@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Universal Lemonade Stand</title>
+  <style>
+    body { font-family: monospace; background: #111; color: #eee; margin: 16px; font-size: 13px; }
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .panel { border: 1px solid #444; padding: 10px; background: #1a1a1a; }
+    h3 { margin: 0 0 8px 0; color: #ffd700; border-bottom: 1px solid #333; padding-bottom: 4px; }
+    button { background: #2b2b2b; color: #fff; border: 1px solid #666; padding: 5px 8px; margin: 2px; cursor: pointer; font-family: monospace; }
+    button:hover:not(:disabled) { background: #444; border-color: #ffd700; }
+    button:disabled { opacity: 0.35; cursor: not-allowed; }
+    .stat { display: flex; justify-content: space-between; margin: 3px 0; }
+    .log { height: 150px; overflow-y: auto; background: #080808; padding: 6px; border: 1px solid #333; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div style="margin-bottom: 10px; display: flex; gap: 12px; align-items: center;">
+    <strong>UNIVERSAL LEMONADE // HEADLESS TELEMETRY HARNESS</strong>
+    <button id="btn-speed-1">1x Speed</button>
+    <button id="btn-speed-10">10x Speed</button>
+    <button id="btn-speed-50">50x Speed</button>
+    <button id="btn-autobot">Toggle Pacing Bot: OFF</button>
+  </div>
+
+  <div class="grid">
+    <!-- COLUMN 1: TELEMETRY & MANUAL CONTROLS -->
+    <div class="panel">
+      <h3>1. Core Telemetry</h3>
+      <div id="telemetry-readout"></div>
+      <hr style="border-color:#333"/>
+      <button id="btn-squeeze" style="width:100%; padding:10px; font-weight:bold; color:#ffd700;">
+        MANUAL SQUEEZE (+1 Cup)
+      </button>
+      <div style="margin-top:8px;">
+        Price/Cup: $<span id="lbl-price">0.25</span>
+        <button id="btn-price-down">- $0.05</button>
+        <button id="btn-price-up">+ $0.05</button>
+      </div>
+    </div>
+
+    <!-- COLUMN 2: PHASE-SPECIFIC ENGINE CONTROLS -->
+    <div class="panel">
+      <h3 id="phase-title">2. Phase Controls</h3>
+      <div id="phase-controls"></div>
+    </div>
+
+    <!-- COLUMN 3: PROJECTS, COMPUTING & LOGS -->
+    <div class="panel">
+      <h3>3. Computing & Tech Projects</h3>
+      <div id="compute-controls"></div>
+      <div id="project-list" style="margin-top:8px;"></div>
+      <h3 style="margin-top:12px;">Event & Bottleneck Log</h3>
+      <div id="log-box" class="log"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { LemonadeEngine, GeometricMath } from './engine.ts';
+
+    const engine = new LemonadeEngine();
+    let timeScale = 1;
+    let botActive = false;
+
+    // Speed controls
+    document.getElementById('btn-speed-1').onclick = () => timeScale = 1;
+    document.getElementById('btn-speed-10').onclick = () => timeScale = 10;
+    document.getElementById('btn-speed-50').onclick = () => timeScale = 50;
+    document.getElementById('btn-autobot').onclick = (e) => {
+      botActive = !botActive;
+      e.target.textContent = `Toggle Pacing Bot: ${botActive ? 'ON' : 'OFF'}`;
+    };
+
+    document.getElementById('btn-squeeze').onclick = () => engine.manualSqueeze();
+    document.getElementById('btn-price-down').onclick = () => {
+      engine.state.recipe.pricePerCup = Math.max(0.05, +(engine.state.recipe.pricePerCup - 0.05).toFixed(2));
+    };
+    document.getElementById('btn-price-up').onclick = () => {
+      engine.state.recipe.pricePerCup = +(engine.state.recipe.pricePerCup + 0.05).toFixed(2);
+    };
+
+    function runBotStep() {
+      const s = engine.state;
+      if (s.phase === 1) {
+        // Optimal recipe matching for current forecast
+        s.recipe.lemonsPerPitcher = 4;
+        s.recipe.sugarPerPitcher = 4;
+        s.recipe.icePerCup = engine.computeIdealIce(s.tempF);
+        s.recipe.pricePerCup = +(0.50 * (1 + 0.015 * (s.tempF - 70))).toFixed(2);
+        if (s.inv.cups < 60) engine.buyPhase1Supplies('cups', 1);
+        if (s.inv.lemons < 24) engine.buyPhase1Supplies('lemons', 1);
+        if (s.inv.sugar < 20) engine.buyPhase1Supplies('sugar', 1);
+        if (s.inv.ice < 60) engine.buyPhase1Supplies('ice', 1);
+        engine.projects.forEach(p => engine.buyProject(p.id));
+        if (s.phase === 1) engine.runPhase1Day();
+      } else {
+        engine.projects.forEach(p => engine.buyProject(p.id));
+        Object.keys(engine.generators).forEach(id => engine.buyGenerator(id, 'MAX'));
+        if (s.trust > s.processors + s.memory) {
+          if (s.memory <= s.processors) s.memory++; else s.processors++;
+        }
+      }
+    }
+
+    // Render loop (decoupled from engine math)
+    let last = performance.now();
+    function loop(now) {
+      const dt = ((now - last) / 1000) * timeScale;
+      last = now;
+
+      engine.tick(dt);
+      if (botActive) runBotStep();
+
+      const s = engine.state;
+      document.getElementById('lbl-price').textContent = s.recipe.pricePerCup.toFixed(2);
+      document.getElementById('telemetry-readout').innerHTML = `
+        <div class="stat"><span>Phase:</span><strong>PHASE ${s.phase}</strong></div>
+        <div class="stat"><span>Sim Time:</span><span>${s.elapsedSec.toFixed(0)}s (Day ${s.day})</span></div>
+        <div class="stat"><span>Cash:</span><strong>$${s.cash.format()}</strong></div>
+        <div class="stat"><span>Total Cups Produced:</span><span>${s.totalCupsProduced.format()}</span></div>
+        <div class="stat"><span>Production / sec:</span><span>${s.cupsPerSec.format()}/s</span></div>
+        <div class="stat"><span>Unsold Cup Buffer:</span><span>${s.unsoldCups.format()}</span></div>
+        <div class="stat"><span>Brand Multiplier:</span><span>${s.brandMultiplier.toFixed(2)}x</span></div>
+      `;
+
+      // Render Phase-Specific Controls
+      const phaseEl = document.getElementById('phase-controls');
+      if (s.phase === 1) {
+        const q = (engine.computeRecipeQuality() * 100).toFixed(0);
+        phaseEl.innerHTML = `
+          <div><strong>Forecast:</strong> ${s.tempF}°F (${s.weather}) | Ideal Ice: ${engine.computeIdealIce(s.tempF)}</div>
+          <div><strong>Recipe Match Quality:</strong> ${q}% (Peak: ${(s.bestRecipeQuality*100).toFixed(0)}%)</div>
+          <div style="margin:6px 0;">
+            Stock: Lemons(${s.inv.lemons}) Sugar(${s.inv.sugar}) Ice(${s.inv.ice}) Cups(${s.inv.cups})<br/>
+            <button onclick="window._buy('lemons')">+24 Lemons ($2)</button>
+            <button onclick="window._buy('sugar')">+20 Sugar ($1.5)</button>
+            <button onclick="window._buy('ice')">+100 Ice ($1)</button>
+            <button onclick="window._buy('cups')">+50 Cups ($1)</button>
+          </div>
+          <div>
+            Ice/Cup: ${s.recipe.icePerCup}
+            <button onclick="window._ice(-1)">-</button><button onclick="window._ice(1)">+</button>
+          </div>
+          <button onclick="window._nextDay()" style="width:100%; margin-top:8px; padding:8px; background:#1e4620;">
+            RUN DAY ${s.day} SIMULATION
+          </button>
+          ${s.lastDaySummary ? `<div style="margin-top:6px; color:#aaa;">Last Day: Sold ${s.lastDaySummary.cupsSold}/${s.lastDaySummary.footTraffic} cups ($${s.lastDaySummary.revenue.toFixed(2)}) | ${s.lastDaySummary.spoilageNote}</div>` : ''}
+        `;
+      } else if (s.phase === 2) {
+        phaseEl.innerHTML = Object.values(engine.generators).map(g => {
+          const cost = GeometricMath.bulkCost(g.baseCost, g.costGrowth, g.owned, 1);
+          return `<div class="stat">
+            <span>${g.name} [${g.owned}]</span>
+            <button onclick="window._gen('${g.id}', 1)" ${s.cash.lt(cost) ? 'disabled' : ''}>Buy 1 ($${cost.format()})</button>
+            <button onclick="window._gen('${g.id}', 'MAX')">Max</button>
+          </div>`;
+        }).join('');
+      } else {
+        phaseEl.innerHTML = `
+          <div class="stat"><span>Active Von Neumann Probes:</span><strong>${s.probes.format()}</strong></div>
+          <div class="stat"><span>Lime Bandits (Drifters):</span><strong style="color:#ff6b6b">${s.drifters.format()}</strong></div>
+          <div class="stat"><span>Remaining Cosmic Matter:</span><span>${s.availableMatter.format()} g</span></div>
+          <div class="stat"><span>Orbital Citrus Factories:</span><span>${s.cosmicFactories.format()}</span></div>
+          <hr style="border-color:#333; margin: 8px 0;"/>
+          <div style="font-weight:bold; color:#ffd700; margin-bottom:4px;">Probe Allocation:</div>
+          ${['rep', 'haz', 'harv', 'fact', 'combat'].map(k => `
+            <div class="stat">
+              <span>${k.toUpperCase()}: ${(s.probeAlloc[k]*100).toFixed(0)}%</span>
+              <div>
+                <button onclick="window._alloc('${k}', -0.05)">-5%</button>
+                <button onclick="window._alloc('${k}', +0.05)">+5%</button>
+              </div>
+            </div>
+          `).join('')}
+        `;
+      }
+
+      // Render Computing & Projects
+      const freeTrust = s.trust - (s.processors + s.memory);
+      document.getElementById('compute-controls').innerHTML = s.phase >= 2 ? `
+        <div>Trust: ${s.trust} (Free: ${freeTrust}) | Next at ${s.nextTrustAtCups.format()} cups</div>
+        <div>CPU: ${s.processors} <button onclick="window._cpu()" ${freeTrust<=0?'disabled':''}>+CPU</button> |
+             Mem: ${s.memory} <button onclick="window._mem()" ${freeTrust<=0?'disabled':''}>+Mem</button></div>
+        <div>Sugar Rush (Ops): ${ s.ops.toFixed(0) } / ${ s.maxOps } | Zest: ${ s.zest.toFixed(0) }</div>
+      ` : `<div>Unlock Squeeze-Bot 9000 to activate continuous CPU/Zest loop.</div>`;
+
+      document.getElementById('project-list').innerHTML = engine.projects
+        .filter(p => !p.purchased && p.unlocked(s))
+        .map(p => `<div style="border:1px solid #555; padding:6px; margin-top:4px;">
+          <strong>${p.name}</strong><br/><span>${p.desc}</span><br/>
+          <button onclick="window._proj('${p.id}')">
+            Unlock (${p.costCash ? '$'+p.costCash : ''} ${p.costOps ? p.costOps+' Ops ' : ''}${p.costZest ? p.costZest+' Zest' : ''})
+          </button>
+        </div>`).join('');
+
+      document.getElementById('log-box').innerHTML = s.logs.map(l => `<div>${l}</div>`).join('');
+      requestAnimationFrame(loop);
+    }
+
+    // Expose quick bindings for barebones harness buttons
+    window._buy = (item) => engine.buyPhase1Supplies(item, 1);
+    window._ice = (d) => engine.state.recipe.icePerCup = Math.max(1, Math.min(8, engine.state.recipe.icePerCup + d));
+    window._nextDay = () => engine.runPhase1Day();
+    window._gen = (id, n) => engine.buyGenerator(id, n);
+    window._proj = (id) => engine.buyProject(id);
+    window._cpu = () => { if (engine.state.trust > engine.state.processors + engine.state.memory) engine.state.processors++; };
+    window._mem = () => { if (engine.state.trust > engine.state.processors + engine.state.memory) engine.state.memory++; };
+    window._alloc = (k, delta) => {
+      engine.state.probeAlloc[k] = Math.max(0, Math.min(1, +(engine.state.probeAlloc[k] + delta).toFixed(2)));
+    };
+
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>
