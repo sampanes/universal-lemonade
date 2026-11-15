@@ -584,6 +584,76 @@ export class LemonadeEngine {
           e.copacker.active = true;
           e.log('PHASE 5 UNLOCKED: Beverage Empire achieved! Commercial co-packing and supermarket distribution active.');
         }
+      },
+      {
+        id: 'regional_supermarkets',
+        name: 'Regional Supermarket Distribution',
+        desc: 'Partner with regional grocery chains (Whole Foods, Sprouted Markets) across 3 states. Co-packer volume scales to 300 cases/day!',
+        phase: 5, costCash: 18000, purchased: false,
+        unlocked: (s) => s.phase === 5 && s.cash.gte(10000),
+        effect: (e) => {
+          e.copacker.casesPerDay = 300;
+          e.log('Project: Regional Supermarket Distribution active! Shipping 300 cases/day across 3 states.');
+        }
+      },
+      {
+        id: 'automated_canning_line',
+        name: 'High-Speed Rotary Canning Line',
+        desc: 'Install automated rotary filler & pasteurization tunnel at the co-packer facility. Capacity scales to 1,500 cases/day at $22/case margin!',
+        phase: 5, costCash: 85000, purchased: false,
+        unlocked: (s) => s.phase === 5 && s.cash.gte(50000),
+        effect: (e) => {
+          e.copacker.casesPerDay = 1500;
+          e.copacker.netPerCase = 22.00;
+          e.log('Project: High-Speed Rotary Canning Line online! 1,500 cases/day at $22/case net margin.');
+        }
+      },
+      {
+        id: 'national_bigbox',
+        name: 'National Big-Box Retail Rollout (Target & Walmart)',
+        desc: 'Premium endcap displays in 2,500 retail stores nationwide. Co-packer volume scales to 6,000 cases/day!',
+        phase: 5, costCash: 350000, purchased: false,
+        unlocked: (s) => s.phase === 5 && s.cash.gte(200000),
+        effect: (e) => {
+          e.copacker.casesPerDay = 6000;
+          e.state.brandMultiplier *= 1.25;
+          e.log('Project: National Big-Box contract finalized! Shipping 6,000 cases/day across America.');
+        }
+      },
+      {
+        id: 'club_store_pallets',
+        name: 'Costco & Sam\'s Club Wholesale Pallet Program',
+        desc: 'Full pallets of 24-can variety club packs in wholesale warehouses nationwide. Volume expands to 25,000 cases/day!',
+        phase: 5, costCash: 1800000, purchased: false,
+        unlocked: (s) => s.phase === 5 && s.cash.gte(1000000),
+        effect: (e) => {
+          e.copacker.casesPerDay = 25000;
+          e.log('Project: Club Store Pallet Program active! 25,000 cases/day flowing through warehouse clubs.');
+        }
+      },
+      {
+        id: 'qsr_fountain_licensing',
+        name: 'Global Fast-Casual Restaurant Fountain Licensing',
+        desc: 'Craft lemonade dispensers in 10,000 fast-casual restaurants worldwide. Volume expands to 100,000 cases/day!',
+        phase: 5, costCash: 8500000, purchased: false,
+        unlocked: (s) => s.phase === 5 && s.cash.gte(5000000),
+        effect: (e) => {
+          e.copacker.casesPerDay = 100000;
+          e.state.brandMultiplier *= 1.20;
+          e.log('Project: Fast-casual soda fountain contract live! 100,000 cases/day globally.');
+        }
+      },
+      {
+        id: 'global_beverage_jv',
+        name: 'International Beverage Conglomerate Joint Venture',
+        desc: 'Partner with global bottling plants in Europe, Asia, and Latin America. Production hits 350,000 cases/day!',
+        phase: 5, costCash: 35000000, purchased: false,
+        unlocked: (s) => s.phase === 5 && s.cash.gte(20000000),
+        effect: (e) => {
+          e.copacker.casesPerDay = 350000;
+          e.state.brandMultiplier *= 1.25;
+          e.log('Project: International Joint Venture operational! World-wide distribution of 350,000 cases/day.');
+        }
       }
     ];
   }
@@ -987,6 +1057,12 @@ export class LemonadeEngine {
       for (const stand of Object.values(this.franchiseStands)) {
         if (!stand.hired) continue;
 
+        // Safety clause: stand pauses without operating supplies, preventing zero-sales payroll drains
+        if (s.inv.cups <= 0 || s.inv.lemons <= 0) {
+          notes.push(`${stand.workerName}'s stand paused (waiting on fresh supplies)`);
+          continue;
+        }
+
         franchiseWages += stand.dailyWage;
         const standTraffic = Math.floor(stand.baseCapacity * Math.pow(weatherMult * tempFactor, stand.weatherSens) * (0.6 + s.reputation * 0.4) * efficiencyBonus);
         const standDemand = Math.floor(standTraffic * buyProb);
@@ -1081,7 +1157,18 @@ export class LemonadeEngine {
     const totalExpenses = franchiseWages + packagingCosts;
     const netProfit = totalRevenue - totalExpenses;
 
-    s.cash = s.cash.add(netProfit);
+    // Debt safety floor: cash never falls below zero into inescapable debt softlocks
+    if (netProfit < 0) {
+      const loss = Math.abs(netProfit);
+      if (s.cash.lt(loss)) {
+        s.cash = BigNum.fromNumber(0);
+        notes.push("Operating expenses exceeded cash reserves! Balance hit $0.00.");
+      } else {
+        s.cash = s.cash.sub(loss);
+      }
+    } else {
+      s.cash = s.cash.add(netProfit);
+    }
     const totalCupsToday = drivewayCupsSold + franchiseCupsSold + bottlesSold;
     s.totalCupsSold = s.totalCupsSold.add(totalCupsToday);
     s.totalRevenueEarned = s.totalRevenueEarned.add(totalRevenue);
