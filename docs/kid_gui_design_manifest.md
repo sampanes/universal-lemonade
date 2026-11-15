@@ -48,43 +48,77 @@ On mobile portrait mode (primary target), the screen is divided into three disti
 
 ---
 
-## 3. Kid Personalization & Agency Systems
+## 3. Paced Milestone Personalization Roadmap
 
-Giving kids creative choices early creates immediate emotional investment:
+Rather than front-loading a tedious 5-step form before Day 1, personalizations unlock as celebratory milestone rewards across the journey. A **🎨 Customize Closet** palette button remains permanently accessible on the stand so kids can experiment and switch styles anytime:
 
-### A. The House & Stand Color Customizer (Day 1 Onboarding)
-Before opening Day 1, a friendly 2-step setup appears:
-1. **"Name Your Lemonade Co."**: (e.g. *Sunshine Squeeze*, *Lightning Lemonade*, *Leo's Lemon Stand*).
-2. **"Pick Your Neighborhood House Color"**:
-   - 🏠 Sunshine Yellow
-   - 🏡 Sky Blue
-   - 🏘️ Mint Green
-   - 🏡 Lavender Purple
-   - 🏠 Coral Red
-3. **"Choose Your Stand Canopy"**:
-   - Classic Yellow/White Stripes
-   - Rainbow Candy Stripes
-   - Solar Citrus Pattern
-   - Retro Wood Plank Rustic
+```mermaid
+flowchart LR
+    M1["Stage 1 (Day 1-5)<br/>Cardboard Marker, Brand Namer, Awning Stripes, Mascot Adoption"] --> M2["Stage 2 (Franchise)<br/>Repaint Family House, Crew Uniform Aprons, Cargo Wagon Decals"]
+    M2 --> M3["Stage 3 (Wholesale)<br/>Custom Bottle Caps, Label Badges, First Car Paint & Bumper Stickers"]
+    M3 --> M4["Stage 4 (Patent)<br/>Vortex Juicer Appliance Colorways, Tesla Vinyl Wrap & Vanity Plate"]
+    M4 --> M5["Stage 5 (Empire)<br/>Arena Skyline Neon, Private Jet Livery, Citrus Cay Island Flag"]
+```
 
-*Technical Implementation:* Handled via **SVG currentColor and CSS filters / CSS variables** (`--house-color`, `--canopy-accent`). The underlying vector/illustration uses mask cutouts or SVG fills, meaning **zero extra asset downloads**—just dynamic CSS variables!
-
-### B. Stand Mascots (Adoptable in Stage 1 & 2)
-Kids can choose a companion sitting by the lemonade stand that provides animated reactions and a mild, fun perk (balanced so no choice is ever wrong):
-- 🐕 **Buster the Golden Pup**: *"Friendly Greeter"* — Wags tail when tips arrive. Barks cheerfully to attract **+2 extra customer visits on sunny days** (75°F+).
-- 🐈 **Mittens the Calico Cat**: *"Pest Patrol & Helper"* — Bats playfully at falling lemon seeds; naps on the cooler. **Reduces lemon spoilage by 5% and adds +$1.00 to chore rewards**.
-- 🦜 **Peppy the Cockatiel**: *"Hype Bird"* — Wears miniature cartoon sunglasses on its crest. Squawks when drinks sell, giving a **10% chance for customers to leave a +$0.25 bonus tip**.
-
-### C. Sticker Book & Apron Badges
-Every milestone unlocks a peel-and-stick enamel badge that visually decorates the side of the lemonade stand:
-- *First 100 Cups Sold*
-- *Chore Champion (5 Chores completed)*
-- *Master Chemist (100% Recipe Match)*
-- *Franchise Boss (First neighbor kid hired)*
+### Stage-by-Stage Unlocks:
+1. **Stage 1 (Driveway):**
+   - **Day 1:** Raw cardboard box & crayon sign (`LEMONAD 50¢`).
+   - **First $30 (Wooden Stand):** Name the Brand + Choose Striped Awning Fabric (Sunny Yellow/White, Watermelon Pink/Green, Cosmic Star Blue, Rainbow).
+   - **Day 5 (Visitor Event):** Adopt companion mascot (**Buster** the golden pup, **Mittens** the calico cat, or **Peppy** the cockatiel) + pick their custom bandana color.
+2. **Stage 2 (Franchise):**
+   - **First $250 Milestone:** *"Mom and Dad say you can help pick the new house color!"* Choose house wall siding & front door trim.
+   - **Hiring Crew:** Pick team apron and baseball cap colors for Timmy, Leo, and Sarah.
+   - **Radio Flyer Wagon:** Pick flame decals, lightning bolts, or racing stripes.
+3. **Stage 3 (Wholesale):**
+   - **Bottle Studio:** Pick bottle crown cap color (Metallic Gold, Electric Lime, Cherry Red) and label badge shape (Comic Starburst, Vintage Oval, Modern Diamond).
+   - **First Car (Used Honda Civic):** Choose paint job (Canary Yellow, Rally Blue, Cherry Red) and funny bumper sticker (*"HONK IF YOU LOVE LEMONS"*).
+4. **Stage 4 (Patent / Tech):**
+   - **Vortex Press Appliance Colorway:** Brushed Stainless Gold, Retro Mint, Glossy Lemon Yellow, or Matte Stealth Black.
+   - **Tesla Model X Wrap & Vanity Plate:** Cyber Chrome or Matte Yellow + custom 7-character plate (`LEM0N8`, `JUICY`).
+5. **Stage 5 (Empire / Island):**
+   - **The Lemonade Center Arena:** Glowing rooftop neon colors lighting up downtown.
+   - **Gulfstream G650 Private Jet:** Yellow-and-black luxury racing stripe livery.
+   - **Citrus Cay Island:** Beach cabana umbrella colors and custom island flag crest (Crowned Lemon, Dolphin, Palm Tree, Sunrise).
 
 ---
 
-## 4. Tactile Interactive Elements (Zero-Weight SVG & CSS)
+## 4. Visual Scale Architecture: The "Powers of Ten" ("WOW THAT'S SO MUCH MORE!")
+
+A 9-year-old cannot easily picture the difference between `1,000` and `100,000` as raw numbers on a screen. But kids immediately grasp **physical unit elevation and visual density**:
+
+### A. The Unit Elevation Ladder (From Cups to Cargo Ships)
+Every stage visually replaces the unit of production with an order-of-magnitude larger physical container:
+
+| Business Tier | Visual Physical Unit | What 1 Unit Represents | On-Screen Graphic & Animation |
+| :--- | :--- | :--- | :--- |
+| **Tier 1 (Driveway)** | 🥛 **Paper Cup** | 1 Single Cup | Hand-poured glass, individual ice cubes bobbing |
+| **Tier 2 (Kitchen/Franchise)** | 🏺 **Glass Pitcher** | 10 Cups | Full glass pitcher bubbling with floating lemon wheels |
+| **Tier 3 (Wholesale Garage)** | 📦 **Wooden Crate** | 24 Glass Bottles | Stacks of wooden crates piled up in the garage |
+| **Tier 4 (Club Store / Factory)**| 🪵 **Industrial Pallet** | 50 Crates (1,200 bottles) | Giant wooden forklift pallet wrapped in clear plastic |
+| **Tier 5 (Regional Supply)** | 🚛 **18-Wheeler Semi-Truck** | 24 Pallets (28,800 bottles) | Heavy diesel semi-truck backing up with air-brake hiss |
+| **Tier 6 (Global Conglomerate)**| 🚢 **Ocean Cargo Freighter** | 500 Containers (14M bottles)| Massive ocean freighter ship sailing past tropical islands |
+
+*The "Drop" Micro-Animation:* When a kid orders supplies in Stage 5, instead of a number incrementing, a **cartoon forklift drops an entire shrink-wrapped wooden pallet onto the screen with a heavy screen-shake and comic dust puff (`THUD!`)**.
+
+### B. The Diorama Camera Pullback (Zooming Out Across the World)
+The top 35% diorama physically pulls its camera back as you advance through stages:
+1. **Stage 1 (Macro View):** Camera is 3 feet from the wooden stand. You see individual wood knots, the sweating pitcher, Buster chewing a tennis ball.
+2. **Stage 2 (Neighborhood Birds-Eye):** Camera pulls back to an aerial view of the suburban cul-de-sac. Dotted bike trails connect your house to Timmy's stand, Leo's ballpark stand, and Sarah's pool stand.
+3. **Stage 3 (Street & Garage Level):** Camera focuses on the garage loading door. The Honda Civic trunk is packed full of bottle crates, with neighborhood delivery vans rolling out.
+4. **Stage 4 (City Skyline):** High-rise downtown office overlooking the city. Highways with bustling delivery trucks, billboards featuring your "Vortex Press" juicer.
+5. **Stage 5 (Global Map & Island):** Stylized globe/ocean view with shipping sea-lanes, flight paths of your yellow jet, and your private tropical island Citrus Cay glistening in turquoise waters.
+
+### C. Tactile Money Scaling (Coins to Cash Briefcases)
+Watching wealth accumulate must feel physically heavy and visceral:
+* **Stage 1 ($1 - $100):** Individual shiny gold coins clink one by one into an open glass mason jar (`clink! clink! clink!`).
+* **Stage 2 ($100 - $1,000):** Coins pour in a continuous green-and-gold waterfall into a heavy metal lockbox.
+* **Stage 3 ($1,000 - $10,000):** Thick banded paper stacks of $100 bills slam onto a wooden desk.
+* **Stage 4 ($10,000 - $1,000,000):** High-speed digital ledger ticker with green neon bank wire-transfer pings.
+* **Stage 5 ($1,000,000+):** Heavy canvas bank bags with dollar signs and shiny gold bars dropping into a vault.
+
+---
+
+## 5. Tactile Interactive Elements (Zero-Weight SVG & CSS)
 
 Instead of sterile HTML input boxes, gameplay interactions feel like physical wooden and glass toys:
 
