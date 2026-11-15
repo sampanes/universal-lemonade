@@ -29,7 +29,7 @@
     .header-title {
       font-weight: bold;
       color: #ffd700;
-      font-size: 14px;
+      font-size: 15px;
     }
     .header-controls {
       display: flex;
@@ -41,7 +41,7 @@
       grid-template-columns: repeat(3, 1fr);
       gap: 12px;
     }
-    @media (max-width: 860px) {
+    @media (max-width: 900px) {
       .grid {
         grid-template-columns: 1fr;
       }
@@ -90,15 +90,22 @@
       margin: 4px 0;
       padding: 2px 0;
     }
-    .log {
-      height: 140px;
-      overflow-y: auto;
-      background: #080808;
-      padding: 6px;
-      border: 1px solid #333;
-      font-size: 12px;
+    .badge {
+      display: inline-block;
+      padding: 2px 6px;
       border-radius: 3px;
-      -webkit-overflow-scrolling: touch;
+      font-size: 11px;
+      font-weight: bold;
+      background: #2e442e;
+      color: #4ade80;
+      border: 1px solid #4ade80;
+    }
+    .card {
+      border: 1px solid #444;
+      background: #222;
+      padding: 8px;
+      margin-top: 6px;
+      border-radius: 4px;
     }
     .stock-grid {
       display: grid;
@@ -110,6 +117,26 @@
       margin: 0;
       width: 100%;
     }
+    .log {
+      height: 140px;
+      overflow-y: auto;
+      background: #080808;
+      padding: 6px;
+      border: 1px solid #333;
+      font-size: 12px;
+      border-radius: 3px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .pnl-box {
+      background: #141414;
+      border: 1px solid #333;
+      padding: 8px;
+      border-radius: 4px;
+      margin-bottom: 8px;
+      font-size: 12px;
+    }
+    .profit-pos { color: #4ade80; font-weight: bold; }
+    .profit-neg { color: #f87171; font-weight: bold; }
   </style>
 </head>
 <body>
@@ -119,254 +146,343 @@
       <button id="btn-speed-1">1x</button>
       <button id="btn-speed-10">10x</button>
       <button id="btn-speed-50">50x</button>
-      <button id="btn-autobot">Bot: OFF</button>
+      <button id="btn-autoday">Auto-Day: OFF</button>
     </div>
   </div>
 
   <div class="grid">
-    <!-- COLUMN 1: TELEMETRY & MANUAL CONTROLS -->
+    <!-- COLUMN 1: FINANCES, RECIPE & EMERGENCY CHORES -->
     <div class="panel">
-      <h3>1. Core Telemetry</h3>
-      <div id="telemetry-readout"></div>
+      <h3>1. Executive Office</h3>
+      <div id="readout-finances"></div>
       <hr style="border-color:#333; margin: 10px 0;"/>
-      <button id="btn-squeeze" style="width:100%; padding:12px; font-weight:bold; min-height:44px;">
+      
+      <div style="font-weight: bold; margin-bottom: 4px;">Emergency Capital (Kid Chores):</div>
+      <button id="btn-chore" style="width:100%; padding:12px; font-weight:bold; min-height:44px;">
         DO CHORE
       </button>
-      <div class="stat" style="margin-top:8px;">
-        <span>Price / Cup: <strong>$<span id="lbl-price">2.00</span></strong></span>
+
+      <hr style="border-color:#333; margin: 10px 0;"/>
+      <div style="font-weight: bold; margin-bottom: 4px;">Recipe & Pricing Tuning:</div>
+      <div class="stat">
+        <span>Price per Cup: <strong>$<span id="lbl-price">2.00</span></strong></span>
         <div>
-          <button id="btn-price-down" style="min-width:55px;">- $0.25</button>
-          <button id="btn-price-up" style="min-width:55px;">+ $0.25</button>
+          <button id="btn-price-down" style="min-width:48px;">-$0.25</button>
+          <button id="btn-price-up" style="min-width:48px;">+$0.25</button>
+        </div>
+      </div>
+      <div class="stat">
+        <span>Lemons per Pitcher: <strong><span id="lbl-lemons">4</span></strong></span>
+        <div>
+          <button id="btn-lemons-down" style="min-width:38px;">-</button>
+          <button id="btn-lemons-up" style="min-width:38px;">+</button>
+        </div>
+      </div>
+      <div class="stat">
+        <span>Sugar per Pitcher: <strong><span id="lbl-sugar">4</span></strong></span>
+        <div>
+          <button id="btn-sugar-down" style="min-width:38px;">-</button>
+          <button id="btn-sugar-up" style="min-width:38px;">+</button>
+        </div>
+      </div>
+      <div class="stat">
+        <span>Ice per Cup: <strong><span id="lbl-ice">4</span></strong></span>
+        <div>
+          <button id="btn-ice-down" style="min-width:38px;">-</button>
+          <button id="btn-ice-up" style="min-width:38px;">+</button>
         </div>
       </div>
     </div>
 
-    <!-- COLUMN 2: PHASE-SPECIFIC ENGINE CONTROLS -->
+    <!-- COLUMN 2: OPERATIONS, SATELLITE LOCATIONS & INVENTORY -->
     <div class="panel">
-      <h3 id="phase-title">2. Phase Controls</h3>
-      <div id="phase-controls"></div>
+      <h3 id="panel2-title">2. Operations & Expansion</h3>
+      <div id="readout-weather"></div>
+      
+      <div style="font-weight: bold; margin: 8px 0 4px 0;">Central Inventory & Supplies:</div>
+      <div id="readout-inventory-text" style="font-size: 12px; color: #ccc;"></div>
+      <div class="stock-grid" id="stock-buttons"></div>
+
+      <button id="btn-run-day" style="width:100%; margin-top:8px; padding:14px; background:#1e4620; font-weight:bold; min-height:48px; font-size:14px; border-color:#4ade80;">
+        ☀️ RUN DAY SIMULATION
+      </button>
+
+      <div id="expansion-sections" style="margin-top: 10px;"></div>
     </div>
 
-    <!-- COLUMN 3: PROJECTS, COMPUTING & LOGS -->
+    <!-- COLUMN 3: P&L STATEMENT, INVESTMENTS & LOGS -->
     <div class="panel">
-      <h3>3. Computing & Tech Projects</h3>
-      <div id="compute-controls"></div>
-      <div id="project-list" style="margin-top:8px;"></div>
-      <h3 style="margin-top:12px;">Event & Bottleneck Log</h3>
+      <h3>3. Financial P&L & Upgrades</h3>
+      <div id="readout-pnl"></div>
+
+      <div style="font-weight: bold; margin: 10px 0 4px 0;">Available Business Investments:</div>
+      <div id="project-list"></div>
+
+      <div style="font-weight: bold; margin: 12px 0 4px 0;">Executive Activity Log:</div>
       <div id="log-box" class="log"></div>
     </div>
   </div>
 
   <script type="module">
-    import { LemonadeEngine, GeometricMath } from './engine.ts';
+    import { LemonadeEngine } from './engine.ts';
 
     const engine = new LemonadeEngine();
     let timeScale = 1;
-    let botActive = false;
+    let autoDay = false;
+    let autoDayTimer = 0;
 
-    // Speed controls
-    document.getElementById('btn-autobot').onclick = (e) => {
-      botActive = !botActive;
-      e.target.textContent = `Bot: ${botActive ? 'ON' : 'OFF'}`;
-      e.target.style.borderColor = botActive ? '#4ade80' : '#666';
-      e.target.style.color = botActive ? '#4ade80' : '#fff';
-    };
-
-    function updateSpeedButtons(speed) {
-      [1, 10, 50].forEach(s => {
-        const btn = document.getElementById(`btn-speed-${s}`);
-        if (s === speed) {
-          btn.style.borderColor = '#ffd700';
-          btn.style.color = '#ffd700';
-        } else {
-          btn.style.borderColor = '#666';
-          btn.style.color = '#fff';
-        }
+    // Header Speed Controls
+    function setSpeed(s) {
+      timeScale = s;
+      [1, 10, 50].forEach(v => {
+        const btn = document.getElementById(`btn-speed-${v}`);
+        btn.style.borderColor = (v === s) ? '#ffd700' : '#666';
+        btn.style.color = (v === s) ? '#ffd700' : '#fff';
       });
     }
-    updateSpeedButtons(1);
+    document.getElementById('btn-speed-1').onclick = () => setSpeed(1);
+    document.getElementById('btn-speed-10').onclick = () => setSpeed(10);
+    document.getElementById('btn-speed-50').onclick = () => setSpeed(50);
+    setSpeed(1);
 
-    document.getElementById('btn-speed-1').onclick = () => { timeScale = 1; updateSpeedButtons(1); };
-    document.getElementById('btn-speed-10').onclick = () => { timeScale = 10; updateSpeedButtons(10); };
-    document.getElementById('btn-speed-50').onclick = () => { timeScale = 50; updateSpeedButtons(50); };
+    document.getElementById('btn-autoday').onclick = (e) => {
+      autoDay = !autoDay;
+      e.target.textContent = `Auto-Day: ${autoDay ? 'ON' : 'OFF'}`;
+      e.target.style.borderColor = autoDay ? '#4ade80' : '#666';
+      e.target.style.color = autoDay ? '#4ade80' : '#fff';
+    };
 
-    document.getElementById('btn-squeeze').onclick = () => engine.manualSqueeze();
+    // Chore Click
+    document.getElementById('btn-chore').onclick = () => engine.doChore();
+
+    // Run Day Click
+    document.getElementById('btn-run-day').onclick = () => engine.runDay();
+
+    // Recipe Controls
     document.getElementById('btn-price-down').onclick = () => {
       engine.state.recipe.pricePerCup = Math.max(0.25, +(engine.state.recipe.pricePerCup - 0.25).toFixed(2));
     };
     document.getElementById('btn-price-up').onclick = () => {
       engine.state.recipe.pricePerCup = +(engine.state.recipe.pricePerCup + 0.25).toFixed(2);
     };
+    document.getElementById('btn-lemons-down').onclick = () => {
+      engine.state.recipe.lemonsPerPitcher = Math.max(1, engine.state.recipe.lemonsPerPitcher - 1);
+    };
+    document.getElementById('btn-lemons-up').onclick = () => {
+      engine.state.recipe.lemonsPerPitcher++;
+    };
+    document.getElementById('btn-sugar-down').onclick = () => {
+      engine.state.recipe.sugarPerPitcher = Math.max(1, engine.state.recipe.sugarPerPitcher - 1);
+    };
+    document.getElementById('btn-sugar-up').onclick = () => {
+      engine.state.recipe.sugarPerPitcher++;
+    };
+    document.getElementById('btn-ice-down').onclick = () => {
+      engine.state.recipe.icePerCup = Math.max(0, engine.state.recipe.icePerCup - 1);
+    };
+    document.getElementById('btn-ice-up').onclick = () => {
+      engine.state.recipe.icePerCup = Math.min(8, engine.state.recipe.icePerCup + 1);
+    };
 
-    function runBotStep() {
-      const s = engine.state;
-      if (s.phase === 1) {
-        // Optimal recipe matching for current forecast
-        s.recipe.lemonsPerPitcher = 4;
-        s.recipe.sugarPerPitcher = 4;
-        s.recipe.icePerCup = engine.computeIdealIce(s.tempF);
-        s.recipe.pricePerCup = +(2.00 * (1 + 0.015 * (s.tempF - 70))).toFixed(2);
-        if (s.inv.cups < 60) engine.buyPhase1Supplies('cups', 1);
-        if (s.inv.lemons < 24) engine.buyPhase1Supplies('lemons', 1);
-        if (s.inv.sugar < 20) engine.buyPhase1Supplies('sugar', 1);
-        if (s.inv.ice < 60) engine.buyPhase1Supplies('ice', 1);
-        engine.projects.forEach(p => engine.buyProject(p.id));
-        if (s.phase === 1) engine.runPhase1Day();
-      } else {
-        engine.projects.forEach(p => engine.buyProject(p.id));
-        Object.keys(engine.generators).forEach(id => engine.buyGenerator(id, 'MAX'));
-        if (s.trust > s.processors + s.memory) {
-          if (s.memory <= s.processors) s.memory++; else s.processors++;
-        }
-      }
-    }
-
-    // Render loop (decoupled from engine math)
+    // Render loop
     let last = performance.now();
     function loop(now) {
       const dt = ((now - last) / 1000) * timeScale;
       last = now;
 
       engine.tick(dt);
-      if (botActive) runBotStep();
+
+      // Auto-Day ticker if enabled
+      if (autoDay) {
+        autoDayTimer += dt;
+        if (autoDayTimer >= 2.5) { // Run day every 2.5 real seconds (scaled by timeScale)
+          autoDayTimer = 0;
+          engine.runDay();
+        }
+      }
 
       const s = engine.state;
-      document.getElementById('lbl-price').textContent = s.recipe.pricePerCup.toFixed(2);
+      const stageNames = [
+        '',
+        'Stage 1: Driveway Hustle',
+        'Stage 2: Neighborhood Franchise',
+        'Stage 3: Bottled Brand & Wholesale',
+        'Stage 4: Patent Licensing & Direct Sales',
+        'Stage 5: Industrial Beverage Empire'
+      ];
 
-      // Dynamic Action Button: Chore (Phase 1) vs Overclock Squeezer (Phase 2+)
-      const actionBtn = document.getElementById('btn-squeeze');
-      if (s.phase === 1) {
-        const chore = s.currentChore;
-        if (chore && chore.remainingSec > 0) {
-          actionBtn.disabled = true;
-          actionBtn.style.background = '#222';
-          actionBtn.style.borderColor = '#555';
-          actionBtn.style.color = '#888';
-          actionBtn.textContent = `⏳ ${chore.name} (${chore.remainingSec.toFixed(1)}s)`;
-        } else if (chore) {
-          actionBtn.disabled = false;
-          actionBtn.style.background = '#1b3d2f';
-          actionBtn.style.borderColor = '#4ade80';
-          actionBtn.style.color = '#4ade80';
-          actionBtn.textContent = `🧹 CHORE: ${chore.name} (+$${chore.reward.toFixed(2)})`;
-        }
-      } else {
-        actionBtn.disabled = false;
-        actionBtn.style.background = '#3b2a1a';
-        actionBtn.style.borderColor = '#ffd700';
-        actionBtn.style.color = '#ffd700';
-        const clickPower = s.cupsPerSec.mul(0.1).add(1);
-        actionBtn.textContent = `⚡ OVERCLOCK SQUEEZER (+${clickPower.format()} Cups)`;
-      }
-
-      document.getElementById('telemetry-readout').innerHTML = `
-        <div class="stat"><span>Phase:</span><strong>PHASE ${s.phase}</strong></div>
-        <div class="stat"><span>Sim Time:</span><span>${s.elapsedSec.toFixed(0)}s (Day ${s.day})</span></div>
-        <div class="stat"><span>Cash:</span><strong>$${s.cash.format()}</strong></div>
-        <div class="stat"><span>Total Cups Produced:</span><span>${s.totalCupsProduced.format()}</span></div>
-        <div class="stat"><span>Production / sec:</span><span>${s.cupsPerSec.format()}/s</span></div>
-        <div class="stat"><span>Unsold Cup Buffer:</span><span>${s.unsoldCups.format()}</span></div>
-        <div class="stat"><span>Brand Multiplier:</span><span>${s.brandMultiplier.toFixed(2)}x</span></div>
+      // 1. Finances & Recipe readout
+      document.getElementById('readout-finances').innerHTML = `
+        <div class="stat"><span>Stage:</span><span class="badge">${stageNames[s.phase]}</span></div>
+        <div class="stat"><span>Available Cash:</span><strong style="color:#ffd700; font-size:15px;">$${s.cash.format()}</strong></div>
+        <div class="stat"><span>Total Career Revenue:</span><span>$${s.totalRevenueEarned.format()}</span></div>
+        <div class="stat"><span>Total Units Sold:</span><span>${s.totalCupsSold.format()}</span></div>
+        <div class="stat"><span>Neighborhood Reputation:</span><span>${(s.reputation * 100).toFixed(0)}%</span></div>
+        <div class="stat"><span>Recipe Quality Match:</span><span>${(engine.computeRecipeQuality() * 100).toFixed(0)}% (Peak: ${(s.bestRecipeQuality * 100).toFixed(0)}%)</span></div>
       `;
 
-      // Render Phase-Specific Controls
-      const phaseEl = document.getElementById('phase-controls');
-      if (s.phase === 1) {
-        const q = (engine.computeRecipeQuality() * 100).toFixed(0);
-        phaseEl.innerHTML = `
-          <div class="stat"><span>Forecast:</span><strong>${s.tempF}°F (${s.weather})</strong></div>
-          <div class="stat"><span>Ideal Ice:</span><span>${engine.computeIdealIce(s.tempF)} cubes / cup</span></div>
-          <div class="stat"><span>Recipe Quality:</span><strong>${q}%</strong> <span style="color:#888;">(Peak: ${(s.bestRecipeQuality*100).toFixed(0)}%)</span></div>
-          <hr style="border-color:#333; margin: 8px 0;"/>
-          <div style="font-weight:bold; margin-bottom:4px;">Stock: Lemons(${s.inv.lemons}) Sugar(${s.inv.sugar}) Ice(${s.inv.ice}) Cups(${s.inv.cups})</div>
-          <div class="stock-grid">
-            <button onclick="window._buy('lemons')">+24 Lemons ($8)</button>
-            <button onclick="window._buy('sugar')">+20 Sugar ($6)</button>
-            <button onclick="window._buy('ice')">+100 Ice ($4)</button>
-            <button onclick="window._buy('cups')">+50 Cups ($4)</button>
-          </div>
-          <div class="stat" style="margin: 8px 0;">
-            <span>Ice per Cup: <strong>${s.recipe.icePerCup}</strong></span>
-            <div>
-              <button onclick="window._ice(-1)" style="min-width:44px;">-</button>
-              <button onclick="window._ice(1)" style="min-width:44px;">+</button>
-            </div>
-          </div>
-          <button onclick="window._nextDay()" style="width:100%; margin-top:8px; padding:12px; background:#1e4620; font-weight:bold; min-height:44px; font-size:14px;">
-            RUN DAY ${s.day} SIMULATION ☀️
-          </button>
-          ${s.lastDaySummary ? `<div style="margin-top:8px; color:#aaa; font-size:12px; border-top:1px dashed #333; padding-top:6px;">Last Day: Sold ${s.lastDaySummary.cupsSold}/${s.lastDaySummary.footTraffic} cups ($${s.lastDaySummary.revenue.toFixed(2)}) • ${s.lastDaySummary.spoilageNote}</div>` : ''}
-        `;
-      } else if (s.phase === 2) {
-        phaseEl.innerHTML = Object.values(engine.generators).map(g => {
-          const cost = GeometricMath.bulkCost(g.baseCost, g.costGrowth, g.owned, 1);
-          return `<div class="stat" style="flex-wrap:wrap; gap:4px; margin: 6px 0;">
-            <span><strong>${g.name}</strong> [${g.owned}]</span>
-            <div>
-              <button onclick="window._gen('${g.id}', 1)" ${s.cash.lt(cost) ? 'disabled' : ''}>Buy 1 ($${cost.format()})</button>
-              <button onclick="window._gen('${g.id}', 'MAX')">Max</button>
-            </div>
-          </div>`;
-        }).join('');
-      } else {
-        phaseEl.innerHTML = `
-          <div class="stat"><span>Active Von Neumann Probes:</span><strong>${s.probes.format()}</strong></div>
-          <div class="stat"><span>Lime Bandits (Drifters):</span><strong style="color:#ff6b6b">${s.drifters.format()}</strong></div>
-          <div class="stat"><span>Remaining Cosmic Matter:</span><span>${s.availableMatter.format()} g</span></div>
-          <div class="stat"><span>Orbital Citrus Factories:</span><span>${s.cosmicFactories.format()}</span></div>
-          <hr style="border-color:#333; margin: 8px 0;"/>
-          <div style="font-weight:bold; color:#ffd700; margin-bottom:4px;">Probe Allocation:</div>
-          ${['rep', 'haz', 'harv', 'fact', 'combat'].map(k => `
-            <div class="stat">
-              <span>${k.toUpperCase()}: <strong>${(s.probeAlloc[k]*100).toFixed(0)}%</strong></span>
-              <div>
-                <button onclick="window._alloc('${k}', -0.05)" style="min-width:44px;">-5%</button>
-                <button onclick="window._alloc('${k}', +0.05)" style="min-width:44px;">+5%</button>
-              </div>
-            </div>
-          `).join('')}
-        `;
+      // Update recipe numbers
+      document.getElementById('lbl-price').textContent = s.recipe.pricePerCup.toFixed(2);
+      document.getElementById('lbl-lemons').textContent = s.recipe.lemonsPerPitcher;
+      document.getElementById('lbl-sugar').textContent = s.recipe.sugarPerPitcher;
+      document.getElementById('lbl-ice').textContent = s.recipe.icePerCup;
+
+      // Chore button state
+      const choreBtn = document.getElementById('btn-chore');
+      const chore = s.currentChore;
+      if (chore && chore.remainingSec > 0) {
+        choreBtn.disabled = true;
+        choreBtn.style.background = '#222';
+        choreBtn.style.borderColor = '#555';
+        choreBtn.style.color = '#888';
+        choreBtn.textContent = `⏳ ${chore.name} (${chore.remainingSec.toFixed(1)}s)`;
+      } else if (chore) {
+        choreBtn.disabled = false;
+        choreBtn.style.background = '#1b3d2f';
+        choreBtn.style.borderColor = '#4ade80';
+        choreBtn.style.color = '#4ade80';
+        choreBtn.textContent = `🧹 CHORE: ${chore.name} (+$${chore.reward.toFixed(2)})`;
       }
 
-      // Render Computing & Projects
-      const freeTrust = s.trust - (s.processors + s.memory);
-      document.getElementById('compute-controls').innerHTML = s.phase >= 2 ? `
-        <div class="stat"><span>Trust: <strong>${s.trust}</strong> (Free: ${freeTrust})</span><span>Next: ${s.nextTrustAtCups.format()} cups</span></div>
-        <div class="stat" style="margin: 6px 0;">
-          <span>CPU: <strong>${s.processors}</strong></span>
-          <button onclick="window._cpu()" ${freeTrust<=0?'disabled':''}>+CPU</button>
-          <span>Mem: <strong>${s.memory}</strong></span>
-          <button onclick="window._mem()" ${freeTrust<=0?'disabled':''}>+Mem</button>
-        </div>
-        <div class="stat"><span>Sugar Rush (Ops):</span><strong>${ s.ops.toFixed(0) } / ${ s.maxOps }</strong></div>
-        <div class="stat"><span>Zest (Creativity):</span><strong>${ s.zest.toFixed(0) }</strong></div>
-      ` : `<div>Unlock Squeeze-Bot 9000 to activate continuous CPU/Zest loop.</div>`;
+      // 2. Weather & Operations
+      document.getElementById('readout-weather').innerHTML = `
+        <div class="stat"><span>Today's Forecast:</span><strong>${s.tempF}°F (${s.weather})</strong></div>
+        <div class="stat"><span>Ideal Ice for Forecast:</span><span>${engine.computeIdealIce(s.tempF)} cubes / cup</span></div>
+      `;
 
+      document.getElementById('readout-inventory-text').textContent =
+        `Lemons: ${s.inv.lemons} | Sugar: ${s.inv.sugar} | Ice: ${s.inv.ice} | Cups: ${s.inv.cups}` +
+        (s.phase >= 3 ? ` | Glass Bottles: ${s.inv.bottles}` : '');
+
+      const discText = s.flags.hasCostcoDiscount ? ' (Costco -35%)' : '';
+      const lCost = s.flags.hasCostcoDiscount ? '$5.20' : '$8';
+      const sCost = s.flags.hasCostcoDiscount ? '$3.90' : '$6';
+      const iCost = s.flags.hasCostcoDiscount ? '$2.60' : '$4';
+      const cCost = s.flags.hasCostcoDiscount ? '$2.60' : '$4';
+      const bCost = s.flags.hasCostcoDiscount ? '$6.50' : '$10';
+
+      document.getElementById('stock-buttons').innerHTML = `
+        <button onclick="window._buy('lemons')">+24 Lemons (${lCost})</button>
+        <button onclick="window._buy('sugar')">+20 Sugar (${sCost})</button>
+        <button onclick="window._buy('ice')">+100 Ice (${iCost})</button>
+        <button onclick="window._buy('cups')">+50 Cups (${cCost})</button>
+        ${s.phase >= 3 ? `<button onclick="window._buy('bottles')" style="grid-column: span 2;">+25 Glass Bottles (${bCost})</button>` : ''}
+      `;
+
+      document.getElementById('btn-run-day').textContent = `☀️ RUN DAY ${s.day} BUSINESS SIMULATION`;
+
+      // Expansion sections (Franchise, Wholesale, Patent, CoPacker)
+      let expansionHTML = '';
+
+      if (s.phase >= 2) {
+        expansionHTML += `<div style="font-weight: bold; margin-top: 12px; color: #ffd700;">Neighborhood Franchise Stands:</div>`;
+        Object.values(engine.franchiseStands).forEach(st => {
+          expansionHTML += `<div class="card">
+            <div class="stat">
+              <strong>${st.name} (${st.workerName})</strong>
+              <span class="${st.hired ? 'badge' : ''}">${st.hired ? 'ACTIVE' : 'NOT HIRED'}</span>
+            </div>
+            <div style="font-size: 11px; color: #aaa;">${st.desc}</div>
+            <div class="stat" style="margin-top: 4px;">
+              <span>Daily Wage: $${st.dailyWage}/day | Max Capacity: ${st.baseCapacity} cups</span>
+              ${!st.hired ? `<button onclick="window._hire('${st.id}')" ${s.cash.lt(st.setupCost) ? 'disabled' : ''}>Hire ($${st.setupCost} setup)</button>` : '<span style="color:#4ade80;">On Payroll</span>'}
+            </div>
+          </div>`;
+        });
+      }
+
+      if (s.phase >= 3) {
+        expansionHTML += `<div style="font-weight: bold; margin-top: 12px; color: #ffd700;">Wholesale Retail Accounts:</div>`;
+        Object.values(engine.wholesaleAccounts).forEach(acc => {
+          expansionHTML += `<div class="card">
+            <div class="stat">
+              <strong>${acc.name}</strong>
+              <span class="${acc.active ? 'badge' : ''}">${acc.active ? 'ACTIVE' : 'UNCOMMITTED'}</span>
+            </div>
+            <div style="font-size: 11px; color: #aaa;">${acc.desc}</div>
+            <div class="stat" style="margin-top: 4px;">
+              <span>Orders: ${acc.bottlesPerDay} bbl/day @ $${acc.wholesalePrice.toFixed(2)} (Pkg: $${acc.packagingCost.toFixed(2)})</span>
+              ${!acc.active ? `<button onclick="window._signWholesale('${acc.id}')" ${s.cash.lt(acc.setupCost) ? 'disabled' : ''}>Sign Contract ($${acc.setupCost})</button>` : '<span style="color:#4ade80;">Active Supplier</span>'}
+            </div>
+          </div>`;
+        });
+      }
+
+      if (s.phase >= 4 && engine.patent.licensed) {
+        expansionHTML += `<div class="card" style="border-color: #ffd700;">
+          <div class="stat">
+            <strong style="color: #ffd700;">USPTO Patent: "Vortex Citrus Press"</strong>
+            <span class="badge">LICENSED</span>
+          </div>
+          <div style="font-size: 11px; color: #ccc; margin: 4px 0;">Kitchen appliance brand sells your juicer design nationwide. Passive income!</div>
+          <div class="stat">
+            <span>Royalty: <strong>$${engine.patent.royaltyPerUnit.toFixed(2)} / unit</strong></span>
+            <span>Est. Sales: ~${engine.patent.baseUnitsPerDay} units/day</span>
+          </div>
+        </div>`;
+      }
+
+      if (s.phase >= 5 && engine.copacker.active) {
+        expansionHTML += `<div class="card" style="border-color: #4ade80;">
+          <div class="stat">
+            <strong style="color: #4ade80;">Industrial Co-Packer & Supermarkets</strong>
+            <span class="badge">REGIONAL SCALE</span>
+          </div>
+          <div style="font-size: 11px; color: #ccc; margin: 4px 0;">Factory production line packaging cases for Whole Foods & regional grocers.</div>
+          <div class="stat">
+            <span>Volume: ~${engine.copacker.casesPerDay} cases/day</span>
+            <span>Net Margin: <strong>+$${engine.copacker.netPerCase.toFixed(2)}/case</strong></span>
+          </div>
+        </div>`;
+      }
+
+      document.getElementById('expansion-sections').innerHTML = expansionHTML;
+
+      // 3. P&L Statement readout
+      const pnl = s.lastDaySummary;
+      if (pnl) {
+        const netClass = pnl.netProfit >= 0 ? 'profit-pos' : 'profit-neg';
+        document.getElementById('readout-pnl').innerHTML = `
+          <div class="pnl-box">
+            <div class="stat"><strong>Day ${pnl.day} Financial Statement</strong><span>${pnl.tempF}°F (${pnl.weather})</span></div>
+            <hr style="border-color:#333; margin:4px 0;"/>
+            <div class="stat"><span>Driveway Stand (${pnl.drivewayCupsSold} cups):</span><span>+$${pnl.drivewayRevenue.toFixed(2)}</span></div>
+            ${s.phase >= 2 ? `<div class="stat"><span>Franchise Stands (${pnl.franchiseCupsSold} cups):</span><span>+$${pnl.franchiseGrossRevenue.toFixed(2)}</span></div>` : ''}
+            ${s.phase >= 2 ? `<div class="stat" style="color:#f87171;"><span>Franchise Wages Paid:</span><span>-$${pnl.franchiseWagesPaid.toFixed(2)}</span></div>` : ''}
+            ${s.phase >= 3 ? `<div class="stat"><span>Wholesale Bottles (${pnl.bottlesSold} bbl):</span><span>+$${pnl.wholesaleRevenue.toFixed(2)}</span></div>` : ''}
+            ${s.phase >= 3 ? `<div class="stat" style="color:#f87171;"><span>Bottle Packaging Costs:</span><span>-$${pnl.packagingCosts.toFixed(2)}</span></div>` : ''}
+            ${s.phase >= 4 ? `<div class="stat" style="color:#ffd700;"><span>Patent Royalties (${pnl.patentUnitsSold} units):</span><span>+$${pnl.patentRoyalties.toFixed(2)}</span></div>` : ''}
+            ${s.phase >= 5 ? `<div class="stat" style="color:#4ade80;"><span>Co-Packer Cases (${pnl.copackerCasesSold} cases):</span><span>+$${pnl.copackerNet.toFixed(2)}</span></div>` : ''}
+            <hr style="border-color:#333; margin:4px 0;"/>
+            <div class="stat" style="font-size:13px;"><span>Daily Net Profit:</span><span class="${netClass}">+$${pnl.netProfit.toFixed(2)}</span></div>
+            <div style="font-size:11px; color:#aaa; margin-top:4px;">${pnl.notes.join(' • ')}</div>
+          </div>
+        `;
+      } else {
+        document.getElementById('readout-pnl').innerHTML = `<div class="pnl-box" style="color:#888;">Run Day 1 simulation to generate your first financial P&L statement!</div>`;
+      }
+
+      // Projects
       document.getElementById('project-list').innerHTML = engine.projects
         .filter(p => !p.purchased && p.unlocked(s))
-        .map(p => `<div style="border:1px solid #555; padding:8px; margin-top:6px; border-radius:4px; background:#222;">
+        .map(p => `<div class="card">
           <div style="font-weight:bold; color:#ffd700;">${p.name}</div>
           <div style="font-size:12px; color:#ccc; margin: 4px 0;">${p.desc}</div>
-          <button onclick="window._proj('${p.id}')" style="width:100%; margin-top:4px; font-weight:bold; background:#2e442e; border-color:#4ade80;">
-            Unlock (${p.costCash ? '$'+p.costCash : ''} ${p.costOps ? p.costOps+' Ops ' : ''}${p.costZest ? p.costZest+' Zest' : ''})
+          <button onclick="window._proj('${p.id}')" ${s.cash.lt(p.costCash) ? 'disabled' : ''} style="width:100%; margin-top:4px; font-weight:bold; background:#2e442e; border-color:#4ade80;">
+            Invest ($${p.costCash})
           </button>
         </div>`).join('');
 
       document.getElementById('log-box').innerHTML = s.logs.map(l => `<div>${l}</div>`).join('');
+
       requestAnimationFrame(loop);
     }
 
-    // Expose quick bindings for barebones harness buttons
-    window._buy = (item) => engine.buyPhase1Supplies(item, 1);
-    window._ice = (d) => engine.state.recipe.icePerCup = Math.max(1, Math.min(8, engine.state.recipe.icePerCup + d));
-    window._nextDay = () => engine.runPhase1Day();
-    window._gen = (id, n) => engine.buyGenerator(id, n);
+    // Global action bindings
+    window._buy = (item) => engine.buySupplies(item, 1);
+    window._hire = (id) => engine.hireFranchiseStand(id);
+    window._signWholesale = (id) => engine.signWholesaleAccount(id);
     window._proj = (id) => engine.buyProject(id);
-    window._cpu = () => { if (engine.state.trust > engine.state.processors + engine.state.memory) engine.state.processors++; };
-    window._mem = () => { if (engine.state.trust > engine.state.processors + engine.state.memory) engine.state.memory++; };
-    window._alloc = (k, delta) => {
-      engine.state.probeAlloc[k] = Math.max(0, Math.min(1, +(engine.state.probeAlloc[k] + delta).toFixed(2)));
-    };
 
     requestAnimationFrame(loop);
   </script>

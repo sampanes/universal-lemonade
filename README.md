@@ -1,25 +1,38 @@
 # Universal Lemonade
 
-A three-phase incremental idle game blending classic neighborhood lemonade stand economics with the cosmic von Neumann probe scaling of *Universal Paperclips*.
+An entrepreneurial business simulation game modeling the realistic (though best-case) growth of an ambitious kid's lemonade business—from driveway hustle to national beverage empire.
 
-## Game Phases
+Live playable demo: **https://sampanes.github.io/universal-lemonade/**
 
-1. **Phase 1: Neighborhood Stand**
-   - Discrete, turn-based day simulation.
-   - Microeconomic recipe optimization: Lemons, Sugar, Ice vs. Temperature and Weather forecasts.
-   - Managing supply inventory and overnight spoilage.
-   - Goal: Build capital and reputation to unlock **The Squeeze-Bot 9000**.
+## Business Scaling Stages
 
-2. **Phase 2: Automated Megacorp**
-   - Seamless transition into a continuous real-time production and sales engine.
-   - Dynamic public demand governed by hyperbolic price elasticity.
-   - Generators: Auto-Squeezers, Delivery Drones, Biodome Orchards, Molecular Synths, and Hadron Lemon Colliders.
-   - Computing loop: Trust milestones, Processors (*Sugar Rush / Ops*), and Memory (*Zest / Creativity*).
+1. **Stage 1: Driveway Hustle (Solo Operator)**
+   - Solo operations: buy supplies (lemons, sugar, ice, cups), monitor weather forecasts, and tune the signature recipe.
+   - Emergency seed capital: do neighborhood chores ($5–$25) when low on working capital.
+   - Invest in an insulated cooler and garage mini-fridge to eliminate overnight spoilage.
 
-3. **Phase 3: Cosmic Von Neumann Probe Expansion**
-   - Deep space probe deployment converting cosmic matter ($3 \times 10^{55}\text{ g}$) into lemonade.
-   - Dynamic 5-weight allocation ODE: Self-replication, Hazard mitigation, Harvesting, Factory construction, and Combat.
-   - Lanchester's Law space battles defending against Value Drift and the *Lime Bandits*.
+2. **Stage 2: Neighborhood Franchise (Labor & Delegation)**
+   - Expand beyond your street by hiring neighborhood kids:
+     - **Timmy** on Elm Street (steady residential traffic).
+     - **Leo** at Little League Park (crushes weekend tournaments).
+     - **Sarah** at the Community Pool (huge volume on hot days).
+   - Manage central supply logistics and daily payroll wages.
+   - Unlock a Costco Business Membership for 35% bulk supply discounts.
+
+3. **Stage 3: Bottling & Wholesale (Packaging & Local Retail)**
+   - Bottle your recipe in sealed glass bottles.
+   - Sign wholesale accounts: Corner Bodega, Saturday Farmers Market, and Youth Sports Concessions.
+   - Balance wholesale margins ($2.00–$3.50/bottle) against bottle packaging and label costs.
+
+4. **Stage 4: Invention & Patent Licensing (Passive Income)**
+   - Invent the "Vortex Citrus Press"—an ergonomic high-yield juicer.
+   - File a USPTO patent and sign a nationwide licensing agreement with an appliance brand.
+   - Earn passive royalties ($2.50/unit) on every juicer sold nationwide.
+
+5. **Stage 5: Industrial Beverage Empire**
+   - Contract with a commercial beverage co-packer.
+   - Distribute cases to regional supermarket chains (Whole Foods, regional grocers).
+   - Scale into a multi-thousand-dollar daily enterprise.
 
 ## Quickstart
 
@@ -33,5 +46,3 @@ npm run dev
 # Build for production
 npm run build
 ```
-
-See it on My Page: https://sampanes.github.io/universal-lemonade

@@ -1,7 +1,7 @@
-// engine.ts — Pure Headless Backend for Universal Lemonade
+// engine.ts — Realistic Scaling Entrepreneur Engine for Universal Lemonade
 
 // ============================================================================
-// 1. SELF-CONTAINED BIGNUM (Mantissa * 10^Exponent, up to 10^9,000,000,000)
+// 1. SELF-CONTAINED BIGNUM (Supports numbers up to 10^9,000,000,000)
 // ============================================================================
 export class BigNum {
   public m: number; // Mantissa in [1, 10) or 0
@@ -122,42 +122,47 @@ export class BigNum {
 }
 
 // ============================================================================
-// 2. DATA STRUCTURES & STATE SCHEMA
+// 2. DATA STRUCTURES & BUSINESS SCHEMA
 // ============================================================================
 export type WeatherCondition = 'SUNNY' | 'CLOUDY' | 'RAINY';
-export type GamePhase = 1 | 2 | 3;
+export type GamePhase = 1 | 2 | 3 | 4 | 5;
 
-export interface GeneratorDef {
+export interface FranchiseStand {
   id: string;
   name: string;
-  baseCost: BigNum;
-  costGrowth: number;
-  baseCupsPerSec: BigNum;
-  owned: number;
-}
-
-export interface ProjectDef {
-  id: string;
-  name: string;
+  workerName: string;
+  location: string;
+  hired: boolean;
+  setupCost: number;
+  dailyWage: number;
+  baseCapacity: number;
+  weatherSens: number;
   desc: string;
-  phase: GamePhase;
-  costCash?: number;
-  costOps?: number;
-  costZest?: number;
-  purchased: boolean;
-  unlocked: (state: GameState) => boolean;
-  effect: (state: GameState) => void;
 }
 
-export interface DaySummary {
-  day: number;
-  tempF: number;
-  weather: WeatherCondition;
-  footTraffic: number;
-  cupsSold: number;
-  revenue: number;
-  recipeQuality: number;
-  spoilageNote: string;
+export interface WholesaleAccount {
+  id: string;
+  name: string;
+  active: boolean;
+  setupCost: number;
+  bottlesPerDay: number;
+  wholesalePrice: number;
+  packagingCost: number;
+  weatherSens: number;
+  desc: string;
+}
+
+export interface PatentSystem {
+  licensed: boolean;
+  royaltyPerUnit: number;
+  baseUnitsPerDay: number;
+  level: number;
+}
+
+export interface CoPackerSystem {
+  active: boolean;
+  casesPerDay: number; // 24 bottles per case
+  netPerCase: number;
 }
 
 export interface ChoreState {
@@ -167,22 +172,76 @@ export interface ChoreState {
   remainingSec: number;
 }
 
+export interface ProjectDef {
+  id: string;
+  name: string;
+  desc: string;
+  phase: GamePhase;
+  costCash: number;
+  purchased: boolean;
+  unlocked: (state: GameState) => boolean;
+  effect: (engine: LemonadeEngine) => void;
+}
+
+export interface DaySummary {
+  day: number;
+  tempF: number;
+  weather: WeatherCondition;
+
+  // Driveway Stand
+  drivewayCupsSold: number;
+  drivewayRevenue: number;
+
+  // Franchise Stands (Phase 2+)
+  franchiseCupsSold: number;
+  franchiseGrossRevenue: number;
+  franchiseWagesPaid: number;
+  franchiseNet: number;
+
+  // Wholesale Bottling (Phase 3+)
+  bottlesSold: number;
+  wholesaleRevenue: number;
+  packagingCosts: number;
+  wholesaleNet: number;
+
+  // Patent Royalties (Phase 4+)
+  patentUnitsSold: number;
+  patentRoyalties: number;
+
+  // Industrial Co-Packing (Phase 5)
+  copackerCasesSold: number;
+  copackerNet: number;
+
+  // P&L Statement totals
+  totalRevenue: number;
+  totalExpenses: number;
+  netProfit: number;
+
+  recipeQuality: number;
+  notes: string[];
+}
+
 export interface GameState {
   phase: GamePhase;
   elapsedSec: number;
-
-  // Phase 1: Turn-based Stand State
   day: number;
   tempF: number;
   weather: WeatherCondition;
   reputation: number;        // [0.1, 1.0]
-  bestRecipeQuality: number; // Carries into Phase 2 as brand multiplier
+  bestRecipeQuality: number;
   brandMultiplier: number;
+
+  // Working Capital & Inventory
+  cash: BigNum;
+  totalCupsSold: BigNum;
+  totalRevenueEarned: BigNum;
+
   inv: {
     lemons: number;
     sugar: number;
     ice: number;
     cups: number;
+    bottles: number; // For wholesale (Phase 3+)
   };
   recipe: {
     lemonsPerPitcher: number;
@@ -190,235 +249,34 @@ export interface GameState {
     icePerCup: number;
     pricePerCup: number;
   };
+
+  // Upgrades & Flag States
   flags: {
     hasCooler: boolean;
     hasMiniFridge: boolean;
-    hasAutoBuyer: boolean;
+    hasCostcoDiscount: boolean;
+    hasCargoWagon: boolean;
+    hasCommercialLabeler: boolean;
     weatherLocked95F: boolean;
   };
-  lastDaySummary: DaySummary | null;
+
   currentChore: ChoreState;
-
-  // Phase 2: Continuous Megacorp State
-  cash: BigNum;
-  unsoldCups: BigNum;
-  totalCupsProduced: BigNum;
-  totalCupsSold: BigNum;
-  cupsPerSec: BigNum;
-  salesPerSec: BigNum;
-  marketingLevel: number;
-  marketingCost: BigNum;
-
-  // Computing (Universal Paperclips Brain Loop)
-  trust: number;
-  nextTrustAtCups: BigNum;
-  processors: number;
-  memory: number;
-  ops: number;       // "Sugar Rush"
-  maxOps: number;
-  zest: number;      // "Creativity"
-
-  // Phase 3: Cosmic Von Neumann State
-  probes: BigNum;
-  drifters: BigNum;  // "Lime Bandits"
-  availableMatter: BigNum;
-  totalMatter: BigNum;
-  cosmicFactories: BigNum;
-  probeAlloc: {
-    rep: number;     // Self-replication
-    haz: number;     // Hazard mitigation
-    harv: number;    // Matter harvesting
-    fact: number;    // Factory building
-    combat: number;  // Anti-Drifter combat
-  };
-  goldenSeeds: number;
+  lastDaySummary: DaySummary | null;
   logs: string[];
 }
 
 // ============================================================================
-// 3. O(1) GEOMETRIC SERIES MATH FOR GENERATORS
-// ============================================================================
-export class GeometricMath {
-  static currentCost(base: BigNum, r: number, owned: number): BigNum {
-    return base.mul(BigNum.fromNumber(1).mul(new BigNum(1, 0)).add(0).mul(Math.pow(r, owned)));
-  }
-
-  static bulkCost(base: BigNum, r: number, owned: number, count: number): BigNum {
-    const startCost = base.mul(new BigNum(1, 0).add(0)).mul(
-      new BigNum(Math.pow(10, (owned * Math.log10(r)) % 1), Math.floor(owned * Math.log10(r)))
-    );
-    const factor = (Math.pow(r, count) - 1) / (r - 1);
-    return startCost.mul(factor);
-  }
-
-  static maxAffordable(cash: BigNum, base: BigNum, r: number, owned: number): number {
-    const logStart = base.log10() + owned * Math.log10(r);
-    const startCost = new BigNum(Math.pow(10, logStart - Math.floor(logStart)), Math.floor(logStart));
-    if (cash.lt(startCost)) return 0;
-    const rhs = cash.mul(r - 1).div(startCost).add(1);
-    const maxM = Math.floor(rhs.log10() / Math.log10(r));
-    return Math.max(0, maxM);
-  }
-}
-
-// ============================================================================
-// 4. CORE SIMULATION ENGINE
+// 3. CORE SIMULATION ENGINE
 // ============================================================================
 export class LemonadeEngine {
   public state: GameState;
-  public generators: Record<string, GeneratorDef>;
   public projects: ProjectDef[];
+  public franchiseStands: Record<string, FranchiseStand>;
+  public wholesaleAccounts: Record<string, WholesaleAccount>;
+  public patent: PatentSystem;
+  public copacker: CoPackerSystem;
   private rngSeed = 1337;
 
-  constructor(goldenSeeds: number = 0) {
-    this.generators = this.initGenerators();
-    this.projects = this.initProjects();
-    this.state = this.createInitialState(goldenSeeds);
-    this.rollNextForecast();
-    this.rollNextChore();
-  }
-
-  private rand(): number {
-    // Deterministic xorshift32 for reproducible pacing tests
-    let x = this.rngSeed;
-    x ^= x << 13;
-    x ^= x >> 17;
-    x ^= x << 5;
-    this.rngSeed = x;
-    return ((x >>> 0) / 4294967296);
-  }
-
-  private createInitialState(goldenSeeds: number): GameState {
-    const prestigeMult = 1 + goldenSeeds * 0.5;
-    return {
-      phase: 1,
-      elapsedSec: 0,
-      day: 1,
-      tempF: 78,
-      weather: 'SUNNY',
-      reputation: 0.5,
-      bestRecipeQuality: 0,
-      brandMultiplier: prestigeMult,
-      inv: { lemons: 24, sugar: 20, ice: 80, cups: 50 },
-      recipe: { lemonsPerPitcher: 4, sugarPerPitcher: 4, icePerCup: 4, pricePerCup: 2.00 },
-      flags: { hasCooler: false, hasMiniFridge: false, hasAutoBuyer: false, weatherLocked95F: false },
-      lastDaySummary: null,
-      currentChore: {
-        name: "Mow Neighbor's Lawn",
-        reward: 15.00,
-        cooldownSec: 10,
-        remainingSec: 0
-      },
-
-      cash: BigNum.fromNumber(60 * prestigeMult),
-      unsoldCups: new BigNum(0, 0),
-      totalCupsProduced: new BigNum(0, 0),
-      totalCupsSold: new BigNum(0, 0),
-      cupsPerSec: new BigNum(0, 0),
-      salesPerSec: new BigNum(0, 0),
-      marketingLevel: 1,
-      marketingCost: BigNum.fromNumber(500),
-
-      trust: 2,
-      nextTrustAtCups: BigNum.fromNumber(1000),
-      processors: 1,
-      memory: 1,
-      ops: 0,
-      maxOps: 1000,
-      zest: 0,
-
-      probes: new BigNum(0, 0),
-      drifters: new BigNum(0, 0),
-      availableMatter: new BigNum(3, 55), // 3e55 grams (Universal Paperclips scale)
-      totalMatter: new BigNum(3, 55),
-      cosmicFactories: new BigNum(1, 0),
-      probeAlloc: { rep: 0.35, haz: 0.25, harv: 0.20, fact: 0.10, combat: 0.10 },
-      goldenSeeds,
-      logs: ['Day 1: Opened the driveway stand. Check the forecast and set your recipe!']
-    };
-  }
-
-  private initGenerators(): Record<string, GeneratorDef> {
-    return {
-      squeezer: { id: 'squeezer', name: 'Auto-Squeezer', baseCost: BigNum.fromNumber(75), costGrowth: 1.15, baseCupsPerSec: BigNum.fromNumber(1.5), owned: 0 },
-      drone:    { id: 'drone',    name: 'Delivery Drone', baseCost: BigNum.fromNumber(600), costGrowth: 1.15, baseCupsPerSec: BigNum.fromNumber(18), owned: 0 },
-      orchard:  { id: 'orchard',  name: 'Biodome Orchard', baseCost: BigNum.fromNumber(10000), costGrowth: 1.15, baseCupsPerSec: BigNum.fromNumber(320), owned: 0 },
-      synth:    { id: 'synth',    name: 'Molecular Citrus Synth', baseCost: BigNum.fromNumber(250000), costGrowth: 1.14, baseCupsPerSec: BigNum.fromNumber(7500), owned: 0 },
-      collider: { id: 'collider', name: 'Hadron Lemon Collider', baseCost: BigNum.fromNumber(5e6), costGrowth: 1.14, baseCupsPerSec: BigNum.fromNumber(2.5e5), owned: 0 }
-    };
-  }
-
-  private initProjects(): ProjectDef[] {
-    return [
-      {
-        id: 'cooler', name: 'Insulated Igloo Cooler',
-        desc: 'Stops ice from melting overnight between days.',
-        phase: 1, costCash: 45, purchased: false,
-        unlocked: (s) => s.phase === 1 && s.day >= 2,
-        effect: (s) => { s.flags.hasCooler = true; this.log('Upgrade: Ice no longer melts overnight!'); }
-      },
-      {
-        id: 'fridge', name: 'Garage Mini-Fridge',
-        desc: 'Eliminates overnight lemon rot and boosts recipe freshness (+10% Reputation).',
-        phase: 1, costCash: 120, purchased: false,
-        unlocked: (s) => s.phase === 1 && s.day >= 3,
-        effect: (s) => { s.flags.hasMiniFridge = true; s.reputation = Math.min(1, s.reputation + 0.1); }
-      },
-      {
-        id: 'singularity_bot', name: 'THE SQUEEZE-BOT 9000 (Singularity Unlock)',
-        desc: 'Automates squeezing and shatters turn-based days into continuous real-time production!',
-        phase: 1, costCash: 500, purchased: false,
-        unlocked: (s) => s.phase === 1 && s.cash.gte(300) && s.bestRecipeQuality >= 0.85,
-        effect: (s) => {
-          s.phase = 2;
-          s.brandMultiplier = (1 + 2 * s.bestRecipeQuality * s.reputation) * (1 + s.goldenSeeds * 0.5);
-          this.generators.squeezer.owned = Math.max(1, this.generators.squeezer.owned);
-          this.log(`SINGULARITY UNLOCKED! Brand Multiplier locked at ${s.brandMultiplier.toFixed(2)}x. Continuous clock active.`);
-        }
-      },
-      {
-        id: 'auto_supply', name: 'Algorithmic Supply Chain',
-        desc: 'Doubles all Phase 2 generator output via automated bulk logistics.',
-        phase: 2, costOps: 750, costZest: 25, purchased: false,
-        unlocked: (s) => s.phase === 2 && s.totalCupsProduced.gte(250),
-        effect: (s) => { s.brandMultiplier *= 2.0; this.log('Project: Algorithmic Supply Chain online (2x output).'); }
-      },
-      {
-        id: 'weather_ray', name: 'Ionospheric Sun-Lock Satellite',
-        desc: 'Locks Earth weather at a permanent 95°F Sunny, multiplying public demand by 3x.',
-        phase: 2, costOps: 2500, costZest: 150, purchased: false,
-        unlocked: (s) => s.phase === 2 && s.totalCupsProduced.gte(25000),
-        effect: (s) => {
-          s.flags.weatherLocked95F = true;
-          s.tempF = 95;
-          s.weather = 'SUNNY';
-          s.brandMultiplier *= 3.0;
-          this.log('Project: Sun-Lock Satellite deployed! Permanent 95°F heatwave.');
-        }
-      },
-      {
-        id: 'orbital_probe', name: 'Launch Von Neumann Citrus Probe (Phase 3)',
-        desc: 'Converts terrestrial assets into self-replicating space probes to turn the cosmos into lemonade.',
-        phase: 2, costOps: 5000, costZest: 500, purchased: false,
-        unlocked: (s) => s.phase === 2 && s.totalCupsProduced.gte(1e7),
-        effect: (s) => {
-          s.phase = 3;
-          s.probes = BigNum.fromNumber(10);
-          s.cosmicFactories = BigNum.fromNumber(5);
-          this.log('PHASE 3: Von Neumann Citrus Probes launched into deep space!');
-        }
-      }
-    ];
-  }
-
-  public log(msg: string): void {
-    this.state.logs.unshift(`[t=${this.state.elapsedSec.toFixed(0)}s] ${msg}`);
-    if (this.state.logs.length > 40) this.state.logs.pop();
-  }
-
-  // ==========================================================================
-  // PHASE 1: DISCRETE MICROECONOMICS & CHORE SYSTEM
-  // ==========================================================================
   private static readonly CHORE_DEFS: { name: string; min: number; max: number }[] = [
     { name: "Mow Neighbor's Lawn", min: 15, max: 25 },
     { name: "Rake Autumn Leaves", min: 10, max: 18 },
@@ -432,6 +290,263 @@ export class LemonadeEngine {
     { name: "Sweep the Deck & Porch", min: 5, max: 10 }
   ];
 
+  constructor() {
+    this.franchiseStands = this.initFranchiseStands();
+    this.wholesaleAccounts = this.initWholesaleAccounts();
+    this.patent = { licensed: false, royaltyPerUnit: 2.50, baseUnitsPerDay: 16, level: 1 };
+    this.copacker = { active: false, casesPerDay: 40, netPerCase: 18.00 };
+    this.projects = this.initProjects();
+    this.state = this.createInitialState();
+    this.rollNextForecast();
+    this.rollNextChore();
+  }
+
+  private rand(): number {
+    let x = this.rngSeed;
+    x ^= x << 13;
+    x ^= x >> 17;
+    x ^= x << 5;
+    this.rngSeed = x;
+    return ((x >>> 0) / 4294967296);
+  }
+
+  private createInitialState(): GameState {
+    return {
+      phase: 1,
+      elapsedSec: 0,
+      day: 1,
+      tempF: 78,
+      weather: 'SUNNY',
+      reputation: 0.5,
+      bestRecipeQuality: 0,
+      brandMultiplier: 1.0,
+
+      cash: BigNum.fromNumber(60.00), // Modern 2020s starting allowance
+      totalCupsSold: new BigNum(0, 0),
+      totalRevenueEarned: new BigNum(0, 0),
+
+      inv: { lemons: 24, sugar: 20, ice: 80, cups: 50, bottles: 0 },
+      recipe: { lemonsPerPitcher: 4, sugarPerPitcher: 4, icePerCup: 4, pricePerCup: 2.00 },
+
+      flags: {
+        hasCooler: false,
+        hasMiniFridge: false,
+        hasCostcoDiscount: false,
+        hasCargoWagon: false,
+        hasCommercialLabeler: false,
+        weatherLocked95F: false
+      },
+
+      currentChore: {
+        name: "Mow Neighbor's Lawn",
+        reward: 18.00,
+        cooldownSec: 10,
+        remainingSec: 0
+      },
+      lastDaySummary: null,
+      logs: ['Day 1: Opened the driveway stand! Check the forecast and set your recipe.']
+    };
+  }
+
+  private initFranchiseStands(): Record<string, FranchiseStand> {
+    return {
+      timmy: {
+        id: 'timmy',
+        name: 'Elm Street Stand',
+        workerName: 'Timmy',
+        location: 'Elm St & 4th Ave',
+        hired: false,
+        setupCost: 45.00,
+        dailyWage: 12.00,
+        baseCapacity: 35,
+        weatherSens: 0.8,
+        desc: 'Steady residential traffic. Timmy is reliable and easygoing.'
+      },
+      leo: {
+        id: 'leo',
+        name: 'Ballpark Stand',
+        workerName: 'Leo',
+        location: 'Little League Park',
+        hired: false,
+        setupCost: 75.00,
+        dailyWage: 16.00,
+        baseCapacity: 70,
+        weatherSens: 1.2,
+        desc: 'Crushes weekend games and sunny tournaments! Huge crowds.'
+      },
+      sarah: {
+        id: 'sarah',
+        name: 'Poolside Stand',
+        workerName: 'Sarah',
+        location: 'Community Pool Entrance',
+        hired: false,
+        setupCost: 95.00,
+        dailyWage: 20.00,
+        baseCapacity: 100,
+        weatherSens: 1.8,
+        desc: 'Insane volume on scorchers above 80°F! Slow when cloudy.'
+      }
+    };
+  }
+
+  private initWholesaleAccounts(): Record<string, WholesaleAccount> {
+    return {
+      bodega: {
+        id: 'bodega',
+        name: 'Corner Bodega & Deli',
+        active: false,
+        setupCost: 80.00,
+        bottlesPerDay: 25,
+        wholesalePrice: 2.40,
+        packagingCost: 0.60,
+        weatherSens: 0.6,
+        desc: 'Buys 25 bottled units daily for their refrigerated beverage case.'
+      },
+      market: {
+        id: 'market',
+        name: "Saturday Farmers Market",
+        active: false,
+        setupCost: 140.00,
+        bottlesPerDay: 60,
+        wholesalePrice: 3.50,
+        packagingCost: 0.65,
+        weatherSens: 1.5,
+        desc: 'Weekend organic craft stall. Sells out premium bottles on sunny days!'
+      },
+      sports: {
+        id: 'sports',
+        name: 'Youth Sports Complex Concession',
+        active: false,
+        setupCost: 180.00,
+        bottlesPerDay: 80,
+        wholesalePrice: 2.20,
+        packagingCost: 0.55,
+        weatherSens: 1.3,
+        desc: 'Supplies bottled sports drinks to concession stands across 4 fields.'
+      }
+    };
+  }
+
+  private initProjects(): ProjectDef[] {
+    return [
+      {
+        id: 'cooler',
+        name: 'Insulated 50-Qt Cooler',
+        desc: 'Stops unused ice from melting overnight.',
+        phase: 1, costCash: 45, purchased: false,
+        unlocked: (s) => s.phase >= 1 && s.day >= 2,
+        effect: (e) => { e.state.flags.hasCooler = true; e.log('Upgrade: Insulated cooler bought. Ice no longer melts overnight!'); }
+      },
+      {
+        id: 'fridge',
+        name: 'Garage Mini-Fridge',
+        desc: 'Eliminates overnight lemon spoilage (+10% Reputation).',
+        phase: 1, costCash: 120, purchased: false,
+        unlocked: (s) => s.phase >= 1 && s.day >= 3,
+        effect: (e) => { e.state.flags.hasMiniFridge = true; e.state.reputation = Math.min(1.0, e.state.reputation + 0.1); e.log('Upgrade: Mini-fridge online! Lemons stay crisp and fresh.'); }
+      },
+      {
+        id: 'franchise_license',
+        name: 'Neighborhood Expansion (Phase 2)',
+        desc: 'Print flyers, buy folding tables, and start hiring neighborhood kids to run stands!',
+        phase: 1, costCash: 150, purchased: false,
+        unlocked: (s) => s.phase === 1 && s.cash.gte(100) && s.bestRecipeQuality >= 0.80,
+        effect: (e) => {
+          e.state.phase = 2;
+          e.log('PHASE 2 UNLOCKED: You are now a manager! Hire neighborhood kids in the Franchise tab.');
+        }
+      },
+      {
+        id: 'costco_card',
+        name: 'Costco Business Card',
+        desc: 'Wholesale restaurant supply pricing: cuts all grocery supply costs by 35%!',
+        phase: 2, costCash: 60, purchased: false,
+        unlocked: (s) => s.phase >= 2,
+        effect: (e) => { e.state.flags.hasCostcoDiscount = true; e.log('Project: Costco Business Card unlocked! 35% discount on all ingredients.'); }
+      },
+      {
+        id: 'cargo_wagon',
+        name: 'Heavy-Duty Radio Flyer Cargo Wagon',
+        desc: 'Streamlines supply distribution: boosts all franchise stands capacity by +25%!',
+        phase: 2, costCash: 75, purchased: false,
+        unlocked: (s) => s.phase >= 2,
+        effect: (e) => {
+          e.state.flags.hasCargoWagon = true;
+          Object.values(e.franchiseStands).forEach(st => st.baseCapacity = Math.round(st.baseCapacity * 1.25));
+          e.log('Project: Cargo Wagon in service! Franchise capacity expanded.');
+        }
+      },
+      {
+        id: 'bottling_rig',
+        name: 'Commercial Countertop Bottling Rig (Phase 3)',
+        desc: 'Hand-capper, food-grade glass bottles, and labels. Sell wholesale to local stores!',
+        phase: 2, costCash: 450, purchased: false,
+        unlocked: (s) => s.phase === 2 && s.cash.gte(300) && s.totalCupsSold.gte(250),
+        effect: (e) => {
+          e.state.phase = 3;
+          e.log('PHASE 3 UNLOCKED: Bottling operations online! Sign wholesale accounts in the Wholesale tab.');
+        }
+      },
+      {
+        id: 'commercial_labeler',
+        name: 'Semi-Automatic Bottle Labeler',
+        desc: 'Reduces bottle packaging cost from ~$0.60 down to $0.35 per bottle.',
+        phase: 3, costCash: 250, purchased: false,
+        unlocked: (s) => s.phase >= 3,
+        effect: (e) => {
+          e.state.flags.hasCommercialLabeler = true;
+          Object.values(e.wholesaleAccounts).forEach(w => w.packagingCost = 0.35);
+          e.log('Project: Semi-Auto Labeler running! Packaging margins improved.');
+        }
+      },
+      {
+        id: 'patent_filing',
+        name: 'USPTO Patent for "Vortex Press" (Phase 4)',
+        desc: 'Invent an ergonomic high-yield citrus press. License it to an appliance company for passive royalties!',
+        phase: 3, costCash: 1200, purchased: false,
+        unlocked: (s) => s.phase === 3 && s.cash.gte(800),
+        effect: (e) => {
+          e.state.phase = 4;
+          e.patent.licensed = true;
+          e.log('PHASE 4 UNLOCKED: Patent granted! You now earn passive royalties on every juicer sold nationwide.');
+        }
+      },
+      {
+        id: 'global_licensing',
+        name: 'International Appliance Licensing',
+        desc: 'Expands juicer distribution across Europe and Asia. Triples passive patent royalties!',
+        phase: 4, costCash: 3000, purchased: false,
+        unlocked: (s) => s.phase >= 4,
+        effect: (e) => {
+          e.patent.level = 2;
+          e.patent.baseUnitsPerDay *= 3;
+          e.patent.royaltyPerUnit = 3.25;
+          e.log('Project: Global patent licensing active! Royalties tripled.');
+        }
+      },
+      {
+        id: 'copacker_deal',
+        name: 'Industrial Co-Packer Agreement (Phase 5)',
+        desc: 'Contract a regional beverage bottling plant. Place cases on supermarket shelves across the state!',
+        phase: 4, costCash: 6000, purchased: false,
+        unlocked: (s) => s.phase >= 4 && s.cash.gte(4000),
+        effect: (e) => {
+          e.state.phase = 5;
+          e.copacker.active = true;
+          e.log('PHASE 5 UNLOCKED: Beverage Empire achieved! Commercial co-packing and supermarket distribution active.');
+        }
+      }
+    ];
+  }
+
+  public log(msg: string): void {
+    this.state.logs.unshift(`[Day ${this.state.day}] ${msg}`);
+    if (this.state.logs.length > 50) this.state.logs.pop();
+  }
+
+  // ==========================================================================
+  // CHORE SYSTEM (EMERGENCY SEED CAPITAL)
+  // ==========================================================================
   public rollNextChore(): void {
     const chore = LemonadeEngine.CHORE_DEFS[Math.floor(this.rand() * LemonadeEngine.CHORE_DEFS.length)];
     const reward = chore.min + Math.floor(this.rand() * (chore.max - chore.min + 1));
@@ -445,14 +560,13 @@ export class LemonadeEngine {
   }
 
   public doChore(): { name: string; reward: number } | null {
-    if (this.state.phase !== 1) return null;
     const chore = this.state.currentChore;
     if (chore.remainingSec > 0) return null;
 
     const reward = chore.reward;
     const name = chore.name;
     this.state.cash = this.state.cash.add(reward);
-    this.log(`Did Chore: ${name} (Earned +$${reward.toFixed(2)})`);
+    this.log(`Completed chore: ${name} (Earned +$${reward.toFixed(2)})`);
 
     const cd = chore.cooldownSec;
     this.rollNextChore();
@@ -460,6 +574,63 @@ export class LemonadeEngine {
     return { name, reward };
   }
 
+  // ==========================================================================
+  // INVENTORY & SUPPLY LOGISTICS
+  // ==========================================================================
+  public buySupplies(item: 'lemons' | 'sugar' | 'ice' | 'cups' | 'bottles', packs: number = 1): boolean {
+    const discount = this.state.flags.hasCostcoDiscount ? 0.65 : 1.0;
+    const catalog = {
+      lemons:  { qty: 24,  cost: +(8.00 * discount).toFixed(2) },
+      sugar:   { qty: 20,  cost: +(6.00 * discount).toFixed(2) },
+      ice:     { qty: 100, cost: +(4.00 * discount).toFixed(2) },
+      cups:    { qty: 50,  cost: +(4.00 * discount).toFixed(2) },
+      bottles: { qty: 25,  cost: +(10.00 * discount).toFixed(2) }
+    }[item];
+
+    const totalCost = catalog.cost * packs;
+    if (this.state.cash.lt(totalCost)) return false;
+
+    this.state.cash = this.state.cash.sub(totalCost);
+    this.state.inv[item] += catalog.qty * packs;
+    return true;
+  }
+
+  // ==========================================================================
+  // FRANCHISE & WHOLESALE ACTIONS
+  // ==========================================================================
+  public hireFranchiseStand(id: string): boolean {
+    const stand = this.franchiseStands[id];
+    if (!stand || stand.hired || this.state.cash.lt(stand.setupCost)) return false;
+
+    this.state.cash = this.state.cash.sub(stand.setupCost);
+    stand.hired = true;
+    this.log(`Hired ${stand.workerName} for ${stand.name}! ($${stand.setupCost} setup, $${stand.dailyWage}/day wage)`);
+    return true;
+  }
+
+  public signWholesaleAccount(id: string): boolean {
+    const account = this.wholesaleAccounts[id];
+    if (!account || account.active || this.state.cash.lt(account.setupCost)) return false;
+
+    this.state.cash = this.state.cash.sub(account.setupCost);
+    account.active = true;
+    this.log(`Signed wholesale contract with ${account.name}!`);
+    return true;
+  }
+
+  public buyProject(id: string): boolean {
+    const p = this.projects.find(x => x.id === id);
+    if (!p || p.purchased || !p.unlocked(this.state) || this.state.cash.lt(p.costCash)) return false;
+
+    this.state.cash = this.state.cash.sub(p.costCash);
+    p.purchased = true;
+    p.effect(this);
+    return true;
+  }
+
+  // ==========================================================================
+  // WEATHER & RECIPE CALCULATIONS
+  // ==========================================================================
   public rollNextForecast(): void {
     if (this.state.flags.weatherLocked95F) {
       this.state.tempF = 95;
@@ -481,260 +652,207 @@ export class LemonadeEngine {
     const idealL = 4;
     const idealS = 4;
     const idealI = this.computeIdealIce(tempF);
-    // Gaussian Radial Basis Function
     const distSq = 0.08 * Math.pow(L - idealL, 2) + 0.08 * Math.pow(S - idealS, 2) + 0.12 * Math.pow(I - idealI, 2);
     return Math.exp(-distSq);
   }
 
-  public buyPhase1Supplies(item: 'lemons' | 'sugar' | 'ice' | 'cups', packs: number = 1): boolean {
-    const catalog = {
-      lemons: { qty: 24, cost: 8.00 },
-      sugar:  { qty: 20, cost: 6.00 },
-      ice:    { qty: 100, cost: 4.00 },
-      cups:   { qty: 50, cost: 4.00 }
-    }[item];
-    const totalCost = catalog.cost * packs;
-    if (this.state.cash.lt(totalCost)) return false;
-    this.state.cash = this.state.cash.sub(totalCost);
-    this.state.inv[item] += catalog.qty * packs;
-    return true;
-  }
-
-  public runPhase1Day(): DaySummary {
+  // ==========================================================================
+  // MAIN DAILY BUSINESS SIMULATION (P&L EXECUTION)
+  // ==========================================================================
+  public runDay(): DaySummary {
     const s = this.state;
+    const notes: string[] = [];
+
     const weatherMult = s.weather === 'SUNNY' ? 1.0 : s.weather === 'CLOUDY' ? 0.65 : 0.25;
     const tempFactor = Math.max(0.3, 1 + 0.8 * ((s.tempF - 70) / 30));
-    const footTraffic = Math.floor(65 * weatherMult * tempFactor * (0.5 + s.reputation));
-
     const quality = this.computeRecipeQuality(s.tempF);
     s.bestRecipeQuality = Math.max(s.bestRecipeQuality, quality);
 
-    // Fair price in modern 2020s dollars (baseline $2.00/cup at 70°F)
+    // 1. Driveway Stand Execution
+    const drivewayTraffic = Math.floor(65 * weatherMult * tempFactor * (0.5 + s.reputation));
     const fairPrice = 2.00 * (1 + 0.02 * (s.tempF - 70));
     const priceRatio = fairPrice / Math.max(0.25, s.recipe.pricePerCup);
     const buyProb = Math.max(0, Math.min(1, quality * Math.pow(priceRatio, 1.8)));
+    const drivewayDemand = Math.floor(drivewayTraffic * buyProb);
 
-    const demandedCups = Math.floor(footTraffic * buyProb);
-
-    // Limiting reagent math (1 pitcher = 10 + icePerCup cups)
+    // Stock deduction helper for cups
     const cupsPerPitcher = 10 + s.recipe.icePerCup;
     const maxByLemons = Math.floor(s.inv.lemons / Math.max(1, s.recipe.lemonsPerPitcher)) * cupsPerPitcher;
     const maxBySugar = Math.floor(s.inv.sugar / Math.max(1, s.recipe.sugarPerPitcher)) * cupsPerPitcher;
     const maxByIce = s.recipe.icePerCup > 0 ? Math.floor(s.inv.ice / s.recipe.icePerCup) : Infinity;
-    const maxPourable = Math.min(s.inv.cups, maxByLemons, maxBySugar, maxByIce);
+    const maxPourableDriveway = Math.min(s.inv.cups, maxByLemons, maxBySugar, maxByIce);
 
-    const cupsSold = Math.min(demandedCups, maxPourable);
-    const pitchersUsed = Math.ceil(cupsSold / cupsPerPitcher);
+    const drivewayCupsSold = Math.min(drivewayDemand, maxPourableDriveway);
+    const pitchersUsed = Math.ceil(drivewayCupsSold / cupsPerPitcher);
 
-    // Deduct inventory
-    s.inv.cups -= cupsSold;
-    s.inv.ice -= cupsSold * s.recipe.icePerCup;
+    s.inv.cups -= drivewayCupsSold;
+    s.inv.ice = Math.max(0, s.inv.ice - drivewayCupsSold * s.recipe.icePerCup);
     s.inv.lemons = Math.max(0, s.inv.lemons - pitchersUsed * s.recipe.lemonsPerPitcher);
     s.inv.sugar = Math.max(0, s.inv.sugar - pitchersUsed * s.recipe.sugarPerPitcher);
 
-    const revenue = cupsSold * s.recipe.pricePerCup;
-    s.cash = s.cash.add(revenue);
-    s.totalCupsProduced = s.totalCupsProduced.add(cupsSold);
-    s.totalCupsSold = s.totalCupsSold.add(cupsSold);
+    const drivewayRevenue = drivewayCupsSold * s.recipe.pricePerCup;
 
-    // Update reputation based on recipe quality
-    s.reputation = Math.max(0.1, Math.min(1.0, s.reputation + (quality - 0.65) * 0.15));
+    // 2. Franchise Stands Execution (Phase 2+)
+    let franchiseCupsSold = 0;
+    let franchiseGross = 0;
+    let franchiseWages = 0;
+
+    if (s.phase >= 2) {
+      for (const stand of Object.values(this.franchiseStands)) {
+        if (!stand.hired) continue;
+
+        franchiseWages += stand.dailyWage;
+        const standTraffic = Math.floor(stand.baseCapacity * Math.pow(weatherMult * tempFactor, stand.weatherSens) * (0.6 + s.reputation * 0.4));
+        const standDemand = Math.floor(standTraffic * buyProb);
+
+        // Check remaining inventory
+        const remByLemons = Math.floor(s.inv.lemons / Math.max(1, s.recipe.lemonsPerPitcher)) * cupsPerPitcher;
+        const remBySugar = Math.floor(s.inv.sugar / Math.max(1, s.recipe.sugarPerPitcher)) * cupsPerPitcher;
+        const remByIce = s.recipe.icePerCup > 0 ? Math.floor(s.inv.ice / s.recipe.icePerCup) : Infinity;
+        const maxStandPour = Math.min(s.inv.cups, remByLemons, remBySugar, remByIce);
+
+        const sold = Math.min(standDemand, maxStandPour);
+        if (sold < standDemand) {
+          notes.push(`${stand.workerName} sold out early (ran out of supplies)!`);
+        }
+
+        const pitchers = Math.ceil(sold / cupsPerPitcher);
+        s.inv.cups -= sold;
+        s.inv.ice = Math.max(0, s.inv.ice - sold * s.recipe.icePerCup);
+        s.inv.lemons = Math.max(0, s.inv.lemons - pitchers * s.recipe.lemonsPerPitcher);
+        s.inv.sugar = Math.max(0, s.inv.sugar - pitchers * s.recipe.sugarPerPitcher);
+
+        franchiseCupsSold += sold;
+        franchiseGross += sold * s.recipe.pricePerCup;
+      }
+    }
+    const franchiseNet = franchiseGross - franchiseWages;
+
+    // 3. Wholesale Bottling Accounts (Phase 3+)
+    let bottlesSold = 0;
+    let wholesaleGross = 0;
+    let packagingCosts = 0;
+
+    if (s.phase >= 3) {
+      for (const acc of Object.values(this.wholesaleAccounts)) {
+        if (!acc.active) continue;
+
+        const demand = Math.round(acc.bottlesPerDay * Math.pow(weatherMult, acc.weatherSens));
+        // 1 bottle = 0.5 lemon, 0.4 sugar, 1 bottle package
+        const maxByL = Math.floor(s.inv.lemons / 0.5);
+        const maxByS = Math.floor(s.inv.sugar / 0.4);
+        const maxBottles = Math.min(demand, s.inv.bottles, maxByL, maxByS);
+
+        if (maxBottles > 0) {
+          s.inv.bottles -= maxBottles;
+          s.inv.lemons -= Math.ceil(maxBottles * 0.5);
+          s.inv.sugar -= Math.ceil(maxBottles * 0.4);
+
+          bottlesSold += maxBottles;
+          wholesaleGross += maxBottles * acc.wholesalePrice;
+          packagingCosts += maxBottles * acc.packagingCost;
+        } else if (demand > 0) {
+          notes.push(`Could not fill wholesale order for ${acc.name} (out of bottles/lemons)!`);
+        }
+      }
+    }
+    const wholesaleNet = wholesaleGross - packagingCosts;
+
+    // 4. Patent Royalties (Phase 4+)
+    let patentUnitsSold = 0;
+    let patentRoyalties = 0;
+    if (s.phase >= 4 && this.patent.licensed) {
+      patentUnitsSold = Math.round(this.patent.baseUnitsPerDay * (0.8 + this.rand() * 0.4));
+      patentRoyalties = patentUnitsSold * this.patent.royaltyPerUnit;
+    }
+
+    // 5. Industrial Co-Packing (Phase 5)
+    let copackerCasesSold = 0;
+    let copackerNet = 0;
+    if (s.phase >= 5 && this.copacker.active) {
+      copackerCasesSold = Math.round(this.copacker.casesPerDay * (0.85 + this.rand() * 0.3));
+      copackerNet = copackerCasesSold * this.copacker.netPerCase;
+    }
 
     // Overnight Spoilage
-    const notes: string[] = [];
     if (!s.flags.hasCooler && s.inv.ice > 0) {
-      notes.push(`${s.inv.ice} ice melted`);
+      notes.push(`${s.inv.ice} ice cubes melted overnight`);
       s.inv.ice = 0;
     }
     if (!s.flags.hasMiniFridge && s.inv.lemons > 0) {
-      const rotted = Math.ceil(s.inv.lemons * 0.25);
+      const rotted = Math.ceil(s.inv.lemons * 0.20);
       s.inv.lemons -= rotted;
       notes.push(`${rotted} lemons rotted`);
     }
+
+    // P&L Consolidation
+    const totalRevenue = drivewayRevenue + franchiseGross + wholesaleGross + patentRoyalties + copackerNet;
+    const totalExpenses = franchiseWages + packagingCosts;
+    const netProfit = totalRevenue - totalExpenses;
+
+    s.cash = s.cash.add(netProfit);
+    const totalCupsToday = drivewayCupsSold + franchiseCupsSold + bottlesSold;
+    s.totalCupsSold = s.totalCupsSold.add(totalCupsToday);
+    s.totalRevenueEarned = s.totalRevenueEarned.add(totalRevenue);
+
+    // Reputation adjustment
+    s.reputation = Math.max(0.1, Math.min(1.0, s.reputation + (quality - 0.65) * 0.12));
 
     const summary: DaySummary = {
       day: s.day,
       tempF: s.tempF,
       weather: s.weather,
-      footTraffic,
-      cupsSold,
-      revenue,
+      drivewayCupsSold,
+      drivewayRevenue,
+      franchiseCupsSold,
+      franchiseGrossRevenue: franchiseGross,
+      franchiseWagesPaid: franchiseWages,
+      franchiseNet,
+      bottlesSold,
+      wholesaleRevenue: wholesaleGross,
+      packagingCosts,
+      wholesaleNet,
+      patentUnitsSold,
+      patentRoyalties,
+      copackerCasesSold,
+      copackerNet,
+      totalRevenue,
+      totalExpenses,
+      netProfit,
       recipeQuality: quality,
-      spoilageNote: notes.length ? notes.join(', ') : 'Zero spoilage!'
+      notes: notes.length ? notes : ['All operations ran smoothly!']
     };
 
     s.lastDaySummary = summary;
     s.day += 1;
-    s.elapsedSec += 30; // Each discrete day represents ~30s of active play pacing
+    s.elapsedSec += 30;
     this.rollNextForecast();
     if (s.currentChore) {
-      s.currentChore.remainingSec = 0; // New day brings ready chore
+      s.currentChore.remainingSec = 0; // Fresh chore every morning
     }
+
     return summary;
   }
 
   // ==========================================================================
-  // PHASE 2 & 3: CONTINUOUS REAL-TIME TICK (dt in seconds)
+  // REAL-TIME CLOCK / TIMERS
   // ==========================================================================
   public tick(dt: number): void {
-    const s = this.state;
-    s.elapsedSec += dt;
-
-    if (s.phase === 1) {
-      if (s.currentChore && s.currentChore.remainingSec > 0) {
-        s.currentChore.remainingSec = Math.max(0, s.currentChore.remainingSec - dt);
-      }
-      return;
-    }
-
-    // 1. Computing Loop: Processors -> Ops (Sugar Rush), Memory -> Cap + Zest
-    s.maxOps = s.memory * 1000;
-    const opsPerSec = s.processors * 18;
-    if (s.ops < s.maxOps) {
-      s.ops = Math.min(s.maxOps, s.ops + opsPerSec * dt);
-    } else {
-      // Overflow compute turns into Creativity (Zest)
-      s.zest += s.processors * 2.5 * dt;
-    }
-
-    // 2. Check Trust Milestones (Fibonacci-like logarithmic progression)
-    while (s.totalCupsProduced.gte(s.nextTrustAtCups)) {
-      s.trust += 1;
-      s.nextTrustAtCups = s.nextTrustAtCups.mul(2.6);
-      this.log(`Trust Milestone +1! Total Trust: ${s.trust}`);
-    }
-
-    if (s.phase === 2) {
-      this.tickPhase2(dt);
-    } else if (s.phase === 3) {
-      this.tickPhase3(dt);
+    this.state.elapsedSec += dt;
+    if (this.state.currentChore && this.state.currentChore.remainingSec > 0) {
+      this.state.currentChore.remainingSec = Math.max(0, this.state.currentChore.remainingSec - dt);
     }
   }
 
-  private tickPhase2(dt: number): void {
-    const s = this.state;
-    // Sum generator production
-    let prodPerSec = new BigNum(0, 0);
-    for (const key of Object.keys(this.generators)) {
-      const g = this.generators[key];
-      if (g.owned > 0) {
-        // Synergy bonus: +2% per owned unit
-        const unitSynergy = 1 + g.owned * 0.02;
-        prodPerSec = prodPerSec.add(g.baseCupsPerSec.mul(g.owned * unitSynergy * s.brandMultiplier));
-      }
-    }
-    s.cupsPerSec = prodPerSec;
-
-    const producedThisTick = prodPerSec.mul(dt);
-    s.unsoldCups = s.unsoldCups.add(producedThisTick);
-    s.totalCupsProduced = s.totalCupsProduced.add(producedThisTick);
-
-    // Continuous Public Demand & Price Elasticity (Modern scale)
-    const fairPrice = 2.50;
-    const priceRatio = fairPrice / Math.max(0.10, s.recipe.pricePerCup);
-    const mktBoost = Math.pow(1.25, s.marketingLevel - 1);
-    const demandPerSec = BigNum.fromNumber(8 * s.brandMultiplier * mktBoost * Math.pow(priceRatio, 1.8));
-
-    const actualSales = s.unsoldCups.lt(demandPerSec.mul(dt))
-      ? s.unsoldCups.clone()
-      : demandPerSec.mul(dt);
-
-    s.unsoldCups = s.unsoldCups.sub(actualSales);
-    s.totalCupsSold = s.totalCupsSold.add(actualSales);
-    s.salesPerSec = actualSales.div(Math.max(1e-4, dt));
-    s.cash = s.cash.add(actualSales.mul(s.recipe.pricePerCup));
-  }
-
-  private tickPhase3(dt: number): void {
-    const s = this.state;
-    const { rep, haz, harv, fact, combat } = s.probeAlloc;
-
-    // 1. Coupled ODE: Self-Replication vs Hazards vs Value Drift
-    const repRate = 0.45 * rep;
-    const hazardLossRate = Math.max(0, 0.22 - haz * 0.9);
-    const driftRate = 0.04 * Math.pow(rep, 2);
-    const netGrowthRate = repRate - hazardLossRate - driftRate;
-
-    if (s.availableMatter.gt(0)) {
-      const deltaProbes = s.probes.mul(netGrowthRate * dt);
-      s.probes = s.probes.add(deltaProbes);
-      if (s.probes.lt(1)) s.probes = BigNum.fromNumber(1);
-
-      const newDrifters = s.probes.mul(driftRate * dt);
-      s.drifters = s.drifters.add(newDrifters);
-    }
-
-    // 2. Lanchester's Law Space Combat against Lime Bandits (Drifters)
-    if (s.drifters.gt(1) && combat > 0) {
-      const probeKills = s.probes.mul(combat * 0.35 * dt);
-      const drifterKills = s.drifters.mul(0.05 * dt);
-      s.drifters = s.drifters.gt(probeKills) ? s.drifters.sub(probeKills) : new BigNum(0, 0);
-      s.probes = s.probes.gt(drifterKills) ? s.probes.sub(drifterKills) : BigNum.fromNumber(1);
-    }
-
-    // 3. Cosmic Matter Harvesting & Exponential Cup Conversion
-    const matterHarvested = s.probes.mul(harv * 1e12 * dt);
-    const actualHarvest = s.availableMatter.gt(matterHarvested) ? matterHarvested : s.availableMatter.clone();
-    s.availableMatter = s.availableMatter.sub(actualHarvest);
-
-    const newFactories = s.probes.mul(fact * 0.05 * dt);
-    s.cosmicFactories = s.cosmicFactories.add(newFactories);
-
-    const cosmicCupsPerSec = s.cosmicFactories.mul(actualHarvest.div(Math.max(1e-4, dt))).mul(1e3);
-    s.cupsPerSec = cosmicCupsPerSec;
-    s.totalCupsProduced = s.totalCupsProduced.add(cosmicCupsPerSec.mul(dt));
-    s.totalCupsSold = s.totalCupsProduced.clone();
-  }
-
-  // ==========================================================================
-  // PLAYER ACTIONS (GENERATOR BUY, PROJECTS, MANUAL CLICK)
-  // ==========================================================================
-  public manualSqueeze(): void {
-    const s = this.state;
-    if (s.phase === 1) {
-      this.doChore();
-    } else {
-      const clickPower = s.cupsPerSec.mul(0.1).add(1);
-      s.unsoldCups = s.unsoldCups.add(clickPower);
-      s.totalCupsProduced = s.totalCupsProduced.add(clickPower);
-    }
-  }
-
-  public buyGenerator(id: string, count: number | 'MAX' = 1): number {
-    const g = this.generators[id];
-    if (!g) return 0;
-    const toBuy = count === 'MAX'
-      ? GeometricMath.maxAffordable(this.state.cash, g.baseCost, g.costGrowth, g.owned)
-      : count;
-    if (toBuy <= 0) return 0;
-    const cost = GeometricMath.bulkCost(g.baseCost, g.costGrowth, g.owned, toBuy);
-    if (this.state.cash.lt(cost)) return 0;
-    this.state.cash = this.state.cash.sub(cost);
-    g.owned += toBuy;
-    return toBuy;
-  }
-
-  public buyProject(id: string): boolean {
-    const p = this.projects.find((x) => x.id === id);
-    if (!p || p.purchased || !p.unlocked(this.state)) return false;
-    if (p.costCash && this.state.cash.lt(p.costCash)) return false;
-    if (p.costOps && this.state.ops < p.costOps) return false;
-    if (p.costZest && this.state.zest < p.costZest) return false;
-
-    if (p.costCash) this.state.cash = this.state.cash.sub(p.costCash);
-    if (p.costOps) this.state.ops -= p.costOps;
-    if (p.costZest) this.state.zest -= p.costZest;
-    p.purchased = true;
-    p.effect(this.state);
-    return true;
-  }
-
-  public setProbeAlloc(alloc: Partial<GameState['probeAlloc']>): void {
-    Object.assign(this.state.probeAlloc, alloc);
+  public manualAction(): void {
+    this.doChore();
   }
 }
 
-export function runHeadlessPacingTest(simSeconds: number = 300): {
+// ============================================================================
+// 4. AUTOMATED PACING SIMULATOR
+// ============================================================================
+export function runHeadlessPacingTest(simDays: number = 30): {
   phase: number;
   totalCups: string;
   cash: string;
@@ -743,41 +861,35 @@ export function runHeadlessPacingTest(simSeconds: number = 300): {
   const engine = new LemonadeEngine();
   const logs: string[] = [];
 
-  // Phase 1 fast simulation
-  for (let d = 1; d <= 30; d++) {
-    if (engine.state.phase > 1) break;
+  for (let d = 1; d <= simDays; d++) {
     const s = engine.state;
-    s.recipe.lemonsPerPitcher = 4;
-    s.recipe.sugarPerPitcher = 4;
-    s.recipe.icePerCup = engine.computeIdealIce(s.tempF);
+    // Basic bot AI
     s.recipe.pricePerCup = +(2.00 * (1 + 0.015 * (s.tempF - 70))).toFixed(2);
+    s.recipe.icePerCup = engine.computeIdealIce(s.tempF);
 
-    if (s.inv.cups < 60) engine.buyPhase1Supplies('cups', 1);
-    if (s.inv.lemons < 24) engine.buyPhase1Supplies('lemons', 1);
-    if (s.inv.sugar < 20) engine.buyPhase1Supplies('sugar', 1);
-    if (s.inv.ice < 60) engine.buyPhase1Supplies('ice', 1);
+    // Buy supplies if low
+    if (s.inv.cups < 60) engine.buySupplies('cups', 2);
+    if (s.inv.lemons < 30) engine.buySupplies('lemons', 2);
+    if (s.inv.sugar < 25) engine.buySupplies('sugar', 2);
+    if (s.inv.ice < 80) engine.buySupplies('ice', 2);
+    if (s.phase >= 3 && s.inv.bottles < 40) engine.buySupplies('bottles', 2);
 
+    // Buy available upgrades & franchise stands
     engine.projects.forEach(p => engine.buyProject(p.id));
-    const summary = engine.runPhase1Day();
-    logs.push(`Day ${summary.day}: Sold ${summary.cupsSold}/${summary.footTraffic} cups ($${summary.revenue.toFixed(2)}) | Cash: $${s.cash.format()}`);
-    engine.projects.forEach(p => engine.buyProject(p.id));
-  }
-
-  // Phase 2 & 3 continuous tick
-  const dt = 1.0;
-  for (let t = 0; t < simSeconds; t += dt) {
-    engine.tick(dt);
-    engine.projects.forEach(p => engine.buyProject(p.id));
-    Object.keys(engine.generators).forEach(id => engine.buyGenerator(id, 'MAX'));
-    const s = engine.state;
-    if (s.trust > s.processors + s.memory) {
-      if (s.memory <= s.processors) s.memory++; else s.processors++;
+    if (s.phase >= 2) {
+      Object.keys(engine.franchiseStands).forEach(id => engine.hireFranchiseStand(id));
     }
+    if (s.phase >= 3) {
+      Object.keys(engine.wholesaleAccounts).forEach(id => engine.signWholesaleAccount(id));
+    }
+
+    const res = engine.runDay();
+    logs.push(`Day ${res.day}: Net Profit +$${res.netProfit.toFixed(2)} | Cash: $${s.cash.format()} | Cups: ${s.totalCupsSold.format()}`);
   }
 
   return {
     phase: engine.state.phase,
-    totalCups: engine.state.totalCupsProduced.format(),
+    totalCups: engine.state.totalCupsSold.format(),
     cash: engine.state.cash.format(),
     log: logs
   };
