@@ -31,8 +31,12 @@ Live playable demo: **https://sampanes.github.io/universal-lemonade/**
 
 5. **Stage 5: Industrial Beverage Empire**
    - Contract with a commercial beverage co-packer.
-   - Distribute cases to regional supermarket chains (Whole Foods, regional grocers).
-   - Scale into a multi-thousand-dollar daily enterprise.
+   - Distribute cases to regional supermarket chains, national big-box stores, and warehouse club pallets.
+   - Scale into a global enterprise to buy personal trophies and retire on Citrus Cay.
+
+## Design & GUI Architecture
+
+- See the **[Kid-Centric GUI Masterplan & Asset Manifest](docs/kid_gui_design_manifest.md)** for our visual design specifications, Pop Comic art direction, prompt recipes for frontier image generation, mascot perks, and zero-asset Web Audio synthesis architecture.
 
 ## Quickstart
 
