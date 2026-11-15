@@ -160,6 +160,13 @@ export interface DaySummary {
   spoilageNote: string;
 }
 
+export interface ChoreState {
+  name: string;
+  reward: number;
+  cooldownSec: number;
+  remainingSec: number;
+}
+
 export interface GameState {
   phase: GamePhase;
   elapsedSec: number;
@@ -190,6 +197,7 @@ export interface GameState {
     weatherLocked95F: boolean;
   };
   lastDaySummary: DaySummary | null;
+  currentChore: ChoreState;
 
   // Phase 2: Continuous Megacorp State
   cash: BigNum;
@@ -267,6 +275,7 @@ export class LemonadeEngine {
     this.projects = this.initProjects();
     this.state = this.createInitialState(goldenSeeds);
     this.rollNextForecast();
+    this.rollNextChore();
   }
 
   private rand(): number {
@@ -294,6 +303,12 @@ export class LemonadeEngine {
       recipe: { lemonsPerPitcher: 4, sugarPerPitcher: 4, icePerCup: 4, pricePerCup: 0.50 },
       flags: { hasCooler: false, hasMiniFridge: false, hasAutoBuyer: false, weatherLocked95F: false },
       lastDaySummary: null,
+      currentChore: {
+        name: "Mow Neighbor's Lawn",
+        reward: 2.00,
+        cooldownSec: 8,
+        remainingSec: 0
+      },
 
       cash: BigNum.fromNumber(25 * prestigeMult),
       unsoldCups: new BigNum(0, 0),
@@ -402,8 +417,53 @@ export class LemonadeEngine {
   }
 
   // ==========================================================================
-  // PHASE 1: DISCRETE MICROECONOMICS & WEATHER MATH
+  // PHASE 1: DISCRETE MICROECONOMICS & CHORE SYSTEM
   // ==========================================================================
+  private static readonly CHORE_NAMES = [
+    "Mow Neighbor's Lawn",
+    "Rake Autumn Leaves",
+    "Wash Dad's Car",
+    "Walk Mrs. Higgins' Dog",
+    "Weed the Flowerbed",
+    "Clean the Garage",
+    "Sort Recycling Cans",
+    "Shovel the Walkway",
+    "Help Carry Groceries",
+    "Sweep the Porch"
+  ];
+
+  public rollNextChore(): void {
+    const names = LemonadeEngine.CHORE_NAMES;
+    const name = names[Math.floor(this.rand() * names.length)];
+    // Random reward between $1.25 and $3.50 in 25-cent steps
+    const rewardSteps = Math.floor(this.rand() * 10);
+    const reward = +(1.25 + rewardSteps * 0.25).toFixed(2);
+    // Random cooldown between 7 and 16 seconds
+    const cooldownSec = 7 + Math.floor(this.rand() * 10);
+    this.state.currentChore = {
+      name,
+      reward,
+      cooldownSec,
+      remainingSec: 0
+    };
+  }
+
+  public doChore(): { name: string; reward: number } | null {
+    if (this.state.phase !== 1) return null;
+    const chore = this.state.currentChore;
+    if (chore.remainingSec > 0) return null;
+
+    const reward = chore.reward;
+    const name = chore.name;
+    this.state.cash = this.state.cash.add(reward);
+    this.log(`Did Chore: ${name} (Earned +$${reward.toFixed(2)})`);
+
+    const cd = chore.cooldownSec;
+    this.rollNextChore();
+    this.state.currentChore.remainingSec = cd;
+    return { name, reward };
+  }
+
   public rollNextForecast(): void {
     if (this.state.flags.weatherLocked95F) {
       this.state.tempF = 95;
@@ -511,6 +571,9 @@ export class LemonadeEngine {
     s.day += 1;
     s.elapsedSec += 30; // Each discrete day represents ~30s of active play pacing
     this.rollNextForecast();
+    if (s.currentChore) {
+      s.currentChore.remainingSec = 0; // New day brings ready chore
+    }
     return summary;
   }
 
@@ -520,7 +583,13 @@ export class LemonadeEngine {
   public tick(dt: number): void {
     const s = this.state;
     s.elapsedSec += dt;
-    if (s.phase === 1) return; // Phase 1 only advances via runPhase1Day() or manual squeeze
+
+    if (s.phase === 1) {
+      if (s.currentChore && s.currentChore.remainingSec > 0) {
+        s.currentChore.remainingSec = Math.max(0, s.currentChore.remainingSec - dt);
+      }
+      return;
+    }
 
     // 1. Computing Loop: Processors -> Ops (Sugar Rush), Memory -> Cap + Zest
     s.maxOps = s.memory * 1000;
@@ -627,9 +696,7 @@ export class LemonadeEngine {
   public manualSqueeze(): void {
     const s = this.state;
     if (s.phase === 1) {
-      s.cash = s.cash.add(s.recipe.pricePerCup);
-      s.totalCupsProduced = s.totalCupsProduced.add(1);
-      s.totalCupsSold = s.totalCupsSold.add(1);
+      this.doChore();
     } else {
       const clickPower = s.cupsPerSec.mul(0.1).add(1);
       s.unsoldCups = s.unsoldCups.add(clickPower);

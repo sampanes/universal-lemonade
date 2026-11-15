@@ -30,11 +30,11 @@
       <h3>1. Core Telemetry</h3>
       <div id="telemetry-readout"></div>
       <hr style="border-color:#333"/>
-      <button id="btn-squeeze" style="width:100%; padding:10px; font-weight:bold; color:#ffd700;">
-        MANUAL SQUEEZE (+1 Cup)
+      <button id="btn-squeeze" style="width:100%; padding:10px; font-weight:bold;">
+        DO CHORE
       </button>
       <div style="margin-top:8px;">
-        Price/Cup: $<span id="lbl-price">0.25</span>
+        Price/Cup: $<span id="lbl-price">0.50</span>
         <button id="btn-price-down">- $0.05</button>
         <button id="btn-price-up">+ $0.05</button>
       </div>
@@ -114,6 +114,33 @@
 
       const s = engine.state;
       document.getElementById('lbl-price').textContent = s.recipe.pricePerCup.toFixed(2);
+
+      // Dynamic Action Button: Chore (Phase 1) vs Overclock Squeezer (Phase 2+)
+      const actionBtn = document.getElementById('btn-squeeze');
+      if (s.phase === 1) {
+        const chore = s.currentChore;
+        if (chore && chore.remainingSec > 0) {
+          actionBtn.disabled = true;
+          actionBtn.style.background = '#222';
+          actionBtn.style.borderColor = '#555';
+          actionBtn.style.color = '#888';
+          actionBtn.textContent = `⏳ ${chore.name} (${chore.remainingSec.toFixed(1)}s)`;
+        } else if (chore) {
+          actionBtn.disabled = false;
+          actionBtn.style.background = '#1b3d2f';
+          actionBtn.style.borderColor = '#4ade80';
+          actionBtn.style.color = '#4ade80';
+          actionBtn.textContent = `🧹 CHORE: ${chore.name} (+$${chore.reward.toFixed(2)})`;
+        }
+      } else {
+        actionBtn.disabled = false;
+        actionBtn.style.background = '#3b2a1a';
+        actionBtn.style.borderColor = '#ffd700';
+        actionBtn.style.color = '#ffd700';
+        const clickPower = s.cupsPerSec.mul(0.1).add(1);
+        actionBtn.textContent = `⚡ OVERCLOCK SQUEEZER (+${clickPower.format()} Cups)`;
+      }
+
       document.getElementById('telemetry-readout').innerHTML = `
         <div class="stat"><span>Phase:</span><strong>PHASE ${s.phase}</strong></div>
         <div class="stat"><span>Sim Time:</span><span>${s.elapsedSec.toFixed(0)}s (Day ${s.day})</span></div>
