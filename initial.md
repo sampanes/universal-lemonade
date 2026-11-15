@@ -29,8 +29,8 @@ At $10^{12}$ cups, Earth's supply chain saturates. Launching the **Orbital Citru
 
 | Phase                     | Target Real-Time Window | Primary Bottleneck                                        | Escape Valve / Unlock                                                                                            |
 | ------------------------- | ----------------------- | --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| **Phase 1A (Days 1–5)**   | `0:00 – 3:00`           | Working capital & overnight ice melt ($100\%$ loss/night) | **Insulated Cooler** ($\$15$) stops ice spoilage.                                                                |
-| **Phase 1B (Days 6–14)**  | `3:00 – 7:00`           | Weather variance & manual recipe matching                 | **Weather Almanac** ($\$25$) + hitting $\$100$ & $Q \ge 0.90$ unlocks **Squeeze-Bot 9000**.                      |
+| **Phase 1A (Days 1–5)**   | `0:00 – 3:00`           | Working capital & overnight ice melt ($100\%$ loss/night) | **Insulated Cooler** ($\$45$) stops ice spoilage.                                                                |
+| **Phase 1B (Days 6–14)**  | `3:00 – 7:00`           | Weather variance & manual recipe matching                 | Hitting $\$500$ & $Q \ge 0.85$ unlocks **Squeeze-Bot 9000** ($\$500$).                                          |
 | **Phase 2A (Early Idle)** | `7:00 – 15:00`          | Raw lemon/ice supply vs. Auto-Squeezer speed              | **Auto-Restock Contract** (500 Ops) automates raw material buying.                                               |
 | **Phase 2B (Megacorp)**   | `15:00 – 28:00`         | Geometric generator wall ($1.15^n$) & Ops cap             | **Trust / Memory upgrades** unlock **Weather Control Satellite** (locks $T = 95^\circ\text{F}$).                 |
 | **Phase 3 (Cosmic)**      | `28:00 – 45:00`         | Value Drift (*Lime Bandits*) & Matter depletion           | Balancing $w_{\text{haz}}$ and $w_{\text{combat}}$ until $M_{\text{cosmos}} \rightarrow 0$, triggering Prestige. |

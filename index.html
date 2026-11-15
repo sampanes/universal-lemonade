@@ -34,9 +34,9 @@
         DO CHORE
       </button>
       <div style="margin-top:8px;">
-        Price/Cup: $<span id="lbl-price">0.50</span>
-        <button id="btn-price-down">- $0.05</button>
-        <button id="btn-price-up">+ $0.05</button>
+        Price/Cup: $<span id="lbl-price">2.00</span>
+        <button id="btn-price-down">- $0.25</button>
+        <button id="btn-price-up">+ $0.25</button>
       </div>
     </div>
 
@@ -74,10 +74,10 @@
 
     document.getElementById('btn-squeeze').onclick = () => engine.manualSqueeze();
     document.getElementById('btn-price-down').onclick = () => {
-      engine.state.recipe.pricePerCup = Math.max(0.05, +(engine.state.recipe.pricePerCup - 0.05).toFixed(2));
+      engine.state.recipe.pricePerCup = Math.max(0.25, +(engine.state.recipe.pricePerCup - 0.25).toFixed(2));
     };
     document.getElementById('btn-price-up').onclick = () => {
-      engine.state.recipe.pricePerCup = +(engine.state.recipe.pricePerCup + 0.05).toFixed(2);
+      engine.state.recipe.pricePerCup = +(engine.state.recipe.pricePerCup + 0.25).toFixed(2);
     };
 
     function runBotStep() {
@@ -87,7 +87,7 @@
         s.recipe.lemonsPerPitcher = 4;
         s.recipe.sugarPerPitcher = 4;
         s.recipe.icePerCup = engine.computeIdealIce(s.tempF);
-        s.recipe.pricePerCup = +(0.50 * (1 + 0.015 * (s.tempF - 70))).toFixed(2);
+        s.recipe.pricePerCup = +(2.00 * (1 + 0.015 * (s.tempF - 70))).toFixed(2);
         if (s.inv.cups < 60) engine.buyPhase1Supplies('cups', 1);
         if (s.inv.lemons < 24) engine.buyPhase1Supplies('lemons', 1);
         if (s.inv.sugar < 20) engine.buyPhase1Supplies('sugar', 1);
@@ -160,10 +160,10 @@
           <div><strong>Recipe Match Quality:</strong> ${q}% (Peak: ${(s.bestRecipeQuality*100).toFixed(0)}%)</div>
           <div style="margin:6px 0;">
             Stock: Lemons(${s.inv.lemons}) Sugar(${s.inv.sugar}) Ice(${s.inv.ice}) Cups(${s.inv.cups})<br/>
-            <button onclick="window._buy('lemons')">+24 Lemons ($2)</button>
-            <button onclick="window._buy('sugar')">+20 Sugar ($1.5)</button>
-            <button onclick="window._buy('ice')">+100 Ice ($1)</button>
-            <button onclick="window._buy('cups')">+50 Cups ($1)</button>
+            <button onclick="window._buy('lemons')">+24 Lemons ($8)</button>
+            <button onclick="window._buy('sugar')">+20 Sugar ($6)</button>
+            <button onclick="window._buy('ice')">+100 Ice ($4)</button>
+            <button onclick="window._buy('cups')">+50 Cups ($4)</button>
           </div>
           <div>
             Ice/Cup: ${s.recipe.icePerCup}

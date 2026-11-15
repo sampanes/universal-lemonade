@@ -300,24 +300,24 @@ export class LemonadeEngine {
       bestRecipeQuality: 0,
       brandMultiplier: prestigeMult,
       inv: { lemons: 24, sugar: 20, ice: 80, cups: 50 },
-      recipe: { lemonsPerPitcher: 4, sugarPerPitcher: 4, icePerCup: 4, pricePerCup: 0.50 },
+      recipe: { lemonsPerPitcher: 4, sugarPerPitcher: 4, icePerCup: 4, pricePerCup: 2.00 },
       flags: { hasCooler: false, hasMiniFridge: false, hasAutoBuyer: false, weatherLocked95F: false },
       lastDaySummary: null,
       currentChore: {
         name: "Mow Neighbor's Lawn",
-        reward: 2.00,
-        cooldownSec: 8,
+        reward: 15.00,
+        cooldownSec: 10,
         remainingSec: 0
       },
 
-      cash: BigNum.fromNumber(25 * prestigeMult),
+      cash: BigNum.fromNumber(60 * prestigeMult),
       unsoldCups: new BigNum(0, 0),
       totalCupsProduced: new BigNum(0, 0),
       totalCupsSold: new BigNum(0, 0),
       cupsPerSec: new BigNum(0, 0),
       salesPerSec: new BigNum(0, 0),
       marketingLevel: 1,
-      marketingCost: BigNum.fromNumber(100),
+      marketingCost: BigNum.fromNumber(500),
 
       trust: 2,
       nextTrustAtCups: BigNum.fromNumber(1000),
@@ -340,11 +340,11 @@ export class LemonadeEngine {
 
   private initGenerators(): Record<string, GeneratorDef> {
     return {
-      squeezer: { id: 'squeezer', name: 'Auto-Squeezer', baseCost: BigNum.fromNumber(15), costGrowth: 1.15, baseCupsPerSec: BigNum.fromNumber(1.5), owned: 0 },
-      drone:    { id: 'drone',    name: 'Delivery Drone', baseCost: BigNum.fromNumber(150), costGrowth: 1.15, baseCupsPerSec: BigNum.fromNumber(18), owned: 0 },
-      orchard:  { id: 'orchard',  name: 'Biodome Orchard', baseCost: BigNum.fromNumber(2500), costGrowth: 1.15, baseCupsPerSec: BigNum.fromNumber(320), owned: 0 },
-      synth:    { id: 'synth',    name: 'Molecular Citrus Synth', baseCost: BigNum.fromNumber(50000), costGrowth: 1.14, baseCupsPerSec: BigNum.fromNumber(7500), owned: 0 },
-      collider: { id: 'collider', name: 'Hadron Lemon Collider', baseCost: BigNum.fromNumber(1.5e6), costGrowth: 1.14, baseCupsPerSec: BigNum.fromNumber(2.5e5), owned: 0 }
+      squeezer: { id: 'squeezer', name: 'Auto-Squeezer', baseCost: BigNum.fromNumber(75), costGrowth: 1.15, baseCupsPerSec: BigNum.fromNumber(1.5), owned: 0 },
+      drone:    { id: 'drone',    name: 'Delivery Drone', baseCost: BigNum.fromNumber(600), costGrowth: 1.15, baseCupsPerSec: BigNum.fromNumber(18), owned: 0 },
+      orchard:  { id: 'orchard',  name: 'Biodome Orchard', baseCost: BigNum.fromNumber(10000), costGrowth: 1.15, baseCupsPerSec: BigNum.fromNumber(320), owned: 0 },
+      synth:    { id: 'synth',    name: 'Molecular Citrus Synth', baseCost: BigNum.fromNumber(250000), costGrowth: 1.14, baseCupsPerSec: BigNum.fromNumber(7500), owned: 0 },
+      collider: { id: 'collider', name: 'Hadron Lemon Collider', baseCost: BigNum.fromNumber(5e6), costGrowth: 1.14, baseCupsPerSec: BigNum.fromNumber(2.5e5), owned: 0 }
     };
   }
 
@@ -353,22 +353,22 @@ export class LemonadeEngine {
       {
         id: 'cooler', name: 'Insulated Igloo Cooler',
         desc: 'Stops ice from melting overnight between days.',
-        phase: 1, costCash: 15, purchased: false,
+        phase: 1, costCash: 45, purchased: false,
         unlocked: (s) => s.phase === 1 && s.day >= 2,
         effect: (s) => { s.flags.hasCooler = true; this.log('Upgrade: Ice no longer melts overnight!'); }
       },
       {
         id: 'fridge', name: 'Garage Mini-Fridge',
         desc: 'Eliminates overnight lemon rot and boosts recipe freshness (+10% Reputation).',
-        phase: 1, costCash: 35, purchased: false,
+        phase: 1, costCash: 120, purchased: false,
         unlocked: (s) => s.phase === 1 && s.day >= 3,
         effect: (s) => { s.flags.hasMiniFridge = true; s.reputation = Math.min(1, s.reputation + 0.1); }
       },
       {
         id: 'singularity_bot', name: 'THE SQUEEZE-BOT 9000 (Singularity Unlock)',
         desc: 'Automates squeezing and shatters turn-based days into continuous real-time production!',
-        phase: 1, costCash: 100, purchased: false,
-        unlocked: (s) => s.phase === 1 && s.cash.gte(60) && s.bestRecipeQuality >= 0.85,
+        phase: 1, costCash: 500, purchased: false,
+        unlocked: (s) => s.phase === 1 && s.cash.gte(300) && s.bestRecipeQuality >= 0.85,
         effect: (s) => {
           s.phase = 2;
           s.brandMultiplier = (1 + 2 * s.bestRecipeQuality * s.reputation) * (1 + s.goldenSeeds * 0.5);
@@ -419,29 +419,25 @@ export class LemonadeEngine {
   // ==========================================================================
   // PHASE 1: DISCRETE MICROECONOMICS & CHORE SYSTEM
   // ==========================================================================
-  private static readonly CHORE_NAMES = [
-    "Mow Neighbor's Lawn",
-    "Rake Autumn Leaves",
-    "Wash Dad's Car",
-    "Walk Mrs. Higgins' Dog",
-    "Weed the Flowerbed",
-    "Clean the Garage",
-    "Sort Recycling Cans",
-    "Shovel the Walkway",
-    "Help Carry Groceries",
-    "Sweep the Porch"
+  private static readonly CHORE_DEFS: { name: string; min: number; max: number }[] = [
+    { name: "Mow Neighbor's Lawn", min: 15, max: 25 },
+    { name: "Rake Autumn Leaves", min: 10, max: 18 },
+    { name: "Wash Dad's SUV", min: 12, max: 20 },
+    { name: "Walk Mrs. Higgins' Dog", min: 8, max: 15 },
+    { name: "Weed the Garden Beds", min: 8, max: 15 },
+    { name: "Clean Out the Garage", min: 15, max: 25 },
+    { name: "Sort Recycling Cans", min: 5, max: 10 },
+    { name: "Shovel Neighbor's Walkway", min: 15, max: 25 },
+    { name: "Help Carry Heavy Groceries", min: 6, max: 12 },
+    { name: "Sweep the Deck & Porch", min: 5, max: 10 }
   ];
 
   public rollNextChore(): void {
-    const names = LemonadeEngine.CHORE_NAMES;
-    const name = names[Math.floor(this.rand() * names.length)];
-    // Random reward between $1.25 and $3.50 in 25-cent steps
-    const rewardSteps = Math.floor(this.rand() * 10);
-    const reward = +(1.25 + rewardSteps * 0.25).toFixed(2);
-    // Random cooldown between 7 and 16 seconds
-    const cooldownSec = 7 + Math.floor(this.rand() * 10);
+    const chore = LemonadeEngine.CHORE_DEFS[Math.floor(this.rand() * LemonadeEngine.CHORE_DEFS.length)];
+    const reward = chore.min + Math.floor(this.rand() * (chore.max - chore.min + 1));
+    const cooldownSec = 8 + Math.floor(this.rand() * 10);
     this.state.currentChore = {
-      name,
+      name: chore.name,
       reward,
       cooldownSec,
       remainingSec: 0
@@ -492,10 +488,10 @@ export class LemonadeEngine {
 
   public buyPhase1Supplies(item: 'lemons' | 'sugar' | 'ice' | 'cups', packs: number = 1): boolean {
     const catalog = {
-      lemons: { qty: 24, cost: 2.00 },
-      sugar:  { qty: 20, cost: 1.50 },
-      ice:    { qty: 100, cost: 1.00 },
-      cups:   { qty: 50, cost: 1.00 }
+      lemons: { qty: 24, cost: 8.00 },
+      sugar:  { qty: 20, cost: 6.00 },
+      ice:    { qty: 100, cost: 4.00 },
+      cups:   { qty: 50, cost: 4.00 }
     }[item];
     const totalCost = catalog.cost * packs;
     if (this.state.cash.lt(totalCost)) return false;
@@ -513,9 +509,9 @@ export class LemonadeEngine {
     const quality = this.computeRecipeQuality(s.tempF);
     s.bestRecipeQuality = Math.max(s.bestRecipeQuality, quality);
 
-    // Fair price scales with temperature
-    const fairPrice = 0.50 * (1 + 0.02 * (s.tempF - 70));
-    const priceRatio = fairPrice / Math.max(0.05, s.recipe.pricePerCup);
+    // Fair price in modern 2020s dollars (baseline $2.00/cup at 70°F)
+    const fairPrice = 2.00 * (1 + 0.02 * (s.tempF - 70));
+    const priceRatio = fairPrice / Math.max(0.25, s.recipe.pricePerCup);
     const buyProb = Math.max(0, Math.min(1, quality * Math.pow(priceRatio, 1.8)));
 
     const demandedCups = Math.floor(footTraffic * buyProb);
@@ -633,9 +629,9 @@ export class LemonadeEngine {
     s.unsoldCups = s.unsoldCups.add(producedThisTick);
     s.totalCupsProduced = s.totalCupsProduced.add(producedThisTick);
 
-    // Continuous Public Demand & Price Elasticity
-    const fairPrice = 0.35;
-    const priceRatio = fairPrice / Math.max(0.02, s.recipe.pricePerCup);
+    // Continuous Public Demand & Price Elasticity (Modern scale)
+    const fairPrice = 2.50;
+    const priceRatio = fairPrice / Math.max(0.10, s.recipe.pricePerCup);
     const mktBoost = Math.pow(1.25, s.marketingLevel - 1);
     const demandPerSec = BigNum.fromNumber(8 * s.brandMultiplier * mktBoost * Math.pow(priceRatio, 1.8));
 
@@ -754,7 +750,7 @@ export function runHeadlessPacingTest(simSeconds: number = 300): {
     s.recipe.lemonsPerPitcher = 4;
     s.recipe.sugarPerPitcher = 4;
     s.recipe.icePerCup = engine.computeIdealIce(s.tempF);
-    s.recipe.pricePerCup = +(0.50 * (1 + 0.015 * (s.tempF - 70))).toFixed(2);
+    s.recipe.pricePerCup = +(2.00 * (1 + 0.015 * (s.tempF - 70))).toFixed(2);
 
     if (s.inv.cups < 60) engine.buyPhase1Supplies('cups', 1);
     if (s.inv.lemons < 24) engine.buyPhase1Supplies('lemons', 1);
