@@ -2,26 +2,125 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Universal Lemonade Stand</title>
   <style>
-    body { font-family: monospace; background: #111; color: #eee; margin: 16px; font-size: 13px; }
-    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-    .panel { border: 1px solid #444; padding: 10px; background: #1a1a1a; }
-    h3 { margin: 0 0 8px 0; color: #ffd700; border-bottom: 1px solid #333; padding-bottom: 4px; }
-    button { background: #2b2b2b; color: #fff; border: 1px solid #666; padding: 5px 8px; margin: 2px; cursor: pointer; font-family: monospace; }
-    button:hover:not(:disabled) { background: #444; border-color: #ffd700; }
-    button:disabled { opacity: 0.35; cursor: not-allowed; }
-    .stat { display: flex; justify-content: space-between; margin: 3px 0; }
-    .log { height: 150px; overflow-y: auto; background: #080808; padding: 6px; border: 1px solid #333; font-size: 12px; }
+    * { box-sizing: border-box; }
+    body {
+      font-family: monospace;
+      background: #111;
+      color: #eee;
+      margin: 0;
+      padding: 12px;
+      font-size: 13px;
+      line-height: 1.4;
+      -webkit-text-size-adjust: 100%;
+    }
+    .header-bar {
+      margin-bottom: 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #333;
+      padding-bottom: 8px;
+    }
+    .header-title {
+      font-weight: bold;
+      color: #ffd700;
+      font-size: 14px;
+    }
+    .header-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+    @media (max-width: 860px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+      body {
+        padding: 8px;
+      }
+    }
+    .panel {
+      border: 1px solid #444;
+      padding: 12px;
+      background: #1a1a1a;
+      border-radius: 4px;
+    }
+    h3 {
+      margin: 0 0 8px 0;
+      color: #ffd700;
+      border-bottom: 1px solid #333;
+      padding-bottom: 6px;
+      font-size: 14px;
+    }
+    button {
+      background: #2b2b2b;
+      color: #fff;
+      border: 1px solid #666;
+      padding: 8px 12px;
+      margin: 2px;
+      cursor: pointer;
+      font-family: monospace;
+      font-size: 13px;
+      border-radius: 4px;
+      touch-action: manipulation;
+      min-height: 38px;
+    }
+    button:hover:not(:disabled) {
+      background: #444;
+      border-color: #ffd700;
+    }
+    button:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+    .stat {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 4px 0;
+      padding: 2px 0;
+    }
+    .log {
+      height: 140px;
+      overflow-y: auto;
+      background: #080808;
+      padding: 6px;
+      border: 1px solid #333;
+      font-size: 12px;
+      border-radius: 3px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .stock-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      margin: 8px 0;
+    }
+    .stock-grid button {
+      margin: 0;
+      width: 100%;
+    }
   </style>
 </head>
 <body>
-  <div style="margin-bottom: 10px; display: flex; gap: 12px; align-items: center;">
-    <strong>UNIVERSAL LEMONADE // HEADLESS TELEMETRY HARNESS</strong>
-    <button id="btn-speed-1">1x Speed</button>
-    <button id="btn-speed-10">10x Speed</button>
-    <button id="btn-speed-50">50x Speed</button>
-    <button id="btn-autobot">Toggle Pacing Bot: OFF</button>
+  <div class="header-bar">
+    <div class="header-title">🍋 UNIVERSAL LEMONADE</div>
+    <div class="header-controls">
+      <button id="btn-speed-1">1x</button>
+      <button id="btn-speed-10">10x</button>
+      <button id="btn-speed-50">50x</button>
+      <button id="btn-autobot">Bot: OFF</button>
+    </div>
   </div>
 
   <div class="grid">
@@ -29,14 +128,16 @@
     <div class="panel">
       <h3>1. Core Telemetry</h3>
       <div id="telemetry-readout"></div>
-      <hr style="border-color:#333"/>
-      <button id="btn-squeeze" style="width:100%; padding:10px; font-weight:bold;">
+      <hr style="border-color:#333; margin: 10px 0;"/>
+      <button id="btn-squeeze" style="width:100%; padding:12px; font-weight:bold; min-height:44px;">
         DO CHORE
       </button>
-      <div style="margin-top:8px;">
-        Price/Cup: $<span id="lbl-price">2.00</span>
-        <button id="btn-price-down">- $0.25</button>
-        <button id="btn-price-up">+ $0.25</button>
+      <div class="stat" style="margin-top:8px;">
+        <span>Price / Cup: <strong>$<span id="lbl-price">2.00</span></strong></span>
+        <div>
+          <button id="btn-price-down" style="min-width:55px;">- $0.25</button>
+          <button id="btn-price-up" style="min-width:55px;">+ $0.25</button>
+        </div>
       </div>
     </div>
 
@@ -64,13 +165,30 @@
     let botActive = false;
 
     // Speed controls
-    document.getElementById('btn-speed-1').onclick = () => timeScale = 1;
-    document.getElementById('btn-speed-10').onclick = () => timeScale = 10;
-    document.getElementById('btn-speed-50').onclick = () => timeScale = 50;
     document.getElementById('btn-autobot').onclick = (e) => {
       botActive = !botActive;
-      e.target.textContent = `Toggle Pacing Bot: ${botActive ? 'ON' : 'OFF'}`;
+      e.target.textContent = `Bot: ${botActive ? 'ON' : 'OFF'}`;
+      e.target.style.borderColor = botActive ? '#4ade80' : '#666';
+      e.target.style.color = botActive ? '#4ade80' : '#fff';
     };
+
+    function updateSpeedButtons(speed) {
+      [1, 10, 50].forEach(s => {
+        const btn = document.getElementById(`btn-speed-${s}`);
+        if (s === speed) {
+          btn.style.borderColor = '#ffd700';
+          btn.style.color = '#ffd700';
+        } else {
+          btn.style.borderColor = '#666';
+          btn.style.color = '#fff';
+        }
+      });
+    }
+    updateSpeedButtons(1);
+
+    document.getElementById('btn-speed-1').onclick = () => { timeScale = 1; updateSpeedButtons(1); };
+    document.getElementById('btn-speed-10').onclick = () => { timeScale = 10; updateSpeedButtons(10); };
+    document.getElementById('btn-speed-50').onclick = () => { timeScale = 50; updateSpeedButtons(50); };
 
     document.getElementById('btn-squeeze').onclick = () => engine.manualSqueeze();
     document.getElementById('btn-price-down').onclick = () => {
@@ -156,31 +274,38 @@
       if (s.phase === 1) {
         const q = (engine.computeRecipeQuality() * 100).toFixed(0);
         phaseEl.innerHTML = `
-          <div><strong>Forecast:</strong> ${s.tempF}°F (${s.weather}) | Ideal Ice: ${engine.computeIdealIce(s.tempF)}</div>
-          <div><strong>Recipe Match Quality:</strong> ${q}% (Peak: ${(s.bestRecipeQuality*100).toFixed(0)}%)</div>
-          <div style="margin:6px 0;">
-            Stock: Lemons(${s.inv.lemons}) Sugar(${s.inv.sugar}) Ice(${s.inv.ice}) Cups(${s.inv.cups})<br/>
+          <div class="stat"><span>Forecast:</span><strong>${s.tempF}°F (${s.weather})</strong></div>
+          <div class="stat"><span>Ideal Ice:</span><span>${engine.computeIdealIce(s.tempF)} cubes / cup</span></div>
+          <div class="stat"><span>Recipe Quality:</span><strong>${q}%</strong> <span style="color:#888;">(Peak: ${(s.bestRecipeQuality*100).toFixed(0)}%)</span></div>
+          <hr style="border-color:#333; margin: 8px 0;"/>
+          <div style="font-weight:bold; margin-bottom:4px;">Stock: Lemons(${s.inv.lemons}) Sugar(${s.inv.sugar}) Ice(${s.inv.ice}) Cups(${s.inv.cups})</div>
+          <div class="stock-grid">
             <button onclick="window._buy('lemons')">+24 Lemons ($8)</button>
             <button onclick="window._buy('sugar')">+20 Sugar ($6)</button>
             <button onclick="window._buy('ice')">+100 Ice ($4)</button>
             <button onclick="window._buy('cups')">+50 Cups ($4)</button>
           </div>
-          <div>
-            Ice/Cup: ${s.recipe.icePerCup}
-            <button onclick="window._ice(-1)">-</button><button onclick="window._ice(1)">+</button>
+          <div class="stat" style="margin: 8px 0;">
+            <span>Ice per Cup: <strong>${s.recipe.icePerCup}</strong></span>
+            <div>
+              <button onclick="window._ice(-1)" style="min-width:44px;">-</button>
+              <button onclick="window._ice(1)" style="min-width:44px;">+</button>
+            </div>
           </div>
-          <button onclick="window._nextDay()" style="width:100%; margin-top:8px; padding:8px; background:#1e4620;">
-            RUN DAY ${s.day} SIMULATION
+          <button onclick="window._nextDay()" style="width:100%; margin-top:8px; padding:12px; background:#1e4620; font-weight:bold; min-height:44px; font-size:14px;">
+            RUN DAY ${s.day} SIMULATION ☀️
           </button>
-          ${s.lastDaySummary ? `<div style="margin-top:6px; color:#aaa;">Last Day: Sold ${s.lastDaySummary.cupsSold}/${s.lastDaySummary.footTraffic} cups ($${s.lastDaySummary.revenue.toFixed(2)}) | ${s.lastDaySummary.spoilageNote}</div>` : ''}
+          ${s.lastDaySummary ? `<div style="margin-top:8px; color:#aaa; font-size:12px; border-top:1px dashed #333; padding-top:6px;">Last Day: Sold ${s.lastDaySummary.cupsSold}/${s.lastDaySummary.footTraffic} cups ($${s.lastDaySummary.revenue.toFixed(2)}) • ${s.lastDaySummary.spoilageNote}</div>` : ''}
         `;
       } else if (s.phase === 2) {
         phaseEl.innerHTML = Object.values(engine.generators).map(g => {
           const cost = GeometricMath.bulkCost(g.baseCost, g.costGrowth, g.owned, 1);
-          return `<div class="stat">
-            <span>${g.name} [${g.owned}]</span>
-            <button onclick="window._gen('${g.id}', 1)" ${s.cash.lt(cost) ? 'disabled' : ''}>Buy 1 ($${cost.format()})</button>
-            <button onclick="window._gen('${g.id}', 'MAX')">Max</button>
+          return `<div class="stat" style="flex-wrap:wrap; gap:4px; margin: 6px 0;">
+            <span><strong>${g.name}</strong> [${g.owned}]</span>
+            <div>
+              <button onclick="window._gen('${g.id}', 1)" ${s.cash.lt(cost) ? 'disabled' : ''}>Buy 1 ($${cost.format()})</button>
+              <button onclick="window._gen('${g.id}', 'MAX')">Max</button>
+            </div>
           </div>`;
         }).join('');
       } else {
@@ -193,10 +318,10 @@
           <div style="font-weight:bold; color:#ffd700; margin-bottom:4px;">Probe Allocation:</div>
           ${['rep', 'haz', 'harv', 'fact', 'combat'].map(k => `
             <div class="stat">
-              <span>${k.toUpperCase()}: ${(s.probeAlloc[k]*100).toFixed(0)}%</span>
+              <span>${k.toUpperCase()}: <strong>${(s.probeAlloc[k]*100).toFixed(0)}%</strong></span>
               <div>
-                <button onclick="window._alloc('${k}', -0.05)">-5%</button>
-                <button onclick="window._alloc('${k}', +0.05)">+5%</button>
+                <button onclick="window._alloc('${k}', -0.05)" style="min-width:44px;">-5%</button>
+                <button onclick="window._alloc('${k}', +0.05)" style="min-width:44px;">+5%</button>
               </div>
             </div>
           `).join('')}
@@ -206,17 +331,23 @@
       // Render Computing & Projects
       const freeTrust = s.trust - (s.processors + s.memory);
       document.getElementById('compute-controls').innerHTML = s.phase >= 2 ? `
-        <div>Trust: ${s.trust} (Free: ${freeTrust}) | Next at ${s.nextTrustAtCups.format()} cups</div>
-        <div>CPU: ${s.processors} <button onclick="window._cpu()" ${freeTrust<=0?'disabled':''}>+CPU</button> |
-             Mem: ${s.memory} <button onclick="window._mem()" ${freeTrust<=0?'disabled':''}>+Mem</button></div>
-        <div>Sugar Rush (Ops): ${ s.ops.toFixed(0) } / ${ s.maxOps } | Zest: ${ s.zest.toFixed(0) }</div>
+        <div class="stat"><span>Trust: <strong>${s.trust}</strong> (Free: ${freeTrust})</span><span>Next: ${s.nextTrustAtCups.format()} cups</span></div>
+        <div class="stat" style="margin: 6px 0;">
+          <span>CPU: <strong>${s.processors}</strong></span>
+          <button onclick="window._cpu()" ${freeTrust<=0?'disabled':''}>+CPU</button>
+          <span>Mem: <strong>${s.memory}</strong></span>
+          <button onclick="window._mem()" ${freeTrust<=0?'disabled':''}>+Mem</button>
+        </div>
+        <div class="stat"><span>Sugar Rush (Ops):</span><strong>${ s.ops.toFixed(0) } / ${ s.maxOps }</strong></div>
+        <div class="stat"><span>Zest (Creativity):</span><strong>${ s.zest.toFixed(0) }</strong></div>
       ` : `<div>Unlock Squeeze-Bot 9000 to activate continuous CPU/Zest loop.</div>`;
 
       document.getElementById('project-list').innerHTML = engine.projects
         .filter(p => !p.purchased && p.unlocked(s))
-        .map(p => `<div style="border:1px solid #555; padding:6px; margin-top:4px;">
-          <strong>${p.name}</strong><br/><span>${p.desc}</span><br/>
-          <button onclick="window._proj('${p.id}')">
+        .map(p => `<div style="border:1px solid #555; padding:8px; margin-top:6px; border-radius:4px; background:#222;">
+          <div style="font-weight:bold; color:#ffd700;">${p.name}</div>
+          <div style="font-size:12px; color:#ccc; margin: 4px 0;">${p.desc}</div>
+          <button onclick="window._proj('${p.id}')" style="width:100%; margin-top:4px; font-weight:bold; background:#2e442e; border-color:#4ade80;">
             Unlock (${p.costCash ? '$'+p.costCash : ''} ${p.costOps ? p.costOps+' Ops ' : ''}${p.costZest ? p.costZest+' Zest' : ''})
           </button>
         </div>`).join('');
