@@ -1,4 +1,4 @@
-// engine.ts — Realistic Scaling Entrepreneur Engine for Universal Lemonade
+// engine.ts — Realistic Scaling Entrepreneur Engine with Lifestyle Trophies
 
 // ============================================================================
 // 1. SELF-CONTAINED BIGNUM (Supports numbers up to 10^9,000,000,000)
@@ -183,6 +183,18 @@ export interface ProjectDef {
   effect: (engine: LemonadeEngine) => void;
 }
 
+export interface LifestyleTrophy {
+  id: string;
+  name: string;
+  emoji: string;
+  category: 'kid' | 'teen' | 'mogul' | 'billionaire';
+  costCash: number;
+  purchased: boolean;
+  desc: string;
+  perkDesc: string;
+  phaseRequired: GamePhase;
+}
+
 export interface DaySummary {
   day: number;
   tempF: number;
@@ -230,6 +242,7 @@ export interface GameState {
   reputation: number;        // [0.1, 1.0]
   bestRecipeQuality: number;
   brandMultiplier: number;
+  gameWon: boolean;
 
   // Working Capital & Inventory
   cash: BigNum;
@@ -241,7 +254,7 @@ export interface GameState {
     sugar: number;
     ice: number;
     cups: number;
-    bottles: number; // For wholesale (Phase 3+)
+    bottles: number;
   };
   recipe: {
     lemonsPerPitcher: number;
@@ -258,6 +271,23 @@ export interface GameState {
     hasCargoWagon: boolean;
     hasCommercialLabeler: boolean;
     weatherLocked95F: boolean;
+
+    // Lifestyle Trophy Flags
+    hasSkateboard: boolean;
+    hasMountainBike: boolean;
+    hasNintendoSwitch: boolean;
+    hasElectricScooter: boolean;
+    hasIpadPro: boolean;
+    hasDisneyTrip: boolean;
+    hasHondaCivic: boolean;
+    hasGarageArcade: boolean;
+    hasCollegePrepaid: boolean;
+    hasPaidMortgage: boolean;
+    hasLemonGrove: boolean;
+    hasTeslaModelX: boolean;
+    hasPrivateJet: boolean;
+    hasArenaNaming: boolean;
+    hasPrivateIsland: boolean;
   };
 
   currentChore: ChoreState;
@@ -271,6 +301,7 @@ export interface GameState {
 export class LemonadeEngine {
   public state: GameState;
   public projects: ProjectDef[];
+  public trophies: LifestyleTrophy[];
   public franchiseStands: Record<string, FranchiseStand>;
   public wholesaleAccounts: Record<string, WholesaleAccount>;
   public patent: PatentSystem;
@@ -296,6 +327,7 @@ export class LemonadeEngine {
     this.patent = { licensed: false, royaltyPerUnit: 2.50, baseUnitsPerDay: 16, level: 1 };
     this.copacker = { active: false, casesPerDay: 40, netPerCase: 18.00 };
     this.projects = this.initProjects();
+    this.trophies = this.initTrophies();
     this.state = this.createInitialState();
     this.rollNextForecast();
     this.rollNextChore();
@@ -320,8 +352,9 @@ export class LemonadeEngine {
       reputation: 0.5,
       bestRecipeQuality: 0,
       brandMultiplier: 1.0,
+      gameWon: false,
 
-      cash: BigNum.fromNumber(60.00), // Modern 2020s starting allowance
+      cash: BigNum.fromNumber(60.00),
       totalCupsSold: new BigNum(0, 0),
       totalRevenueEarned: new BigNum(0, 0),
 
@@ -334,7 +367,23 @@ export class LemonadeEngine {
         hasCostcoDiscount: false,
         hasCargoWagon: false,
         hasCommercialLabeler: false,
-        weatherLocked95F: false
+        weatherLocked95F: false,
+
+        hasSkateboard: false,
+        hasMountainBike: false,
+        hasNintendoSwitch: false,
+        hasElectricScooter: false,
+        hasIpadPro: false,
+        hasDisneyTrip: false,
+        hasHondaCivic: false,
+        hasGarageArcade: false,
+        hasCollegePrepaid: false,
+        hasPaidMortgage: false,
+        hasLemonGrove: false,
+        hasTeslaModelX: false,
+        hasPrivateJet: false,
+        hasArenaNaming: false,
+        hasPrivateIsland: false
       },
 
       currentChore: {
@@ -539,6 +588,176 @@ export class LemonadeEngine {
     ];
   }
 
+  private initTrophies(): LifestyleTrophy[] {
+    return [
+      {
+        id: 'skateboard',
+        name: 'Custom Pro Skateboard & Helmet',
+        emoji: '🛹',
+        category: 'kid',
+        costCash: 85,
+        purchased: false,
+        desc: 'Custom grip tape and smooth abec-9 bearings. Roll up to the stand in style.',
+        perkDesc: 'Speedy Chore Travel: reduces chore cooldown by 25%!',
+        phaseRequired: 1
+      },
+      {
+        id: 'mountain_bike',
+        name: 'Trek Mountain Bike with Front Basket',
+        emoji: '🚲',
+        category: 'kid',
+        costCash: 280,
+        purchased: false,
+        desc: '21-speed aluminum frame bike with a heavy-duty front rack for grocery runs.',
+        perkDesc: 'Grocery Hauler: +25% bonus supplies on all store pack purchases!',
+        phaseRequired: 1
+      },
+      {
+        id: 'nintendo_switch',
+        name: 'Nintendo Switch OLED & Mario Kart',
+        emoji: '🎮',
+        category: 'kid',
+        costCash: 350,
+        purchased: false,
+        desc: 'Game behind the stand on slow cloudy afternoons. Total neighborhood envy.',
+        perkDesc: 'Good Vibes: +5% customer happiness & reputation floor!',
+        phaseRequired: 1
+      },
+      {
+        id: 'electric_scooter',
+        name: 'Segway Ninebot Electric Scooter',
+        emoji: '🛴',
+        category: 'kid',
+        costCash: 650,
+        purchased: false,
+        desc: 'Zip between Timmy, Leo, and Sarahs stands in seconds to check stock.',
+        perkDesc: 'Manager Mobility: +15% capacity boost to all franchise stands!',
+        phaseRequired: 2
+      },
+      {
+        id: 'ipad_pro',
+        name: 'iPad Pro & Apple Pencil',
+        emoji: '📱',
+        category: 'teen',
+        costCash: 900,
+        purchased: false,
+        desc: 'Design high-res glossy flyers and track real-time franchise supply spreadsheets.',
+        perkDesc: 'Digital Supply Chain: +10% sales throughput across all stands!',
+        phaseRequired: 2
+      },
+      {
+        id: 'disney_vip',
+        name: 'VIP Disney World Family Vacation',
+        emoji: '🏰',
+        category: 'teen',
+        costCash: 3500,
+        purchased: false,
+        desc: 'Treated the entire family to 5-star resort suites. Mom and Dad are in awe.',
+        perkDesc: 'Family Pride: Permanent +15% Neighborhood Reputation!',
+        phaseRequired: 2
+      },
+      {
+        id: 'first_car',
+        name: '2012 Honda Civic Hatchback',
+        emoji: '🚗',
+        category: 'teen',
+        costCash: 8500,
+        purchased: false,
+        desc: 'Your first car! Fold-down rear seats easily hold 25 crates of bottled lemonade.',
+        perkDesc: 'Wholesale Delivery Driver: cuts wholesale packaging delivery friction by 30%!',
+        phaseRequired: 3
+      },
+      {
+        id: 'garage_arcade',
+        name: 'Garage HQ Renovation & Arcade Cabinet',
+        emoji: '🕹️',
+        category: 'teen',
+        costCash: 15000,
+        purchased: false,
+        desc: 'Epoxy floors, stainless steel juicing tables, and a Street Fighter arcade machine.',
+        perkDesc: 'Corporate Headquarters: +15% brand multiplier across all wholesale accounts!',
+        phaseRequired: 3
+      },
+      {
+        id: 'college_fund',
+        name: 'College Tuition Prepaid in Full',
+        emoji: '🎓',
+        category: 'teen',
+        costCash: 50000,
+        purchased: false,
+        desc: 'Paid 4 full years of college tuition before high school graduation. Mom cried tears of joy.',
+        perkDesc: 'Total Peace of Mind: permanent 1.25x Brand Multiplier on all sales!',
+        phaseRequired: 3
+      },
+      {
+        id: 'tesla_model_x',
+        name: 'Tesla Model X (LEM0N8 Plates)',
+        emoji: '⚡',
+        category: 'mogul',
+        costCash: 95000,
+        purchased: false,
+        desc: 'Falcon-wing doors with a custom sunshine-yellow wrap and personalized plates.',
+        perkDesc: 'Luxury Tech Flex: +20% patent licensing royalties!',
+        phaseRequired: 4
+      },
+      {
+        id: 'pay_mortgage',
+        name: 'Paid Off Mom & Dads 30-Year Mortgage',
+        emoji: '🏡',
+        category: 'mogul',
+        costCash: 450000,
+        purchased: false,
+        desc: 'Handed your parents the mortgage deed marked PAID IN FULL. Legend of the neighborhood.',
+        perkDesc: 'Neighborhood Saint: Locks Neighborhood Reputation permanently at 100%!',
+        phaseRequired: 4
+      },
+      {
+        id: 'lemon_grove',
+        name: '100-Acre California Lemon Grove',
+        emoji: '🍋',
+        category: 'mogul',
+        costCash: 1200000,
+        purchased: false,
+        desc: 'Your own certified organic citrus orchards in Santa Barbara, California.',
+        perkDesc: 'Free Lemons Forever: Grove delivers 500 fresh lemons every morning for $0!',
+        phaseRequired: 4
+      },
+      {
+        id: 'private_jet',
+        name: 'Gulfstream G650 Private Jet',
+        emoji: '✈️',
+        category: 'billionaire',
+        costCash: 65000000,
+        purchased: false,
+        desc: 'Yellow-trimmed private jet to negotiate international appliance rights in London and Tokyo.',
+        perkDesc: 'Global Dealmaker: Doubles all patent royalties worldwide!',
+        phaseRequired: 5
+      },
+      {
+        id: 'arena_naming',
+        name: 'Naming Rights: The Lemonade Center Arena',
+        emoji: '🏟️',
+        category: 'billionaire',
+        costCash: 80000000,
+        purchased: false,
+        desc: 'Your brand name glowing across the 20,000-seat professional sports arena downtown.',
+        perkDesc: 'Worldwide Fame: Doubles all supermarket co-packer demand!',
+        phaseRequired: 5
+      },
+      {
+        id: 'private_island',
+        name: 'Buy Citrus Cay Private Caribbean Island',
+        emoji: '🏝️',
+        category: 'billionaire',
+        costCash: 150000000,
+        purchased: false,
+        desc: 'A 500-acre tropical private island with citrus orchards, white sand beaches, and an infinity pool filled with iced lemonade.',
+        perkDesc: 'THE GRAND VICTORY: You won the game! Retires to paradise and unlocks Golden Seeds (+50% Empire Profit)!',
+        phaseRequired: 5
+      }
+    ];
+  }
+
   public log(msg: string): void {
     this.state.logs.unshift(`[Day ${this.state.day}] ${msg}`);
     if (this.state.logs.length > 50) this.state.logs.pop();
@@ -550,7 +769,10 @@ export class LemonadeEngine {
   public rollNextChore(): void {
     const chore = LemonadeEngine.CHORE_DEFS[Math.floor(this.rand() * LemonadeEngine.CHORE_DEFS.length)];
     const reward = chore.min + Math.floor(this.rand() * (chore.max - chore.min + 1));
-    const cooldownSec = 8 + Math.floor(this.rand() * 10);
+    let cooldownSec = 8 + Math.floor(this.rand() * 10);
+    if (this.state.flags.hasSkateboard) {
+      cooldownSec = Math.max(5, Math.round(cooldownSec * 0.75)); // Skateboard perk!
+    }
     this.state.currentChore = {
       name: chore.name,
       reward,
@@ -579,12 +801,14 @@ export class LemonadeEngine {
   // ==========================================================================
   public buySupplies(item: 'lemons' | 'sugar' | 'ice' | 'cups' | 'bottles', packs: number = 1): boolean {
     const discount = this.state.flags.hasCostcoDiscount ? 0.65 : 1.0;
+    const bikeBonus = this.state.flags.hasMountainBike ? 1.25 : 1.0; // Mountain bike perk!
+
     const catalog = {
-      lemons:  { qty: 24,  cost: +(8.00 * discount).toFixed(2) },
-      sugar:   { qty: 20,  cost: +(6.00 * discount).toFixed(2) },
-      ice:     { qty: 100, cost: +(4.00 * discount).toFixed(2) },
-      cups:    { qty: 50,  cost: +(4.00 * discount).toFixed(2) },
-      bottles: { qty: 25,  cost: +(10.00 * discount).toFixed(2) }
+      lemons:  { qty: Math.round(24 * bikeBonus),  cost: +(8.00 * discount).toFixed(2) },
+      sugar:   { qty: Math.round(20 * bikeBonus),  cost: +(6.00 * discount).toFixed(2) },
+      ice:     { qty: Math.round(100 * bikeBonus), cost: +(4.00 * discount).toFixed(2) },
+      cups:    { qty: Math.round(50 * bikeBonus),  cost: +(4.00 * discount).toFixed(2) },
+      bottles: { qty: Math.round(25 * bikeBonus),  cost: +(10.00 * discount).toFixed(2) }
     }[item];
 
     const totalCost = catalog.cost * packs;
@@ -596,7 +820,7 @@ export class LemonadeEngine {
   }
 
   // ==========================================================================
-  // FRANCHISE & WHOLESALE ACTIONS
+  // FRANCHISE, WHOLESALE & LIFESTYLE ACTIONS
   // ==========================================================================
   public hireFranchiseStand(id: string): boolean {
     const stand = this.franchiseStands[id];
@@ -625,6 +849,55 @@ export class LemonadeEngine {
     this.state.cash = this.state.cash.sub(p.costCash);
     p.purchased = true;
     p.effect(this);
+    return true;
+  }
+
+  public buyTrophy(id: string): boolean {
+    const t = this.trophies.find(x => x.id === id);
+    if (!t || t.purchased || this.state.cash.lt(t.costCash)) return false;
+
+    this.state.cash = this.state.cash.sub(t.costCash);
+    t.purchased = true;
+
+    // Apply specific trophy perks
+    if (id === 'skateboard') this.state.flags.hasSkateboard = true;
+    if (id === 'mountain_bike') this.state.flags.hasMountainBike = true;
+    if (id === 'nintendo_switch') {
+      this.state.flags.hasNintendoSwitch = true;
+      this.state.reputation = Math.min(1.0, this.state.reputation + 0.05);
+    }
+    if (id === 'electric_scooter') {
+      this.state.flags.hasElectricScooter = true;
+      Object.values(this.franchiseStands).forEach(st => st.baseCapacity = Math.round(st.baseCapacity * 1.15));
+    }
+    if (id === 'ipad_pro') this.state.flags.hasIpadPro = true;
+    if (id === 'disney_vip') {
+      this.state.flags.hasDisneyTrip = true;
+      this.state.reputation = Math.min(1.0, this.state.reputation + 0.15);
+    }
+    if (id === 'first_car') this.state.flags.hasHondaCivic = true;
+    if (id === 'garage_arcade') {
+      this.state.flags.hasGarageArcade = true;
+      this.state.brandMultiplier *= 1.15;
+    }
+    if (id === 'college_fund') {
+      this.state.flags.hasCollegePrepaid = true;
+      this.state.brandMultiplier *= 1.25;
+    }
+    if (id === 'tesla_model_x') this.state.flags.hasTeslaModelX = true;
+    if (id === 'pay_mortgage') {
+      this.state.flags.hasPaidMortgage = true;
+      this.state.reputation = 1.0;
+    }
+    if (id === 'lemon_grove') this.state.flags.hasLemonGrove = true;
+    if (id === 'private_jet') this.state.flags.hasPrivateJet = true;
+    if (id === 'arena_naming') this.state.flags.hasArenaNaming = true;
+    if (id === 'private_island') {
+      this.state.flags.hasPrivateIsland = true;
+      this.state.gameWon = true;
+    }
+
+    this.log(`🎉 TROPHY PURCHASED: ${t.emoji} ${t.name} ($${t.costCash.toLocaleString()})! ${t.perkDesc}`);
     return true;
   }
 
@@ -663,6 +936,17 @@ export class LemonadeEngine {
     const s = this.state;
     const notes: string[] = [];
 
+    // Lemon grove perk: free morning lemons!
+    if (s.flags.hasLemonGrove) {
+      s.inv.lemons = Math.max(s.inv.lemons, 500);
+      notes.push("California Lemon Grove delivered 500 fresh organic lemons ($0)");
+    }
+
+    // Mortgage perk: locks reputation at 100%
+    if (s.flags.hasPaidMortgage) {
+      s.reputation = 1.0;
+    }
+
     const weatherMult = s.weather === 'SUNNY' ? 1.0 : s.weather === 'CLOUDY' ? 0.65 : 0.25;
     const tempFactor = Math.max(0.3, 1 + 0.8 * ((s.tempF - 70) / 30));
     const quality = this.computeRecipeQuality(s.tempF);
@@ -698,14 +982,15 @@ export class LemonadeEngine {
     let franchiseWages = 0;
 
     if (s.phase >= 2) {
+      const efficiencyBonus = s.flags.hasIpadPro ? 1.10 : 1.0;
+
       for (const stand of Object.values(this.franchiseStands)) {
         if (!stand.hired) continue;
 
         franchiseWages += stand.dailyWage;
-        const standTraffic = Math.floor(stand.baseCapacity * Math.pow(weatherMult * tempFactor, stand.weatherSens) * (0.6 + s.reputation * 0.4));
+        const standTraffic = Math.floor(stand.baseCapacity * Math.pow(weatherMult * tempFactor, stand.weatherSens) * (0.6 + s.reputation * 0.4) * efficiencyBonus);
         const standDemand = Math.floor(standTraffic * buyProb);
 
-        // Check remaining inventory
         const remByLemons = Math.floor(s.inv.lemons / Math.max(1, s.recipe.lemonsPerPitcher)) * cupsPerPitcher;
         const remBySugar = Math.floor(s.inv.sugar / Math.max(1, s.recipe.sugarPerPitcher)) * cupsPerPitcher;
         const remByIce = s.recipe.icePerCup > 0 ? Math.floor(s.inv.ice / s.recipe.icePerCup) : Infinity;
@@ -734,11 +1019,12 @@ export class LemonadeEngine {
     let packagingCosts = 0;
 
     if (s.phase >= 3) {
+      const civicCostDiscount = s.flags.hasHondaCivic ? 0.70 : 1.0;
+
       for (const acc of Object.values(this.wholesaleAccounts)) {
         if (!acc.active) continue;
 
         const demand = Math.round(acc.bottlesPerDay * Math.pow(weatherMult, acc.weatherSens));
-        // 1 bottle = 0.5 lemon, 0.4 sugar, 1 bottle package
         const maxByL = Math.floor(s.inv.lemons / 0.5);
         const maxByS = Math.floor(s.inv.sugar / 0.4);
         const maxBottles = Math.min(demand, s.inv.bottles, maxByL, maxByS);
@@ -750,7 +1036,7 @@ export class LemonadeEngine {
 
           bottlesSold += maxBottles;
           wholesaleGross += maxBottles * acc.wholesalePrice;
-          packagingCosts += maxBottles * acc.packagingCost;
+          packagingCosts += maxBottles * (acc.packagingCost * civicCostDiscount);
         } else if (demand > 0) {
           notes.push(`Could not fill wholesale order for ${acc.name} (out of bottles/lemons)!`);
         }
@@ -762,7 +1048,11 @@ export class LemonadeEngine {
     let patentUnitsSold = 0;
     let patentRoyalties = 0;
     if (s.phase >= 4 && this.patent.licensed) {
-      patentUnitsSold = Math.round(this.patent.baseUnitsPerDay * (0.8 + this.rand() * 0.4));
+      let multiplier = 1.0;
+      if (s.flags.hasTeslaModelX) multiplier += 0.20;
+      if (s.flags.hasPrivateJet) multiplier *= 2.0;
+
+      patentUnitsSold = Math.round(this.patent.baseUnitsPerDay * (0.8 + this.rand() * 0.4) * multiplier);
       patentRoyalties = patentUnitsSold * this.patent.royaltyPerUnit;
     }
 
@@ -770,7 +1060,8 @@ export class LemonadeEngine {
     let copackerCasesSold = 0;
     let copackerNet = 0;
     if (s.phase >= 5 && this.copacker.active) {
-      copackerCasesSold = Math.round(this.copacker.casesPerDay * (0.85 + this.rand() * 0.3));
+      const arenaMult = s.flags.hasArenaNaming ? 2.0 : 1.0;
+      copackerCasesSold = Math.round(this.copacker.casesPerDay * (0.85 + this.rand() * 0.3) * arenaMult);
       copackerNet = copackerCasesSold * this.copacker.netPerCase;
     }
 
@@ -779,14 +1070,14 @@ export class LemonadeEngine {
       notes.push(`${s.inv.ice} ice cubes melted overnight`);
       s.inv.ice = 0;
     }
-    if (!s.flags.hasMiniFridge && s.inv.lemons > 0) {
+    if (!s.flags.hasMiniFridge && s.inv.lemons > 0 && !s.flags.hasLemonGrove) {
       const rotted = Math.ceil(s.inv.lemons * 0.20);
       s.inv.lemons -= rotted;
       notes.push(`${rotted} lemons rotted`);
     }
 
     // P&L Consolidation
-    const totalRevenue = drivewayRevenue + franchiseGross + wholesaleGross + patentRoyalties + copackerNet;
+    const totalRevenue = (drivewayRevenue + franchiseGross + wholesaleGross + patentRoyalties + copackerNet) * s.brandMultiplier;
     const totalExpenses = franchiseWages + packagingCosts;
     const netProfit = totalRevenue - totalExpenses;
 
@@ -795,8 +1086,10 @@ export class LemonadeEngine {
     s.totalCupsSold = s.totalCupsSold.add(totalCupsToday);
     s.totalRevenueEarned = s.totalRevenueEarned.add(totalRevenue);
 
-    // Reputation adjustment
-    s.reputation = Math.max(0.1, Math.min(1.0, s.reputation + (quality - 0.65) * 0.12));
+    // Reputation adjustment (unless mortgage is paid off!)
+    if (!s.flags.hasPaidMortgage) {
+      s.reputation = Math.max(0.1, Math.min(1.0, s.reputation + (quality - 0.65) * 0.12));
+    }
 
     const summary: DaySummary = {
       day: s.day,
@@ -828,7 +1121,7 @@ export class LemonadeEngine {
     s.elapsedSec += 30;
     this.rollNextForecast();
     if (s.currentChore) {
-      s.currentChore.remainingSec = 0; // Fresh chore every morning
+      s.currentChore.remainingSec = 0;
     }
 
     return summary;
@@ -852,7 +1145,7 @@ export class LemonadeEngine {
 // ============================================================================
 // 4. AUTOMATED PACING SIMULATOR
 // ============================================================================
-export function runHeadlessPacingTest(simDays: number = 30): {
+export function runHeadlessPacingTest(simDays: number = 35): {
   phase: number;
   totalCups: string;
   cash: string;
@@ -863,18 +1156,15 @@ export function runHeadlessPacingTest(simDays: number = 30): {
 
   for (let d = 1; d <= simDays; d++) {
     const s = engine.state;
-    // Basic bot AI
     s.recipe.pricePerCup = +(2.00 * (1 + 0.015 * (s.tempF - 70))).toFixed(2);
     s.recipe.icePerCup = engine.computeIdealIce(s.tempF);
 
-    // Buy supplies if low
     if (s.inv.cups < 60) engine.buySupplies('cups', 2);
     if (s.inv.lemons < 30) engine.buySupplies('lemons', 2);
     if (s.inv.sugar < 25) engine.buySupplies('sugar', 2);
     if (s.inv.ice < 80) engine.buySupplies('ice', 2);
     if (s.phase >= 3 && s.inv.bottles < 40) engine.buySupplies('bottles', 2);
 
-    // Buy available upgrades & franchise stands
     engine.projects.forEach(p => engine.buyProject(p.id));
     if (s.phase >= 2) {
       Object.keys(engine.franchiseStands).forEach(id => engine.hireFranchiseStand(id));
@@ -882,6 +1172,13 @@ export function runHeadlessPacingTest(simDays: number = 30): {
     if (s.phase >= 3) {
       Object.keys(engine.wholesaleAccounts).forEach(id => engine.signWholesaleAccount(id));
     }
+
+    // Try buying trophies if cash is abundant
+    engine.trophies.filter(t => !t.purchased && t.phaseRequired <= s.phase).forEach(t => {
+      if (s.cash.gte(t.costCash * 1.5)) {
+        engine.buyTrophy(t.id);
+      }
+    });
 
     const res = engine.runDay();
     logs.push(`Day ${res.day}: Net Profit +$${res.netProfit.toFixed(2)} | Cash: $${s.cash.format()} | Cups: ${s.totalCupsSold.format()}`);

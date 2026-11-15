@@ -137,6 +137,89 @@
     }
     .profit-pos { color: #4ade80; font-weight: bold; }
     .profit-neg { color: #f87171; font-weight: bold; }
+    .trophy-shelf {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      padding: 8px;
+      background: #141414;
+      border: 1px solid #333;
+      border-radius: 4px;
+      margin-bottom: 8px;
+    }
+    .trophy-icon {
+      font-size: 20px;
+      width: 34px;
+      height: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      background: #1f1f1f;
+      border: 1px solid #444;
+      transition: all 0.2s;
+      user-select: none;
+    }
+    .trophy-icon.owned {
+      background: #2a2200;
+      border-color: #ffd700;
+      box-shadow: 0 0 6px rgba(255, 215, 0, 0.4);
+      filter: none;
+    }
+    .trophy-icon.locked {
+      filter: grayscale(100%);
+      opacity: 0.25;
+    }
+    .category-badge {
+      display: inline-block;
+      padding: 1px 6px;
+      font-size: 10px;
+      border-radius: 3px;
+      font-weight: bold;
+    }
+    .category-kid {
+      background: #1e3a5f;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+    }
+    .category-teen {
+      background: #3b1d54;
+      color: #d8b4fe;
+      border: 1px solid #a855f7;
+    }
+    .category-mogul {
+      background: #432808;
+      color: #fde047;
+      border: 1px solid #eab308;
+    }
+    .category-billionaire {
+      background: #042f2e;
+      color: #5eead4;
+      border: 1px solid #14b8a6;
+    }
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      padding: 16px;
+    }
+    .modal-card {
+      background: #1a1a1a;
+      border: 2px solid #ffd700;
+      border-radius: 8px;
+      max-width: 520px;
+      width: 100%;
+      padding: 24px;
+      text-align: center;
+      box-shadow: 0 0 35px rgba(255, 215, 0, 0.4);
+    }
   </style>
 </head>
 <body>
@@ -147,6 +230,7 @@
       <button id="btn-speed-10">10x</button>
       <button id="btn-speed-50">50x</button>
       <button id="btn-autoday">Auto-Day: OFF</button>
+      <button id="btn-reset" style="border-color:#e11d48; color:#f87171;">Reset</button>
     </div>
   </div>
 
@@ -218,18 +302,43 @@
       <div style="font-weight: bold; margin: 10px 0 4px 0;">Available Business Investments:</div>
       <div id="project-list"></div>
 
-      <div style="font-weight: bold; margin: 12px 0 4px 0;">Executive Activity Log:</div>
+      <div style="font-weight: bold; margin: 14px 0 4px 0; color: #ffd700;">🏆 Personal Lifestyle & Trophies:</div>
+      <div id="trophy-shelf" class="trophy-shelf"></div>
+      <div id="trophy-list"></div>
+
+      <div style="font-weight: bold; margin: 14px 0 4px 0;">Executive Activity Log:</div>
       <div id="log-box" class="log"></div>
+    </div>
+  </div>
+
+  <!-- VICTORY MODAL (CITRUS CAY) -->
+  <div id="victory-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-card">
+      <div style="font-size: 48px; margin-bottom: 8px;">🏝️🍋🎉</div>
+      <h2 style="color: #ffd700; margin: 0 0 8px 0; font-size: 20px;">VICTORY: CITRUS CAY!</h2>
+      <p style="color: #eee; font-size: 13px; line-height: 1.5; margin: 0 0 14px 0;">
+        You started with $60 and a folding table on Elm Street. Today, you purchased <strong>Citrus Cay</strong>, your private Caribbean island sanctuary. You beat Universal Lemonade!
+      </p>
+      <div style="background: #111; padding: 12px; border-radius: 6px; margin-bottom: 16px; font-size: 12px; text-align: left; border: 1px solid #333;">
+        <div class="stat"><span>🏆 Career Revenue:</span><strong style="color:#ffd700;">$<span id="vic-revenue">0</span></strong></div>
+        <div class="stat"><span>🍋 Total Cups Sold:</span><strong style="color:#4ade80;"><span id="vic-cups">0</span></strong></div>
+        <div class="stat"><span>📅 Days in Business:</span><strong style="color:#60a5fa;"><span id="vic-days">0</span></strong></div>
+        <div class="stat"><span>🏡 Parents' Mortgage:</span><span style="color:#4ade80; font-weight:bold;">PAID IN FULL</span></div>
+      </div>
+      <button id="btn-victory-dismiss" style="background: #2e442e; border: 1px solid #4ade80; color: #4ade80; font-weight: bold; font-size: 14px; padding: 12px 20px; cursor: pointer; width: 100%;">
+        Enjoy Paradise (Continue Sandbox)
+      </button>
     </div>
   </div>
 
   <script type="module">
     import { LemonadeEngine } from './engine.ts';
 
-    const engine = new LemonadeEngine();
+    let engine = new LemonadeEngine();
     let timeScale = 1;
     let autoDay = false;
     let autoDayTimer = 0;
+    let victoryDismissed = false;
 
     // Header Speed Controls
     function setSpeed(s) {
@@ -250,6 +359,21 @@
       e.target.textContent = `Auto-Day: ${autoDay ? 'ON' : 'OFF'}`;
       e.target.style.borderColor = autoDay ? '#4ade80' : '#666';
       e.target.style.color = autoDay ? '#4ade80' : '#fff';
+    };
+
+    document.getElementById('btn-reset').onclick = () => {
+      if (confirm("Reset lemonade business back to Day 1 with $60 seed capital?")) {
+        engine = new LemonadeEngine();
+        victoryDismissed = false;
+        const vModal = document.getElementById('victory-modal');
+        if (vModal) vModal.style.display = 'none';
+      }
+    };
+
+    document.getElementById('btn-victory-dismiss').onclick = () => {
+      victoryDismissed = true;
+      const vModal = document.getElementById('victory-modal');
+      if (vModal) vModal.style.display = 'none';
     };
 
     // Chore Click
@@ -361,12 +485,19 @@
       const cCost = s.flags.hasCostcoDiscount ? '$2.60' : '$4';
       const bCost = s.flags.hasCostcoDiscount ? '$6.50' : '$10';
 
+      const bikeBonus = s.flags.hasMountainBike ? 1.25 : 1.0;
+      const lQty = Math.round(24 * bikeBonus);
+      const sQty = Math.round(20 * bikeBonus);
+      const iQty = Math.round(100 * bikeBonus);
+      const cQty = Math.round(50 * bikeBonus);
+      const bQty = Math.round(25 * bikeBonus);
+
       document.getElementById('stock-buttons').innerHTML = `
-        <button onclick="window._buy('lemons')">+24 Lemons (${lCost})</button>
-        <button onclick="window._buy('sugar')">+20 Sugar (${sCost})</button>
-        <button onclick="window._buy('ice')">+100 Ice (${iCost})</button>
-        <button onclick="window._buy('cups')">+50 Cups (${cCost})</button>
-        ${s.phase >= 3 ? `<button onclick="window._buy('bottles')" style="grid-column: span 2;">+25 Glass Bottles (${bCost})</button>` : ''}
+        <button onclick="window._buy('lemons')">+${lQty} Lemons (${lCost})</button>
+        <button onclick="window._buy('sugar')">+${sQty} Sugar (${sCost})</button>
+        <button onclick="window._buy('ice')">+${iQty} Ice (${iCost})</button>
+        <button onclick="window._buy('cups')">+${cQty} Cups (${cCost})</button>
+        ${s.phase >= 3 ? `<button onclick="window._buy('bottles')" style="grid-column: span 2;">+${bQty} Glass Bottles (${bCost})</button>` : ''}
       `;
 
       document.getElementById('btn-run-day').textContent = `☀️ RUN DAY ${s.day} BUSINESS SIMULATION`;
@@ -473,6 +604,58 @@
           </button>
         </div>`).join('');
 
+      // Trophy Shelf Display (All 15 Emojis)
+      const trophyShelf = document.getElementById('trophy-shelf');
+      if (trophyShelf) {
+        trophyShelf.innerHTML = engine.trophies.map(t => {
+          const cls = t.purchased ? 'trophy-icon owned' : 'trophy-icon locked';
+          return `<div class="${cls}" title="${t.name} ($${t.costCash.toLocaleString()})">${t.emoji}</div>`;
+        }).join('');
+      }
+
+      // Trophy List (Available in current stage)
+      const trophyList = document.getElementById('trophy-list');
+      if (trophyList) {
+        const catLabels = {
+          kid: 'Kid Hustle',
+          teen: 'Teen Ambition',
+          mogul: 'Industry Mogul',
+          billionaire: 'Global Billionaire'
+        };
+        const availableTrophies = engine.trophies.filter(t => !t.purchased && t.phaseRequired <= s.phase);
+        if (availableTrophies.length === 0) {
+          const allBought = engine.trophies.every(t => t.purchased);
+          trophyList.innerHTML = `<div style="font-size:12px; color:#888; font-style:italic; padding:4px 0;">${allBought ? '★ All 15 lifestyle trophies acquired! Complete mastery.' : 'Advance to higher business stages to unlock more lifestyle trophies.'}</div>`;
+        } else {
+          trophyList.innerHTML = availableTrophies.map(t => `
+            <div class="card">
+              <div class="stat">
+                <strong>${t.emoji} ${t.name}</strong>
+                <span class="category-badge category-${t.category}">${catLabels[t.category]}</span>
+              </div>
+              <div style="font-size:12px; color:#ccc; margin:4px 0;">${t.desc}</div>
+              <div style="font-size:12px; color:#4ade80; margin-bottom:6px;">★ ${t.perkDesc}</div>
+              <button onclick="window._buyTrophy('${t.id}')" ${s.cash.lt(t.costCash) ? 'disabled' : ''} style="width:100%; font-weight:bold; background:#2c2413; border-color:#ffd700; color:#ffd700;">
+                Buy Trophy ($${t.costCash.toLocaleString()})
+              </button>
+            </div>
+          `).join('');
+        }
+      }
+
+      // Victory Modal Trigger
+      const vModal = document.getElementById('victory-modal');
+      if (s.gameWon && !victoryDismissed) {
+        if (vModal && vModal.style.display !== 'flex') {
+          vModal.style.display = 'flex';
+          document.getElementById('vic-revenue').textContent = s.totalRevenueEarned.format();
+          document.getElementById('vic-cups').textContent = s.totalCupsSold.format();
+          document.getElementById('vic-days').textContent = s.day;
+        }
+      } else if (vModal && vModal.style.display === 'flex' && !s.gameWon) {
+        vModal.style.display = 'none';
+      }
+
       document.getElementById('log-box').innerHTML = s.logs.map(l => `<div>${l}</div>`).join('');
 
       requestAnimationFrame(loop);
@@ -483,6 +666,7 @@
     window._hire = (id) => engine.hireFranchiseStand(id);
     window._signWholesale = (id) => engine.signWholesaleAccount(id);
     window._proj = (id) => engine.buyProject(id);
+    window._buyTrophy = (id) => engine.buyTrophy(id);
 
     requestAnimationFrame(loop);
   </script>
