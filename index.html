@@ -235,6 +235,112 @@
       background: #2b2208;
       color: #fde047;
     }
+
+    /* Recipe Ratio Workbench Card */
+    .ratio-card {
+      background: #fbf7ee;
+      border: 3px solid #8b5cf6;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(139, 92, 246, 0.25);
+      margin-top: 10px;
+      color: #1e1b4b;
+    }
+    .ratio-banner {
+      background: linear-gradient(90deg, #9333ea, #a855f7, #c084fc);
+      color: #fff;
+      font-weight: bold;
+      text-align: center;
+      padding: 6px 10px;
+      font-size: 13px;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      border-bottom: 2px solid #7e22ce;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    }
+    .ratio-body {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 8px;
+      padding: 10px 8px;
+      background: linear-gradient(180deg, #fffdf5 0%, #fef9c3 60%, #fed7aa 100%);
+      align-items: center;
+    }
+    @media (max-width: 900px) {
+      .ratio-body {
+        grid-template-columns: 1fr;
+      }
+    }
+    .ratio-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 4px 0;
+      background: rgba(255, 255, 255, 0.9);
+      border: 2px solid #e9d5ff;
+      border-radius: 30px;
+      padding: 3px 6px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+    }
+    .ratio-icon {
+      width: 34px;
+      height: 34px;
+      object-fit: contain;
+    }
+    .ratio-btn {
+      width: 30px;
+      height: 30px;
+      padding: 0;
+      margin: 0;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: auto;
+      transition: transform 0.1s;
+    }
+    .ratio-btn:hover:not(:disabled) {
+      background: transparent;
+      border-color: transparent;
+      transform: scale(1.08);
+    }
+    .ratio-btn:active:not(:disabled) {
+      transform: scale(0.92);
+    }
+    .ratio-btn img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    .ratio-pill {
+      min-width: 32px;
+      height: 26px;
+      background: #fff;
+      border: 2px solid #c084fc;
+      border-radius: 13px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: bold;
+      color: #581c87;
+      padding: 0 4px;
+    }
+    @keyframes float-gentle-1 {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-8px) rotate(4deg); }
+    }
+    @keyframes float-gentle-2 {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-10px) rotate(-6deg); }
+    }
+    .floating-bob-1 { animation: float-gentle-1 2.8s ease-in-out infinite; transform-origin: center; }
+    .floating-bob-2 { animation: float-gentle-2 3.4s ease-in-out infinite; transform-origin: center; }
   </style>
 </head>
 <body>
@@ -261,37 +367,103 @@
         DO CHORE
       </button>
 
-      <hr style="border-color:#333; margin: 10px 0;"/>
-      <div style="font-weight: bold; margin-bottom: 4px;">Recipe & Pricing Tuning:</div>
-      <div class="stat">
-        <span>Price per Cup: <strong>$<span id="lbl-price">2.00</span></strong></span>
-        <div>
-          <button id="btn-price-down" style="min-width:48px;">-$0.25</button>
-          <button id="btn-price-up" style="min-width:48px;">+$0.25</button>
+      <!-- RECIPE RATIO WORKBENCH CARD -->
+      <div class="ratio-card">
+        <div class="ratio-banner">
+          <span>🍋</span> RECIPE RATIO <span>🍋</span>
         </div>
-      </div>
-      <div class="stat">
-        <span>Lemons per Pitcher: <strong><span id="lbl-lemons">4</span></strong></span>
-        <div>
-          <button id="btn-lemons-down" style="min-width:38px;">-</button>
-          <button id="btn-lemons-up" style="min-width:38px;">+</button>
-        </div>
-      </div>
-      <div class="stat">
-        <span>Sugar per Pitcher: <strong><span id="lbl-sugar">4</span></strong></span>
-        <div>
-          <button id="btn-sugar-down" style="min-width:38px;">-</button>
-          <button id="btn-sugar-up" style="min-width:38px;">+</button>
-        </div>
-      </div>
-      <div class="stat">
-        <span>
-          Ice per Cup: <strong><span id="lbl-ice">4</span></strong>
-          <span id="autoice-container"></span>
-        </span>
-        <div>
-          <button id="btn-ice-down" style="min-width:38px;">-</button>
-          <button id="btn-ice-up" style="min-width:38px;">+</button>
+        <div class="ratio-body">
+          <!-- LEFT COLUMN: INGREDIENTS & PRICE CONTROLS -->
+          <div class="ratio-controls">
+            <!-- LEMONS ROW -->
+            <div class="ratio-row">
+              <img src="./sprites/lemon.png" class="ratio-icon" alt="Lemons" title="Lemons per Pitcher" />
+              <button id="btn-lemons-down" class="ratio-btn" title="Decrease Lemons">
+                <img src="./sprites/btn_minus.png" alt="-" />
+              </button>
+              <div class="ratio-pill" id="lbl-lemons">4</div>
+              <button id="btn-lemons-up" class="ratio-btn" title="Increase Lemons">
+                <img src="./sprites/btn_plus.png" alt="+" />
+              </button>
+            </div>
+
+            <!-- SUGAR ROW -->
+            <div class="ratio-row">
+              <img src="./sprites/sugar_scoop.png" class="ratio-icon" alt="Sugar" title="Sugar per Pitcher" />
+              <button id="btn-sugar-down" class="ratio-btn" title="Decrease Sugar">
+                <img src="./sprites/btn_minus.png" alt="-" />
+              </button>
+              <div class="ratio-pill" id="lbl-sugar">4</div>
+              <button id="btn-sugar-up" class="ratio-btn" title="Increase Sugar">
+                <img src="./sprites/btn_plus.png" alt="+" />
+              </button>
+            </div>
+
+            <!-- ICE ROW -->
+            <div class="ratio-row">
+              <img src="./sprites/ice_cubes.png" class="ratio-icon" alt="Ice" title="Ice per Cup" />
+              <button id="btn-ice-down" class="ratio-btn" title="Decrease Ice">
+                <img src="./sprites/btn_minus.png" alt="-" />
+              </button>
+              <div class="ratio-pill" id="lbl-ice">4</div>
+              <button id="btn-ice-up" class="ratio-btn" title="Increase Ice">
+                <img src="./sprites/btn_plus.png" alt="+" />
+              </button>
+            </div>
+
+            <!-- PRICE ROW -->
+            <div class="ratio-row" style="margin-top: 6px; background: rgba(254, 240, 138, 0.6); border-color: #facc15;">
+              <span style="font-weight:bold; font-size:12px; color:#713f12; margin-left:4px;">Price:</span>
+              <button id="btn-price-down" class="ratio-btn" title="Decrease Price" style="width:28px; height:28px;">
+                <img src="./sprites/btn_minus.png" alt="-" />
+              </button>
+              <div class="ratio-pill" style="min-width:44px; border-color:#eab308; color:#713f12; font-size:13px;">
+                $<span id="lbl-price">2.00</span>
+              </div>
+              <button id="btn-price-up" class="ratio-btn" title="Increase Price" style="width:28px; height:28px;">
+                <img src="./sprites/btn_plus.png" alt="+" />
+              </button>
+            </div>
+
+            <div id="autoice-container" style="margin-top: 4px; text-align: center;"></div>
+          </div>
+
+          <!-- RIGHT COLUMN: THE DYNAMIC PITCHER -->
+          <div class="pitcher-col" style="text-align: center;">
+            <div class="pitcher-container" style="position: relative; width: 100%; max-width: 170px; height: 170px; margin: 0 auto;">
+              <svg viewBox="0 0 1024 1024" style="width: 100%; height: 100%; position: absolute; top:0; left:0; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.12));">
+                <defs>
+                  <clipPath id="pitcher-belly-clip">
+                    <path d="M 254,320 L 251,336 L 247,352 L 242,368 L 235,384 L 227,400 L 218,416 L 208,432 L 199,448 L 189,464 L 181,480 L 173,496 L 165,512 L 160,528 L 160,544 L 160,560 L 160,576 L 160,592 L 160,608 L 160,624 L 160,640 L 160,656 L 160,672 L 160,688 L 160,704 L 160,720 L 160,736 L 160,752 L 164,768 L 172,784 L 182,800 L 194,816 L 208,832 L 224,848 L 226,864 L 693,864 L 700,848 L 717,832 L 730,816 L 741,800 L 749,784 L 757,768 L 763,752 L 768,736 L 769,720 L 769,704 L 769,688 L 769,672 L 769,656 L 769,640 L 769,624 L 769,608 L 769,592 L 769,576 L 769,560 L 769,544 L 765,528 L 759,512 L 753,496 L 745,480 L 737,464 L 728,448 L 719,432 L 709,416 L 700,400 L 692,384 L 699,368 L 708,352 L 723,336 L 751,320 Z" />
+                  </clipPath>
+                  <linearGradient id="liquid-grad" x1="0" y1="0" x2="0" y2="1">
+                    <stop id="grad-stop-1" offset="0%" stop-color="#FEF08A" stop-opacity="0.88" />
+                    <stop id="grad-stop-2" offset="100%" stop-color="#FACC15" stop-opacity="0.95" />
+                  </linearGradient>
+                </defs>
+
+                <!-- Dynamic Liquid & Floating Items clipped inside pitcher -->
+                <g clip-path="url(#pitcher-belly-clip)">
+                  <!-- Liquid Fill Body -->
+                  <rect id="svg-liquid-rect" x="140" y="440" width="650" height="450" fill="url(#liquid-grad)" />
+                  <!-- Liquid Wave Surface -->
+                  <ellipse id="svg-liquid-wave" cx="465" cy="440" rx="260" ry="20" fill="#FEF9C3" opacity="0.85" />
+                  <!-- Floating Lemons Layer -->
+                  <g id="svg-lemons-layer"></g>
+                  <!-- Floating Ice Layer -->
+                  <g id="svg-ice-layer"></g>
+                </g>
+
+                <!-- Front Translucent Glass Pitcher & Reflections Overlay -->
+                <image href="./sprites/pitcher_glass_translucent.png" x="0" y="0" width="1024" height="1024" />
+              </svg>
+            </div>
+
+            <!-- Taste Profile Pill -->
+            <div id="recipe-taste-pill" style="margin-top:6px; font-weight:bold; font-size:11px; padding:3px 8px; border-radius:12px; display:inline-block; border:1px solid #c084fc; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+              Refreshing Balance
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -521,6 +693,83 @@
       document.getElementById('lbl-lemons').textContent = s.recipe.lemonsPerPitcher;
       document.getElementById('lbl-sugar').textContent = s.recipe.sugarPerPitcher;
       document.getElementById('lbl-ice').textContent = s.recipe.icePerCup;
+
+      // Dynamic Visual Pitcher Workbench Updates
+      const prof = engine.getRecipeProfile(s.tempF);
+      const totalVol = s.recipe.lemonsPerPitcher + s.recipe.sugarPerPitcher + (s.recipe.icePerCup * 0.5);
+      // Fill Y line between y=360 (full) and y=760 (low)
+      const fillY = Math.max(360, Math.min(760, Math.round(790 - Math.min(14, totalVol) * 28)));
+
+      const liquidRect = document.getElementById('svg-liquid-rect');
+      const liquidWave = document.getElementById('svg-liquid-wave');
+      const gradStop1 = document.getElementById('grad-stop-1');
+      const gradStop2 = document.getElementById('grad-stop-2');
+
+      if (liquidRect) {
+        liquidRect.setAttribute('y', fillY);
+        liquidRect.setAttribute('height', 870 - fillY);
+      }
+      if (liquidWave) {
+        liquidWave.setAttribute('cy', fillY);
+      }
+      if (gradStop1 && gradStop2) {
+        gradStop1.setAttribute('stop-color', prof.liquidColor);
+        gradStop2.setAttribute('stop-color', prof.liquidColor);
+      }
+
+      // Update Floating Lemon Wheels (1 to 6)
+      const lemonsLayer = document.getElementById('svg-lemons-layer');
+      if (lemonsLayer) {
+        const numLemons = Math.min(6, Math.max(1, Math.round(s.recipe.lemonsPerPitcher * 0.75)));
+        const lemonPositions = [
+          { x: 300, y: fillY + 60, s: 155, rot: -15, anim: 'floating-bob-1' },
+          { x: 460, y: fillY + 120, s: 140, rot: 25, anim: 'floating-bob-2' },
+          { x: 230, y: fillY + 180, s: 135, rot: 45, anim: 'floating-bob-1' },
+          { x: 420, y: fillY + 230, s: 145, rot: -30, anim: 'floating-bob-2' },
+          { x: 320, y: fillY + 310, s: 130, rot: 10, anim: 'floating-bob-1' },
+          { x: 500, y: fillY + 190, s: 125, rot: -60, anim: 'floating-bob-2' }
+        ];
+
+        let lemonHTML = '';
+        for (let i = 0; i < numLemons; i++) {
+          const lp = lemonPositions[i];
+          lemonHTML += `<g class="${lp.anim}" style="transform-origin: ${lp.x + lp.s/2}px ${lp.y + lp.s/2}px;">
+            <image href="./sprites/lemon_wheel.png" x="${lp.x}" y="${lp.y}" width="${lp.s}" height="${lp.s}" style="transform: rotate(${lp.rot}deg); transform-origin: center;" />
+          </g>`;
+        }
+        setHTMLIfChanged(lemonsLayer, lemonHTML);
+      }
+
+      // Update Floating Ice Cubes (0 to 6)
+      const iceLayer = document.getElementById('svg-ice-layer');
+      if (iceLayer) {
+        const numIce = Math.min(6, s.recipe.icePerCup);
+        const icePositions = [
+          { x: 240, y: fillY - 35, s: 130, rot: -8, anim: 'floating-bob-2' },
+          { x: 380, y: fillY - 50, s: 140, rot: 15, anim: 'floating-bob-1' },
+          { x: 510, y: fillY - 40, s: 135, rot: -12, anim: 'floating-bob-2' },
+          { x: 320, y: fillY + 20, s: 120, rot: 22, anim: 'floating-bob-1' },
+          { x: 450, y: fillY + 25, s: 115, rot: -18, anim: 'floating-bob-2' },
+          { x: 215, y: fillY + 15, s: 110, rot: 14, anim: 'floating-bob-1' }
+        ];
+
+        let iceHTML = '';
+        for (let i = 0; i < numIce; i++) {
+          const ip = icePositions[i];
+          iceHTML += `<g class="${ip.anim}" style="transform-origin: ${ip.x + ip.s/2}px ${ip.y + ip.s/2}px;">
+            <image href="./sprites/ice_cube_single.png" x="${ip.x}" y="${ip.y}" width="${ip.s}" height="${ip.s}" style="transform: rotate(${ip.rot}deg); transform-origin: center;" />
+          </g>`;
+        }
+        setHTMLIfChanged(iceLayer, iceHTML);
+      }
+
+      // Taste profile pill badge
+      const tastePill = document.getElementById('recipe-taste-pill');
+      if (tastePill) {
+        tastePill.textContent = `${prof.tasteName} (${(prof.quality * 100).toFixed(0)}%)`;
+        tastePill.style.backgroundColor = prof.liquidColor;
+        tastePill.style.color = '#3b1d54';
+      }
 
       // Auto-Ice button state
       const autoIceSpan = document.getElementById('autoice-container');

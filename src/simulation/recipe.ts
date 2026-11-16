@@ -23,20 +23,27 @@ export function getRecipeProfile(recipe: RecipeConfig, tempF: number): RecipePro
   const { lemonsPerPitcher: L, sugarPerPitcher: S } = recipe;
 
   let tasteName = "Refreshing Citrus Balance";
-  let liquidColor = "#FFD700"; // Golden sunshine yellow
+  // Natural progression: Clear -> Pleasant Soft Yellow -> Brownish Yellow (too dark)
+  let liquidColor = "#FDE047"; // Pleasant natural soft yellow
 
-  if (L <= 2 && S <= 2) {
-    tasteName = "Watery Lemonade";
-    liquidColor = "#FFFACD"; // Very pale yellow
-  } else if (L - S >= 2) {
-    tasteName = "Super Sour Puckering";
-    liquidColor = "#CCFF00"; // Neon acid greenish-yellow
+  if (L <= 1 && S <= 1) {
+    tasteName = "Just Plain Tap Water";
+    liquidColor = "#E0F2FE"; // Clear soft water tint
+  } else if (L <= 2) {
+    tasteName = "Faint Lemon Water";
+    liquidColor = "#FEF9C3"; // Very pale, near-clear soft lemon
+  } else if (S >= 7 || (S - L >= 3)) {
+    tasteName = "Syrupy & Too Dark";
+    liquidColor = "#B45309"; // Brownish yellow that's too dark
   } else if (S - L >= 2) {
-    tasteName = "Sweet & Syrupy";
-    liquidColor = "#FFA500"; // Deep amber orange
+    tasteName = "Sweet Honey Amber";
+    liquidColor = "#D97706"; // Warm amber / brownish yellow
+  } else if (L - S >= 3) {
+    tasteName = "Super Tart Puckering";
+    liquidColor = "#EAB308"; // Cloudy tart lemon
   } else if (quality >= 0.85) {
     tasteName = "Golden Ratio Perfection";
-    liquidColor = "#FFDE00"; // Vibrant golden citrus
+    liquidColor = "#FACC15"; // Pleasant soft sunshine yellow (warm, not electric)
   }
 
   return {
