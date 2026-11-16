@@ -297,11 +297,8 @@
       </div>
       <div id="readout-inventory-text" style="font-size: 12px; color: #ccc;"></div>
       <div class="stock-grid" id="stock-buttons"></div>
-      <button id="btn-quick-restock" style="width:100%; margin: 2px 0 6px 0; padding:8px; font-size:12px; background:#1e3a5f; border:1px solid #3b82f6; color:#93c5fd; font-weight:bold; border-radius:4px; cursor:pointer;">
-        📦 Restock Needed Supplies for Today
-      </button>
 
-      <button id="btn-run-day" style="width:100%; margin-top:4px; padding:14px; background:#1e4620; font-weight:bold; min-height:48px; font-size:14px; border-color:#4ade80;">
+      <button id="btn-run-day" style="width:100%; margin-top:6px; padding:14px; background:#1e4620; font-weight:bold; min-height:48px; font-size:14px; border-color:#4ade80;">
         ☀️ RUN DAY SIMULATION
       </button>
 
@@ -385,13 +382,6 @@
     document.getElementById('btn-mult-5').onclick = () => setPackMult(5);
     document.getElementById('btn-mult-10').onclick = () => setPackMult(10);
     setPackMult(1);
-
-    document.getElementById('btn-quick-restock').onclick = () => {
-      const res = engine.autoRestockForToday();
-      if (!res.success) {
-        alert(res.message);
-      }
-    };
 
     window._toggleAutoIce = () => {
       engine.state.flags.autoIceEnabled = !engine.state.flags.autoIceEnabled;

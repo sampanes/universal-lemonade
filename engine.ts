@@ -1285,95 +1285,113 @@ export class LemonadeEngine {
     s.totalQualitySum = (s.totalQualitySum || 0) + quality;
     s.avgRecipeQuality = s.totalQualitySum / s.totalQualityDays;
 
-    // 1. Driveway Stand Execution
+    // 1. Calculate Demand across Driveway and all hired Franchise Stands
     const drivewayTraffic = Math.floor(65 * weatherMult * tempFactor * (0.5 + s.reputation));
     const fairPrice = 2.00 * (1 + 0.02 * (s.tempF - 70));
     const priceRatio = fairPrice / Math.max(0.25, s.recipe.pricePerCup);
     const buyProb = Math.max(0, Math.min(1, quality * Math.pow(priceRatio, 1.8)));
     const drivewayDemand = Math.floor(drivewayTraffic * buyProb);
 
-    // Stock deduction helper for cups
-    const cupsPerPitcher = 10 + s.recipe.icePerCup;
-    const maxByLemons = Math.floor(s.inv.lemons / Math.max(1, s.recipe.lemonsPerPitcher)) * cupsPerPitcher;
-    const maxBySugar = Math.floor(s.inv.sugar / Math.max(1, s.recipe.sugarPerPitcher)) * cupsPerPitcher;
-    const maxByIce = s.recipe.icePerCup > 0 ? Math.floor(s.inv.ice / s.recipe.icePerCup) : Infinity;
-    const maxPourableDriveway = Math.min(s.inv.cups, maxByLemons, maxBySugar, maxByIce);
-
-    const drivewayCupsSold = Math.min(drivewayDemand, maxPourableDriveway);
-    const pitchersUsed = Math.ceil(drivewayCupsSold / cupsPerPitcher);
-
-    // If driveway ran out of supplies before meeting demand:
-    if (drivewayDemand > 0 && drivewayCupsSold < drivewayDemand) {
-      const shortages: string[] = [];
-      if (s.inv.cups === maxPourableDriveway) shortages.push('Cups');
-      if (maxByIce === maxPourableDriveway) shortages.push('Ice');
-      if (maxByLemons === maxPourableDriveway) shortages.push('Lemons');
-      if (maxBySugar === maxPourableDriveway) shortages.push('Sugar');
-      const itemStr = shortages.length > 0 ? shortages.join(' & ') : 'supplies';
-      notes.push(`Driveway stand sold out early (ran out of ${itemStr}! Sold ${drivewayCupsSold}/${drivewayDemand} cups)`);
+    interface ActiveStandDemand {
+      id: string;
+      name: string;
+      workerName: string;
+      demand: number;
+      wage: number;
+      isDriveway: boolean;
     }
 
-    s.inv.cups -= drivewayCupsSold;
-    s.inv.ice = Math.max(0, s.inv.ice - drivewayCupsSold * s.recipe.icePerCup);
-    s.inv.lemons = Math.max(0, s.inv.lemons - pitchersUsed * s.recipe.lemonsPerPitcher);
-    s.inv.sugar = Math.max(0, s.inv.sugar - pitchersUsed * s.recipe.sugarPerPitcher);
-
-    const drivewayRevenue = drivewayCupsSold * s.recipe.pricePerCup;
-
-    // 2. Franchise Stands Execution (Phase 2+)
-    let franchiseCupsSold = 0;
-    let franchiseGross = 0;
-    let franchiseWages = 0;
-    const soldOutStands: string[] = [];
+    const activeStands: ActiveStandDemand[] = [
+      { id: 'driveway', name: 'Driveway Stand', workerName: 'You', demand: drivewayDemand, wage: 0, isDriveway: true }
+    ];
 
     if (s.phase >= 2) {
       const efficiencyBonus = s.flags.hasIpadPro ? 1.10 : 1.0;
-
       for (const stand of Object.values(this.franchiseStands)) {
         if (!stand.hired) continue;
-
-        const remByLemons = Math.floor(s.inv.lemons / Math.max(1, s.recipe.lemonsPerPitcher)) * cupsPerPitcher;
-        const remBySugar = Math.floor(s.inv.sugar / Math.max(1, s.recipe.sugarPerPitcher)) * cupsPerPitcher;
-        const remByIce = s.recipe.icePerCup > 0 ? Math.floor(s.inv.ice / s.recipe.icePerCup) : Infinity;
-        const maxStandPour = Math.min(s.inv.cups, remByLemons, remBySugar, remByIce);
-
-        // Safety clause: if stand cannot even pour 1 cup, pause it with ZERO wages charged!
-        if (maxStandPour <= 0) {
-          const missing: string[] = [];
-          if (s.inv.cups <= 0) missing.push('Cups');
-          if (s.inv.lemons < s.recipe.lemonsPerPitcher) missing.push('Lemons');
-          if (s.inv.sugar < s.recipe.sugarPerPitcher) missing.push('Sugar');
-          if (s.recipe.icePerCup > 0 && s.inv.ice < s.recipe.icePerCup) missing.push('Ice');
-          notes.push(`${stand.workerName}'s stand paused (out of ${missing.join(' & ') || 'supplies'})`);
-          soldOutStands.push(stand.name);
-          continue;
-        }
-
-        franchiseWages += stand.dailyWage;
         const standTraffic = Math.floor(stand.baseCapacity * Math.pow(weatherMult * tempFactor, stand.weatherSens) * (0.6 + s.reputation * 0.4) * efficiencyBonus);
         const standDemand = Math.floor(standTraffic * buyProb);
-
-        const sold = Math.min(standDemand, maxStandPour);
-        if (sold < standDemand) {
-          const bottlenecks: string[] = [];
-          if (s.inv.cups === maxStandPour) bottlenecks.push('Cups');
-          if (remByIce === maxStandPour) bottlenecks.push('Ice');
-          if (remByLemons === maxStandPour) bottlenecks.push('Lemons');
-          if (remBySugar === maxStandPour) bottlenecks.push('Sugar');
-          notes.push(`${stand.workerName} sold out early (ran out of ${bottlenecks.join(' & ') || 'supplies'}! Sold ${sold}/${standDemand} cups)`);
-          soldOutStands.push(stand.name);
-        }
-
-        const pitchers = Math.ceil(sold / cupsPerPitcher);
-        s.inv.cups -= sold;
-        s.inv.ice = Math.max(0, s.inv.ice - sold * s.recipe.icePerCup);
-        s.inv.lemons = Math.max(0, s.inv.lemons - pitchers * s.recipe.lemonsPerPitcher);
-        s.inv.sugar = Math.max(0, s.inv.sugar - pitchers * s.recipe.sugarPerPitcher);
-
-        franchiseCupsSold += sold;
-        franchiseGross += sold * s.recipe.pricePerCup;
+        activeStands.push({
+          id: stand.id,
+          name: stand.name,
+          workerName: stand.workerName,
+          demand: standDemand,
+          wage: stand.dailyWage,
+          isDriveway: false
+        });
       }
     }
+
+    const totalCupDemand = activeStands.reduce((sum, st) => sum + st.demand, 0);
+
+    // 2. Compute Maximum Pourable Cups from Central Inventory
+    const cupsPerPitcher = 10 + s.recipe.icePerCup;
+    const maxByCups = s.inv.cups;
+    const maxByIce = s.recipe.icePerCup > 0 ? Math.floor(s.inv.ice / s.recipe.icePerCup) : Infinity;
+    const maxByLemons = Math.floor(s.inv.lemons / Math.max(1, s.recipe.lemonsPerPitcher)) * cupsPerPitcher;
+    const maxBySugar = Math.floor(s.inv.sugar / Math.max(1, s.recipe.sugarPerPitcher)) * cupsPerPitcher;
+    const maxTotalPour = Math.min(totalCupDemand, maxByCups, maxByIce, maxByLemons, maxBySugar);
+
+    const soldOutStands: string[] = [];
+    let drivewayCupsSold = 0;
+    let franchiseCupsSold = 0;
+    let franchiseGross = 0;
+    let franchiseWages = 0;
+
+    if (maxTotalPour <= 0 && totalCupDemand > 0) {
+      // Complete stockout of at least 1 critical supply: stands pause with 0 wages charged!
+      const missing: string[] = [];
+      if (s.inv.cups <= 0) missing.push('Cups');
+      if (s.inv.lemons < s.recipe.lemonsPerPitcher) missing.push('Lemons');
+      if (s.inv.sugar < s.recipe.sugarPerPitcher) missing.push('Sugar');
+      if (s.recipe.icePerCup > 0 && s.inv.ice < s.recipe.icePerCup) missing.push('Ice');
+      notes.push(`All stands paused (out of ${missing.join(' & ') || 'supplies'})! No wages incurred.`);
+      activeStands.forEach(st => { if (!st.isDriveway) soldOutStands.push(st.name); });
+    } else {
+      // Supplies available: allocate proportionally so every stand gets its fair share!
+      const ratio = totalCupDemand > 0 ? Math.min(1.0, maxTotalPour / totalCupDemand) : 0;
+      let remainingPour = maxTotalPour;
+
+      activeStands.forEach((st, idx) => {
+        const sold = (idx === activeStands.length - 1)
+          ? remainingPour
+          : Math.min(st.demand, Math.floor(st.demand * ratio));
+        remainingPour = Math.max(0, remainingPour - sold);
+
+        if (!st.isDriveway) {
+          franchiseWages += st.wage;
+          franchiseCupsSold += sold;
+          franchiseGross += sold * s.recipe.pricePerCup;
+        } else {
+          drivewayCupsSold += sold;
+        }
+
+        if (sold < st.demand) {
+          soldOutStands.push(st.name);
+        }
+      });
+
+      // Deduct exact supplies used across all stands
+      const totalSold = drivewayCupsSold + franchiseCupsSold;
+      const pitchersUsed = Math.ceil(totalSold / cupsPerPitcher);
+
+      s.inv.cups = Math.max(0, s.inv.cups - totalSold);
+      s.inv.ice = Math.max(0, s.inv.ice - totalSold * s.recipe.icePerCup);
+      s.inv.lemons = Math.max(0, s.inv.lemons - pitchersUsed * s.recipe.lemonsPerPitcher);
+      s.inv.sugar = Math.max(0, s.inv.sugar - pitchersUsed * s.recipe.sugarPerPitcher);
+
+      // Report bottleneck if demand was cut short
+      if (maxTotalPour < totalCupDemand) {
+        const bottlenecks: string[] = [];
+        if (maxByCups === maxTotalPour) bottlenecks.push('Cups');
+        if (maxByIce === maxTotalPour) bottlenecks.push('Ice');
+        if (maxByLemons === maxTotalPour) bottlenecks.push('Lemons');
+        if (maxBySugar === maxTotalPour) bottlenecks.push('Sugar');
+        notes.push(`Stands sold out early: out of ${bottlenecks.join(' & ') || 'supplies'}! (Sold ${totalSold}/${totalCupDemand} cups across ${activeStands.length} stands)`);
+      }
+    }
+
+    const drivewayRevenue = drivewayCupsSold * s.recipe.pricePerCup;
     const franchiseNet = franchiseGross - franchiseWages;
 
     // 3. Wholesale Bottling Accounts (Phase 3+)
