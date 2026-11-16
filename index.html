@@ -546,25 +546,39 @@
             <div style="font-size: 11px; color: #888; margin-bottom: 4px;">${standNames}</div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2px 8px; font-size: 11px;">
               <div style="color: ${lLow ? '#f87171' : '#a3e635'};">
-                Lemons: ${s.inv.lemons} / ~${est.neededLemons} ${lLow ? '⚠️ Need More' : '✓'}
+                Lemons: ${s.inv.lemons} / ~${est.neededLemons} ${lLow ? `⚠️ Need ${est.neededLemons - s.inv.lemons} more` : '✓'}
               </div>
               <div style="color: ${sLow ? '#f87171' : '#a3e635'};">
-                Sugar: ${s.inv.sugar} / ~${est.neededSugar} ${sLow ? '⚠️ Need More' : '✓'}
+                Sugar: ${s.inv.sugar} / ~${est.neededSugar} ${sLow ? `⚠️ Need ${est.neededSugar - s.inv.sugar} more` : '✓'}
               </div>
               <div style="color: ${iLow ? '#f87171' : '#a3e635'};">
-                Ice: ${s.inv.ice} / ~${est.neededIce} ${iLow ? '⚠️ Need More' : '✓'}
+                Ice: ${s.inv.ice} / ~${est.neededIce} ${iLow ? `⚠️ Need ${est.neededIce - s.inv.ice} more` : '✓'}
               </div>
               <div style="color: ${cLow ? '#f87171' : '#a3e635'};">
-                Cups: ${s.inv.cups} / ~${est.neededCups} ${cLow ? '⚠️ Need More' : '✓'}
+                Cups: ${s.inv.cups} / ~${est.neededCups} ${cLow ? `⚠️ Need ${est.neededCups - s.inv.cups} more` : '✓'}
               </div>
             </div>
           </div>
         `;
       }
 
-      document.getElementById('readout-inventory-text').textContent =
-        `Lemons: ${s.inv.lemons} | Sugar: ${s.inv.sugar} | Ice: ${s.inv.ice} | Cups: ${s.inv.cups}` +
-        (s.phase >= 3 ? ` | Glass Bottles: ${s.inv.bottles}` : '');
+      const cap = engine.getMaxPourableCups();
+      document.getElementById('readout-inventory-text').innerHTML = `
+        <div>
+          <strong>Pantry Stock:</strong>
+          Lemons: <strong>${s.inv.lemons}</strong> (~${cap.byLemons}c) |
+          Sugar: <strong>${s.inv.sugar}</strong> (~${cap.bySugar}c) |
+          Ice: <strong>${s.inv.ice}</strong> (${cap.byIce}c) |
+          Cups: <strong>${s.inv.cups}</strong> (${cap.byCups}c)
+          ${s.phase >= 3 ? ` | Bottles: ${s.inv.bottles}` : ''}
+        </div>
+        <div style="margin-top: 3px; font-size: 11px;">
+          🥤 <strong>Current Stock Can Pour:</strong> <strong style="color: ${cap.maxCups >= est.totalEstCups ? '#4ade80' : '#ffd700'};">${cap.maxCups} cups max</strong>
+          ${cap.maxCups < est.totalEstCups
+            ? `<span style="color: #f87171;">(⚠️ Bottleneck: ${cap.bottleneck} — today's demand is ~${est.totalEstCups}!)</span>`
+            : `<span style="color: #4ade80;">(Fully covers today's demand ✓)</span>`}
+        </div>
+      `;
 
       const discText = s.flags.hasCostcoDiscount ? ' (Costco -35%)' : '';
       const lBaseCost = s.flags.hasCostcoDiscount ? 5.20 : 8.00;
@@ -582,7 +596,7 @@
       const bikeBonus = s.flags.hasMountainBike ? 1.25 : 1.0;
       const lQty = Math.round(24 * bikeBonus) * buyPackMult;
       const sQty = Math.round(20 * bikeBonus) * buyPackMult;
-      const iQty = Math.round(100 * bikeBonus) * buyPackMult;
+      const iQty = Math.round(200 * bikeBonus) * buyPackMult;
       const cQty = Math.round(50 * bikeBonus) * buyPackMult;
       const bQty = Math.round(25 * bikeBonus) * buyPackMult;
 

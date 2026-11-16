@@ -212,6 +212,15 @@ export interface DailyDemandEstimate {
   neededCups: number;
 }
 
+export interface PourableCapacity {
+  maxCups: number;
+  bottleneck: string;
+  byCups: number;
+  byIce: number;
+  byLemons: number;
+  bySugar: number;
+}
+
 export interface DaySummary {
   day: number;
   tempF: number;
@@ -384,7 +393,7 @@ export class LemonadeEngine {
       totalCupsSold: new BigNum(0, 0),
       totalRevenueEarned: new BigNum(0, 0),
 
-      inv: { lemons: 24, sugar: 20, ice: 80, cups: 50, bottles: 0 },
+      inv: { lemons: 24, sugar: 20, ice: 200, cups: 50, bottles: 0 },
       recipe: { lemonsPerPitcher: 4, sugarPerPitcher: 4, icePerCup: 4, pricePerCup: 2.00 },
 
       flags: {
@@ -917,7 +926,7 @@ export class LemonadeEngine {
     const catalog = {
       lemons:  { qty: Math.round(24 * bikeBonus),  cost: +(8.00 * discount).toFixed(2) },
       sugar:   { qty: Math.round(20 * bikeBonus),  cost: +(6.00 * discount).toFixed(2) },
-      ice:     { qty: Math.round(100 * bikeBonus), cost: +(4.00 * discount).toFixed(2) },
+      ice:     { qty: Math.round(200 * bikeBonus), cost: +(4.00 * discount).toFixed(2) },
       cups:    { qty: Math.round(50 * bikeBonus),  cost: +(4.00 * discount).toFixed(2) },
       bottles: { qty: Math.round(25 * bikeBonus),  cost: +(10.00 * discount).toFixed(2) }
     }[item];
@@ -1254,6 +1263,31 @@ export class LemonadeEngine {
     return { success: true, message: `Restocked all supplies for $${totalCost.toFixed(2)}!` };
   }
 
+  public getMaxPourableCups(): PourableCapacity {
+    const s = this.state;
+    const cupsPerPitcher = 10 + s.recipe.icePerCup;
+    const byCups = s.inv.cups;
+    const byIce = s.recipe.icePerCup > 0 ? Math.floor(s.inv.ice / s.recipe.icePerCup) : 999999;
+    const byLemons = Math.floor(s.inv.lemons / Math.max(1, s.recipe.lemonsPerPitcher)) * cupsPerPitcher;
+    const bySugar = Math.floor(s.inv.sugar / Math.max(1, s.recipe.sugarPerPitcher)) * cupsPerPitcher;
+    const maxCups = Math.min(byCups, byIce, byLemons, bySugar);
+
+    const bottlenecks: string[] = [];
+    if (byCups === maxCups) bottlenecks.push('Cups');
+    if (byIce === maxCups) bottlenecks.push(`Ice (${s.recipe.icePerCup} cubes/cup)`);
+    if (byLemons === maxCups) bottlenecks.push('Lemons');
+    if (bySugar === maxCups) bottlenecks.push('Sugar');
+
+    return {
+      maxCups,
+      bottleneck: bottlenecks.join(' & '),
+      byCups,
+      byIce,
+      byLemons,
+      bySugar
+    };
+  }
+
   // ==========================================================================
   // MAIN DAILY BUSINESS SIMULATION (P&L EXECUTION)
   // ==========================================================================
@@ -1305,10 +1339,13 @@ export class LemonadeEngine {
       { id: 'driveway', name: 'Driveway Stand', workerName: 'You', demand: drivewayDemand, wage: 0, isDriveway: true }
     ];
 
+    let franchiseWages = 0;
     if (s.phase >= 2) {
       const efficiencyBonus = s.flags.hasIpadPro ? 1.10 : 1.0;
       for (const stand of Object.values(this.franchiseStands)) {
         if (!stand.hired) continue;
+        // Payroll commitment: worker wages are owed regardless of supply stockouts
+        franchiseWages += stand.dailyWage;
         const standTraffic = Math.floor(stand.baseCapacity * Math.pow(weatherMult * tempFactor, stand.weatherSens) * (0.6 + s.reputation * 0.4) * efficiencyBonus);
         const standDemand = Math.floor(standTraffic * buyProb);
         activeStands.push({
@@ -1336,16 +1373,15 @@ export class LemonadeEngine {
     let drivewayCupsSold = 0;
     let franchiseCupsSold = 0;
     let franchiseGross = 0;
-    let franchiseWages = 0;
 
     if (maxTotalPour <= 0 && totalCupDemand > 0) {
-      // Complete stockout of at least 1 critical supply: stands pause with 0 wages charged!
+      // Complete stockout of at least 1 critical supply: stands sell 0 cups, but payroll must still be paid!
       const missing: string[] = [];
       if (s.inv.cups <= 0) missing.push('Cups');
       if (s.inv.lemons < s.recipe.lemonsPerPitcher) missing.push('Lemons');
       if (s.inv.sugar < s.recipe.sugarPerPitcher) missing.push('Sugar');
       if (s.recipe.icePerCup > 0 && s.inv.ice < s.recipe.icePerCup) missing.push('Ice');
-      notes.push(`All stands paused (out of ${missing.join(' & ') || 'supplies'})! No wages incurred.`);
+      notes.push(`All stands had 0 sales (out of ${missing.join(' & ') || 'supplies'})! Full worker wages paid: -$${franchiseWages.toFixed(2)}.`);
       activeStands.forEach(st => { if (!st.isDriveway) soldOutStands.push(st.name); });
     } else {
       // Supplies available: allocate proportionally so every stand gets its fair share!
@@ -1359,7 +1395,6 @@ export class LemonadeEngine {
         remainingPour = Math.max(0, remainingPour - sold);
 
         if (!st.isDriveway) {
-          franchiseWages += st.wage;
           franchiseCupsSold += sold;
           franchiseGross += sold * s.recipe.pricePerCup;
         } else {
@@ -1383,11 +1418,11 @@ export class LemonadeEngine {
       // Report bottleneck if demand was cut short
       if (maxTotalPour < totalCupDemand) {
         const bottlenecks: string[] = [];
-        if (maxByCups === maxTotalPour) bottlenecks.push('Cups');
-        if (maxByIce === maxTotalPour) bottlenecks.push('Ice');
-        if (maxByLemons === maxTotalPour) bottlenecks.push('Lemons');
-        if (maxBySugar === maxTotalPour) bottlenecks.push('Sugar');
-        notes.push(`Stands sold out early: out of ${bottlenecks.join(' & ') || 'supplies'}! (Sold ${totalSold}/${totalCupDemand} cups across ${activeStands.length} stands)`);
+        if (maxByCups === maxTotalPour) bottlenecks.push(`Cups (had ${s.inv.cups}, needed ${totalCupDemand})`);
+        if (maxByIce === maxTotalPour) bottlenecks.push(`Ice (${s.inv.ice} cubes only poured ${maxByIce} cups at ${s.recipe.icePerCup}/cup; needed ${totalCupDemand * s.recipe.icePerCup})`);
+        if (maxByLemons === maxTotalPour) bottlenecks.push(`Lemons (had ${s.inv.lemons}, needed ${Math.ceil(totalCupDemand / cupsPerPitcher) * s.recipe.lemonsPerPitcher})`);
+        if (maxBySugar === maxTotalPour) bottlenecks.push(`Sugar (had ${s.inv.sugar}, needed ${Math.ceil(totalCupDemand / cupsPerPitcher) * s.recipe.sugarPerPitcher})`);
+        notes.push(`Stands sold out early: out of ${bottlenecks.join(' & ') || 'supplies'}! Sold ${totalSold}/${totalCupDemand} cups. Leftover supplies could not be poured without matching ingredients.`);
       }
     }
 
