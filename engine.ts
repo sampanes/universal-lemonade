@@ -195,6 +195,23 @@ export interface LifestyleTrophy {
   phaseRequired: GamePhase;
 }
 
+export interface CustomerReview {
+  stars: number;
+  quote: string;
+  reviewer: string;
+  sentiment: 'positive' | 'mixed' | 'negative';
+}
+
+export interface DailyDemandEstimate {
+  estDrivewayCups: number;
+  franchiseEstimates: { id: string; name: string; workerName: string; estCups: number }[];
+  totalEstCups: number;
+  neededLemons: number;
+  neededSugar: number;
+  neededIce: number;
+  neededCups: number;
+}
+
 export interface DaySummary {
   day: number;
   tempF: number;
@@ -230,6 +247,7 @@ export interface DaySummary {
   netProfit: number;
 
   recipeQuality: number;
+  reviews: CustomerReview[];
   notes: string[];
 }
 
@@ -241,6 +259,9 @@ export interface GameState {
   weather: WeatherCondition;
   reputation: number;        // [0.1, 1.0]
   bestRecipeQuality: number;
+  avgRecipeQuality: number;
+  totalQualityDays: number;
+  totalQualitySum: number;
   brandMultiplier: number;
   gameWon: boolean;
 
@@ -271,6 +292,8 @@ export interface GameState {
     hasCargoWagon: boolean;
     hasCommercialLabeler: boolean;
     weatherLocked95F: boolean;
+    hasAutoIce: boolean;
+    autoIceEnabled: boolean;
 
     // Lifestyle Trophy Flags
     hasSkateboard: boolean;
@@ -351,6 +374,9 @@ export class LemonadeEngine {
       weather: 'SUNNY',
       reputation: 0.5,
       bestRecipeQuality: 0,
+      avgRecipeQuality: 0,
+      totalQualityDays: 0,
+      totalQualitySum: 0,
       brandMultiplier: 1.0,
       gameWon: false,
 
@@ -368,6 +394,8 @@ export class LemonadeEngine {
         hasCargoWagon: false,
         hasCommercialLabeler: false,
         weatherLocked95F: false,
+        hasAutoIce: false,
+        autoIceEnabled: false,
 
         hasSkateboard: false,
         hasMountainBike: false,
@@ -487,6 +515,19 @@ export class LemonadeEngine {
         effect: (e) => { e.state.flags.hasCooler = true; e.log('Upgrade: Insulated cooler bought. Ice no longer melts overnight!'); }
       },
       {
+        id: 'auto_ice_dispenser',
+        name: 'Digital Weather-Synced Ice Dispenser',
+        desc: 'Reads the morning thermometer and automatically dials in ideal ice cubes per cup! Includes an Auto toggle.',
+        phase: 1, costCash: 60, purchased: false,
+        unlocked: (s) => s.phase >= 1 && s.day >= 3,
+        effect: (e) => {
+          e.state.flags.hasAutoIce = true;
+          e.state.flags.autoIceEnabled = true;
+          e.state.recipe.icePerCup = e.computeIdealIce(e.state.tempF);
+          e.log('Project: Digital Ice Dispenser installed! Automatically calibrates ice to the daily weather forecast.');
+        }
+      },
+      {
         id: 'fridge',
         name: 'Garage Mini-Fridge',
         desc: 'Eliminates overnight lemon spoilage (+10% Reputation).',
@@ -499,7 +540,7 @@ export class LemonadeEngine {
         name: 'Neighborhood Expansion (Phase 2)',
         desc: 'Print flyers, buy folding tables, and start hiring neighborhood kids to run stands!',
         phase: 1, costCash: 150, purchased: false,
-        unlocked: (s) => s.phase === 1 && s.cash.gte(100) && s.bestRecipeQuality >= 0.80,
+        unlocked: (s) => s.phase === 1 && s.cash.gte(100) && (s.bestRecipeQuality >= 0.80 || (s.avgRecipeQuality || 0) >= 0.75),
         effect: (e) => {
           e.state.phase = 2;
           e.log('PHASE 2 UNLOCKED: You are now a manager! Hire neighborhood kids in the Franchise tab.');
@@ -1000,11 +1041,230 @@ export class LemonadeEngine {
   }
 
   // ==========================================================================
+  // CUSTOMER REVIEWS & DEMAND ESTIMATION
+  // ==========================================================================
+  public generateCustomerReviews(info: {
+    tempF: number;
+    quality: number;
+    pricePerCup: number;
+    fairPrice: number;
+    drivewayCupsSold: number;
+    franchiseCupsSold: number;
+    soldOutStands: string[];
+  }): CustomerReview[] {
+    const reviews: CustomerReview[] = [];
+    const s = this.state;
+    const { lemonsPerPitcher: L, sugarPerPitcher: S, icePerCup: I } = s.recipe;
+    const idealI = this.computeIdealIce(info.tempF);
+    const priceRatio = info.pricePerCup / info.fairPrice;
+
+    // 1. TASTE / RECIPE REVIEW
+    if (L - S >= 2) {
+      reviews.push({
+        stars: 1,
+        quote: "My whole face puckered up! Did you forget the sugar?!",
+        reviewer: "Elm St. neighbor",
+        sentiment: "negative"
+      });
+    } else if (S - L >= 2) {
+      reviews.push({
+        stars: 2,
+        quote: "Liquid sugar shock! Tastes more like melted candy than lemonade.",
+        reviewer: "Dentist on Elm St.",
+        sentiment: "negative"
+      });
+    } else if (idealI - I >= 2) {
+      reviews.push({
+        stars: 2,
+        quote: info.tempF >= 80
+          ? `It's ${info.tempF}°F outside and this was lukewarm... needed ice!`
+          : "Barely cool, could definitely use more ice cubes.",
+        reviewer: "Pool lifeguard",
+        sentiment: "negative"
+      });
+    } else if (I - idealI >= 3) {
+      reviews.push({
+        stars: 2,
+        quote: "Cup was 90% ice cubes! More ice than actual lemonade.",
+        reviewer: "Little League coach",
+        sentiment: "negative"
+      });
+    } else if (L <= 2 && S <= 2) {
+      reviews.push({
+        stars: 1,
+        quote: "Tastes mostly like tap water. Where are the lemons?",
+        reviewer: "Dog walker",
+        sentiment: "negative"
+      });
+    } else if (info.quality >= 0.88) {
+      const praises = [
+        { quote: "Absolute perfection! Crisp, ice-cold, and perfectly tangy.", reviewer: "Local foodie" },
+        { quote: "Best lemonade on the block! The recipe is dialed in 100%.", reviewer: "Mail carrier" },
+        { quote: "Five stars! Whatever you did to this batch, don't change a thing!", reviewer: "Little League parent" },
+        { quote: "The golden ratio! Crisp, sweet, and wonderfully refreshing.", reviewer: "Bicycle kid" }
+      ];
+      const picked = praises[Math.floor(this.rand() * praises.length)];
+      reviews.push({
+        stars: 5,
+        quote: picked.quote,
+        reviewer: picked.reviewer,
+        sentiment: "positive"
+      });
+    } else {
+      reviews.push({
+        stars: 4,
+        quote: "Solid, refreshing cup of lemonade. Hit the spot!",
+        reviewer: "Next-door neighbor",
+        sentiment: "positive"
+      });
+    }
+
+    // 2. PRICE / VALUE REVIEW
+    if (priceRatio >= 1.40) {
+      reviews.push({
+        stars: 1,
+        quote: `$${info.pricePerCup.toFixed(2)} for a paper cup?! Highway robbery!`,
+        reviewer: "Thrifty neighbor",
+        sentiment: "negative"
+      });
+    } else if (priceRatio >= 1.18) {
+      reviews.push({
+        stars: 2,
+        quote: `$${info.pricePerCup.toFixed(2)} is a bit steep for kid lemonade, but I was thirsty.`,
+        reviewer: "Dog walker",
+        sentiment: "mixed"
+      });
+    } else if (priceRatio <= 0.70) {
+      reviews.push({
+        stars: 5,
+        quote: `Only $${info.pricePerCup.toFixed(2)}?! Best deal in town, I bought two!`,
+        reviewer: "Teen on a scooter",
+        sentiment: "positive"
+      });
+    } else {
+      reviews.push({
+        stars: 4,
+        quote: "Fair price for cold fresh lemonade on a day like this.",
+        reviewer: "Neighborhood regular",
+        sentiment: "positive"
+      });
+    }
+
+    // 3. OPTIONAL STOCKOUT REVIEW
+    if (info.soldOutStands.length > 0) {
+      reviews.push({
+        stars: 2,
+        quote: `Walked over to ${info.soldOutStands[0]} but they were sold out of supplies early!`,
+        reviewer: "Thirsty customer",
+        sentiment: "negative"
+      });
+    }
+
+    return reviews;
+  }
+
+  public getDailyDemandEstimate(): DailyDemandEstimate {
+    const s = this.state;
+    const weatherMult = s.weather === 'SUNNY' ? 1.0 : s.weather === 'CLOUDY' ? 0.65 : 0.25;
+    const tempFactor = Math.max(0.3, 1 + 0.8 * ((s.tempF - 70) / 30));
+    const quality = this.computeRecipeQuality(s.tempF);
+    const fairPrice = 2.00 * (1 + 0.02 * (s.tempF - 70));
+    const priceRatio = fairPrice / Math.max(0.25, s.recipe.pricePerCup);
+    const buyProb = Math.max(0, Math.min(1, quality * Math.pow(priceRatio, 1.8)));
+
+    const estDriveway = Math.floor(65 * weatherMult * tempFactor * (0.5 + s.reputation) * buyProb);
+    let totalCups = estDriveway;
+
+    const franchiseEstimates: { id: string; name: string; workerName: string; estCups: number }[] = [];
+    if (s.phase >= 2) {
+      const efficiencyBonus = s.flags.hasIpadPro ? 1.10 : 1.0;
+      for (const stand of Object.values(this.franchiseStands)) {
+        if (!stand.hired) continue;
+        const standTraffic = Math.floor(stand.baseCapacity * Math.pow(weatherMult * tempFactor, stand.weatherSens) * (0.6 + s.reputation * 0.4) * efficiencyBonus);
+        const estStand = Math.floor(standTraffic * buyProb);
+        franchiseEstimates.push({ id: stand.id, name: stand.name, workerName: stand.workerName, estCups: estStand });
+        totalCups += estStand;
+      }
+    }
+
+    const cupsPerPitcher = 10 + s.recipe.icePerCup;
+    const pitchers = Math.ceil(totalCups / cupsPerPitcher);
+    const neededLemons = pitchers * s.recipe.lemonsPerPitcher;
+    const neededSugar = pitchers * s.recipe.sugarPerPitcher;
+    const neededIce = totalCups * s.recipe.icePerCup;
+    const neededCups = totalCups;
+
+    return {
+      estDrivewayCups: estDriveway,
+      franchiseEstimates,
+      totalEstCups: totalCups,
+      neededLemons,
+      neededSugar,
+      neededIce,
+      neededCups
+    };
+  }
+
+  public autoRestockForToday(): { success: boolean; message: string } {
+    const est = this.getDailyDemandEstimate();
+    const s = this.state;
+    const discount = s.flags.hasCostcoDiscount ? 0.65 : 1.0;
+    const bikeBonus = s.flags.hasMountainBike ? 1.25 : 1.0;
+
+    const packSizes = {
+      lemons: Math.round(24 * bikeBonus),
+      sugar: Math.round(20 * bikeBonus),
+      ice: Math.round(100 * bikeBonus),
+      cups: Math.round(50 * bikeBonus)
+    };
+
+    const packCosts = {
+      lemons: +(8.00 * discount).toFixed(2),
+      sugar: +(6.00 * discount).toFixed(2),
+      ice: +(4.00 * discount).toFixed(2),
+      cups: +(4.00 * discount).toFixed(2)
+    };
+
+    const defL = Math.max(0, est.neededLemons - s.inv.lemons);
+    const defS = Math.max(0, est.neededSugar - s.inv.sugar);
+    const defI = Math.max(0, est.neededIce - s.inv.ice);
+    const defC = Math.max(0, est.neededCups - s.inv.cups);
+
+    const packsL = Math.ceil(defL / packSizes.lemons);
+    const packsS = Math.ceil(defS / packSizes.sugar);
+    const packsI = Math.ceil(defI / packSizes.ice);
+    const packsC = Math.ceil(defC / packSizes.cups);
+
+    const totalCost = packsL * packCosts.lemons + packsS * packCosts.sugar + packsI * packCosts.ice + packsC * packCosts.cups;
+
+    if (totalCost === 0) {
+      return { success: true, message: "Inventory is already fully stocked for today's forecast!" };
+    }
+
+    if (s.cash.lt(totalCost)) {
+      return { success: false, message: `Need $${totalCost.toFixed(2)} to restock all items, but only have $${s.cash.format()}!` };
+    }
+
+    if (packsL > 0) this.buySupplies('lemons', packsL);
+    if (packsS > 0) this.buySupplies('sugar', packsS);
+    if (packsI > 0) this.buySupplies('ice', packsI);
+    if (packsC > 0) this.buySupplies('cups', packsC);
+
+    this.log(`Auto-Restocked for today: bought supplies for $${totalCost.toFixed(2)}.`);
+    return { success: true, message: `Restocked all supplies for $${totalCost.toFixed(2)}!` };
+  }
+
+  // ==========================================================================
   // MAIN DAILY BUSINESS SIMULATION (P&L EXECUTION)
   // ==========================================================================
   public runDay(): DaySummary {
     const s = this.state;
     const notes: string[] = [];
+
+    // Auto-Ice Dispenser: if unlocked and enabled, calibrate ice cubes to forecast
+    if (s.flags.hasAutoIce && s.flags.autoIceEnabled) {
+      s.recipe.icePerCup = this.computeIdealIce(s.tempF);
+    }
 
     // Lemon grove perk: free morning lemons!
     if (s.flags.hasLemonGrove) {
@@ -1021,6 +1281,9 @@ export class LemonadeEngine {
     const tempFactor = Math.max(0.3, 1 + 0.8 * ((s.tempF - 70) / 30));
     const quality = this.computeRecipeQuality(s.tempF);
     s.bestRecipeQuality = Math.max(s.bestRecipeQuality, quality);
+    s.totalQualityDays = (s.totalQualityDays || 0) + 1;
+    s.totalQualitySum = (s.totalQualitySum || 0) + quality;
+    s.avgRecipeQuality = s.totalQualitySum / s.totalQualityDays;
 
     // 1. Driveway Stand Execution
     const drivewayTraffic = Math.floor(65 * weatherMult * tempFactor * (0.5 + s.reputation));
@@ -1039,6 +1302,17 @@ export class LemonadeEngine {
     const drivewayCupsSold = Math.min(drivewayDemand, maxPourableDriveway);
     const pitchersUsed = Math.ceil(drivewayCupsSold / cupsPerPitcher);
 
+    // If driveway ran out of supplies before meeting demand:
+    if (drivewayDemand > 0 && drivewayCupsSold < drivewayDemand) {
+      const shortages: string[] = [];
+      if (s.inv.cups === maxPourableDriveway) shortages.push('Cups');
+      if (maxByIce === maxPourableDriveway) shortages.push('Ice');
+      if (maxByLemons === maxPourableDriveway) shortages.push('Lemons');
+      if (maxBySugar === maxPourableDriveway) shortages.push('Sugar');
+      const itemStr = shortages.length > 0 ? shortages.join(' & ') : 'supplies';
+      notes.push(`Driveway stand sold out early (ran out of ${itemStr}! Sold ${drivewayCupsSold}/${drivewayDemand} cups)`);
+    }
+
     s.inv.cups -= drivewayCupsSold;
     s.inv.ice = Math.max(0, s.inv.ice - drivewayCupsSold * s.recipe.icePerCup);
     s.inv.lemons = Math.max(0, s.inv.lemons - pitchersUsed * s.recipe.lemonsPerPitcher);
@@ -1050,6 +1324,7 @@ export class LemonadeEngine {
     let franchiseCupsSold = 0;
     let franchiseGross = 0;
     let franchiseWages = 0;
+    const soldOutStands: string[] = [];
 
     if (s.phase >= 2) {
       const efficiencyBonus = s.flags.hasIpadPro ? 1.10 : 1.0;
@@ -1057,9 +1332,20 @@ export class LemonadeEngine {
       for (const stand of Object.values(this.franchiseStands)) {
         if (!stand.hired) continue;
 
-        // Safety clause: stand pauses without operating supplies, preventing zero-sales payroll drains
-        if (s.inv.cups <= 0 || s.inv.lemons <= 0) {
-          notes.push(`${stand.workerName}'s stand paused (waiting on fresh supplies)`);
+        const remByLemons = Math.floor(s.inv.lemons / Math.max(1, s.recipe.lemonsPerPitcher)) * cupsPerPitcher;
+        const remBySugar = Math.floor(s.inv.sugar / Math.max(1, s.recipe.sugarPerPitcher)) * cupsPerPitcher;
+        const remByIce = s.recipe.icePerCup > 0 ? Math.floor(s.inv.ice / s.recipe.icePerCup) : Infinity;
+        const maxStandPour = Math.min(s.inv.cups, remByLemons, remBySugar, remByIce);
+
+        // Safety clause: if stand cannot even pour 1 cup, pause it with ZERO wages charged!
+        if (maxStandPour <= 0) {
+          const missing: string[] = [];
+          if (s.inv.cups <= 0) missing.push('Cups');
+          if (s.inv.lemons < s.recipe.lemonsPerPitcher) missing.push('Lemons');
+          if (s.inv.sugar < s.recipe.sugarPerPitcher) missing.push('Sugar');
+          if (s.recipe.icePerCup > 0 && s.inv.ice < s.recipe.icePerCup) missing.push('Ice');
+          notes.push(`${stand.workerName}'s stand paused (out of ${missing.join(' & ') || 'supplies'})`);
+          soldOutStands.push(stand.name);
           continue;
         }
 
@@ -1067,14 +1353,15 @@ export class LemonadeEngine {
         const standTraffic = Math.floor(stand.baseCapacity * Math.pow(weatherMult * tempFactor, stand.weatherSens) * (0.6 + s.reputation * 0.4) * efficiencyBonus);
         const standDemand = Math.floor(standTraffic * buyProb);
 
-        const remByLemons = Math.floor(s.inv.lemons / Math.max(1, s.recipe.lemonsPerPitcher)) * cupsPerPitcher;
-        const remBySugar = Math.floor(s.inv.sugar / Math.max(1, s.recipe.sugarPerPitcher)) * cupsPerPitcher;
-        const remByIce = s.recipe.icePerCup > 0 ? Math.floor(s.inv.ice / s.recipe.icePerCup) : Infinity;
-        const maxStandPour = Math.min(s.inv.cups, remByLemons, remBySugar, remByIce);
-
         const sold = Math.min(standDemand, maxStandPour);
         if (sold < standDemand) {
-          notes.push(`${stand.workerName} sold out early (ran out of supplies)!`);
+          const bottlenecks: string[] = [];
+          if (s.inv.cups === maxStandPour) bottlenecks.push('Cups');
+          if (remByIce === maxStandPour) bottlenecks.push('Ice');
+          if (remByLemons === maxStandPour) bottlenecks.push('Lemons');
+          if (remBySugar === maxStandPour) bottlenecks.push('Sugar');
+          notes.push(`${stand.workerName} sold out early (ran out of ${bottlenecks.join(' & ') || 'supplies'}! Sold ${sold}/${standDemand} cups)`);
+          soldOutStands.push(stand.name);
         }
 
         const pitchers = Math.ceil(sold / cupsPerPitcher);
@@ -1114,7 +1401,11 @@ export class LemonadeEngine {
           wholesaleGross += maxBottles * acc.wholesalePrice;
           packagingCosts += maxBottles * (acc.packagingCost * civicCostDiscount);
         } else if (demand > 0) {
-          notes.push(`Could not fill wholesale order for ${acc.name} (out of bottles/lemons)!`);
+          const missing: string[] = [];
+          if (s.inv.bottles <= 0) missing.push('Glass Bottles');
+          if (s.inv.lemons < 1) missing.push('Lemons');
+          if (s.inv.sugar < 1) missing.push('Sugar');
+          notes.push(`Could not fill wholesale order for ${acc.name} (out of ${missing.join(' & ') || 'supplies'})!`);
         }
       }
     }
@@ -1143,13 +1434,13 @@ export class LemonadeEngine {
 
     // Overnight Spoilage
     if (!s.flags.hasCooler && s.inv.ice > 0) {
-      notes.push(`${s.inv.ice} ice cubes melted overnight`);
+      notes.push(`${s.inv.ice} ice cubes melted overnight (Tip: buy 50-Qt Cooler to keep ice cold)`);
       s.inv.ice = 0;
     }
     if (!s.flags.hasMiniFridge && s.inv.lemons > 0 && !s.flags.hasLemonGrove) {
       const rotted = Math.ceil(s.inv.lemons * 0.20);
       s.inv.lemons -= rotted;
-      notes.push(`${rotted} lemons rotted`);
+      notes.push(`${rotted} lemons rotted (Tip: buy Mini-Fridge to keep lemons fresh)`);
     }
 
     // P&L Consolidation
@@ -1178,6 +1469,17 @@ export class LemonadeEngine {
       s.reputation = Math.max(0.1, Math.min(1.0, s.reputation + (quality - 0.65) * 0.12));
     }
 
+    // Generate Customer Reviews for the day
+    const reviews = this.generateCustomerReviews({
+      tempF: s.tempF,
+      quality,
+      pricePerCup: s.recipe.pricePerCup,
+      fairPrice,
+      drivewayCupsSold,
+      franchiseCupsSold,
+      soldOutStands
+    });
+
     const summary: DaySummary = {
       day: s.day,
       tempF: s.tempF,
@@ -1200,12 +1502,20 @@ export class LemonadeEngine {
       totalExpenses,
       netProfit,
       recipeQuality: quality,
+      reviews,
       notes: notes.length ? notes : ['All operations ran smoothly!']
     };
 
     s.lastDaySummary = summary;
     s.day += 1;
     s.elapsedSec += 30;
+
+    // Log the top customer review
+    if (reviews.length > 0) {
+      const r = reviews[0];
+      this.log(`Review: ${'★'.repeat(r.stars)} "${r.quote}" — ${r.reviewer}`);
+    }
+
     this.rollNextForecast();
     if (s.currentChore) {
       s.currentChore.remainingSec = 0;

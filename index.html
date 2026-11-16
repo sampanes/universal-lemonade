@@ -270,7 +270,10 @@
         </div>
       </div>
       <div class="stat">
-        <span>Ice per Cup: <strong><span id="lbl-ice">4</span></strong></span>
+        <span>
+          Ice per Cup: <strong><span id="lbl-ice">4</span></strong>
+          <span id="autoice-container"></span>
+        </span>
         <div>
           <button id="btn-ice-down" style="min-width:38px;">-</button>
           <button id="btn-ice-up" style="min-width:38px;">+</button>
@@ -282,12 +285,23 @@
     <div class="panel">
       <h3 id="panel2-title">2. Operations & Expansion</h3>
       <div id="readout-weather"></div>
+      <div id="readout-demand-estimate"></div>
       
-      <div style="font-weight: bold; margin: 8px 0 4px 0;">Central Inventory & Supplies:</div>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin: 8px 0 4px 0;">
+        <span style="font-weight: bold;">Central Supplies:</span>
+        <div id="pack-mult-controls" style="display:flex; gap:2px;">
+          <button id="btn-mult-1" style="padding:2px 8px; font-size:11px; min-height:26px;">1x</button>
+          <button id="btn-mult-5" style="padding:2px 8px; font-size:11px; min-height:26px;">5x</button>
+          <button id="btn-mult-10" style="padding:2px 8px; font-size:11px; min-height:26px;">10x</button>
+        </div>
+      </div>
       <div id="readout-inventory-text" style="font-size: 12px; color: #ccc;"></div>
       <div class="stock-grid" id="stock-buttons"></div>
+      <button id="btn-quick-restock" style="width:100%; margin: 2px 0 6px 0; padding:8px; font-size:12px; background:#1e3a5f; border:1px solid #3b82f6; color:#93c5fd; font-weight:bold; border-radius:4px; cursor:pointer;">
+        📦 Restock Needed Supplies for Today
+      </button>
 
-      <button id="btn-run-day" style="width:100%; margin-top:8px; padding:14px; background:#1e4620; font-weight:bold; min-height:48px; font-size:14px; border-color:#4ade80;">
+      <button id="btn-run-day" style="width:100%; margin-top:4px; padding:14px; background:#1e4620; font-weight:bold; min-height:48px; font-size:14px; border-color:#4ade80;">
         ☀️ RUN DAY SIMULATION
       </button>
 
@@ -339,6 +353,7 @@
     let autoDay = false;
     let autoDayTimer = 0;
     let victoryDismissed = false;
+    let buyPackMult = 1;
 
     // Header Speed Controls
     function setSpeed(s) {
@@ -353,6 +368,37 @@
     document.getElementById('btn-speed-10').onclick = () => setSpeed(10);
     document.getElementById('btn-speed-50').onclick = () => setSpeed(50);
     setSpeed(1);
+
+    // Pack Multiplier Controls
+    function setPackMult(m) {
+      buyPackMult = m;
+      [1, 5, 10].forEach(v => {
+        const btn = document.getElementById(`btn-mult-${v}`);
+        if (btn) {
+          btn.style.borderColor = (v === m) ? '#ffd700' : '#555';
+          btn.style.color = (v === m) ? '#ffd700' : '#888';
+          btn.style.background = (v === m) ? '#2a2200' : '#222';
+        }
+      });
+    }
+    document.getElementById('btn-mult-1').onclick = () => setPackMult(1);
+    document.getElementById('btn-mult-5').onclick = () => setPackMult(5);
+    document.getElementById('btn-mult-10').onclick = () => setPackMult(10);
+    setPackMult(1);
+
+    document.getElementById('btn-quick-restock').onclick = () => {
+      const res = engine.autoRestockForToday();
+      if (!res.success) {
+        alert(res.message);
+      }
+    };
+
+    window._toggleAutoIce = () => {
+      engine.state.flags.autoIceEnabled = !engine.state.flags.autoIceEnabled;
+      if (engine.state.flags.autoIceEnabled) {
+        engine.state.recipe.icePerCup = engine.computeIdealIce(engine.state.tempF);
+      }
+    };
 
     document.getElementById('btn-autoday').onclick = (e) => {
       autoDay = !autoDay;
@@ -442,7 +488,7 @@
         <div class="stat"><span>Total Career Revenue:</span><span>$${s.totalRevenueEarned.format()}</span></div>
         <div class="stat"><span>Total Units Sold:</span><span>${s.totalCupsSold.format()}</span></div>
         <div class="stat"><span>Neighborhood Reputation:</span><span>${(s.reputation * 100).toFixed(0)}%</span></div>
-        <div class="stat"><span>Recipe Quality Match:</span><span>${(engine.computeRecipeQuality() * 100).toFixed(0)}% (Peak: ${(s.bestRecipeQuality * 100).toFixed(0)}%)</span></div>
+        <div class="stat"><span>Recipe Rating:</span><span><strong>${(engine.computeRecipeQuality() * 100).toFixed(0)}%</strong> <span style="color:#aaa;">(Avg: ${((s.avgRecipeQuality || engine.computeRecipeQuality()) * 100).toFixed(0)}%)</span></span></div>
       `;
 
       // Update recipe numbers
@@ -450,6 +496,20 @@
       document.getElementById('lbl-lemons').textContent = s.recipe.lemonsPerPitcher;
       document.getElementById('lbl-sugar').textContent = s.recipe.sugarPerPitcher;
       document.getElementById('lbl-ice').textContent = s.recipe.icePerCup;
+
+      // Auto-Ice button state
+      const autoIceSpan = document.getElementById('autoice-container');
+      if (autoIceSpan) {
+        if (s.flags.hasAutoIce) {
+          autoIceSpan.innerHTML = `
+            <button onclick="window._toggleAutoIce()" style="padding:1px 6px; font-size:10px; margin-left:6px; min-height:20px; background:${s.flags.autoIceEnabled ? '#1e3a5f' : '#222'}; color:${s.flags.autoIceEnabled ? '#93c5fd' : '#888'}; border:1px solid ${s.flags.autoIceEnabled ? '#3b82f6' : '#555'}; border-radius:3px; cursor:pointer;" title="Toggle automatic weather-synced ice tuning">
+              Auto: ${s.flags.autoIceEnabled ? 'ON' : 'OFF'}
+            </button>
+          `;
+        } else {
+          autoIceSpan.innerHTML = '';
+        }
+      }
 
       // Chore button state
       const choreBtn = document.getElementById('btn-chore');
@@ -474,23 +534,67 @@
         <div class="stat"><span>Ideal Ice for Forecast:</span><span>${engine.computeIdealIce(s.tempF)} cubes / cup</span></div>
       `;
 
+      // Demand Estimator & Stock Check
+      const est = engine.getDailyDemandEstimate();
+      const estEl = document.getElementById('readout-demand-estimate');
+      if (estEl) {
+        const standNames = est.franchiseEstimates.length > 0
+          ? `Driveway: ~${est.estDrivewayCups} | ` + est.franchiseEstimates.map(f => `${f.workerName}: ~${f.estCups}`).join(' | ')
+          : 'Driveway solo stand';
+        
+        const lLow = s.inv.lemons < est.neededLemons;
+        const sLow = s.inv.sugar < est.neededSugar;
+        const iLow = s.inv.ice < est.neededIce;
+        const cLow = s.inv.cups < est.neededCups;
+
+        estEl.innerHTML = `
+          <div class="card" style="margin: 6px 0; background: #161616; border-color: #333; padding: 6px 8px;">
+            <div class="stat" style="margin: 0 0 2px 0;">
+              <span style="font-weight: bold; color: #ffd700;">📦 Today's Est. Demand:</span>
+              <strong style="color: #4ade80;">~${est.totalEstCups} cups</strong>
+            </div>
+            <div style="font-size: 11px; color: #888; margin-bottom: 4px;">${standNames}</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2px 8px; font-size: 11px;">
+              <div style="color: ${lLow ? '#f87171' : '#a3e635'};">
+                Lemons: ${s.inv.lemons} / ~${est.neededLemons} ${lLow ? '⚠️ Need More' : '✓'}
+              </div>
+              <div style="color: ${sLow ? '#f87171' : '#a3e635'};">
+                Sugar: ${s.inv.sugar} / ~${est.neededSugar} ${sLow ? '⚠️ Need More' : '✓'}
+              </div>
+              <div style="color: ${iLow ? '#f87171' : '#a3e635'};">
+                Ice: ${s.inv.ice} / ~${est.neededIce} ${iLow ? '⚠️ Need More' : '✓'}
+              </div>
+              <div style="color: ${cLow ? '#f87171' : '#a3e635'};">
+                Cups: ${s.inv.cups} / ~${est.neededCups} ${cLow ? '⚠️ Need More' : '✓'}
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
       document.getElementById('readout-inventory-text').textContent =
         `Lemons: ${s.inv.lemons} | Sugar: ${s.inv.sugar} | Ice: ${s.inv.ice} | Cups: ${s.inv.cups}` +
         (s.phase >= 3 ? ` | Glass Bottles: ${s.inv.bottles}` : '');
 
       const discText = s.flags.hasCostcoDiscount ? ' (Costco -35%)' : '';
-      const lCost = s.flags.hasCostcoDiscount ? '$5.20' : '$8';
-      const sCost = s.flags.hasCostcoDiscount ? '$3.90' : '$6';
-      const iCost = s.flags.hasCostcoDiscount ? '$2.60' : '$4';
-      const cCost = s.flags.hasCostcoDiscount ? '$2.60' : '$4';
-      const bCost = s.flags.hasCostcoDiscount ? '$6.50' : '$10';
+      const lBaseCost = s.flags.hasCostcoDiscount ? 5.20 : 8.00;
+      const sBaseCost = s.flags.hasCostcoDiscount ? 3.90 : 6.00;
+      const iBaseCost = s.flags.hasCostcoDiscount ? 2.60 : 4.00;
+      const cBaseCost = s.flags.hasCostcoDiscount ? 2.60 : 4.00;
+      const bBaseCost = s.flags.hasCostcoDiscount ? 6.50 : 10.00;
+
+      const lCost = `$${(lBaseCost * buyPackMult).toFixed(2)}`;
+      const sCost = `$${(sBaseCost * buyPackMult).toFixed(2)}`;
+      const iCost = `$${(iBaseCost * buyPackMult).toFixed(2)}`;
+      const cCost = `$${(cBaseCost * buyPackMult).toFixed(2)}`;
+      const bCost = `$${(bBaseCost * buyPackMult).toFixed(2)}`;
 
       const bikeBonus = s.flags.hasMountainBike ? 1.25 : 1.0;
-      const lQty = Math.round(24 * bikeBonus);
-      const sQty = Math.round(20 * bikeBonus);
-      const iQty = Math.round(100 * bikeBonus);
-      const cQty = Math.round(50 * bikeBonus);
-      const bQty = Math.round(25 * bikeBonus);
+      const lQty = Math.round(24 * bikeBonus) * buyPackMult;
+      const sQty = Math.round(20 * bikeBonus) * buyPackMult;
+      const iQty = Math.round(100 * bikeBonus) * buyPackMult;
+      const cQty = Math.round(50 * bikeBonus) * buyPackMult;
+      const bQty = Math.round(25 * bikeBonus) * buyPackMult;
 
       document.getElementById('stock-buttons').innerHTML = `
         <button onclick="window._buy('lemons')">+${lQty} Lemons (${lCost})</button>
@@ -588,7 +692,19 @@
             ${s.phase >= 5 ? `<div class="stat" style="color:#4ade80;"><span>Co-Packer Cases (${pnl.copackerCasesSold} cases):</span><span>+$${pnl.copackerNet.toFixed(2)}</span></div>` : ''}
             <hr style="border-color:#333; margin:4px 0;"/>
             <div class="stat" style="font-size:13px;"><span>Daily Net Profit:</span><span class="${netClass}">+$${pnl.netProfit.toFixed(2)}</span></div>
-            <div style="font-size:11px; color:#aaa; margin-top:4px;">${pnl.notes.join(' • ')}</div>
+            ${pnl.reviews && pnl.reviews.length > 0 ? `
+              <div style="background:#181818; border:1px solid #333; border-radius:4px; padding:6px 8px; margin:6px 0;">
+                <div style="font-weight:bold; color:#ffd700; margin-bottom:4px; font-size:11px;">💬 Customer Feedback & Reviews:</div>
+                ${pnl.reviews.map(r => `
+                  <div style="margin:3px 0; font-size:11px; line-height:1.3;">
+                    <span style="color:#ffd700;">${'★'.repeat(r.stars)}${'☆'.repeat(5 - r.stars)}</span>
+                    <span style="font-style:italic;">"${r.quote}"</span>
+                    <span style="color:#888;">— ${r.reviewer}</span>
+                  </div>
+                `).join('')}
+              </div>
+            ` : ''}
+            <div style="font-size:11px; color:#aaa; margin-top:4px;"><strong>Operations:</strong> ${pnl.notes.join(' • ')}</div>
           </div>
         `;
       } else {
@@ -664,7 +780,7 @@
     }
 
     // Global action bindings
-    window._buy = (item) => engine.buySupplies(item, 1);
+    window._buy = (item) => engine.buySupplies(item, buyPackMult);
     window._hire = (id) => engine.hireFranchiseStand(id);
     window._signWholesale = (id) => engine.signWholesaleAccount(id);
     window._proj = (id) => engine.buyProject(id);
