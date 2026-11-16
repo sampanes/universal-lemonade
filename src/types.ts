@@ -1,0 +1,219 @@
+import type { BigNum } from './bignum';
+
+export type WeatherCondition = 'SUNNY' | 'CLOUDY' | 'RAINY';
+export type GamePhase = 1 | 2 | 3 | 4 | 5;
+export type SupplyItem = 'lemons' | 'sugar' | 'ice' | 'cups' | 'bottles';
+
+export interface FranchiseStand {
+  id: string;
+  name: string;
+  workerName: string;
+  location: string;
+  hired: boolean;
+  setupCost: number;
+  dailyWage: number;
+  baseCapacity: number;
+  weatherSens: number;
+  desc: string;
+}
+
+export interface WholesaleAccount {
+  id: string;
+  name: string;
+  active: boolean;
+  setupCost: number;
+  bottlesPerDay: number;
+  wholesalePrice: number;
+  packagingCost: number;
+  weatherSens: number;
+  desc: string;
+}
+
+export interface PatentSystem {
+  licensed: boolean;
+  royaltyPerUnit: number;
+  baseUnitsPerDay: number;
+  level: number;
+}
+
+export interface CoPackerSystem {
+  active: boolean;
+  casesPerDay: number; // 24 bottles per case
+  netPerCase: number;
+}
+
+export interface ChoreState {
+  name: string;
+  reward: number;
+  cooldownSec: number;
+  remainingSec: number;
+}
+
+export interface ProjectDef {
+  id: string;
+  name: string;
+  desc: string;
+  phase: GamePhase;
+  costCash: number;
+  purchased: boolean;
+  unlocked: (state: GameState) => boolean;
+  effect: (engine: any) => void;
+}
+
+export interface LifestyleTrophy {
+  id: string;
+  name: string;
+  emoji: string;
+  category: 'kid' | 'teen' | 'mogul' | 'billionaire';
+  costCash: number;
+  purchased: boolean;
+  desc: string;
+  perkDesc: string;
+  phaseRequired: GamePhase;
+}
+
+export interface CustomerReview {
+  stars: number;
+  quote: string;
+  reviewer: string;
+  sentiment: 'positive' | 'mixed' | 'negative';
+}
+
+export interface DailyDemandEstimate {
+  estDrivewayCups: number;
+  franchiseEstimates: { id: string; name: string; workerName: string; estCups: number }[];
+  totalEstCups: number;
+  neededLemons: number;
+  neededSugar: number;
+  neededIce: number;
+  neededCups: number;
+}
+
+export interface PourableCapacity {
+  maxCups: number;
+  bottleneck: string;
+  byCups: number;
+  byIce: number;
+  byLemons: number;
+  bySugar: number;
+}
+
+export interface KidDemandAdvice {
+  phrase: string;
+  emoji: string;
+  lowItems: ('lemons' | 'sugar' | 'ice' | 'cups')[];
+  isFullyStocked: boolean;
+  estTotalCups: number;
+}
+
+export interface RecipeProfile {
+  quality: number;
+  tasteName: string;
+  liquidColor: string;
+}
+
+export interface DaySummary {
+  day: number;
+  tempF: number;
+  weather: WeatherCondition;
+
+  // Driveway Stand
+  drivewayCupsSold: number;
+  drivewayRevenue: number;
+
+  // Franchise Stands (Phase 2+)
+  franchiseCupsSold: number;
+  franchiseGrossRevenue: number;
+  franchiseWagesPaid: number;
+  franchiseNet: number;
+
+  // Wholesale Bottling (Phase 3+)
+  bottlesSold: number;
+  wholesaleRevenue: number;
+  packagingCosts: number;
+  wholesaleNet: number;
+
+  // Patent Royalties (Phase 4+)
+  patentUnitsSold: number;
+  patentRoyalties: number;
+
+  // Industrial Co-Packing (Phase 5)
+  copackerCasesSold: number;
+  copackerNet: number;
+
+  // P&L Statement totals
+  totalRevenue: number;
+  totalExpenses: number;
+  netProfit: number;
+
+  recipeQuality: number;
+  reviews: CustomerReview[];
+  notes: string[];
+}
+
+export interface GameState {
+  phase: GamePhase;
+  elapsedSec: number;
+  day: number;
+  tempF: number;
+  weather: WeatherCondition;
+  reputation: number;        // [0.1, 1.0]
+  bestRecipeQuality: number;
+  avgRecipeQuality: number;
+  totalQualityDays: number;
+  totalQualitySum: number;
+  brandMultiplier: number;
+  gameWon: boolean;
+
+  // Working Capital & Inventory
+  cash: BigNum;
+  totalCupsSold: BigNum;
+  totalRevenueEarned: BigNum;
+
+  inv: {
+    lemons: number;
+    sugar: number;
+    ice: number;
+    cups: number;
+    bottles: number;
+  };
+  recipe: {
+    lemonsPerPitcher: number;
+    sugarPerPitcher: number;
+    icePerCup: number;
+    pricePerCup: number;
+  };
+
+  // Upgrades & Flag States
+  flags: {
+    hasCooler: boolean;
+    hasMiniFridge: boolean;
+    hasCostcoDiscount: boolean;
+    hasCargoWagon: boolean;
+    hasCommercialLabeler: boolean;
+    weatherLocked95F: boolean;
+    hasAutoIce: boolean;
+    autoIceEnabled: boolean;
+
+    // Lifestyle Trophy Flags
+    hasSkateboard: boolean;
+    hasMountainBike: boolean;
+    hasNintendoSwitch: boolean;
+    hasElectricScooter: boolean;
+    hasIpadPro: boolean;
+    hasDisneyTrip: boolean;
+    hasHondaCivic: boolean;
+    hasGarageArcade: boolean;
+    hasCollegePrepaid: boolean;
+    hasPaidMortgage: boolean;
+    hasLemonGrove: boolean;
+    hasTeslaModelX: boolean;
+    hasPrivateJet: boolean;
+    hasArenaNaming: boolean;
+    hasPrivateIsland: boolean;
+  };
+
+  currentChore: ChoreState;
+  lastDaySummary: DaySummary | null;
+  logs: string[];
+}

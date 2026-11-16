@@ -220,6 +220,21 @@
       text-align: center;
       box-shadow: 0 0 35px rgba(255, 215, 0, 0.4);
     }
+    .pantry-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: #202020;
+      border: 1px solid #444;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+    .pantry-tag.low {
+      border-color: #f59e0b;
+      background: #2b2208;
+      color: #fde047;
+    }
   </style>
 </head>
 <body>
@@ -296,7 +311,13 @@
         </div>
       </div>
       <div id="readout-inventory-text" style="font-size: 12px; color: #ccc;"></div>
-      <div class="stock-grid" id="stock-buttons"></div>
+      <div class="stock-grid" id="stock-buttons">
+        <button id="btn-buy-lemons">+24 Lemons ($8.00)</button>
+        <button id="btn-buy-sugar">+20 Sugar ($6.00)</button>
+        <button id="btn-buy-ice">+200 Ice ($4.00)</button>
+        <button id="btn-buy-cups">+50 Cups ($4.00)</button>
+        <button id="btn-buy-bottles" style="grid-column: span 2; display: none;">+25 Glass Bottles ($10.00)</button>
+      </div>
 
       <button id="btn-run-day" style="width:100%; margin-top:6px; padding:14px; background:#1e4620; font-weight:bold; min-height:48px; font-size:14px; border-color:#4ade80;">
         ☀️ RUN DAY SIMULATION
@@ -418,6 +439,20 @@
     // Run Day Click
     document.getElementById('btn-run-day').onclick = () => engine.runDay();
 
+    // Buy Supplies Static Click Bindings (Guarantees zero dropped clicks on desktop)
+    document.getElementById('btn-buy-lemons').onclick = () => engine.buySupplies('lemons', buyPackMult);
+    document.getElementById('btn-buy-sugar').onclick = () => engine.buySupplies('sugar', buyPackMult);
+    document.getElementById('btn-buy-ice').onclick = () => engine.buySupplies('ice', buyPackMult);
+    document.getElementById('btn-buy-cups').onclick = () => engine.buySupplies('cups', buyPackMult);
+    document.getElementById('btn-buy-bottles').onclick = () => engine.buySupplies('bottles', buyPackMult);
+
+    function setHTMLIfChanged(el, newHTML) {
+      if (el && el._lastHTML !== newHTML) {
+        el.innerHTML = newHTML;
+        el._lastHTML = newHTML;
+      }
+    }
+
     // Recipe Controls
     document.getElementById('btn-price-down').onclick = () => {
       engine.state.recipe.pricePerCup = Math.max(0.25, +(engine.state.recipe.pricePerCup - 0.25).toFixed(2));
@@ -524,49 +559,45 @@
         <div class="stat"><span>Ideal Ice for Forecast:</span><span>${engine.computeIdealIce(s.tempF)} cubes / cup</span></div>
       `;
 
-      // Demand Estimator & Stock Check
-      const est = engine.getDailyDemandEstimate();
+      // Kid-Friendly Demand Advice & Status
+      const advice = engine.getKidDemandAdvice();
       const estEl = document.getElementById('readout-demand-estimate');
       if (estEl) {
-        const standNames = est.franchiseEstimates.length > 0
-          ? `Driveway: ~${est.estDrivewayCups} | ` + est.franchiseEstimates.map(f => `${f.workerName}: ~${f.estCups}`).join(' | ')
-          : 'Driveway solo stand';
-        
-        const lLow = s.inv.lemons < est.neededLemons;
-        const sLow = s.inv.sugar < est.neededSugar;
-        const iLow = s.inv.ice < est.neededIce;
-        const cLow = s.inv.cups < est.neededCups;
+        const standSubtitle = s.phase >= 2 && Object.values(engine.franchiseStands).some(st => st.hired)
+          ? 'Across all stands'
+          : 'Driveway stand';
 
-        estEl.innerHTML = `
-          <div class="card" style="margin: 6px 0; background: #161616; border-color: #333; padding: 6px 8px;">
-            <div class="stat" style="margin: 0 0 2px 0;">
-              <span style="font-weight: bold; color: #ffd700;">📦 Today's Est. Demand:</span>
-              <strong style="color: #4ade80;">~${est.totalEstCups} cups</strong>
-            </div>
-            <div style="font-size: 11px; color: #888; margin-bottom: 4px;">${standNames}</div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2px 8px; font-size: 11px;">
-              <div style="color: ${lLow ? '#f87171' : '#a3e635'};">
-                Lemons: ${s.inv.lemons} / ~${est.neededLemons} ${lLow ? `⚠️ Need ${est.neededLemons - s.inv.lemons} more` : '✓'}
-              </div>
-              <div style="color: ${sLow ? '#f87171' : '#a3e635'};">
-                Sugar: ${s.inv.sugar} / ~${est.neededSugar} ${sLow ? `⚠️ Need ${est.neededSugar - s.inv.sugar} more` : '✓'}
-              </div>
-              <div style="color: ${iLow ? '#f87171' : '#a3e635'};">
-                Ice: ${s.inv.ice} / ~${est.neededIce} ${iLow ? `⚠️ Need ${est.neededIce - s.inv.ice} more` : '✓'}
-              </div>
-              <div style="color: ${cLow ? '#f87171' : '#a3e635'};">
-                Cups: ${s.inv.cups} / ~${est.neededCups} ${cLow ? `⚠️ Need ${est.neededCups - s.inv.cups} more` : '✓'}
+        setHTMLIfChanged(estEl, `
+          <div class="card" style="margin: 6px 0; background: #1a1e24; border: 2px solid ${advice.isFullyStocked ? '#10b981' : '#f59e0b'}; padding: 8px 10px; border-radius: 6px;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="font-size: 24px;">${advice.emoji}</span>
+              <div style="flex:1;">
+                <div style="font-weight: bold; font-size: 13px; color: ${advice.isFullyStocked ? '#4ade80' : '#fcd34d'};">
+                  ${advice.phrase}
+                </div>
+                <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">
+                  ${standSubtitle} • Today's Est. Demand: ~<strong style="color:#eee;">${advice.estTotalCups} cups</strong>
+                </div>
               </div>
             </div>
           </div>
-        `;
+        `);
       }
 
-      document.getElementById('readout-inventory-text').textContent =
-        `Lemons: ${s.inv.lemons} | Sugar: ${s.inv.sugar} | Ice: ${s.inv.ice} | Cups: ${s.inv.cups}` +
-        (s.phase >= 3 ? ` | Bottles: ${s.inv.bottles}` : '');
+      // Pantry Shelf Badges with Warning Exclamation Marks
+      const invEl = document.getElementById('readout-inventory-text');
+      if (invEl) {
+        setHTMLIfChanged(invEl, `
+          <div style="display:flex; flex-wrap:wrap; gap:6px; margin: 6px 0;">
+            <span class="pantry-tag ${advice.lowItems.includes('lemons') ? 'low' : ''}">🍋 Lemons: <strong>${s.inv.lemons}</strong> ${advice.lowItems.includes('lemons') ? '⚠️' : ''}</span>
+            <span class="pantry-tag ${advice.lowItems.includes('sugar') ? 'low' : ''}">🍬 Sugar: <strong>${s.inv.sugar}</strong> ${advice.lowItems.includes('sugar') ? '⚠️' : ''}</span>
+            <span class="pantry-tag ${advice.lowItems.includes('ice') ? 'low' : ''}">🧊 Ice: <strong>${s.inv.ice}</strong> ${advice.lowItems.includes('ice') ? '⚠️' : ''}</span>
+            <span class="pantry-tag ${advice.lowItems.includes('cups') ? 'low' : ''}">🥤 Cups: <strong>${s.inv.cups}</strong> ${advice.lowItems.includes('cups') ? '⚠️' : ''}</span>
+            ${s.phase >= 3 ? `<span class="pantry-tag">🍾 Bottles: <strong>${s.inv.bottles}</strong></span>` : ''}
+          </div>
+        `);
+      }
 
-      const discText = s.flags.hasCostcoDiscount ? ' (Costco -35%)' : '';
       const lBaseCost = s.flags.hasCostcoDiscount ? 5.20 : 8.00;
       const sBaseCost = s.flags.hasCostcoDiscount ? 3.90 : 6.00;
       const iBaseCost = s.flags.hasCostcoDiscount ? 2.60 : 4.00;
@@ -586,13 +617,36 @@
       const cQty = Math.round(50 * bikeBonus) * buyPackMult;
       const bQty = Math.round(25 * bikeBonus) * buyPackMult;
 
-      document.getElementById('stock-buttons').innerHTML = `
-        <button onclick="window._buy('lemons')">+${lQty} Lemons (${lCost})</button>
-        <button onclick="window._buy('sugar')">+${sQty} Sugar (${sCost})</button>
-        <button onclick="window._buy('ice')">+${iQty} Ice (${iCost})</button>
-        <button onclick="window._buy('cups')">+${cQty} Cups (${cCost})</button>
-        ${s.phase >= 3 ? `<button onclick="window._buy('bottles')" style="grid-column: span 2;">+${bQty} Glass Bottles (${bCost})</button>` : ''}
-      `;
+      // Update static purchase buttons in-place (never replace elements, completely eliminates dropped clicks)
+      const btnL = document.getElementById('btn-buy-lemons');
+      const btnS = document.getElementById('btn-buy-sugar');
+      const btnI = document.getElementById('btn-buy-ice');
+      const btnC = document.getElementById('btn-buy-cups');
+      const btnB = document.getElementById('btn-buy-bottles');
+
+      if (btnL) {
+        btnL.textContent = `+${lQty} Lemons (${lCost})`;
+        btnL.disabled = s.cash.lt(lBaseCost * buyPackMult);
+      }
+      if (btnS) {
+        btnS.textContent = `+${sQty} Sugar (${sCost})`;
+        btnS.disabled = s.cash.lt(sBaseCost * buyPackMult);
+      }
+      if (btnI) {
+        btnI.textContent = `+${iQty} Ice (${iCost})`;
+        btnI.disabled = s.cash.lt(iBaseCost * buyPackMult);
+      }
+      if (btnC) {
+        btnC.textContent = `+${cQty} Cups (${cCost})`;
+        btnC.disabled = s.cash.lt(cBaseCost * buyPackMult);
+      }
+      if (btnB) {
+        btnB.style.display = s.phase >= 3 ? 'block' : 'none';
+        if (s.phase >= 3) {
+          btnB.textContent = `+${bQty} Glass Bottles (${bCost})`;
+          btnB.disabled = s.cash.lt(bBaseCost * buyPackMult);
+        }
+      }
 
       document.getElementById('btn-run-day').textContent = `☀️ RUN DAY ${s.day} BUSINESS SIMULATION`;
 
@@ -663,13 +717,13 @@
         </div>`;
       }
 
-      document.getElementById('expansion-sections').innerHTML = expansionHTML;
+      setHTMLIfChanged(document.getElementById('expansion-sections'), expansionHTML);
 
       // 3. P&L Statement readout
       const pnl = s.lastDaySummary;
       if (pnl) {
         const netClass = pnl.netProfit >= 0 ? 'profit-pos' : 'profit-neg';
-        document.getElementById('readout-pnl').innerHTML = `
+        setHTMLIfChanged(document.getElementById('readout-pnl'), `
           <div class="pnl-box">
             <div class="stat"><strong>Day ${pnl.day} Financial Statement</strong><span>${pnl.tempF}°F (${pnl.weather})</span></div>
             <hr style="border-color:#333; margin:4px 0;"/>
@@ -696,13 +750,13 @@
             ` : ''}
             <div style="font-size:11px; color:#aaa; margin-top:4px;"><strong>Operations:</strong> ${pnl.notes.join(' • ')}</div>
           </div>
-        `;
+        `);
       } else {
-        document.getElementById('readout-pnl').innerHTML = `<div class="pnl-box" style="color:#888;">Run Day 1 simulation to generate your first financial P&L statement!</div>`;
+        setHTMLIfChanged(document.getElementById('readout-pnl'), `<div class="pnl-box" style="color:#888;">Run Day 1 simulation to generate your first financial P&L statement!</div>`);
       }
 
       // Projects
-      document.getElementById('project-list').innerHTML = engine.projects
+      const projectHTML = engine.projects
         .filter(p => !p.purchased && p.unlocked(s))
         .map(p => `<div class="card">
           <div style="font-weight:bold; color:#ffd700;">${p.name}</div>
@@ -711,14 +765,16 @@
             Invest ($${p.costCash.toLocaleString()})
           </button>
         </div>`).join('');
+      setHTMLIfChanged(document.getElementById('project-list'), projectHTML);
 
       // Trophy Shelf Display (All 15 Emojis)
       const trophyShelf = document.getElementById('trophy-shelf');
       if (trophyShelf) {
-        trophyShelf.innerHTML = engine.trophies.map(t => {
+        const shelfHTML = engine.trophies.map(t => {
           const cls = t.purchased ? 'trophy-icon owned' : 'trophy-icon locked';
           return `<div class="${cls}" title="${t.name} ($${t.costCash.toLocaleString()})">${t.emoji}</div>`;
         }).join('');
+        setHTMLIfChanged(trophyShelf, shelfHTML);
       }
 
       // Trophy List (Available in current stage)
@@ -731,11 +787,12 @@
           billionaire: 'Global Billionaire'
         };
         const availableTrophies = engine.trophies.filter(t => !t.purchased && t.phaseRequired <= s.phase);
+        let trophyListHTML = '';
         if (availableTrophies.length === 0) {
           const allBought = engine.trophies.every(t => t.purchased);
-          trophyList.innerHTML = `<div style="font-size:12px; color:#888; font-style:italic; padding:4px 0;">${allBought ? '★ All 15 lifestyle trophies acquired! Complete mastery.' : 'Advance to higher business stages to unlock more lifestyle trophies.'}</div>`;
+          trophyListHTML = `<div style="font-size:12px; color:#888; font-style:italic; padding:4px 0;">${allBought ? '★ All 15 lifestyle trophies acquired! Complete mastery.' : 'Advance to higher business stages to unlock more lifestyle trophies.'}</div>`;
         } else {
-          trophyList.innerHTML = availableTrophies.map(t => `
+          trophyListHTML = availableTrophies.map(t => `
             <div class="card">
               <div class="stat">
                 <strong>${t.emoji} ${t.name}</strong>
@@ -749,6 +806,7 @@
             </div>
           `).join('');
         }
+        setHTMLIfChanged(trophyList, trophyListHTML);
       }
 
       // Victory Modal Trigger
@@ -764,7 +822,8 @@
         vModal.style.display = 'none';
       }
 
-      document.getElementById('log-box').innerHTML = s.logs.map(l => `<div>${l}</div>`).join('');
+      const logHTML = s.logs.map(l => `<div>${l}</div>`).join('');
+      setHTMLIfChanged(document.getElementById('log-box'), logHTML);
 
       requestAnimationFrame(loop);
     }
