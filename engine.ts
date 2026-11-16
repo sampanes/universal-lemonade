@@ -1060,6 +1060,7 @@ export class LemonadeEngine {
     drivewayCupsSold: number;
     franchiseCupsSold: number;
     soldOutStands: string[];
+    bottleneck?: string;
   }): CustomerReview[] {
     const reviews: CustomerReview[] = [];
     const s = this.state;
@@ -1159,12 +1160,44 @@ export class LemonadeEngine {
       });
     }
 
-    // 3. OPTIONAL STOCKOUT REVIEW
-    if (info.soldOutStands.length > 0) {
+    // 3. TEAM CHATTER & SIMPLE FRANCHISE MESSAGES (Timmy, Leo, Sarah)
+    const hiredStands = Object.values(this.franchiseStands).filter(st => st.hired);
+    if (hiredStands.length > 0) {
+      const stand = hiredStands[Math.floor(this.rand() * hiredStands.length)];
+      if (info.soldOutStands.length > 0) {
+        const item = info.bottleneck || 'supplies';
+        let msg = `Hey boss, we had a line of customers today, but ran out of ${item}! Buy extra tomorrow!`;
+        if (item.toLowerCase().includes('ice')) {
+          msg = `Huge crowd today, but we ran out of ice cubes early! Grab an extra bag of ice tomorrow!`;
+        } else if (item.toLowerCase().includes('cup')) {
+          msg = `We blew through all our cups! Customers kept asking for refills.`;
+        } else if (item.toLowerCase().includes('lemon')) {
+          msg = `Pitcher's empty! We ran out of fresh lemons to mix more lemonade.`;
+        }
+        reviews.push({
+          stars: 3,
+          quote: msg,
+          reviewer: `${stand.workerName} (${stand.name})`,
+          sentiment: 'mixed'
+        });
+      } else {
+        const victoryMsgs = [
+          `Crushed it today! Served every single customer on our street!`,
+          `Great shift, boss! Customers loved the cold lemonade!`,
+          `Sold out all our cups today! That was so much fun!`
+        ];
+        reviews.push({
+          stars: 5,
+          quote: victoryMsgs[Math.floor(this.rand() * victoryMsgs.length)],
+          reviewer: `${stand.workerName} (${stand.name})`,
+          sentiment: 'positive'
+        });
+      }
+    } else if (info.soldOutStands.length > 0) {
       reviews.push({
         stars: 2,
-        quote: `Walked over to ${info.soldOutStands[0]} but they were sold out of supplies early!`,
-        reviewer: "Thirsty customer",
+        quote: `Walked over to the driveway stand, but they were sold out of supplies early!`,
+        reviewer: "Thirsty neighbor",
         sentiment: "negative"
       });
     }
@@ -1373,6 +1406,7 @@ export class LemonadeEngine {
     let drivewayCupsSold = 0;
     let franchiseCupsSold = 0;
     let franchiseGross = 0;
+    let primaryBottleneck = '';
 
     if (maxTotalPour <= 0 && totalCupDemand > 0) {
       // Complete stockout of at least 1 critical supply: stands sell 0 cups, but payroll must still be paid!
@@ -1381,6 +1415,7 @@ export class LemonadeEngine {
       if (s.inv.lemons < s.recipe.lemonsPerPitcher) missing.push('Lemons');
       if (s.inv.sugar < s.recipe.sugarPerPitcher) missing.push('Sugar');
       if (s.recipe.icePerCup > 0 && s.inv.ice < s.recipe.icePerCup) missing.push('Ice');
+      primaryBottleneck = missing[0] || 'supplies';
       notes.push(`All stands had 0 sales (out of ${missing.join(' & ') || 'supplies'})! Full worker wages paid: -$${franchiseWages.toFixed(2)}.`);
       activeStands.forEach(st => { if (!st.isDriveway) soldOutStands.push(st.name); });
     } else {
@@ -1418,10 +1453,10 @@ export class LemonadeEngine {
       // Report bottleneck if demand was cut short
       if (maxTotalPour < totalCupDemand) {
         const bottlenecks: string[] = [];
-        if (maxByCups === maxTotalPour) bottlenecks.push(`Cups (had ${s.inv.cups}, needed ${totalCupDemand})`);
-        if (maxByIce === maxTotalPour) bottlenecks.push(`Ice (${s.inv.ice} cubes only poured ${maxByIce} cups at ${s.recipe.icePerCup}/cup; needed ${totalCupDemand * s.recipe.icePerCup})`);
-        if (maxByLemons === maxTotalPour) bottlenecks.push(`Lemons (had ${s.inv.lemons}, needed ${Math.ceil(totalCupDemand / cupsPerPitcher) * s.recipe.lemonsPerPitcher})`);
-        if (maxBySugar === maxTotalPour) bottlenecks.push(`Sugar (had ${s.inv.sugar}, needed ${Math.ceil(totalCupDemand / cupsPerPitcher) * s.recipe.sugarPerPitcher})`);
+        if (maxByCups === maxTotalPour) { bottlenecks.push(`Cups (had ${s.inv.cups}, needed ${totalCupDemand})`); primaryBottleneck = 'cups'; }
+        if (maxByIce === maxTotalPour) { bottlenecks.push(`Ice (${s.inv.ice} cubes only poured ${maxByIce} cups at ${s.recipe.icePerCup}/cup; needed ${totalCupDemand * s.recipe.icePerCup})`); primaryBottleneck = 'ice'; }
+        if (maxByLemons === maxTotalPour) { bottlenecks.push(`Lemons (had ${s.inv.lemons}, needed ${Math.ceil(totalCupDemand / cupsPerPitcher) * s.recipe.lemonsPerPitcher})`); primaryBottleneck = 'lemons'; }
+        if (maxBySugar === maxTotalPour) { bottlenecks.push(`Sugar (had ${s.inv.sugar}, needed ${Math.ceil(totalCupDemand / cupsPerPitcher) * s.recipe.sugarPerPitcher})`); primaryBottleneck = 'sugar'; }
         notes.push(`Stands sold out early: out of ${bottlenecks.join(' & ') || 'supplies'}! Sold ${totalSold}/${totalCupDemand} cups. Leftover supplies could not be poured without matching ingredients.`);
       }
     }
@@ -1522,7 +1557,7 @@ export class LemonadeEngine {
       s.reputation = Math.max(0.1, Math.min(1.0, s.reputation + (quality - 0.65) * 0.12));
     }
 
-    // Generate Customer Reviews for the day
+    // Generate Customer Reviews & Team Chatter for the day
     const reviews = this.generateCustomerReviews({
       tempF: s.tempF,
       quality,
@@ -1530,7 +1565,8 @@ export class LemonadeEngine {
       fairPrice,
       drivewayCupsSold,
       franchiseCupsSold,
-      soldOutStands
+      soldOutStands,
+      bottleneck: primaryBottleneck
     });
 
     const summary: DaySummary = {
@@ -1563,10 +1599,14 @@ export class LemonadeEngine {
     s.day += 1;
     s.elapsedSec += 30;
 
-    // Log the top customer review
+    // Log customer and team chatter
     if (reviews.length > 0) {
-      const r = reviews[0];
-      this.log(`Review: ${'★'.repeat(r.stars)} "${r.quote}" — ${r.reviewer}`);
+      const topCust = reviews.find(r => !r.reviewer.includes('(')) || reviews[0];
+      this.log(`Review: ${'★'.repeat(topCust.stars)} "${topCust.quote}" — ${topCust.reviewer}`);
+      const teamMsg = reviews.find(r => r.reviewer.includes('('));
+      if (teamMsg) {
+        this.log(`Team: "${teamMsg.quote}" — ${teamMsg.reviewer}`);
+      }
     }
 
     this.rollNextForecast();
