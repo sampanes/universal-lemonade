@@ -16,6 +16,14 @@ export interface SeasonInfo {
 export type GamePhase = 1 | 2 | 3 | 4 | 5;
 export type SupplyItem = 'lemons' | 'sugar' | 'ice' | 'cups' | 'bottles';
 
+export interface CharacterProfile {
+  name: string;
+  hairStyle: number; // 0..11
+  skinTone: number;  // 0..4
+  hairColor: number; // 0..4
+  uniformColor: number; // 0..4
+}
+
 export interface FranchiseStand {
   id: string;
   name: string;
