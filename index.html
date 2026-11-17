@@ -1998,6 +1998,173 @@
       }
 
     
+      
+      /* Header Cash Pill & Cat */
+      .header-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+        border-bottom: 2px solid rgba(255, 255, 255, 0.12);
+        padding-bottom: 8px;
+        margin-bottom: 12px;
+      }
+      .header-brand-wrap {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .header-cash-pill {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: linear-gradient(180deg, #2d2438 0%, #1e1828 100%);
+        border: 2px solid #facc15;
+        border-radius: 999px;
+        padding: 3px 14px 3px 6px;
+        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35), 0 0 10px rgba(250, 204, 21, 0.25);
+        position: relative;
+      }
+      .header-cat-slot {
+        width: 36px;
+        height: 36px;
+        background: #fef08a;
+        border: 1.5px solid #ca8a04;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        flex-shrink: 0;
+        transition: transform 0.2s ease;
+      }
+      .header-cat-slot img {
+        width: 32px;
+        height: 32px;
+        object-fit: contain;
+        transform: translateY(2px);
+      }
+      .header-cat-slot.cheer {
+        animation: cat-cheer-hop 0.4s ease-out 2;
+      }
+      @keyframes cat-cheer-hop {
+        0%, 100% { transform: translateY(0) scale(1); }
+        50% { transform: translateY(-4px) scale(1.15); }
+      }
+      .header-cash-val-wrap {
+        display: flex;
+        align-items: baseline;
+        gap: 2px;
+      }
+      .header-coin-symbol {
+        font-family: var(--font-display);
+        font-size: 16px;
+        color: #facc15;
+        font-weight: 700;
+      }
+      .header-cash-num {
+        font-family: var(--font-display);
+        font-size: 21px;
+        font-weight: 700;
+        color: #ffffff;
+        letter-spacing: 0.5px;
+        text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+      }
+      .header-cash-float {
+        position: absolute;
+        right: 12px;
+        top: -16px;
+        pointer-events: none;
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: 14px;
+      }
+
+      /* Unified Weather Window */
+      .weather-card {
+        max-width: 100%;
+        margin: 0 0 10px 0;
+        filter: drop-shadow(0 3px 6px rgba(0,0,0,0.22));
+      }
+      .weather-panel-inner {
+        background: url('./sprites/morning_prep/weather_panel_bg.png') no-repeat center / 100% 100%;
+        min-height: 100px;
+        padding: 8px 14px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .weather-top-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 2px;
+      }
+      .weather-bold-cond {
+        font-family: var(--font-display);
+        font-size: 16px;
+        color: #1e1b4b;
+        letter-spacing: 0.3px;
+      }
+      .weather-mid-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        font-weight: 700;
+        color: #4338ca;
+        margin-bottom: 3px;
+      }
+      .weather-bullet {
+        opacity: 0.5;
+      }
+      .weather-tip-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 11.5px;
+        color: #374151;
+        background: rgba(255, 255, 255, 0.7);
+        border: 1px solid rgba(250, 204, 21, 0.5);
+        border-radius: 8px;
+        padding: 2px 8px;
+        max-width: 320px;
+        line-height: 1.25;
+      }
+      .weather-tip-lemon {
+        width: 18px;
+        height: 18px;
+        object-fit: contain;
+        flex-shrink: 0;
+      }
+
+      /* Emergency Chore Banner (shown when cash < $5 in Kid Mode) */
+      .emergency-chore-pill {
+        display: none;
+        align-items: center;
+        justify-content: space-between;
+        background: #fef08a;
+        border: 2px solid #eab308;
+        border-radius: 12px;
+        padding: 6px 10px;
+        margin-bottom: 10px;
+        color: #713f12;
+        font-weight: 700;
+        font-size: 12px;
+      }
+      body.low-cash .emergency-chore-pill {
+        display: flex !important;
+        animation: pulse 1s infinite alternate;
+      }
+
+      /* Kid Mode Rules: Hide executive office titles and giant bank card */
+      body:not(.dad-mode) .panel-exec-heading,
+      body:not(.dad-mode) #bank-card {
+        display: none !important;
+      }
+
       /* --- DAD MODE OFF: ULTRA-CLEAN SIMPLIFIED DAY 1 --- */
       body:not(.dad-mode) .mascot-advice-card,
       body:not(.dad-mode) .prep-mult-bar,
@@ -2027,7 +2194,22 @@
 </head>
 <body>
   <div class="header-bar">
-    <div class="header-title" id="header-title" style="cursor: pointer;" title="Triple-click to toggle Dad Mode">🍋 UNIVERSAL LEMONADE</div>
+    <div class="header-brand-wrap">
+      <div class="header-title" id="header-title" style="cursor: pointer;" title="Triple-click to toggle Dad Mode">🍋 UNIVERSAL LEMONADE</div>
+    </div>
+
+    <!-- COMPACT HEADER CASH COUNTER & CAT -->
+    <div class="header-cash-pill" id="header-cash-pill" title="Cash available to spend">
+      <div class="header-cat-slot" id="header-cat-slot">
+        <img src="./sprites/kawaii_cat/cat1.png" id="header-cat-img" alt="Cat" />
+      </div>
+      <div class="header-cash-val-wrap">
+        <span class="header-coin-symbol">$</span>
+        <span class="header-cash-num" id="header-cash-num">60.00</span>
+      </div>
+      <div class="header-cash-float" id="header-cash-float" aria-hidden="true"></div>
+    </div>
+
     <div class="header-controls">
       <button id="btn-dad-toggle" class="dad-pill">🛠️ DAD MODE: ON</button>
       <button id="btn-speed-1" class="dad-test-only">1x</button>
@@ -2039,9 +2221,38 @@
   </div>
 
   <div class="grid">
-    <!-- COLUMN 1: FINANCES, RECIPE & EMERGENCY CHORES -->
+    <!-- COLUMN 1: WEATHER & RECIPE MIXING -->
     <div class="panel">
-      <h3>1. Executive Office</h3>
+      <h3 class="panel-exec-heading">1. Executive Office</h3>
+
+      <!-- STEP 1: UNIFIED WEATHER WINDOW (Check weather first!) -->
+      <div class="weather-card" id="unified-weather-card">
+        <div class="weather-panel-inner">
+          <div class="weather-art-slot">
+            <img id="weather-sun-sprite" src="./sprites/morning_prep/sun_happy.png" class="weather-sun floating-bob-1" alt="Sunny" />
+            <div id="weather-cloud-rain-wrap" class="weather-cloud-rain" style="display:none;">
+              <img src="./sprites/morning_prep/cloud_puff.png" class="weather-cloud floating-bob-2" alt="Cloud" />
+              <img id="weather-rain-sprite" src="./sprites/morning_prep/rain_drops.png" class="weather-rain" alt="Rain" style="display:none;" />
+            </div>
+          </div>
+          <div class="weather-details">
+            <div class="weather-top-row">
+              <span id="weather-condition-label" class="weather-bold-cond">89°F SUNNY</span>
+              <span id="weather-season-badge" class="weather-season-pill">🌸 Spring · Day 1 of 5</span>
+            </div>
+            <div class="weather-mid-row">
+              <span class="weather-cust-text">Expect ~<strong id="demand-est-cups-val">22 cups</strong></span>
+              <span class="weather-bullet">·</span>
+              <span class="weather-ice-hint">🧊 Ideal: <strong id="weather-ideal-ice">1 cube</strong>/cup</span>
+            </div>
+            <div class="weather-tip-row" id="weather-tip-row">
+              <img src="./sprites/morning_prep/mascot_lemon_head.png" alt="Tip" class="weather-tip-lemon" />
+              <span id="mascot-bubble-phrase">A mild spring day! A small batch should be great!</span>
+              <span id="mascot-bubble-sub" style="display:none;">Driveway stand</span>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <!-- MONEY BOX: CAT CASH COUNTER, STATS & CHORES (FOLDABLE) -->
       <div class="bank-card foldable-card" id="bank-card">
@@ -2230,56 +2441,9 @@
       </div>
     </div>
 
-    <!-- COLUMN 2: OPERATIONS, SATELLITE LOCATIONS & INVENTORY -->
+    <!-- COLUMN 2: PANTRY & OPEN FOR BUSINESS -->
     <div class="panel">
-      <h3 id="panel2-title">🍋 2. Operations & Expansion</h3>
-      
-      <!-- 1. KAWAII WEATHER FORECAST CARD -->
-      <div class="weather-card">
-        <div class="weather-panel-inner">
-          <div class="weather-art-slot">
-            <img id="weather-sun-sprite" src="./sprites/morning_prep/sun_happy.png" class="weather-sun floating-bob-1" alt="Sunny" />
-            <div id="weather-cloud-rain-wrap" class="weather-cloud-rain" style="display:none;">
-              <img src="./sprites/morning_prep/cloud_puff.png" class="weather-cloud floating-bob-2" alt="Cloud" />
-              <img id="weather-rain-sprite" src="./sprites/morning_prep/rain_drops.png" class="weather-rain" alt="Rain" style="display:none;" />
-            </div>
-          </div>
-          <div class="weather-details">
-            <div id="weather-season-badge" class="weather-season-pill">🌸 Spring · Day 1 of 5</div>
-            <div class="weather-pill-box">
-              <span id="weather-condition-label">89°F SUNNY</span>
-            </div>
-            <div class="weather-ice-hint">
-              🧊 Ideal Ice: <strong id="weather-ideal-ice">6 cubes</strong> / cup
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 2. MASCOT LEMON & DEMAND ADVICE SPEECH BUBBLE -->
-      <div class="mascot-advice-card">
-        <div class="mascot-advice-row">
-          <div class="mascot-avatar-wrap">
-            <img src="./sprites/morning_prep/mascot_lemon_head.png" alt="Lemon Mascot" class="mascot-lemon-head floating-bob-1" />
-          </div>
-          <div class="mascot-bubble-wrap">
-            <div class="mascot-speech-bubble">
-              <div id="mascot-bubble-phrase" class="mascot-phrase-text">
-                Hot sunny day! You'll need lots of lemonade!
-              </div>
-              <div id="mascot-bubble-sub" class="mascot-sub-text">
-                Driveway stand
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="cups-estimate-wrap">
-          <div class="cups-estimate-pill">
-            <span class="cups-pill-text">Expect ~<strong id="demand-est-cups-val">97 cups</strong> today</span>
-          </div>
-        </div>
-      </div>
+      <h3 id="panel2-title" class="panel-exec-heading">🍋 2. Operations & Expansion</h3>
 
       <!-- 3. MORNING PREP & SUPPLIES STAND -->
       <div class="prep-stand-card">
@@ -2380,6 +2544,15 @@
         </div>
 
         <div class="prep-gingham-footer"></div>
+      </div>
+
+            <!-- EMERGENCY BANKRUPTCY CHORE BANNER (Kid Mode: Appears when cash < $5) -->
+      <div class="emergency-chore-pill" id="emergency-chore-banner">
+        <span>💸 Low on cash? Do a quick chore!</span>
+        <button id="btn-chore-emergency" class="chore-btn" style="min-height:36px; padding:4px 10px; font-size:12px;">
+          <span class="chore-name" id="chore-name-em">Chore</span>
+          <span class="chore-reward" id="chore-reward-em">+$0.00</span>
+        </button>
       </div>
 
       <!-- 4. BIG ACTION BUTTON: OPEN FOR BUSINESS -->
@@ -2829,6 +3002,9 @@
 
     // Chore Click
     document.getElementById('btn-chore').onclick = () => engine.doChore();
+    const btnChoreEm = document.getElementById('btn-chore-emergency');
+    if (btnChoreEm) btnChoreEm.onclick = () => engine.doChore();
+
 
     // Foldable State & Controllers
     let reportInlineExpanded = false;
@@ -3019,6 +3195,21 @@
       ];
 
       // 1. Money Box: cat cash counter, stats chips
+            // Update Compact Header Cash Counter & Cat
+      const headerCashNum = document.getElementById('header-cash-num');
+      if (headerCashNum) {
+        headerCashNum.textContent = fmtDollars(cashNum, true);
+      }
+      const headerCatImg = document.getElementById('header-cat-img');
+      const headerCatSlot = document.getElementById('header-cat-slot');
+      if (headerCatImg) {
+        const catMoodIdx = now < catCheerUntil ? 4 : baseCatMood(s);
+        headerCatImg.src = `./sprites/kawaii_cat/cat${catMoodIdx}.png`;
+      }
+      if (headerCatSlot) {
+        headerCatSlot.classList.toggle('cheer', now < catCheerUntil);
+      }
+
       setText(document.getElementById('bank-stage'), stageNames[s.phase]);
       renderSpriteNumber(document.getElementById('bank-cash'), fmtMoney(s.cash));
 
@@ -3159,6 +3350,14 @@
         setText(document.getElementById('chore-name'), busy ? `Resting... next: ${chore.name}` : chore.name);
         setText(document.getElementById('chore-reward'), busy ? `${chore.remainingSec.toFixed(1)}s` : `+$${chore.reward.toFixed(2)}`);
         if (choreFill) choreFill.style.width = busy ? `${((1 - chore.remainingSec / choreMaxRemain) * 100).toFixed(1)}%` : '0%';
+      }
+
+            const choreEmName = document.getElementById('chore-name-em');
+      const choreEmReward = document.getElementById('chore-reward-em');
+      if (chore && choreEmName && choreEmReward) {
+        const busy = chore.remainingSec > 0;
+        choreEmName.textContent = busy ? `Resting...` : chore.name;
+        choreEmReward.textContent = busy ? `${chore.remainingSec.toFixed(1)}s` : `+$${chore.reward.toFixed(2)}`;
       }
 
       // 2. Weather & Operations (Kawaii Weather Panel)
