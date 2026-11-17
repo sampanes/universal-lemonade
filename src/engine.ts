@@ -567,13 +567,14 @@ export class LemonadeEngine {
     }
 
     if (!s.flags.hasCooler && s.inv.ice > 0) {
-      notes.push(`${s.inv.ice} ice cubes melted overnight (Tip: buy 50-Qt Cooler to keep ice cold)`);
+      // Kid-facing: the cooler upgrade is not on the kid's screen, so the tip says what to do today.
+      notes.push(`${s.inv.ice} ice ${s.inv.ice === 1 ? 'cube' : 'cubes'} melted overnight. Ice only lasts one day, so buy just what today needs.`);
       s.inv.ice = 0;
     }
     if (!s.flags.hasMiniFridge && s.inv.lemons > 0 && !s.flags.hasLemonGrove) {
       const rotted = Math.ceil(s.inv.lemons * 0.20);
       s.inv.lemons -= rotted;
-      notes.push(`${rotted} lemons rotted (Tip: buy Mini-Fridge to keep lemons fresh)`);
+      notes.push(`${rotted} ${rotted === 1 ? 'lemon' : 'lemons'} went bad overnight. Lemons spoil, so don't stock up too far ahead.`);
     }
 
     const totalRevenue = (drivewayRevenue + franchiseGross + wholesaleGross + patentRoyalties + copackerNet) * s.brandMultiplier;
