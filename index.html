@@ -2066,7 +2066,7 @@
       .header-cash-num {
         font-family: var(--font-display);
         font-size: 21px;
-        font-weight: 700;
+        font-weight: 400;
         color: #ffffff;
         letter-spacing: 0.5px;
         text-shadow: 0 1px 3px rgba(0,0,0,0.5);
@@ -3195,21 +3195,6 @@
       ];
 
       // 1. Money Box: cat cash counter, stats chips
-            // Update Compact Header Cash Counter & Cat
-      const headerCashNum = document.getElementById('header-cash-num');
-      if (headerCashNum) {
-        headerCashNum.textContent = fmtDollars(cashNum, true);
-      }
-      const headerCatImg = document.getElementById('header-cat-img');
-      const headerCatSlot = document.getElementById('header-cat-slot');
-      if (headerCatImg) {
-        const catMoodIdx = now < catCheerUntil ? 4 : baseCatMood(s);
-        headerCatImg.src = `./sprites/kawaii_cat/cat${catMoodIdx}.png`;
-      }
-      if (headerCatSlot) {
-        headerCatSlot.classList.toggle('cheer', now < catCheerUntil);
-      }
-
       setText(document.getElementById('bank-stage'), stageNames[s.phase]);
       renderSpriteNumber(document.getElementById('bank-cash'), fmtMoney(s.cash));
 
@@ -3223,6 +3208,18 @@
         }
       }
       prevCashNum = cashNum;
+
+      // Compact header cash counter and cat (needs cashNum, so it must come after it)
+      setText(document.getElementById('header-cash-num'), fmtDollars(cashNum, true));
+      const headerCatImg = document.getElementById('header-cat-img');
+      const headerCatSlot = document.getElementById('header-cat-slot');
+      if (headerCatImg) {
+        const catSrc = `./sprites/kawaii_cat/cat${now < catCheerUntil ? 4 : baseCatMood(s)}.png`;
+        if (headerCatImg.getAttribute('src') !== catSrc) headerCatImg.setAttribute('src', catSrc);
+      }
+      if (headerCatSlot) {
+        headerCatSlot.classList.toggle('cheer', now < catCheerUntil);
+      }
 
       const bankCat = document.getElementById('bank-cat');
       const catMood = now < catCheerUntil ? 4 : baseCatMood(s);
