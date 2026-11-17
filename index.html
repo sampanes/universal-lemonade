@@ -588,18 +588,33 @@
       font-family: var(--font-ui);
       font-size: 11px;
       font-weight: 700;
-      padding: 2px 8px;
-      border-radius: 12px;
+      padding: 4px 10px;
+      border-radius: 14px;
       cursor: pointer;
-      background: #4c1d95;
-      color: #fbcfe8;
-      border: 1.5px solid #a855f7;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-      transition: transform 0.1s ease;
+      transition: all 0.15s ease;
+      letter-spacing: 0.3px;
     }
-    .dad-pill:hover {
+    body.dad-mode .dad-pill {
+      background: #3b2800;
+      color: #fef08a;
+      border: 1.5px solid #eab308;
+      box-shadow: 0 0 8px rgba(234, 179, 8, 0.4);
+    }
+    body.dad-mode .dad-pill:hover {
+      background: #451a03;
       transform: scale(1.04);
-      background: #5b21b6;
+    }
+    body:not(.dad-mode) .dad-pill {
+      background: #1e1e24;
+      color: #94a3b8;
+      border: 1.5px solid #475569;
+      opacity: 0.85;
+    }
+    body:not(.dad-mode) .dad-pill:hover {
+      opacity: 1;
+      border-color: #cbd5e1;
+      color: #f8fafc;
+      transform: scale(1.04);
     }
 
     /* Mascot & Demand Advice */
@@ -1708,7 +1723,7 @@
   <div class="header-bar">
     <div class="header-title" id="header-title" style="cursor: pointer;" title="Triple-click to toggle Dad Mode">🍋 UNIVERSAL LEMONADE</div>
     <div class="header-controls">
-      <button id="btn-dad-toggle" class="dad-pill dad-test-only">🛠️ DAD MODE: ON</button>
+      <button id="btn-dad-toggle" class="dad-pill">🛠️ DAD MODE: ON</button>
       <button id="btn-speed-1" class="dad-test-only">1x</button>
       <button id="btn-speed-10" class="dad-test-only">10x</button>
       <button id="btn-speed-50" class="dad-test-only">50x</button>
@@ -1762,6 +1777,16 @@
             </button>
           </div>
 
+          <!-- Chores: Emergency bankruptcy recovery & quick cash (ALWAYS VISIBLE!) -->
+          <div class="chore-wrap" id="bank-chore-wrap">
+            <div class="chore-title">Need cash fast? Do a chore!</div>
+            <button id="btn-chore" class="chore-btn">
+              <span class="chore-fill" id="chore-fill"></span>
+              <span class="chore-name" id="chore-name">Chore</span>
+              <span class="chore-reward" id="chore-reward">+$0.00</span>
+            </button>
+          </div>
+
           <div class="foldable-drawer" id="bank-stats-drawer">
             <div class="bank-stats">
               <div class="bank-chip">
@@ -1789,15 +1814,6 @@
                   <span class="bank-chip-sub" id="bank-quality-avg">avg 62%</span>
                 </span>
               </div>
-            </div>
-
-            <div class="chore-wrap dad-test-only">
-              <div class="chore-title">Need cash fast? Do a chore!</div>
-              <button id="btn-chore" class="chore-btn">
-                <span class="chore-fill" id="chore-fill"></span>
-                <span class="chore-name" id="chore-name">Chore</span>
-                <span class="chore-reward" id="chore-reward">+$0.00</span>
-              </button>
             </div>
           </div>
         </div>
@@ -2162,7 +2178,8 @@
       localStorage.setItem('universal_lemonade_dad_mode', dadModeActive ? 'true' : 'false');
       const toggleBtn = document.getElementById('btn-dad-toggle');
       if (toggleBtn) {
-        toggleBtn.textContent = `🛠️ DAD MODE: ${dadModeActive ? 'ON' : 'OFF'}`;
+        toggleBtn.textContent = dadModeActive ? '🛠️ DAD MODE: ON' : '🛠️ Dad Mode: OFF';
+        toggleBtn.title = dadModeActive ? 'Dad Mode test controls ACTIVE (Click to turn OFF)' : 'Dad Mode test controls OFF (Click to turn ON)';
       }
       console.log(`[Dad Mode] ${dadModeActive ? 'Enabled' : 'Disabled'}`);
     }
