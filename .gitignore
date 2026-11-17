@@ -4,6 +4,9 @@ node_modules/
 # Production build
 dist/
 
+# Simulator bundle (npm run sim:build)
+.sim-build/
+
 # Local env & logs
 .env
 .env.local

@@ -49,4 +49,23 @@ npm run dev
 
 # Build for production
 npm run build
+
+# Engine and pacing checks
+npm test
 ```
+
+## Balance Simulator
+
+Every economy tuning number lives in `src/balance.ts`. The simulator plays thousands of
+headless games with bot players across all CPU cores and reports pacing (day each stage is
+reached), money, going broke, chores and reputation as p10 / median / p90 across games.
+
+```bash
+npm run sim                                          # 1,000 games per bot, 60 days
+npm run sim -- --games 100000 --bots careful,sloppy  # more games, chosen bots
+npm run sim -- --vs demand.drivewayBaseTraffic=70    # current vs a changed setting
+npm run sim -- --help                                # all options and bot descriptions
+```
+
+Games are seeded, so the same seed and the same choices always play out the same way.
+Bots live in `sim/bots.ts`; add one to model a new kind of player.

@@ -301,6 +301,11 @@ export class LemonadeEngine {
     return computeIdealIce(tempF, this.balance);
   }
 
+  // The lemon:sugar recipe that tastes best.
+  public getGoldenRecipe(): { lemons: number; sugar: number } {
+    return { lemons: this.balance.recipe.idealLemons, sugar: this.balance.recipe.idealSugar };
+  }
+
   public computeRecipeQuality(tempF: number = this.state.tempF): number {
     return computeRecipeQuality(this.state.recipe, tempF, this.balance);
   }
