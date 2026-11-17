@@ -260,6 +260,12 @@ export class LemonadeEngine {
     this.state.weather = weather;
     this.state.tempF = tempF;
     this.state.seasonInfo = seasonInfo;
+
+    // When Auto-Ice is enabled, immediately update recipe.icePerCup to tomorrow's ideal ice
+    // so the morning prep screen, demand calculator, and supply warnings are accurate before starting the day.
+    if (this.state.flags.hasAutoIce && this.state.flags.autoIceEnabled) {
+      this.state.recipe.icePerCup = computeIdealIce(tempF);
+    }
   }
 
   public getSeasonInfo(day: number = this.state.day): SeasonInfo {

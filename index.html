@@ -2972,9 +2972,11 @@
       engine.state.recipe.sugarPerPitcher++;
     };
     document.getElementById('btn-ice-down').onclick = () => {
+      if (engine.state.flags.autoIceEnabled) engine.state.flags.autoIceEnabled = false;
       engine.state.recipe.icePerCup = Math.max(0, engine.state.recipe.icePerCup - 1);
     };
     document.getElementById('btn-ice-up').onclick = () => {
+      if (engine.state.flags.autoIceEnabled) engine.state.flags.autoIceEnabled = false;
       engine.state.recipe.icePerCup = Math.min(8, engine.state.recipe.icePerCup + 1);
     };
 
@@ -2996,6 +2998,16 @@
       }
 
       const s = engine.state;
+
+      // Auto-Ice synchronization: when Auto-Ice is enabled, keep recipe.icePerCup
+      // immediately synchronized to the current forecast temperature so the morning
+      // supply calculator and low-stock alerts reflect the actual ice needed to start the day.
+      if (s.flags.hasAutoIce && s.flags.autoIceEnabled) {
+        const ideal = engine.computeIdealIce(s.tempF);
+        if (s.recipe.icePerCup !== ideal) {
+          s.recipe.icePerCup = ideal;
+        }
+      }
       const stageNames = [
         '',
         'Stage 1: Driveway Hustle',
