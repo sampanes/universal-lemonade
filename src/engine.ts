@@ -468,6 +468,9 @@ export class LemonadeEngine {
 
       const totalSold = drivewayCupsSold + franchiseCupsSold;
       const pitchersUsed = Math.ceil(totalSold / cupsPerPitcher);
+      // Stock when the stands opened. The sold-out note below reports what we "had"; reading
+      // s.inv there (after the sales are deducted) always printed the leftovers, usually 0.
+      const had = { ...s.inv };
 
       s.inv.cups = Math.max(0, s.inv.cups - totalSold);
       s.inv.ice = Math.max(0, s.inv.ice - totalSold * s.recipe.icePerCup);
@@ -476,10 +479,10 @@ export class LemonadeEngine {
 
       if (maxTotalPour < totalCupDemand) {
         const bottlenecks: string[] = [];
-        if (maxByCups === maxTotalPour) { bottlenecks.push(`Cups (had ${s.inv.cups}, needed ${totalCupDemand})`); primaryBottleneck = 'cups'; }
-        if (maxByIce === maxTotalPour) { bottlenecks.push(`Ice (${s.inv.ice} cubes only poured ${maxByIce} cups at ${s.recipe.icePerCup}/cup; needed ${totalCupDemand * s.recipe.icePerCup})`); primaryBottleneck = 'ice'; }
-        if (maxByLemons === maxTotalPour) { bottlenecks.push(`Lemons (had ${s.inv.lemons}, needed ${Math.ceil(totalCupDemand / cupsPerPitcher) * s.recipe.lemonsPerPitcher})`); primaryBottleneck = 'lemons'; }
-        if (maxBySugar === maxTotalPour) { bottlenecks.push(`Sugar (had ${s.inv.sugar}, needed ${Math.ceil(totalCupDemand / cupsPerPitcher) * s.recipe.sugarPerPitcher})`); primaryBottleneck = 'sugar'; }
+        if (maxByCups === maxTotalPour) { bottlenecks.push(`Cups (had ${had.cups}, needed ${totalCupDemand})`); primaryBottleneck = 'cups'; }
+        if (maxByIce === maxTotalPour) { bottlenecks.push(`Ice (${had.ice} cubes only poured ${maxByIce} cups at ${s.recipe.icePerCup}/cup; needed ${totalCupDemand * s.recipe.icePerCup})`); primaryBottleneck = 'ice'; }
+        if (maxByLemons === maxTotalPour) { bottlenecks.push(`Lemons (had ${had.lemons}, needed ${Math.ceil(totalCupDemand / cupsPerPitcher) * s.recipe.lemonsPerPitcher})`); primaryBottleneck = 'lemons'; }
+        if (maxBySugar === maxTotalPour) { bottlenecks.push(`Sugar (had ${had.sugar}, needed ${Math.ceil(totalCupDemand / cupsPerPitcher) * s.recipe.sugarPerPitcher})`); primaryBottleneck = 'sugar'; }
         notes.push(`Stands sold out early: out of ${bottlenecks.join(' & ') || 'supplies'}! Sold ${totalSold}/${totalCupDemand} cups. Leftover supplies could not be poured without matching ingredients.`);
       }
     }

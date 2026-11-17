@@ -3,11 +3,49 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- This page ships its own dark theme. Declaring it stops phone browsers (Chrome
+       "auto dark theme", Samsung Internet dark mode) from force-recoloring text and
+       backgrounds, which made text on the light sprite pills unreadable. -->
+  <meta name="color-scheme" content="dark" />
+  <link rel="icon" type="image/png" href="./sprites/lemon.png" />
+  <link rel="preload" as="font" type="font/woff2" href="./fonts/Fredoka-Variable-latin.woff2" crossorigin />
+  <link rel="preload" as="font" type="font/woff2" href="./fonts/LilitaOne-Regular-latin.woff2" crossorigin />
   <title>Universal Lemonade Stand</title>
   <style>
+    /* Typefaces. Both files are served from this site (public/fonts, SIL Open Font License,
+       license texts next to them) instead of from a font CDN, so the page needs nothing
+       from other servers and works behind a strict site allowlist.
+         Fredoka    : everything you read (buttons, prices, descriptions). Weights 300-700.
+         Lilita One : banners, the big button and big numbers. It has ONE weight, so every
+                      rule that uses it also sets font-weight: 400; "bold" would make the
+                      browser smear a fake bold over it.
+       Outlines use -webkit-text-stroke with paint-order: stroke fill. The stroke is painted
+       behind the letter, so a 2px stroke shows 1px outside it and never eats the inside.
+       Keep them thin, and give ordinary reading text none. */
+    @font-face {
+      font-family: 'Fredoka';
+      font-style: normal;
+      font-weight: 300 700;
+      font-stretch: 100%;
+      font-display: swap;
+      src: url('./fonts/Fredoka-Variable-latin.woff2') format('woff2');
+    }
+    @font-face {
+      font-family: 'Lilita One';
+      font-style: normal;
+      font-weight: 400;
+      font-display: swap;
+      src: url('./fonts/LilitaOne-Regular-latin.woff2') format('woff2');
+    }
+    :root {
+      color-scheme: dark;
+      --font-ui: 'Fredoka', 'Trebuchet MS', 'Segoe UI', sans-serif;
+      --font-display: 'Lilita One', 'Fredoka', 'Trebuchet MS', sans-serif;
+    }
     * { box-sizing: border-box; }
     body {
-      font-family: monospace;
+      font-family: var(--font-ui);
+      font-weight: 500;
       background: #111;
       color: #eee;
       margin: 0;
@@ -27,9 +65,12 @@
       padding-bottom: 8px;
     }
     .header-title {
-      font-weight: bold;
+      font-family: var(--font-display);
+      font-weight: 400;
+      letter-spacing: 0.6px;
       color: #ffd700;
-      font-size: 15px;
+      font-size: 21px;
+      line-height: 1.1;
     }
     .header-controls {
       display: flex;
@@ -49,6 +90,25 @@
         padding: 8px;
       }
     }
+    /* Big screens (this is played on a 1080p touchscreen all-in-one): everything is scaled
+       up, so text reads from a step back and buttons are finger-sized. The tests are the
+       window size in CSS pixels, so a screen Windows already magnifies (1080p at 125% is
+       1536 px wide) is left alone. Each step is the largest scale at which the first two
+       columns of a new game still fit without scrolling:
+         width  >= 1536 x scale keeps the Money Box wide enough for chips beside the cat,
+         height >=  890 x scale keeps the recipe card (with the auto-ice button) on screen. */
+    @media (min-width: 1690px) and (min-height: 979px) {
+      body { zoom: 1.1; } /* 1080p in a window with a title bar */
+    }
+    @media (min-width: 1840px) and (min-height: 1068px) {
+      body { zoom: 1.2; } /* 1080p full screen */
+    }
+    @media (min-width: 2310px) and (min-height: 1335px) {
+      body { zoom: 1.5; } /* 1440p */
+    }
+    @media (min-width: 3080px) and (min-height: 1780px) {
+      body { zoom: 2; } /* 4K at 100% */
+    }
     .panel {
       border: 1px solid #444;
       padding: 12px;
@@ -60,7 +120,11 @@
       color: #ffd700;
       border-bottom: 1px solid #333;
       padding-bottom: 6px;
-      font-size: 14px;
+      font-family: var(--font-display);
+      font-weight: 400;
+      letter-spacing: 0.4px;
+      font-size: 16px;
+      line-height: 1.2;
     }
     button {
       background: #2b2b2b;
@@ -69,15 +133,22 @@
       padding: 8px 12px;
       margin: 2px;
       cursor: pointer;
-      font-family: monospace;
+      font-family: var(--font-ui);
+      font-weight: 600;
       font-size: 13px;
       border-radius: 4px;
       touch-action: manipulation;
       min-height: 38px;
     }
-    button:hover:not(:disabled) {
-      background: #444;
-      border-color: #ffd700;
+    /* Hover styles are for a mouse only. After a finger tap :hover sticks to the tapped
+       button, which left it gold-bordered / enlarged until the next tap. Two guards:
+       the media query covers phones, and html.touch-input (set by the script from the last
+       pointer type) covers a touchscreen PC that also has a mouse, where the query is true. */
+    @media (hover: hover) {
+      html:not(.touch-input) button:hover:not(:disabled) {
+        background: #444;
+        border-color: #ffd700;
+      }
     }
     button:disabled {
       opacity: 0.35;
@@ -123,6 +194,8 @@
       background: #080808;
       padding: 6px;
       border: 1px solid #333;
+      font-family: Consolas, 'Courier New', monospace; /* the activity log keeps its terminal look */
+      font-weight: 400;
       font-size: 12px;
       border-radius: 3px;
       -webkit-overflow-scrolling: touch;
@@ -249,17 +322,21 @@
     .ratio-banner {
       background: linear-gradient(90deg, #9333ea, #a855f7, #c084fc);
       color: #fff;
-      font-weight: bold;
+      font-family: var(--font-display);
+      font-weight: 400;
       text-align: center;
       padding: 6px 10px;
-      font-size: 13px;
-      letter-spacing: 0.5px;
+      font-size: 17px;
+      line-height: 1.15;
+      letter-spacing: 0.8px;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 6px;
+      gap: 7px;
       border-bottom: 2px solid #7e22ce;
-      text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+      -webkit-text-stroke: 2px #6b21a8;
+      paint-order: stroke fill;
+      text-shadow: 0 2px 0 rgba(88, 28, 135, 0.55);
     }
     .ratio-body {
       display: grid;
@@ -291,6 +368,7 @@
       object-fit: contain;
     }
     .ratio-btn {
+      position: relative;
       width: 30px;
       height: 30px;
       padding: 0;
@@ -304,10 +382,21 @@
       min-height: auto;
       transition: transform 0.1s;
     }
-    .ratio-btn:hover:not(:disabled) {
-      background: transparent;
-      border-color: transparent;
-      transform: scale(1.08);
+    /* Invisible finger margin: the + and - art stays 30 px, the tappable area is 42 px.
+       On the 21-inch 1080p touchscreen this is played on, 30 px is under 9 mm even after
+       the big-screen scale-up, which is small for a kid's finger. Rows are 44 px apart, so
+       neighboring tap areas do not overlap. */
+    .ratio-btn::after {
+      content: '';
+      position: absolute;
+      inset: -6px;
+    }
+    @media (hover: hover) {
+      html:not(.touch-input) .ratio-btn:hover:not(:disabled) {
+        background: transparent;
+        border-color: transparent;
+        transform: scale(1.08);
+      }
     }
     .ratio-btn:active:not(:disabled) {
       transform: scale(0.92);
@@ -342,9 +431,51 @@
     .floating-bob-1 { animation: float-gentle-1 2.8s ease-in-out infinite; transform-origin: center; }
     .floating-bob-2 { animation: float-gentle-2 3.4s ease-in-out infinite; transform-origin: center; }
 
+    /* Lemon wheels and ice inside the pitcher SVG. transform-box: fill-box makes "center" mean
+       the sprite's own center; without it SVG resolves it against the whole 1024-unit viewBox,
+       which swung every rotated sprite away from where it was placed. The viewBox is drawn
+       about 170 px wide, so the bob distance is in (larger) viewBox units. */
+    .pitcher-item,
+    .pitcher-bob-1,
+    .pitcher-bob-2 {
+      transform-box: fill-box;
+      transform-origin: center;
+    }
+    .pitcher-bob-1 { animation: pitcher-bob-1 2.8s ease-in-out infinite; }
+    .pitcher-bob-2 { animation: pitcher-bob-2 3.4s ease-in-out infinite; }
+    @keyframes pitcher-bob-1 {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-16px) rotate(4deg); }
+    }
+    @keyframes pitcher-bob-2 {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-22px) rotate(-6deg); }
+    }
+    .autoice-btn {
+      min-height: 30px;
+      margin: 2px 0 0 0;
+      padding: 3px 12px;
+      background: #ffffff;
+      border: 2px solid #c084fc;
+      border-radius: 15px;
+      color: #6b21a8;
+      font-weight: 800;
+      font-size: 11px;
+    }
+    .autoice-btn.on {
+      background: #dbeafe;
+      border-color: #3b82f6;
+      color: #1d4ed8;
+    }
+    @media (hover: hover) {
+      html:not(.touch-input) .autoice-btn:hover:not(:disabled) { background: #f5f3ff; border-color: #a855f7; }
+      html:not(.touch-input) .autoice-btn.on:hover:not(:disabled) { background: #bfdbfe; border-color: #2563eb; }
+    }
+
     /* Morning Prep & Operations Kawaii Styles */
     .weather-card {
-      margin-bottom: 8px;
+      max-width: 440px; /* the panel art is 362 x 159; wider than this it smears sideways */
+      margin: 0 auto 8px auto;
       filter: drop-shadow(0 3px 6px rgba(0,0,0,0.22));
     }
     .weather-panel-inner {
@@ -398,6 +529,7 @@
     }
     .weather-details {
       flex: 1;
+      min-width: 0;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -412,10 +544,11 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-weight: 800;
-      font-size: 13px;
+      font-family: var(--font-display);
+      font-weight: 400;
+      font-size: 15px;
       color: #713f12;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.6px;
       text-shadow: 0 1px 1px rgba(255, 255, 255, 0.7);
       padding: 0 8px;
       box-sizing: border-box;
@@ -429,7 +562,9 @@
       border-radius: 14px;
       padding: 2px 9px;
       box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-      white-space: nowrap;
+      /* May wrap: as one unbreakable line this hint made the weather card 306 px wide at
+         minimum, wider than a 320 px phone, so the whole page overflowed sideways. */
+      text-align: center;
     }
 
     /* Mascot & Demand Advice */
@@ -439,6 +574,7 @@
     .mascot-advice-row {
       display: flex;
       align-items: center;
+      justify-content: center;
       gap: 6px;
     }
     .mascot-avatar-wrap {
@@ -458,11 +594,14 @@
     .mascot-bubble-wrap {
       flex: 1;
       min-width: 0;
+      max-width: 340px; /* bubble art is 504 x 164; keeps the tail and sparks in shape */
     }
     .mascot-speech-bubble {
       background: url('./sprites/morning_prep/advice_bubble_bg.png') no-repeat center / 100% 100%;
-      min-height: 72px;
-      padding: 8px 12px 8px 22px; /* Left padding clears pointer tail */
+      min-height: 78px;
+      /* The bubble body only fills part of the sprite: pointer tail on the left, spark
+         doodle above/right. Padding keeps the text inside the body. */
+      padding: 16px 10% 9px 14%;
       display: flex;
       flex-direction: column;
       justify-content: center;
@@ -493,7 +632,10 @@
       height: 38px;
       display: flex;
       align-items: center;
-      padding-left: 28%; /* Clear lemonade cup illustration */
+      /* Clears the cup + lemon slice art (about 112 px of the 290 px pill). Percent padding
+         is measured against the wrapper, which is far wider than the pill in a desktop
+         column, so cap it or the text gets squeezed out and cut off. */
+      padding-left: min(34%, 112px);
       padding-right: 12px;
       box-sizing: border-box;
       filter: drop-shadow(0 2px 4px rgba(0,0,0,0.12));
@@ -520,30 +662,43 @@
     .prep-stand-header {
       position: relative;
       background: linear-gradient(180deg, #7e22ce 0%, #9333ea 50%, #a855f7 100%);
-      padding: 6px 8px 0 8px;
+      padding: 8px 8px 0 8px;
       text-align: center;
     }
+    /* Sits on the purple ribbon drawn into prep_awning_top.png (342 x 62). */
     .prep-ribbon-title {
+      position: absolute;
+      left: 24%;
+      right: 24%;
+      top: 20%;
+      height: 54%;
       color: #fff;
-      font-weight: 800;
-      font-size: 13px;
-      letter-spacing: 0.6px;
-      text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+      font-family: var(--font-display);
+      font-weight: 400;
+      font-size: 16px;
+      font-size: clamp(12px, 4.8cqw, 18px); /* follows the ribbon as the banner shrinks on phones */
+      letter-spacing: 0.8px;
+      -webkit-text-stroke: 2px #5b21b6;
+      paint-order: stroke fill;
+      text-shadow: 0 2px 0 rgba(76, 29, 149, 0.6);
+      white-space: nowrap;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 6px;
-      padding: 2px 0 6px 0;
     }
     .ribbon-sparkle {
-      width: 15px;
-      height: 15px;
+      width: 17px;
+      height: 17px;
       object-fit: contain;
     }
     .prep-awning-banner {
-      background: url('./sprites/morning_prep/prep_awning_top.png') no-repeat center bottom / 100% auto;
-      height: 28px;
+      position: relative;
+      container-type: inline-size; /* the ribbon title sizes itself from the banner width */
       width: 100%;
+      max-width: 380px;
+      margin: 0 auto;
+      aspect-ratio: 342 / 62;
+      background: url('./sprites/morning_prep/prep_awning_top.png') no-repeat center bottom / 100% 100%;
     }
     .prep-stand-body {
       padding: 10px 10px 8px 10px;
@@ -567,25 +722,6 @@
     .prep-mult-pills {
       display: flex;
       gap: 4px;
-    }
-    .mult-pill-btn {
-      background: #f5f3ff;
-      color: #6b21a8;
-      border: 1.5px solid #c084fc;
-      border-radius: 12px;
-      padding: 2px 8px;
-      font-weight: 800;
-      font-size: 11px;
-      min-height: 24px;
-      cursor: pointer;
-      font-family: inherit;
-      transition: all 0.15s;
-    }
-    .mult-pill-btn.active {
-      background: #facc15 !important;
-      color: #713f12 !important;
-      border-color: #ca8a04 !important;
-      box-shadow: 0 1px 4px rgba(202, 138, 4, 0.4);
     }
     .prep-items-grid {
       display: grid;
@@ -668,22 +804,26 @@
       align-items: center;
       justify-content: center;
       color: #ffffff;
-      font-family: inherit;
-      font-weight: 800;
-      font-size: 11.5px;
+      font-family: var(--font-ui);
+      font-weight: 700;
+      font-size: 14.5px;
       letter-spacing: 0.3px;
-      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+      -webkit-text-stroke: 2px #a3155f;
+      paint-order: stroke fill;
+      text-shadow: 0 1.5px 0 #a3155f;
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
       border-radius: 18px;
       touch-action: manipulation;
       transition: transform 0.1s, filter 0.15s;
       min-height: auto;
     }
-    .kawaii-buy-btn:hover:not(:disabled) {
-      transform: scale(1.03);
-      filter: brightness(1.08);
-      background: url('./sprites/morning_prep/buy_button_cart_bg.png') no-repeat center / 100% 100%;
-      border-color: transparent;
+    @media (hover: hover) {
+      html:not(.touch-input) .kawaii-buy-btn:hover:not(:disabled) {
+        transform: scale(1.03);
+        filter: brightness(1.08);
+        background: url('./sprites/morning_prep/buy_button_cart_bg.png') no-repeat center / 100% 100%;
+        border-color: transparent;
+      }
     }
     .kawaii-buy-btn:active:not(:disabled) {
       transform: scale(0.97);
@@ -706,9 +846,13 @@
       padding: 12px 14px;
       background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%);
       color: #ffffff;
-      font-weight: 800;
-      font-size: 14px;
-      letter-spacing: 0.5px;
+      font-family: var(--font-display);
+      font-weight: 400;
+      font-size: 20px;
+      line-height: 1.1;
+      letter-spacing: 0.8px;
+      -webkit-text-stroke: 3px #065f46;
+      paint-order: stroke fill;
       border: 3px solid #6ee7b7;
       border-radius: 26px;
       box-shadow: 0 4px 14px rgba(16, 185, 129, 0.45), 0 0 12px rgba(110, 231, 183, 0.3);
@@ -720,14 +864,16 @@
       touch-action: manipulation;
       transition: transform 0.12s, filter 0.15s, box-shadow 0.15s;
       min-height: 50px;
-      text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+      text-shadow: 0 2px 0 #064e3b;
     }
-    .kawaii-run-day-btn:hover:not(:disabled) {
-      transform: translateY(-2px) scale(1.02);
-      filter: brightness(1.08);
-      box-shadow: 0 6px 20px rgba(16, 185, 129, 0.55), 0 0 16px rgba(110, 231, 183, 0.4);
-      background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%);
-      border-color: #6ee7b7;
+    @media (hover: hover) {
+      html:not(.touch-input) .kawaii-run-day-btn:hover:not(:disabled) {
+        transform: translateY(-2px) scale(1.02);
+        filter: brightness(1.08);
+        box-shadow: 0 6px 20px rgba(16, 185, 129, 0.55), 0 0 16px rgba(110, 231, 183, 0.4);
+        background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%);
+        border-color: #6ee7b7;
+      }
     }
     .kawaii-run-day-btn:active:not(:disabled) {
       transform: translateY(1px) scale(0.98);
@@ -736,6 +882,592 @@
       width: 20px;
       height: 20px;
       object-fit: contain;
+    }
+    .btn-sun {
+      width: 30px;
+      height: 30px;
+      margin: -6px 0;
+      object-fit: contain;
+    }
+
+    /* ==================================================================
+       Money Box: cat cash counter (sprites/kawaii_cat)
+       ================================================================== */
+    .bank-card {
+      background: #fdf4ff;
+      border: 3px solid #8b5cf6;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(139, 92, 246, 0.25);
+      color: #1e1b4b;
+    }
+    .bank-body {
+      position: relative;
+      container: bank / inline-size; /* lets the stat chips react to the box width, see below */
+      padding: 10px 10px 12px 10px;
+      background: linear-gradient(180deg, #fef6ff 0%, #f6eaff 55%, #ecdcff 100%);
+      overflow: hidden;
+    }
+    .bank-cloud,
+    .bank-twinkle {
+      position: absolute;
+      pointer-events: none;
+      user-select: none;
+    }
+    .bank-cloud-a { width: 104px; left: -30px; top: 96px; opacity: 0.7; animation: bank-drift 9s ease-in-out infinite; }
+    .bank-cloud-b { width: 78px; right: -20px; top: 44px; opacity: 0.6; animation: bank-drift 11s ease-in-out infinite reverse; }
+    .bank-twinkle-a { width: 20px; left: 16px; top: 46px; animation: bank-twinkle 2.6s ease-in-out infinite; }
+    .bank-twinkle-b { width: 13px; right: 30px; top: 110px; animation: bank-twinkle 3.1s ease-in-out 0.8s infinite; }
+    @keyframes bank-drift {
+      0%, 100% { transform: translateX(0); }
+      50% { transform: translateX(10px); }
+    }
+    @keyframes bank-twinkle {
+      0%, 100% { transform: scale(0.7) rotate(0deg); opacity: 0.45; }
+      50% { transform: scale(1.1) rotate(12deg); opacity: 1; }
+    }
+    .bank-stage-pill {
+      position: relative;
+      display: table;
+      margin: 0 auto;
+      padding: 3px 12px;
+      background: #ffffff;
+      border: 2px solid #c084fc;
+      border-radius: 14px;
+      font-size: 11px;
+      font-weight: 800;
+      color: #6b21a8;
+      text-align: center;
+      box-shadow: 0 1px 3px rgba(124, 58, 237, 0.15);
+    }
+
+    /* Counter geometry is expressed in fractions of the base pill width (--bw) so the whole
+       cat + pill + digits group scales with the column. Sprite sheet scale: pill = 376 px.
+       --cw is the room the column offers: a long number (millions, billions) first widens
+       the pill up to --cw and only then shrinks its digits. */
+    .bank-counter {
+      position: relative;
+      margin: 4px 0 0 0;
+      container-type: inline-size;
+    }
+    .bank-counter-inner {
+      --cw: 100cqw;
+      --bw: min(100cqw, 330px);
+      position: relative;
+      width: var(--bw);
+      margin: 0 auto;
+      padding-top: calc(var(--bw) * 0.51); /* headroom for the tallest (cheering) cat */
+    }
+    @supports not (width: 1cqw) {
+      .bank-counter { width: 240px; margin: 4px auto 0 auto; }
+      .bank-counter-inner { --cw: 240px; --bw: 240px; }
+    }
+    .bank-cat {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      height: calc(var(--bw) * 0.545); /* paws overlap the pill rim */
+      z-index: 2;
+      pointer-events: none;
+      animation: bank-cat-peek 3.4s ease-in-out infinite;
+    }
+    .bank-cat img {
+      position: absolute;
+      left: 50%;
+      bottom: 0;
+      width: calc(var(--bw) * var(--w) / 376);
+      transform: translateX(-50%);
+      opacity: 0;
+    }
+    .bank-cat img.on { opacity: 1; }
+    .bank-cat.cheer img.on { animation: bank-cat-hop 0.42s ease-out 2; }
+    @keyframes bank-cat-peek {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(calc(var(--bw) * -0.008)); }
+    }
+    @keyframes bank-cat-hop {
+      0%, 100% { transform: translateX(-50%) translateY(0); }
+      45% { transform: translateX(-50%) translateY(calc(var(--bw) * -0.035)); }
+    }
+    .bank-pill {
+      position: relative;
+      z-index: 1;
+      /* at least the base width, centered under the cat, growing with the number */
+      left: 50%;
+      transform: translateX(-50%);
+      width: max-content;
+      min-width: 100%;
+      max-width: var(--cw);
+      height: calc(var(--bw) * 0.34);
+      border: calc(var(--bw) * 0.024) solid #dba6f5;
+      border-radius: calc(var(--bw) * 0.17);
+      background: linear-gradient(180deg, #ffffff 0%, #fffafd 60%, #fbf0ff 100%);
+      box-shadow:
+        0 0 0 calc(var(--bw) * 0.006) #c992ea,
+        inset 0 calc(var(--bw) * -0.012) calc(var(--bw) * 0.02) rgba(216, 180, 254, 0.35),
+        0 3px 8px rgba(124, 58, 237, 0.22);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: calc(var(--bw) * 0.028);
+      padding: 0 calc(var(--bw) * 0.04);
+    }
+    .bank-coin {
+      flex: none;
+      width: calc(var(--bw) * 0.15);
+      height: calc(var(--bw) * 0.15);
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 30%, #fff6b8 0%, #fcd34d 48%, #f59e0b 100%);
+      border: calc(var(--bw) * 0.009) solid #c2780a;
+      box-shadow: inset 0 calc(var(--bw) * -0.008) 0 rgba(180, 100, 0, 0.3), 0 1px 2px rgba(120, 60, 0, 0.3);
+      color: #8a4b06;
+      font-family: var(--font-display);
+      font-weight: 400;
+      font-size: calc(var(--bw) * 0.105);
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    /* A number drawn with the n0..n9 / nc digit sprites (68 px tall on a shared baseline).
+       --units = the number's width in glyph-heights, set from JS. Every digit gets the same
+       cell, so the size depends only on how many digits there are, and a small gain on a big
+       number changes the last digits without moving or resizing the rest.
+       0.36 = the pill's border, padding, coin and gap, in fractions of --bw. */
+    .sprite-num {
+      --units: 4;
+      --h: min(calc(var(--bw) * 0.165), calc((var(--cw) - var(--bw) * 0.36) / var(--units)));
+      height: var(--h);
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      flex: none;
+    }
+    .sprite-num img {
+      height: 100%;
+      width: auto;
+      display: block;
+    }
+    .sprite-num img.sn-d {
+      width: calc(var(--h) * 54 / 68); /* widest digit ("4"); narrower ones sit centered */
+      object-fit: contain;
+      object-position: center bottom;
+    }
+    .sprite-num .sn-dot {
+      width: calc(var(--h) * 0.24);
+      height: calc(var(--h) * 0.24);
+      margin: 0 calc(var(--h) * 0.055) calc(var(--h) * 0.074) calc(var(--h) * 0.055);
+      border-radius: 50%;
+      background: #541e60;
+    }
+    .sprite-num .sn-gap { width: calc(var(--h) * 0.18); }
+    .sprite-num .sn-txt {
+      align-self: center;
+      margin-left: calc(var(--h) * 0.06);
+      font-family: var(--font-display);
+      font-size: calc(var(--h) * 0.8);
+      font-weight: 400;
+      line-height: 1;
+      color: #541e60;
+    }
+    .bank-floaters {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: calc(var(--bw) * 0.48);
+      height: 0;
+      z-index: 3;
+      pointer-events: none;
+    }
+    .bank-float {
+      position: absolute;
+      top: 0;
+      font-family: var(--font-display);
+      font-size: 18px;
+      font-weight: 400;
+      letter-spacing: 0.3px;
+      white-space: nowrap;
+      text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff, 0 2px 4px rgba(88, 28, 135, 0.25);
+      animation: bank-float-up 1.25s ease-out forwards;
+    }
+    .bank-float.gain { right: 2%; color: #059669; }
+    .bank-float.spend { left: 2%; color: #e11d74; }
+    @keyframes bank-float-up {
+      0% { opacity: 0; transform: translateY(8px) scale(0.8); }
+      15% { opacity: 1; transform: translateY(0) scale(1.12); }
+      70% { opacity: 1; }
+      100% { opacity: 0; transform: translateY(-34px) scale(1); }
+    }
+    .bank-caption {
+      position: relative;
+      margin-top: 5px;
+      text-align: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: #7e22ce;
+    }
+    .bank-stats {
+      position: relative;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      margin-top: 10px;
+    }
+    /* Wide Money Box (a desktop column): the four stat chips move up beside the cat, two per
+       side, instead of adding two rows under the counter. That saves about 105 px of height,
+       which is what keeps the recipe card on screen on a 1080p display once everything is
+       scaled up. 204px = the cheering cat (190 px at full size) plus a little clearance. */
+    @container bank (min-width: 444px) {
+      .bank-stats {
+        position: absolute;
+        top: 46px; /* just under the stage pill */
+        left: 10px;
+        right: 10px;
+        margin-top: 0;
+        grid-template-columns: minmax(0, 1fr) 204px minmax(0, 1fr);
+        align-items: start;
+      }
+      .bank-stats .bank-chip:nth-child(1) { grid-area: 1 / 1; }
+      .bank-stats .bank-chip:nth-child(2) { grid-area: 2 / 1; }
+      .bank-stats .bank-chip:nth-child(3) { grid-area: 1 / 3; }
+      .bank-stats .bank-chip:nth-child(4) { grid-area: 2 / 3; }
+      .bank-counter { z-index: 1; } /* cat and the +$ floaters stay in front of the chips */
+    }
+    .bank-chip {
+      min-width: 0;
+      container-type: inline-size;
+      padding: 4px 8px 5px 8px;
+      background: rgba(255, 255, 255, 0.92);
+      border: 2px solid #e9d5ff;
+      border-radius: 12px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+    }
+    .bank-chip-label {
+      display: block;
+      font-size: 10px;
+      font-weight: 700;
+      color: #7e22ce;
+    }
+    .bank-chip-value {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 2px 5px;
+      font-size: 13px;
+      font-weight: 800;
+      color: #4a044e;
+    }
+    .bank-chip-sub {
+      font-size: 10px;
+      font-weight: 700;
+      color: #86198f;
+    }
+    /* Full-digit totals ("$123,456,789,012") shrink to the chip instead of spilling out of it.
+       --chars comes from JS. 0.54em per character: a long number in Fredoka bold averages
+       0.50em even when every digit is the widest one (digits 0.57em, commas 0.22em). */
+    .bank-chip-value.fit-text { font-size: min(13px, calc(100cqw / (var(--chars, 6) * 0.54))); }
+    /* Five smiling stars; the lit row is clipped to a percentage. */
+    .star-meter {
+      position: relative;
+      display: inline-block;
+      width: calc(var(--star, 14px) * 5);
+      height: var(--star, 14px);
+      flex: none;
+    }
+    .star-meter-row {
+      position: absolute;
+      left: 0;
+      top: 0;
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+      white-space: nowrap;
+      font-size: 0;
+      line-height: 0;
+    }
+    .star-meter-row img {
+      width: var(--star, 14px);
+      height: var(--star, 14px);
+      object-fit: contain;
+    }
+    .star-meter-row.dim img { filter: grayscale(1) brightness(1.25); opacity: 0.38; }
+
+    /* Chore: glossy candy button with a rest timer */
+    .chore-wrap {
+      position: relative;
+      margin-top: 10px;
+    }
+    .chore-title {
+      margin-bottom: 4px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #6b21a8;
+      text-align: center;
+    }
+    .chore-btn {
+      position: relative;
+      width: 100%;
+      min-height: 48px;
+      margin: 0;
+      padding: 6px 8px 6px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      overflow: hidden;
+      border: 2px solid #db2777;
+      border-radius: 26px;
+      background: linear-gradient(180deg, #ff9cc4 0%, #f9689f 55%, #ec4899 100%);
+      box-shadow: 0 3px 0 #be185d, 0 6px 10px rgba(190, 24, 93, 0.28);
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 14.5px;
+      letter-spacing: 0.2px;
+      text-align: left;
+      text-shadow: 0 1px 2px rgba(131, 24, 67, 0.6);
+      transition: transform 0.1s, filter 0.15s, box-shadow 0.1s;
+    }
+    .chore-btn::before {
+      content: '';
+      position: absolute;
+      left: 12px;
+      right: 12px;
+      top: 3px;
+      height: 36%;
+      border-radius: 20px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0));
+      pointer-events: none;
+    }
+    .chore-btn:active:not(:disabled) {
+      transform: translateY(2px);
+      box-shadow: 0 1px 0 #be185d, 0 2px 5px rgba(190, 24, 93, 0.28);
+    }
+    .chore-btn:disabled { opacity: 1; cursor: wait; }
+    .chore-btn.is-busy {
+      background: linear-gradient(180deg, #f3e8ff 0%, #e2ccff 100%);
+      border-color: #a78bfa;
+      box-shadow: 0 3px 0 #a78bfa;
+      color: #581c87;
+      text-shadow: none;
+    }
+    .chore-fill {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 0;
+      background: rgba(168, 85, 247, 0.3);
+      pointer-events: none;
+    }
+    .chore-name {
+      position: relative;
+      flex: 1;
+      min-width: 0;
+      line-height: 1.2;
+    }
+    .chore-reward {
+      position: relative;
+      flex: none;
+      min-width: 62px;
+      padding: 4px 9px;
+      background: #ffffff;
+      border-radius: 14px;
+      box-shadow: inset 0 -2px 0 rgba(190, 24, 93, 0.14);
+      color: #be185d;
+      font-size: 14.5px;
+      font-weight: 700;
+      text-align: center;
+      text-shadow: none;
+    }
+    .chore-btn.is-busy .chore-reward { color: #6b21a8; box-shadow: inset 0 -2px 0 rgba(107, 33, 168, 0.14); }
+
+    /* Packs-per-tap candy step buttons (+1 / +10 / +100 sprites) */
+    .step-btn {
+      width: 58px;
+      height: 34px;
+      min-height: auto;
+      margin: 0;
+      padding: 2px 0;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      opacity: 0.55;
+      filter: saturate(0.55);
+      transition: transform 0.12s, opacity 0.12s, filter 0.12s;
+    }
+    .step-btn img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+    .step-btn.active {
+      opacity: 1;
+      transform: scale(1.1);
+      filter: saturate(1) drop-shadow(0 0 3px rgba(250, 204, 21, 1)) drop-shadow(0 2px 2px rgba(0, 0, 0, 0.2));
+    }
+    .step-btn:active { transform: scale(0.96); }
+
+    /* ==================================================================
+       Day Report: cat mood + smiling-star customer reviews
+       ================================================================== */
+    .report-card {
+      margin-bottom: 10px;
+      background: #fffdf7;
+      border: 3px solid #8b5cf6;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(139, 92, 246, 0.25);
+      color: #1e1b4b;
+    }
+    .report-banner {
+      justify-content: space-between;
+      padding: 6px 12px;
+    }
+    .report-weather {
+      padding: 1px 8px;
+      background: rgba(255, 255, 255, 0.22);
+      border-radius: 10px;
+      font-family: var(--font-ui);
+      font-size: 11.5px;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+      white-space: nowrap;
+      -webkit-text-stroke: 0; /* small text: no outline */
+      text-shadow: 0 1px 1px rgba(88, 28, 135, 0.5);
+    }
+    .report-body {
+      padding: 10px;
+      background: linear-gradient(180deg, #fffdf5 0%, #fef9e7 100%);
+    }
+    .report-hero {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 10px;
+      background: linear-gradient(180deg, #fef6ff 0%, #f3e8ff 100%);
+      border: 2px solid #e9d5ff;
+      border-radius: 14px;
+    }
+    .report-cat {
+      flex: none;
+      width: 78px;
+      height: 72px;
+      object-fit: contain;
+      object-position: center bottom;
+    }
+    .report-hero-text { flex: 1 1 0; min-width: 0; container-type: inline-size; }
+    .report-hero-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: #7e22ce;
+    }
+    .report-profit {
+      font-family: var(--font-display);
+      font-size: 27px;
+      /* Long profits shrink to fit: Lilita One averages at most 0.58em per character here. */
+      font-size: min(27px, calc(100cqw / (var(--chars, 8) * 0.6)));
+      font-weight: 400;
+      letter-spacing: 0.3px;
+      line-height: 1.15;
+      white-space: nowrap;
+    }
+    .report-profit.pos { color: #059669; }
+    .report-profit.neg { color: #e11d74; }
+    .report-hero-sub {
+      font-size: 11px;
+      font-weight: 700;
+      color: #4a044e;
+    }
+    .report-rows {
+      margin-top: 8px;
+      padding: 6px 10px;
+      background: #ffffff;
+      border: 2px dashed #e9d5ff;
+      border-radius: 12px;
+      font-size: 12px;
+    }
+    .report-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 2px 0;
+      font-weight: 700;
+      color: #4a044e;
+    }
+    .report-row .amt { flex: none; color: #047857; }
+    .report-row.cost .amt { color: #be123c; }
+    .report-row.total {
+      margin-top: 4px;
+      padding-top: 5px;
+      border-top: 2px dashed #e9d5ff;
+      font-size: 13px;
+      font-weight: 900;
+    }
+    .report-row.total.neg .amt { color: #be123c; }
+    .report-section-title {
+      margin: 10px 0 4px 0;
+      font-size: 11px;
+      font-weight: 800;
+      color: #6b21a8;
+    }
+    .report-review {
+      margin-top: 5px;
+      padding: 6px 10px;
+      background: #ffffff;
+      border: 2px solid #e9d5ff;
+      border-radius: 12px;
+    }
+    .report-review.team {
+      background: #eff6ff;
+      border-color: #bfdbfe;
+    }
+    .report-review-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      margin-bottom: 2px;
+    }
+    .report-review-who {
+      min-width: 0;
+      font-size: 10.5px;
+      font-weight: 800;
+      color: #7e22ce;
+    }
+    .report-review.team .report-review-who { color: #1d4ed8; }
+    .report-review-quote {
+      font-size: 11.5px;
+      font-weight: 600;
+      line-height: 1.3;
+      color: #3b0764;
+    }
+    .report-notes {
+      margin: 8px 0 0 0;
+      padding: 6px 10px 6px 26px;
+      background: #fff7ed;
+      border: 2px solid #fed7aa;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      line-height: 1.35;
+      color: #7c2d12;
+    }
+    .report-notes li + li { margin-top: 3px; }
+
+    /* Mouse-only hover effects (see the note on the global button:hover rule). */
+    @media (hover: hover) {
+      html:not(.touch-input) .chore-btn:hover:not(:disabled) {
+        background: linear-gradient(180deg, #ff9cc4 0%, #f9689f 55%, #ec4899 100%);
+        border-color: #db2777;
+        filter: brightness(1.07);
+        transform: translateY(-1px);
+      }
+      html:not(.touch-input) .step-btn:hover:not(:disabled) {
+        background: transparent;
+        opacity: 1;
+      }
     }
   </style>
 </head>
@@ -755,18 +1487,86 @@
     <!-- COLUMN 1: FINANCES, RECIPE & EMERGENCY CHORES -->
     <div class="panel">
       <h3>1. Executive Office</h3>
-      <div id="readout-finances"></div>
-      <hr style="border-color:#333; margin: 10px 0;"/>
-      
-      <div style="font-weight: bold; margin-bottom: 4px;">Emergency Capital (Kid Chores):</div>
-      <button id="btn-chore" style="width:100%; padding:12px; font-weight:bold; min-height:44px;">
-        DO CHORE
-      </button>
+
+      <!-- MONEY BOX: CAT CASH COUNTER, STATS & CHORES -->
+      <div class="bank-card">
+        <div class="ratio-banner">
+          <img src="./sprites/kawaii_cat/sparkle_small.png" class="ribbon-sparkle" alt="" />
+          <span>MY MONEY BOX</span>
+          <img src="./sprites/kawaii_cat/sparkle_small.png" class="ribbon-sparkle" alt="" />
+        </div>
+        <div class="bank-body">
+          <img src="./sprites/kawaii_cat/cloud_big.png" class="bank-cloud bank-cloud-a" alt="" />
+          <img src="./sprites/kawaii_cat/cloud_small.png" class="bank-cloud bank-cloud-b" alt="" />
+          <img src="./sprites/kawaii_cat/sparkle_big.png" class="bank-twinkle bank-twinkle-a" alt="" />
+          <img src="./sprites/kawaii_cat/sparkle_small.png" class="bank-twinkle bank-twinkle-b" alt="" />
+
+          <div class="bank-stage-pill" id="bank-stage">Stage 1: Driveway Hustle</div>
+
+          <div class="bank-counter">
+            <div class="bank-counter-inner">
+              <!-- Cat mood 0..4 (calm .. cheering); all five stay loaded so swaps never flicker -->
+              <div class="bank-cat" id="bank-cat">
+                <img src="./sprites/kawaii_cat/cat0.png" style="--w:184" alt="" />
+                <img src="./sprites/kawaii_cat/cat1.png" style="--w:182" class="on" alt="" />
+                <img src="./sprites/kawaii_cat/cat2.png" style="--w:183" alt="" />
+                <img src="./sprites/kawaii_cat/cat3.png" style="--w:185" alt="" />
+                <img src="./sprites/kawaii_cat/cat4.png" style="--w:217" alt="" />
+              </div>
+              <div class="bank-pill">
+                <span class="bank-coin" aria-hidden="true">$</span>
+                <div class="sprite-num" id="bank-cash" role="img" aria-label="60.00 dollars"></div>
+              </div>
+              <div class="bank-floaters" id="bank-floaters" aria-hidden="true"></div>
+            </div>
+          </div>
+          <div class="bank-caption">Cash you can spend</div>
+
+          <div class="bank-stats">
+            <div class="bank-chip">
+              <span class="bank-chip-label">Drinks sold</span>
+              <span class="bank-chip-value fit-text" id="bank-units">0</span>
+            </div>
+            <div class="bank-chip">
+              <span class="bank-chip-label">Total earned</span>
+              <span class="bank-chip-value fit-text" id="bank-revenue">$0.00</span>
+            </div>
+            <div class="bank-chip">
+              <span class="bank-chip-label">Reputation</span>
+              <span class="bank-chip-value">
+                <span class="star-meter" id="bank-rep-stars" title="Neighborhood reputation">
+                  <span class="star-meter-row dim"><img src="./sprites/kawaii_cat/star_small.png" alt="" /><img src="./sprites/kawaii_cat/star_small.png" alt="" /><img src="./sprites/kawaii_cat/star_small.png" alt="" /><img src="./sprites/kawaii_cat/star_small.png" alt="" /><img src="./sprites/kawaii_cat/star_small.png" alt="" /></span>
+                  <span class="star-meter-row lit" id="bank-rep-lit" style="width:50%"><img src="./sprites/kawaii_cat/star_small.png" alt="" /><img src="./sprites/kawaii_cat/star_small.png" alt="" /><img src="./sprites/kawaii_cat/star_small.png" alt="" /><img src="./sprites/kawaii_cat/star_small.png" alt="" /><img src="./sprites/kawaii_cat/star_small.png" alt="" /></span>
+                </span>
+                <span id="bank-rep">50%</span>
+              </span>
+            </div>
+            <div class="bank-chip">
+              <span class="bank-chip-label">Recipe rating</span>
+              <span class="bank-chip-value">
+                <span id="bank-quality">62%</span>
+                <span class="bank-chip-sub" id="bank-quality-avg">avg 62%</span>
+              </span>
+            </div>
+          </div>
+
+          <div class="chore-wrap">
+            <div class="chore-title">Need cash fast? Do a chore!</div>
+            <button id="btn-chore" class="chore-btn">
+              <span class="chore-fill" id="chore-fill"></span>
+              <span class="chore-name" id="chore-name">Chore</span>
+              <span class="chore-reward" id="chore-reward">+$0.00</span>
+            </button>
+          </div>
+        </div>
+      </div>
 
       <!-- RECIPE RATIO WORKBENCH CARD -->
       <div class="ratio-card">
         <div class="ratio-banner">
-          <span>🍋</span> RECIPE RATIO <span>🍋</span>
+          <img src="./sprites/lemon.png" class="ribbon-sparkle" alt="" />
+          <span>RECIPE RATIO</span>
+          <img src="./sprites/lemon.png" class="ribbon-sparkle" alt="" />
         </div>
         <div class="ratio-body">
           <!-- LEFT COLUMN: INGREDIENTS & PRICE CONTROLS -->
@@ -821,7 +1621,9 @@
               </button>
             </div>
 
-            <div id="autoice-container" style="margin-top: 4px; text-align: center;"></div>
+            <div id="autoice-container" style="margin-top: 4px; text-align: center;">
+              <button id="btn-autoice" class="autoice-btn" style="display:none;" title="Match ice to the weather automatically each day">Auto ice: OFF</button>
+            </div>
           </div>
 
           <!-- RIGHT COLUMN: THE DYNAMIC PITCHER -->
@@ -909,7 +1711,7 @@
 
         <div class="cups-estimate-wrap">
           <div class="cups-estimate-pill">
-            <span class="cups-pill-text">Demand: ~<strong id="demand-est-cups-val">97 cups</strong> expected today</span>
+            <span class="cups-pill-text">Expect ~<strong id="demand-est-cups-val">97 cups</strong> today</span>
           </div>
         </div>
       </div>
@@ -917,22 +1719,19 @@
       <!-- 3. MORNING PREP & SUPPLIES STAND -->
       <div class="prep-stand-card">
         <div class="prep-stand-header">
-          <div class="prep-ribbon-title">
-            <img src="./sprites/morning_prep/sparkle_small.png" class="ribbon-sparkle" alt="" />
-            <span>MORNING PREP & SUPPLIES</span>
-            <img src="./sprites/morning_prep/sparkle_small.png" class="ribbon-sparkle" alt="" />
+          <div class="prep-awning-banner">
+            <div class="prep-ribbon-title">MORNING PREP</div>
           </div>
-          <div class="prep-awning-banner"></div>
         </div>
 
         <div class="prep-stand-body">
           <!-- Multiplier Packs Bar -->
           <div class="prep-mult-bar">
-            <span class="prep-mult-label">📦 Supply Pack Size:</span>
+            <span class="prep-mult-label">Packs per tap:</span>
             <div id="pack-mult-controls" class="prep-mult-pills">
-              <button id="btn-mult-1" class="mult-pill-btn active">1x</button>
-              <button id="btn-mult-5" class="mult-pill-btn">5x</button>
-              <button id="btn-mult-10" class="mult-pill-btn">10x</button>
+              <button id="btn-mult-1" class="step-btn active" title="Buy 1 pack per tap"><img src="./sprites/kawaii_cat/step1.png" alt="+1" /></button>
+              <button id="btn-mult-10" class="step-btn" title="Buy 10 packs per tap"><img src="./sprites/kawaii_cat/step10.png" alt="+10" /></button>
+              <button id="btn-mult-100" class="step-btn" title="Buy 100 packs per tap"><img src="./sprites/kawaii_cat/step100.png" alt="+100" /></button>
             </div>
           </div>
 
@@ -999,9 +1798,10 @@
             </div>
 
             <!-- BOTTLES (Phase 3+) -->
-            <div class="supply-item-box" id="box-bottles" style="grid-column: span 2; display:none;">
+            <!-- 1 / -1 spans every column; "span 2" forced a second column into the 1-column phone grid -->
+            <div class="supply-item-box" id="box-bottles" style="grid-column: 1 / -1; display:none;">
               <div class="supply-item-header">
-                <span style="font-size:26px; line-height:1;">🍾</span>
+                <span style="font-size:26px; line-height:1;">&#x1F37E;</span>
                 <div class="supply-item-meta">
                   <span class="supply-item-title">Glass Bottles</span>
                   <div class="supply-stock-row">
@@ -1020,7 +1820,8 @@
       <!-- 4. BIG ACTION BUTTON: OPEN FOR BUSINESS -->
       <button id="btn-run-day" class="kawaii-run-day-btn">
         <img src="./sprites/morning_prep/sparkle_small.png" class="btn-sparkle floating-bob-1" alt="" />
-        <span id="btn-run-day-text">☀️ OPEN FOR BUSINESS! (Day 1)</span>
+        <img src="./sprites/morning_prep/sun_happy.png" class="btn-sun" alt="" />
+        <span id="btn-run-day-text">OPEN FOR BUSINESS! (Day 1)</span>
         <img src="./sprites/morning_prep/sparkle_small.png" class="btn-sparkle floating-bob-2" alt="" />
       </button>
 
@@ -1070,14 +1871,223 @@
   </div>
 
   <script type="module">
-    import { LemonadeEngine } from './engine.ts';
+    import { LemonadeEngine, BigNum } from './engine.ts';
+
+    // Track which input is in use so mouse-only hover styles switch off after a finger tap.
+    // (The touchscreen all-in-one this is played on has a mouse too, so CSS alone cannot tell.)
+    const rootEl = document.documentElement;
+    window.addEventListener('pointerdown', (e) => {
+      rootEl.classList.toggle('touch-input', e.pointerType === 'touch');
+    }, true);
+    window.addEventListener('pointermove', (e) => {
+      if (e.pointerType === 'mouse' && rootEl.classList.contains('touch-input')) rootEl.classList.remove('touch-input');
+    }, true);
 
     let engine = new LemonadeEngine();
+    window.__TEST_ENGINE = () => engine; // TEMP-TEST-HOOK (remove before finishing)
     let timeScale = 1;
     let autoDay = false;
     let autoDayTimer = 0;
     let victoryDismissed = false;
     let buyPackMult = 1;
+
+    // ---- Money Box (cat cash counter) helpers ----
+    const SPRITE_DIR = './sprites/kawaii_cat/';
+    // Native glyph widths in px at the shared 68 px glyph height.
+    const DIGIT_W = { '0': 51, '1': 33, '2': 47, '3': 47, '4': 54, '5': 47, '6': 49, '7': 47, '8': 49, '9': 50, ',': 24 };
+    const digitSrc = (ch) => `${SPRITE_DIR}${ch === ',' ? 'nc' : 'n' + ch}.png`;
+    Object.keys(DIGIT_W).forEach(ch => { new Image().src = digitSrc(ch); }); // warm the cache
+
+    function setText(el, text) {
+      if (el && el._lastText !== text) {
+        el.textContent = text;
+        el._lastText = text;
+      }
+    }
+
+    // Like setText, and also tells the CSS how many characters there are so a long value can
+    // shrink to its box (see .fit-text / .report-profit).
+    function setFitText(el, text) {
+      if (el && el._lastText !== text) {
+        el.textContent = text;
+        el.style.setProperty('--chars', text.length);
+        el._lastText = text;
+      }
+    }
+
+    // Draw a number with the digit sprites. Anything the sheet has no glyph for
+    // ("." and the T / Qa suffix letters) falls back to a matching ink-colored shape or text.
+    // Digits all get the widest digit's cell, so the size only changes when a digit is added.
+    const DIGIT_CELL = DIGIT_W['4'] / 68;
+    function renderSpriteNumber(el, text) {
+      if (!el || el._lastText === text) return;
+      el._lastText = text;
+      let html = '';
+      let units = 0;
+      for (const ch of text) {
+        if (ch === ',') {
+          html += `<img src="${digitSrc(ch)}" alt="" />`;
+          units += DIGIT_W[ch] / 68;
+        } else if (DIGIT_W[ch]) {
+          html += `<img class="sn-d" src="${digitSrc(ch)}" alt="" />`;
+          units += DIGIT_CELL;
+        } else if (ch === '.') {
+          html += '<span class="sn-dot"></span>';
+          units += 0.35;
+        } else if (ch === ' ') {
+          html += '<span class="sn-gap"></span>';
+          units += 0.18;
+        } else {
+          html += `<span class="sn-txt">${ch}</span>`;
+          units += 0.56;
+        }
+      }
+      el.innerHTML = html;
+      el.style.setProperty('--units', units.toFixed(2));
+      el.setAttribute('aria-label', `${text} dollars`);
+    }
+
+    // Number style: millions and billions are written out in full, never as "30.00 M", so a
+    // kid can see that $30,000,000 plus an $11 chore is $30,000,011: more, but not by much.
+    // Only from a trillion up do numbers switch to the short "1.23 T" style.
+    const FULL_DIGITS_BELOW = 1e12;
+    const CENTS_BELOW = 100000;
+    const fmt2 = (n) => n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    // Whole dollars, cents cut off. +0.005: BigNum hands back mantissa * 10^e, which can land a
+    // hair under the true value (123456789 came out as 123456788.99999999 and floored to ...788).
+    const fmtWhole = (n) => Math.floor(n + 0.005).toLocaleString('en-US');
+    const fmtShort = (n) => BigNum.fromNumber(n).format(2);
+    // Dollar text for a plain number >= 0: cents while small, then whole dollars in full digits.
+    // exact = keep the cents all the way up (Day Report rows, so they still add up).
+    function fmtDollars(n, exact = false) {
+      if (n >= FULL_DIGITS_BELOW) return fmtShort(n);
+      return exact || n < CENTS_BELOW ? fmt2(n) : fmtWhole(n);
+    }
+    function fmtMoney(bn) {
+      const n = bn.toNumber();
+      if (!(Math.abs(n) < FULL_DIGITS_BELOW)) return bn.format(2);
+      return (n < 0 ? '-' : '') + fmtDollars(Math.abs(n));
+    }
+    function fmtCount(bn) {
+      const n = bn.toNumber();
+      return Math.abs(n) < FULL_DIGITS_BELOW ? Math.round(n).toLocaleString('en-US') : bn.format(2);
+    }
+    function fmtSigned(n, exact = false) {
+      return `${n < 0 ? '-' : '+'}$${fmtDollars(Math.abs(n), exact)}`;
+    }
+
+    let prevCashNum = null;   // null = do not announce the next cash change (fresh game)
+    let catCheerUntil = 0;
+    let choreMaxRemain = 0;
+
+    function spawnCashFloat(delta) {
+      const box = document.getElementById('bank-floaters');
+      if (!box) return;
+      while (box.children.length >= 4) box.removeChild(box.firstChild);
+      const el = document.createElement('div');
+      el.className = `bank-float ${delta > 0 ? 'gain' : 'spend'}`;
+      el.textContent = fmtSigned(delta);
+      el.addEventListener('animationend', () => el.remove());
+      box.appendChild(el);
+    }
+
+    // Five smiling stars with the first `frac` of the row lit (same markup as the reputation meter).
+    const STAR5 = `<img src="${SPRITE_DIR}star_small.png" alt="" />`.repeat(5);
+    const starMeter = (frac, label) => `<span class="star-meter" role="img" aria-label="${label}">` +
+      `<span class="star-meter-row dim">${STAR5}</span>` +
+      `<span class="star-meter-row lit" style="width:${Math.round(frac * 100)}%">${STAR5}</span></span>`;
+    const isTeamNote = (r) => r.reviewer.includes('(');   // "Timmy (Park Stand)" style team chatter
+
+    // Day Report cat: 1 star = calm (0) ... 5 stars = cheering (4); a losing day is always calm.
+    function reportCatMood(d) {
+      const cust = (d.reviews || []).filter(r => !isTeamNote(r));
+      if (d.netProfit <= 0 || cust.length === 0) return 0;
+      const avg = cust.reduce((sum, r) => sum + r.stars, 0) / cust.length;
+      return Math.max(0, Math.min(4, Math.round(avg) - 1));
+    }
+
+    function renderDayReport(s) {
+      const d = s.lastDaySummary;
+      if (!d) {
+        return `<div class="report-card">
+          <div class="ratio-banner"><span>DAY REPORT</span></div>
+          <div class="report-body">
+            <div class="report-hero">
+              <img class="report-cat" src="${SPRITE_DIR}cat0.png" alt="" />
+              <div class="report-hero-text">
+                <div class="report-hero-label">Nothing to report yet!</div>
+                <div class="report-hero-sub">Open for business to see how your first day goes.</div>
+              </div>
+            </div>
+          </div>
+        </div>`;
+      }
+
+      const money = (n) => `$${fmtDollars(n, true)}`;
+      const row = (label, amount, cls = '') =>
+        `<div class="report-row ${cls}"><span>${label}</span><span class="amt">${amount}</span></div>`;
+      const count = (n) => n.toLocaleString('en-US');
+      const units = d.drivewayCupsSold + d.franchiseCupsSold + d.bottlesSold;
+      // Rows list raw sales; the brand multiplier is applied on top inside the engine, so show
+      // it as its own line or the rows would not add up to the day's profit.
+      const rawRevenue = d.drivewayRevenue + d.franchiseGrossRevenue + d.wholesaleRevenue + d.patentRoyalties + d.copackerNet;
+      const brandBonus = d.totalRevenue - rawRevenue;
+
+      let rows = row(`Driveway stand (${count(d.drivewayCupsSold)} cups)`, `+${money(d.drivewayRevenue)}`);
+      if (s.phase >= 2) {
+        rows += row(`Franchise stands (${count(d.franchiseCupsSold)} cups)`, `+${money(d.franchiseGrossRevenue)}`);
+        rows += row('Franchise wages', `-${money(d.franchiseWagesPaid)}`, 'cost');
+      }
+      if (s.phase >= 3) {
+        rows += row(`Wholesale (${count(d.bottlesSold)} bottles)`, `+${money(d.wholesaleRevenue)}`);
+        rows += row('Bottle packaging', `-${money(d.packagingCosts)}`, 'cost');
+      }
+      if (s.phase >= 4) rows += row(`Patent royalties (${count(d.patentUnitsSold)} units)`, `+${money(d.patentRoyalties)}`);
+      if (s.phase >= 5) rows += row(`Co-packer (${count(d.copackerCasesSold)} cases)`, `+${money(d.copackerNet)}`);
+      if (brandBonus > 0.005) rows += row('Famous brand bonus', `+${money(brandBonus)}`);
+      rows += row("Today's profit", fmtSigned(d.netProfit, true), `total ${d.netProfit < 0 ? 'neg' : ''}`);
+
+      const reviews = (d.reviews || []).map(r => {
+        const team = isTeamNote(r);
+        return `<div class="report-review ${team ? 'team' : ''}">
+          <div class="report-review-head">
+            <span class="report-review-who">${r.reviewer}</span>
+            ${team ? '' : starMeter(r.stars / 5, `${r.stars} out of 5 stars`)}
+          </div>
+          <div class="report-review-quote">&quot;${r.quote}&quot;</div>
+        </div>`;
+      }).join('');
+
+      return `<div class="report-card">
+        <div class="ratio-banner report-banner">
+          <span>DAY ${d.day} REPORT</span>
+          <span class="report-weather">${d.tempF}&deg;F ${d.weather}</span>
+        </div>
+        <div class="report-body">
+          <div class="report-hero">
+            <img class="report-cat" src="${SPRITE_DIR}cat${reportCatMood(d)}.png" alt="" />
+            <div class="report-hero-text">
+              <div class="report-hero-label">${d.netProfit < 0 ? 'You lost' : 'You made'}</div>
+              <div class="report-profit ${d.netProfit < 0 ? 'neg' : 'pos'}" style="--chars:${fmtSigned(d.netProfit).length}">${fmtSigned(d.netProfit)}</div>
+              <div class="report-hero-sub">${count(units)} drinks sold today</div>
+            </div>
+          </div>
+          <div class="report-rows">${rows}</div>
+          ${reviews ? `<div class="report-section-title">What people said</div>${reviews}` : ''}
+          <ul class="report-notes">${d.notes.map(n => `<li>${n}</li>`).join('')}</ul>
+        </div>
+      </div>`;
+    }
+
+    // Cat mood 0..3 from how the last day went; 4 (cheering) is reserved for money coming in.
+    function baseCatMood(s) {
+      const d = s.lastDaySummary;
+      if (!d) return 1;
+      if (d.netProfit <= 0) return 0;
+      if (d.recipeQuality < 0.5) return 1;
+      if (d.recipeQuality < 0.8) return 2;
+      return 3;
+    }
 
     // Header Speed Controls
     function setSpeed(s) {
@@ -1093,23 +2103,18 @@
     document.getElementById('btn-speed-50').onclick = () => setSpeed(50);
     setSpeed(1);
 
-    // Pack Multiplier Controls
+    // Packs-per-tap controls (+1 / +10 / +100 candy buttons)
+    const PACK_STEPS = [1, 10, 100];
     function setPackMult(m) {
       buyPackMult = m;
-      [1, 5, 10].forEach(v => {
+      PACK_STEPS.forEach(v => {
         const btn = document.getElementById(`btn-mult-${v}`);
-        if (btn) {
-          if (v === m) {
-            btn.classList.add('active');
-          } else {
-            btn.classList.remove('active');
-          }
-        }
+        if (btn) btn.classList.toggle('active', v === m);
       });
     }
-    document.getElementById('btn-mult-1').onclick = () => setPackMult(1);
-    document.getElementById('btn-mult-5').onclick = () => setPackMult(5);
-    document.getElementById('btn-mult-10').onclick = () => setPackMult(10);
+    PACK_STEPS.forEach(v => {
+      document.getElementById(`btn-mult-${v}`).onclick = () => setPackMult(v);
+    });
     setPackMult(1);
 
     window._toggleAutoIce = () => {
@@ -1118,6 +2123,7 @@
         engine.state.recipe.icePerCup = engine.computeIdealIce(engine.state.tempF);
       }
     };
+    document.getElementById('btn-autoice').onclick = window._toggleAutoIce;
 
     document.getElementById('btn-autoday').onclick = (e) => {
       autoDay = !autoDay;
@@ -1130,6 +2136,9 @@
       if (confirm("Reset lemonade business back to Day 1 with $60 seed capital?")) {
         engine = new LemonadeEngine();
         victoryDismissed = false;
+        prevCashNum = null; // the jump back to $60 is not income: no float, no cheer
+        catCheerUntil = 0;
+        choreMaxRemain = 0;
         const vModal = document.getElementById('victory-modal');
         if (vModal) vModal.style.display = 'none';
       }
@@ -1214,15 +2223,40 @@
         'Stage 5: Industrial Beverage Empire'
       ];
 
-      // 1. Finances & Recipe readout
-      document.getElementById('readout-finances').innerHTML = `
-        <div class="stat"><span>Stage:</span><span class="badge">${stageNames[s.phase]}</span></div>
-        <div class="stat"><span>Available Cash:</span><strong style="color:#ffd700; font-size:15px;">$${s.cash.format()}</strong></div>
-        <div class="stat"><span>Total Career Revenue:</span><span>$${s.totalRevenueEarned.format()}</span></div>
-        <div class="stat"><span>Total Units Sold:</span><span>${s.totalCupsSold.format()}</span></div>
-        <div class="stat"><span>Neighborhood Reputation:</span><span>${(s.reputation * 100).toFixed(0)}%</span></div>
-        <div class="stat"><span>Recipe Rating:</span><span><strong>${(engine.computeRecipeQuality() * 100).toFixed(0)}%</strong> <span style="color:#aaa;">(Avg: ${((s.avgRecipeQuality || engine.computeRecipeQuality()) * 100).toFixed(0)}%)</span></span></div>
-      `;
+      // 1. Money Box: cat cash counter, stats chips
+      setText(document.getElementById('bank-stage'), stageNames[s.phase]);
+      renderSpriteNumber(document.getElementById('bank-cash'), fmtMoney(s.cash));
+
+      const cashNum = s.cash.toNumber();
+      if (prevCashNum !== null) {
+        const delta = cashNum - prevCashNum;
+        if (Math.abs(delta) >= 0.005) {
+          if (delta > 0) catCheerUntil = now + 1400;
+          spawnCashFloat(delta);
+        }
+      }
+      prevCashNum = cashNum;
+
+      const bankCat = document.getElementById('bank-cat');
+      const catMood = now < catCheerUntil ? 4 : baseCatMood(s);
+      if (bankCat && bankCat._mood !== catMood) {
+        bankCat._mood = catMood;
+        Array.from(bankCat.children).forEach((img, i) => img.classList.toggle('on', i === catMood));
+        bankCat.classList.toggle('cheer', catMood === 4);
+      }
+
+      const qualityNow = engine.computeRecipeQuality();
+      setFitText(document.getElementById('bank-units'), fmtCount(s.totalCupsSold));
+      setFitText(document.getElementById('bank-revenue'), `$${fmtMoney(s.totalRevenueEarned)}`);
+      setText(document.getElementById('bank-rep'), `${(s.reputation * 100).toFixed(0)}%`);
+      setText(document.getElementById('bank-quality'), `${(qualityNow * 100).toFixed(0)}%`);
+      setText(document.getElementById('bank-quality-avg'), `avg ${((s.avgRecipeQuality || qualityNow) * 100).toFixed(0)}%`);
+      const repLit = document.getElementById('bank-rep-lit');
+      const repWidth = `${(s.reputation * 100).toFixed(0)}%`;
+      if (repLit && repLit._w !== repWidth) {
+        repLit.style.width = repWidth;
+        repLit._w = repWidth;
+      }
 
       // Update recipe numbers
       document.getElementById('lbl-price').textContent = s.recipe.pricePerCup.toFixed(2);
@@ -1258,19 +2292,19 @@
       if (lemonsLayer) {
         const numLemons = Math.min(6, Math.max(1, Math.round(s.recipe.lemonsPerPitcher * 0.75)));
         const lemonPositions = [
-          { x: 300, y: fillY + 60, s: 155, rot: -15, anim: 'floating-bob-1' },
-          { x: 460, y: fillY + 120, s: 140, rot: 25, anim: 'floating-bob-2' },
-          { x: 230, y: fillY + 180, s: 135, rot: 45, anim: 'floating-bob-1' },
-          { x: 420, y: fillY + 230, s: 145, rot: -30, anim: 'floating-bob-2' },
-          { x: 320, y: fillY + 310, s: 130, rot: 10, anim: 'floating-bob-1' },
-          { x: 500, y: fillY + 190, s: 125, rot: -60, anim: 'floating-bob-2' }
+          { x: 300, y: fillY + 60, s: 155, rot: -15, anim: 'pitcher-bob-1' },
+          { x: 460, y: fillY + 120, s: 140, rot: 25, anim: 'pitcher-bob-2' },
+          { x: 230, y: fillY + 180, s: 135, rot: 45, anim: 'pitcher-bob-1' },
+          { x: 420, y: fillY + 230, s: 145, rot: -30, anim: 'pitcher-bob-2' },
+          { x: 320, y: fillY + 310, s: 130, rot: 10, anim: 'pitcher-bob-1' },
+          { x: 500, y: fillY + 190, s: 125, rot: -60, anim: 'pitcher-bob-2' }
         ];
 
         let lemonHTML = '';
         for (let i = 0; i < numLemons; i++) {
           const lp = lemonPositions[i];
-          lemonHTML += `<g class="${lp.anim}" style="transform-origin: ${lp.x + lp.s/2}px ${lp.y + lp.s/2}px;">
-            <image href="./sprites/lemon_wheel.png" x="${lp.x}" y="${lp.y}" width="${lp.s}" height="${lp.s}" style="transform: rotate(${lp.rot}deg); transform-origin: center;" />
+          lemonHTML += `<g class="${lp.anim}">
+            <image class="pitcher-item" href="./sprites/lemon_wheel.png" x="${lp.x}" y="${lp.y}" width="${lp.s}" height="${lp.s}" style="transform: rotate(${lp.rot}deg);" />
           </g>`;
         }
         setHTMLIfChanged(lemonsLayer, lemonHTML);
@@ -1281,19 +2315,19 @@
       if (iceLayer) {
         const numIce = Math.min(6, s.recipe.icePerCup);
         const icePositions = [
-          { x: 240, y: fillY - 35, s: 130, rot: -8, anim: 'floating-bob-2' },
-          { x: 380, y: fillY - 50, s: 140, rot: 15, anim: 'floating-bob-1' },
-          { x: 510, y: fillY - 40, s: 135, rot: -12, anim: 'floating-bob-2' },
-          { x: 320, y: fillY + 20, s: 120, rot: 22, anim: 'floating-bob-1' },
-          { x: 450, y: fillY + 25, s: 115, rot: -18, anim: 'floating-bob-2' },
-          { x: 215, y: fillY + 15, s: 110, rot: 14, anim: 'floating-bob-1' }
+          { x: 240, y: fillY - 35, s: 130, rot: -8, anim: 'pitcher-bob-2' },
+          { x: 380, y: fillY - 50, s: 140, rot: 15, anim: 'pitcher-bob-1' },
+          { x: 510, y: fillY - 40, s: 135, rot: -12, anim: 'pitcher-bob-2' },
+          { x: 320, y: fillY + 20, s: 120, rot: 22, anim: 'pitcher-bob-1' },
+          { x: 450, y: fillY + 25, s: 115, rot: -18, anim: 'pitcher-bob-2' },
+          { x: 215, y: fillY + 15, s: 110, rot: 14, anim: 'pitcher-bob-1' }
         ];
 
         let iceHTML = '';
         for (let i = 0; i < numIce; i++) {
           const ip = icePositions[i];
-          iceHTML += `<g class="${ip.anim}" style="transform-origin: ${ip.x + ip.s/2}px ${ip.y + ip.s/2}px;">
-            <image href="./sprites/ice_cube_single.png" x="${ip.x}" y="${ip.y}" width="${ip.s}" height="${ip.s}" style="transform: rotate(${ip.rot}deg); transform-origin: center;" />
+          iceHTML += `<g class="${ip.anim}">
+            <image class="pitcher-item" href="./sprites/ice_cube_single.png" x="${ip.x}" y="${ip.y}" width="${ip.s}" height="${ip.s}" style="transform: rotate(${ip.rot}deg);" />
           </g>`;
         }
         setHTMLIfChanged(iceLayer, iceHTML);
@@ -1307,35 +2341,28 @@
         tastePill.style.color = '#3b1d54';
       }
 
-      // Auto-Ice button state
-      const autoIceSpan = document.getElementById('autoice-container');
-      if (autoIceSpan) {
-        if (s.flags.hasAutoIce) {
-          autoIceSpan.innerHTML = `
-            <button onclick="window._toggleAutoIce()" style="padding:1px 6px; font-size:10px; margin-left:6px; min-height:20px; background:${s.flags.autoIceEnabled ? '#1e3a5f' : '#222'}; color:${s.flags.autoIceEnabled ? '#93c5fd' : '#888'}; border:1px solid ${s.flags.autoIceEnabled ? '#3b82f6' : '#555'}; border-radius:3px; cursor:pointer;" title="Toggle automatic weather-synced ice tuning">
-              Auto: ${s.flags.autoIceEnabled ? 'ON' : 'OFF'}
-            </button>
-          `;
-        } else {
-          autoIceSpan.innerHTML = '';
-        }
+      // Auto-Ice toggle. The button is static and updated in place: it used to be rebuilt
+      // through innerHTML on every frame, so a click rarely landed on the same element twice.
+      const autoIceBtn = document.getElementById('btn-autoice');
+      if (autoIceBtn) {
+        const display = s.flags.hasAutoIce ? '' : 'none';
+        if (autoIceBtn.style.display !== display) autoIceBtn.style.display = display;
+        autoIceBtn.classList.toggle('on', !!s.flags.autoIceEnabled);
+        setText(autoIceBtn, `Auto ice: ${s.flags.autoIceEnabled ? 'ON' : 'OFF'}`);
       }
 
-      // Chore button state
+      // Chore button state (candy button; fills up while the kid rests between chores)
       const choreBtn = document.getElementById('btn-chore');
+      const choreFill = document.getElementById('chore-fill');
       const chore = s.currentChore;
-      if (chore && chore.remainingSec > 0) {
-        choreBtn.disabled = true;
-        choreBtn.style.background = '#222';
-        choreBtn.style.borderColor = '#555';
-        choreBtn.style.color = '#888';
-        choreBtn.textContent = `⏳ ${chore.name} (${chore.remainingSec.toFixed(1)}s)`;
-      } else if (chore) {
-        choreBtn.disabled = false;
-        choreBtn.style.background = '#1b3d2f';
-        choreBtn.style.borderColor = '#4ade80';
-        choreBtn.style.color = '#4ade80';
-        choreBtn.textContent = `🧹 CHORE: ${chore.name} (+$${chore.reward.toFixed(2)})`;
+      if (chore) {
+        const busy = chore.remainingSec > 0;
+        choreMaxRemain = busy ? Math.max(choreMaxRemain, chore.remainingSec) : 0;
+        if (choreBtn.disabled !== busy) choreBtn.disabled = busy;
+        choreBtn.classList.toggle('is-busy', busy);
+        setText(document.getElementById('chore-name'), busy ? `Resting... next: ${chore.name}` : chore.name);
+        setText(document.getElementById('chore-reward'), busy ? `${chore.remainingSec.toFixed(1)}s` : `+$${chore.reward.toFixed(2)}`);
+        if (choreFill) choreFill.style.width = busy ? `${((1 - chore.remainingSec / choreMaxRemain) * 100).toFixed(1)}%` : '0%';
       }
 
       // 2. Weather & Operations (Kawaii Weather Panel)
@@ -1378,7 +2405,7 @@
 
       if (mascotPhrase) mascotPhrase.textContent = advice.phrase;
       if (mascotSub) mascotSub.textContent = standSubtitle;
-      if (demandEstVal) demandEstVal.textContent = `~${advice.estTotalCups} cups`;
+      if (demandEstVal) demandEstVal.textContent = `${advice.estTotalCups.toLocaleString('en-US')} cups`; // the "~" is in the markup
 
       // Morning Prep Stock Numbers & Low Stock Alerts
       const invLemons = document.getElementById('lbl-inv-lemons');
@@ -1458,9 +2485,9 @@
 
       const runDayTxt = document.getElementById('btn-run-day-text');
       if (runDayTxt) {
-        runDayTxt.textContent = `☀️ OPEN FOR BUSINESS! (Day ${s.day})`;
+        runDayTxt.textContent = `OPEN FOR BUSINESS! (Day ${s.day})`;
       } else {
-        document.getElementById('btn-run-day').textContent = `☀️ OPEN FOR BUSINESS! (Day ${s.day})`;
+        document.getElementById('btn-run-day').textContent = `OPEN FOR BUSINESS! (Day ${s.day})`;
       }
 
       // Expansion sections (Franchise, Wholesale, Patent, CoPacker)
@@ -1493,7 +2520,7 @@
             </div>
             <div style="font-size: 11px; color: #aaa;">${acc.desc}</div>
             <div class="stat" style="margin-top: 4px;">
-              <span>Orders: ${acc.bottlesPerDay} bbl/day @ $${acc.wholesalePrice.toFixed(2)} (Pkg: $${acc.packagingCost.toFixed(2)})</span>
+              <span>Orders: ${acc.bottlesPerDay} bottles/day @ $${acc.wholesalePrice.toFixed(2)} (Pkg: $${acc.packagingCost.toFixed(2)})</span>
               ${!acc.active ? `<button onclick="window._signWholesale('${acc.id}')" ${s.cash.lt(acc.setupCost) ? 'disabled' : ''}>Sign Contract ($${acc.setupCost})</button>` : '<span style="color:#4ade80;">Active Supplier</span>'}
             </div>
           </div>`;
@@ -1532,41 +2559,8 @@
 
       setHTMLIfChanged(document.getElementById('expansion-sections'), expansionHTML);
 
-      // 3. P&L Statement readout
-      const pnl = s.lastDaySummary;
-      if (pnl) {
-        const netClass = pnl.netProfit >= 0 ? 'profit-pos' : 'profit-neg';
-        setHTMLIfChanged(document.getElementById('readout-pnl'), `
-          <div class="pnl-box">
-            <div class="stat"><strong>Day ${pnl.day} Financial Statement</strong><span>${pnl.tempF}°F (${pnl.weather})</span></div>
-            <hr style="border-color:#333; margin:4px 0;"/>
-            <div class="stat"><span>Driveway Stand (${pnl.drivewayCupsSold} cups):</span><span>+$${pnl.drivewayRevenue.toFixed(2)}</span></div>
-            ${s.phase >= 2 ? `<div class="stat"><span>Franchise Stands (${pnl.franchiseCupsSold} cups):</span><span>+$${pnl.franchiseGrossRevenue.toFixed(2)}</span></div>` : ''}
-            ${s.phase >= 2 ? `<div class="stat" style="color:#f87171;"><span>Franchise Wages Paid:</span><span>-$${pnl.franchiseWagesPaid.toFixed(2)}</span></div>` : ''}
-            ${s.phase >= 3 ? `<div class="stat"><span>Wholesale Bottles (${pnl.bottlesSold} bbl):</span><span>+$${pnl.wholesaleRevenue.toFixed(2)}</span></div>` : ''}
-            ${s.phase >= 3 ? `<div class="stat" style="color:#f87171;"><span>Bottle Packaging Costs:</span><span>-$${pnl.packagingCosts.toFixed(2)}</span></div>` : ''}
-            ${s.phase >= 4 ? `<div class="stat" style="color:#ffd700;"><span>Patent Royalties (${pnl.patentUnitsSold} units):</span><span>+$${pnl.patentRoyalties.toFixed(2)}</span></div>` : ''}
-            ${s.phase >= 5 ? `<div class="stat" style="color:#4ade80;"><span>Co-Packer Cases (${pnl.copackerCasesSold} cases):</span><span>+$${pnl.copackerNet.toFixed(2)}</span></div>` : ''}
-            <hr style="border-color:#333; margin:4px 0;"/>
-            <div class="stat" style="font-size:13px;"><span>Daily Net Profit:</span><span class="${netClass}">+$${pnl.netProfit.toFixed(2)}</span></div>
-            ${pnl.reviews && pnl.reviews.length > 0 ? `
-              <div style="background:#181818; border:1px solid #333; border-radius:4px; padding:6px 8px; margin:6px 0;">
-                <div style="font-weight:bold; color:#ffd700; margin-bottom:4px; font-size:11px;">💬 Customer Feedback & Team Chatter:</div>
-                ${pnl.reviews.map(r => `
-                  <div style="margin:3px 0; font-size:11px; line-height:1.3;">
-                    <span style="color:#ffd700;">${'★'.repeat(r.stars)}${'☆'.repeat(5 - r.stars)}</span>
-                    <span style="font-style:italic;">"${r.quote}"</span>
-                    <span style="color:#888;">— ${r.reviewer}</span>
-                  </div>
-                `).join('')}
-              </div>
-            ` : ''}
-            <div style="font-size:11px; color:#aaa; margin-top:4px;"><strong>Operations:</strong> ${pnl.notes.join(' • ')}</div>
-          </div>
-        `);
-      } else {
-        setHTMLIfChanged(document.getElementById('readout-pnl'), `<div class="pnl-box" style="color:#888;">Run Day 1 simulation to generate your first financial P&L statement!</div>`);
-      }
+      // 3. Day Report (re-rendered only when the summary changes, i.e. once per day)
+      setHTMLIfChanged(document.getElementById('readout-pnl'), renderDayReport(s));
 
       // Projects
       const projectHTML = engine.projects
@@ -1627,8 +2621,8 @@
       if (s.gameWon && !victoryDismissed) {
         if (vModal && vModal.style.display !== 'flex') {
           vModal.style.display = 'flex';
-          document.getElementById('vic-revenue').textContent = s.totalRevenueEarned.format();
-          document.getElementById('vic-cups').textContent = s.totalCupsSold.format();
+          document.getElementById('vic-revenue').textContent = fmtMoney(s.totalRevenueEarned);
+          document.getElementById('vic-cups').textContent = fmtCount(s.totalCupsSold);
           document.getElementById('vic-days').textContent = s.day;
         }
       } else if (vModal && vModal.style.display === 'flex' && !s.gameWon) {
