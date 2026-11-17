@@ -341,6 +341,402 @@
     }
     .floating-bob-1 { animation: float-gentle-1 2.8s ease-in-out infinite; transform-origin: center; }
     .floating-bob-2 { animation: float-gentle-2 3.4s ease-in-out infinite; transform-origin: center; }
+
+    /* Morning Prep & Operations Kawaii Styles */
+    .weather-card {
+      margin-bottom: 8px;
+      filter: drop-shadow(0 3px 6px rgba(0,0,0,0.22));
+    }
+    .weather-panel-inner {
+      background: url('./sprites/morning_prep/weather_panel_bg.png') no-repeat center / 100% 100%;
+      min-height: 104px;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      box-sizing: border-box;
+    }
+    .weather-art-slot {
+      width: 82px;
+      height: 78px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      flex-shrink: 0;
+    }
+    .weather-sun {
+      width: 76px;
+      height: 76px;
+      object-fit: contain;
+    }
+    .weather-cloud-rain {
+      position: relative;
+      width: 76px;
+      height: 74px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .weather-cloud {
+      width: 74px;
+      height: 52px;
+      object-fit: contain;
+    }
+    .weather-rain {
+      width: 44px;
+      height: 46px;
+      object-fit: contain;
+      margin-top: -10px;
+      animation: rain-drip 1.2s linear infinite;
+    }
+    @keyframes rain-drip {
+      0% { transform: translateY(-3px); opacity: 0.6; }
+      50% { opacity: 1; }
+      100% { transform: translateY(3px); opacity: 0.7; }
+    }
+    .weather-details {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+    }
+    .weather-pill-box {
+      background: url('./sprites/morning_prep/weather_word_pill_bg.png') no-repeat center / 100% 100%;
+      width: 100%;
+      max-width: 165px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 13px;
+      color: #713f12;
+      letter-spacing: 0.5px;
+      text-shadow: 0 1px 1px rgba(255, 255, 255, 0.7);
+      padding: 0 8px;
+      box-sizing: border-box;
+    }
+    .weather-ice-hint {
+      font-size: 11px;
+      font-weight: 700;
+      color: #1e1b4b;
+      background: rgba(255, 255, 255, 0.9);
+      border: 1.5px solid #a855f7;
+      border-radius: 14px;
+      padding: 2px 9px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      white-space: nowrap;
+    }
+
+    /* Mascot & Demand Advice */
+    .mascot-advice-card {
+      margin-bottom: 10px;
+    }
+    .mascot-advice-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .mascot-avatar-wrap {
+      width: 68px;
+      height: 68px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .mascot-lemon-head {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+    }
+    .mascot-bubble-wrap {
+      flex: 1;
+      min-width: 0;
+    }
+    .mascot-speech-bubble {
+      background: url('./sprites/morning_prep/advice_bubble_bg.png') no-repeat center / 100% 100%;
+      min-height: 72px;
+      padding: 8px 12px 8px 22px; /* Left padding clears pointer tail */
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      box-sizing: border-box;
+      filter: drop-shadow(0 2px 5px rgba(0,0,0,0.15));
+    }
+    .mascot-phrase-text {
+      font-size: 12px;
+      font-weight: 800;
+      color: #4a044e;
+      line-height: 1.25;
+    }
+    .mascot-sub-text {
+      font-size: 10px;
+      font-weight: 600;
+      color: #7e22ce;
+      margin-top: 2px;
+    }
+    .cups-estimate-wrap {
+      display: flex;
+      justify-content: center;
+      margin-top: 4px;
+    }
+    .cups-estimate-pill {
+      background: url('./sprites/morning_prep/cups_estimate_pill_bg.png') no-repeat center / 100% 100%;
+      width: 100%;
+      max-width: 290px;
+      height: 38px;
+      display: flex;
+      align-items: center;
+      padding-left: 28%; /* Clear lemonade cup illustration */
+      padding-right: 12px;
+      box-sizing: border-box;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.12));
+    }
+    .cups-pill-text {
+      font-size: 11px;
+      font-weight: 700;
+      color: #4c1d95;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Morning Prep Stand Card */
+    .prep-stand-card {
+      background: #fffdf7;
+      border: 3px solid #7c3aed;
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25);
+      margin-top: 8px;
+      color: #1e1b4b;
+    }
+    .prep-stand-header {
+      position: relative;
+      background: linear-gradient(180deg, #7e22ce 0%, #9333ea 50%, #a855f7 100%);
+      padding: 6px 8px 0 8px;
+      text-align: center;
+    }
+    .prep-ribbon-title {
+      color: #fff;
+      font-weight: 800;
+      font-size: 13px;
+      letter-spacing: 0.6px;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 2px 0 6px 0;
+    }
+    .ribbon-sparkle {
+      width: 15px;
+      height: 15px;
+      object-fit: contain;
+    }
+    .prep-awning-banner {
+      background: url('./sprites/morning_prep/prep_awning_top.png') no-repeat center bottom / 100% auto;
+      height: 28px;
+      width: 100%;
+    }
+    .prep-stand-body {
+      padding: 10px 10px 8px 10px;
+      background: linear-gradient(180deg, #fefce8 0%, #fffdf5 40%, #fef3c7 100%);
+    }
+    .prep-mult-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      padding: 4px 8px;
+      background: rgba(255, 255, 255, 0.9);
+      border: 2px solid #e9d5ff;
+      border-radius: 20px;
+    }
+    .prep-mult-label {
+      font-weight: 700;
+      font-size: 11px;
+      color: #581c87;
+    }
+    .prep-mult-pills {
+      display: flex;
+      gap: 4px;
+    }
+    .mult-pill-btn {
+      background: #f5f3ff;
+      color: #6b21a8;
+      border: 1.5px solid #c084fc;
+      border-radius: 12px;
+      padding: 2px 8px;
+      font-weight: 800;
+      font-size: 11px;
+      min-height: 24px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.15s;
+    }
+    .mult-pill-btn.active {
+      background: #facc15 !important;
+      color: #713f12 !important;
+      border-color: #ca8a04 !important;
+      box-shadow: 0 1px 4px rgba(202, 138, 4, 0.4);
+    }
+    .prep-items-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    @media (max-width: 480px) {
+      .prep-items-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    .supply-item-box {
+      background: rgba(255, 255, 255, 0.96);
+      border: 2px solid #e9d5ff;
+      border-radius: 14px;
+      padding: 6px 8px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 6px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+    }
+    .supply-item-header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .supply-item-icon {
+      width: 32px;
+      height: 32px;
+      object-fit: contain;
+      flex-shrink: 0;
+    }
+    .supply-item-meta {
+      flex: 1;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      min-width: 0;
+    }
+    .supply-item-title {
+      font-weight: 700;
+      font-size: 11.5px;
+      color: #4a044e;
+    }
+    .supply-stock-row {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+    }
+    .inv-number-pill {
+      background: url('./sprites/morning_prep/inventory_number_pill_bg.png') no-repeat center / 100% 100%;
+      min-width: 44px;
+      height: 24px;
+      padding: 0 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 12px;
+      color: #581c87;
+      letter-spacing: 0.3px;
+    }
+    .supply-alert {
+      font-size: 13px;
+      animation: pulse-warn 1.5s ease-in-out infinite;
+    }
+    @keyframes pulse-warn {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.3); }
+    }
+    .kawaii-buy-btn {
+      background: url('./sprites/morning_prep/buy_button_cart_bg.png') no-repeat center / 100% 100%;
+      height: 38px;
+      width: 100%;
+      border: none;
+      cursor: pointer;
+      padding: 0 6px 0 26%; /* clear cart icon + divider */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+      font-family: inherit;
+      font-weight: 800;
+      font-size: 11.5px;
+      letter-spacing: 0.3px;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+      border-radius: 18px;
+      touch-action: manipulation;
+      transition: transform 0.1s, filter 0.15s;
+      min-height: auto;
+    }
+    .kawaii-buy-btn:hover:not(:disabled) {
+      transform: scale(1.03);
+      filter: brightness(1.08);
+      background: url('./sprites/morning_prep/buy_button_cart_bg.png') no-repeat center / 100% 100%;
+      border-color: transparent;
+    }
+    .kawaii-buy-btn:active:not(:disabled) {
+      transform: scale(0.97);
+    }
+    .kawaii-buy-btn:disabled {
+      filter: grayscale(80%) opacity(0.45);
+      cursor: not-allowed;
+      transform: none;
+    }
+    .prep-gingham-footer {
+      background: url('./sprites/morning_prep/prep_gingham_bottom.png') no-repeat center bottom / 100% 100%;
+      height: 18px;
+      width: 100%;
+    }
+
+    /* Juicy Run Day Simulation Button */
+    .kawaii-run-day-btn {
+      width: 100%;
+      margin-top: 10px;
+      padding: 12px 14px;
+      background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%);
+      color: #ffffff;
+      font-weight: 800;
+      font-size: 14px;
+      letter-spacing: 0.5px;
+      border: 3px solid #6ee7b7;
+      border-radius: 26px;
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.45), 0 0 12px rgba(110, 231, 183, 0.3);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      touch-action: manipulation;
+      transition: transform 0.12s, filter 0.15s, box-shadow 0.15s;
+      min-height: 50px;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+    }
+    .kawaii-run-day-btn:hover:not(:disabled) {
+      transform: translateY(-2px) scale(1.02);
+      filter: brightness(1.08);
+      box-shadow: 0 6px 20px rgba(16, 185, 129, 0.55), 0 0 16px rgba(110, 231, 183, 0.4);
+      background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%);
+      border-color: #6ee7b7;
+    }
+    .kawaii-run-day-btn:active:not(:disabled) {
+      transform: translateY(1px) scale(0.98);
+    }
+    .btn-sparkle {
+      width: 20px;
+      height: 20px;
+      object-fit: contain;
+    }
   </style>
 </head>
 <body>
@@ -470,30 +866,168 @@
 
     <!-- COLUMN 2: OPERATIONS, SATELLITE LOCATIONS & INVENTORY -->
     <div class="panel">
-      <h3 id="panel2-title">2. Operations & Expansion</h3>
-      <div id="readout-weather"></div>
-      <div id="readout-demand-estimate"></div>
+      <h3 id="panel2-title">🍋 2. Operations & Expansion</h3>
       
-      <div style="display:flex; justify-content:space-between; align-items:center; margin: 8px 0 4px 0;">
-        <span style="font-weight: bold;">Central Supplies:</span>
-        <div id="pack-mult-controls" style="display:flex; gap:2px;">
-          <button id="btn-mult-1" style="padding:2px 8px; font-size:11px; min-height:26px;">1x</button>
-          <button id="btn-mult-5" style="padding:2px 8px; font-size:11px; min-height:26px;">5x</button>
-          <button id="btn-mult-10" style="padding:2px 8px; font-size:11px; min-height:26px;">10x</button>
+      <!-- 1. KAWAII WEATHER FORECAST CARD -->
+      <div class="weather-card">
+        <div class="weather-panel-inner">
+          <div class="weather-art-slot">
+            <img id="weather-sun-sprite" src="./sprites/morning_prep/sun_happy.png" class="weather-sun floating-bob-1" alt="Sunny" />
+            <div id="weather-cloud-rain-wrap" class="weather-cloud-rain" style="display:none;">
+              <img src="./sprites/morning_prep/cloud_puff.png" class="weather-cloud floating-bob-2" alt="Cloud" />
+              <img id="weather-rain-sprite" src="./sprites/morning_prep/rain_drops.png" class="weather-rain" alt="Rain" style="display:none;" />
+            </div>
+          </div>
+          <div class="weather-details">
+            <div class="weather-pill-box">
+              <span id="weather-condition-label">89°F SUNNY</span>
+            </div>
+            <div class="weather-ice-hint">
+              🧊 Ideal Ice: <strong id="weather-ideal-ice">6 cubes</strong> / cup
+            </div>
+          </div>
         </div>
       </div>
-      <div id="readout-inventory-text" style="font-size: 12px; color: #ccc;"></div>
-      <div class="stock-grid" id="stock-buttons">
-        <button id="btn-buy-lemons">+24 Lemons ($8.00)</button>
-        <button id="btn-buy-sugar">+20 Sugar ($6.00)</button>
-        <button id="btn-buy-ice">+200 Ice ($4.00)</button>
-        <button id="btn-buy-cups">+50 Cups ($4.00)</button>
-        <button id="btn-buy-bottles" style="grid-column: span 2; display: none;">+25 Glass Bottles ($10.00)</button>
+
+      <!-- 2. MASCOT LEMON & DEMAND ADVICE SPEECH BUBBLE -->
+      <div class="mascot-advice-card">
+        <div class="mascot-advice-row">
+          <div class="mascot-avatar-wrap">
+            <img src="./sprites/morning_prep/mascot_lemon_head.png" alt="Lemon Mascot" class="mascot-lemon-head floating-bob-1" />
+          </div>
+          <div class="mascot-bubble-wrap">
+            <div class="mascot-speech-bubble">
+              <div id="mascot-bubble-phrase" class="mascot-phrase-text">
+                Hot sunny day! You'll need lots of lemonade!
+              </div>
+              <div id="mascot-bubble-sub" class="mascot-sub-text">
+                Driveway stand
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="cups-estimate-wrap">
+          <div class="cups-estimate-pill">
+            <span class="cups-pill-text">Demand: ~<strong id="demand-est-cups-val">97 cups</strong> expected today</span>
+          </div>
+        </div>
       </div>
 
-      <button id="btn-run-day" style="width:100%; margin-top:6px; padding:14px; background:#1e4620; font-weight:bold; min-height:48px; font-size:14px; border-color:#4ade80;">
-        ☀️ RUN DAY SIMULATION
+      <!-- 3. MORNING PREP & SUPPLIES STAND -->
+      <div class="prep-stand-card">
+        <div class="prep-stand-header">
+          <div class="prep-ribbon-title">
+            <img src="./sprites/morning_prep/sparkle_small.png" class="ribbon-sparkle" alt="" />
+            <span>MORNING PREP & SUPPLIES</span>
+            <img src="./sprites/morning_prep/sparkle_small.png" class="ribbon-sparkle" alt="" />
+          </div>
+          <div class="prep-awning-banner"></div>
+        </div>
+
+        <div class="prep-stand-body">
+          <!-- Multiplier Packs Bar -->
+          <div class="prep-mult-bar">
+            <span class="prep-mult-label">📦 Supply Pack Size:</span>
+            <div id="pack-mult-controls" class="prep-mult-pills">
+              <button id="btn-mult-1" class="mult-pill-btn active">1x</button>
+              <button id="btn-mult-5" class="mult-pill-btn">5x</button>
+              <button id="btn-mult-10" class="mult-pill-btn">10x</button>
+            </div>
+          </div>
+
+          <!-- Supplies Pantry Grid -->
+          <div class="prep-items-grid">
+            <!-- LEMONS -->
+            <div class="supply-item-box" id="box-lemons">
+              <div class="supply-item-header">
+                <img src="./sprites/lemon.png" class="supply-item-icon" alt="Lemons" />
+                <div class="supply-item-meta">
+                  <span class="supply-item-title">Lemons</span>
+                  <div class="supply-stock-row">
+                    <div class="inv-number-pill" id="lbl-inv-lemons">24</div>
+                    <span class="supply-alert" id="alert-lemons" style="display:none;" title="Stock is low!">⚠️</span>
+                  </div>
+                </div>
+              </div>
+              <button id="btn-buy-lemons" class="kawaii-buy-btn">+24 ($8.00)</button>
+            </div>
+
+            <!-- SUGAR -->
+            <div class="supply-item-box" id="box-sugar">
+              <div class="supply-item-header">
+                <img src="./sprites/sugar_scoop.png" class="supply-item-icon" alt="Sugar" />
+                <div class="supply-item-meta">
+                  <span class="supply-item-title">Sugar</span>
+                  <div class="supply-stock-row">
+                    <div class="inv-number-pill" id="lbl-inv-sugar">20</div>
+                    <span class="supply-alert" id="alert-sugar" style="display:none;" title="Stock is low!">⚠️</span>
+                  </div>
+                </div>
+              </div>
+              <button id="btn-buy-sugar" class="kawaii-buy-btn">+20 ($6.00)</button>
+            </div>
+
+            <!-- ICE -->
+            <div class="supply-item-box" id="box-ice">
+              <div class="supply-item-header">
+                <img src="./sprites/ice_cubes.png" class="supply-item-icon" alt="Ice" />
+                <div class="supply-item-meta">
+                  <span class="supply-item-title">Ice Cubes</span>
+                  <div class="supply-stock-row">
+                    <div class="inv-number-pill" id="lbl-inv-ice">200</div>
+                    <span class="supply-alert" id="alert-ice" style="display:none;" title="Stock is low!">⚠️</span>
+                  </div>
+                </div>
+              </div>
+              <button id="btn-buy-ice" class="kawaii-buy-btn">+200 ($4.00)</button>
+            </div>
+
+            <!-- CUPS -->
+            <div class="supply-item-box" id="box-cups">
+              <div class="supply-item-header">
+                <img src="./sprites/lemonade_cup.png" class="supply-item-icon" alt="Cups" />
+                <div class="supply-item-meta">
+                  <span class="supply-item-title">Cups</span>
+                  <div class="supply-stock-row">
+                    <div class="inv-number-pill" id="lbl-inv-cups">50</div>
+                    <span class="supply-alert" id="alert-cups" style="display:none;" title="Stock is low!">⚠️</span>
+                  </div>
+                </div>
+              </div>
+              <button id="btn-buy-cups" class="kawaii-buy-btn">+50 ($4.00)</button>
+            </div>
+
+            <!-- BOTTLES (Phase 3+) -->
+            <div class="supply-item-box" id="box-bottles" style="grid-column: span 2; display:none;">
+              <div class="supply-item-header">
+                <span style="font-size:26px; line-height:1;">🍾</span>
+                <div class="supply-item-meta">
+                  <span class="supply-item-title">Glass Bottles</span>
+                  <div class="supply-stock-row">
+                    <div class="inv-number-pill" id="lbl-inv-bottles">0</div>
+                  </div>
+                </div>
+              </div>
+              <button id="btn-buy-bottles" class="kawaii-buy-btn">+25 ($10.00)</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="prep-gingham-footer"></div>
+      </div>
+
+      <!-- 4. BIG ACTION BUTTON: OPEN FOR BUSINESS -->
+      <button id="btn-run-day" class="kawaii-run-day-btn">
+        <img src="./sprites/morning_prep/sparkle_small.png" class="btn-sparkle floating-bob-1" alt="" />
+        <span id="btn-run-day-text">☀️ OPEN FOR BUSINESS! (Day 1)</span>
+        <img src="./sprites/morning_prep/sparkle_small.png" class="btn-sparkle floating-bob-2" alt="" />
       </button>
+
+      <!-- Legacy containers kept hidden for fallback compatibility -->
+      <div id="readout-weather" style="display:none;"></div>
+      <div id="readout-demand-estimate" style="display:none;"></div>
+      <div id="readout-inventory-text" style="display:none;"></div>
 
       <div id="expansion-sections" style="margin-top: 10px;"></div>
     </div>
@@ -565,9 +1099,11 @@
       [1, 5, 10].forEach(v => {
         const btn = document.getElementById(`btn-mult-${v}`);
         if (btn) {
-          btn.style.borderColor = (v === m) ? '#ffd700' : '#555';
-          btn.style.color = (v === m) ? '#ffd700' : '#888';
-          btn.style.background = (v === m) ? '#2a2200' : '#222';
+          if (v === m) {
+            btn.classList.add('active');
+          } else {
+            btn.classList.remove('active');
+          }
         }
       });
     }
@@ -802,50 +1338,73 @@
         choreBtn.textContent = `🧹 CHORE: ${chore.name} (+$${chore.reward.toFixed(2)})`;
       }
 
-      // 2. Weather & Operations
-      document.getElementById('readout-weather').innerHTML = `
-        <div class="stat"><span>Today's Forecast:</span><strong>${s.tempF}°F (${s.weather})</strong></div>
-        <div class="stat"><span>Ideal Ice for Forecast:</span><span>${engine.computeIdealIce(s.tempF)} cubes / cup</span></div>
-      `;
+      // 2. Weather & Operations (Kawaii Weather Panel)
+      const weatherSun = document.getElementById('weather-sun-sprite');
+      const weatherCloudRain = document.getElementById('weather-cloud-rain-wrap');
+      const weatherRain = document.getElementById('weather-rain-sprite');
+      const weatherConditionLabel = document.getElementById('weather-condition-label');
+      const weatherIdealIce = document.getElementById('weather-ideal-ice');
 
-      // Kid-Friendly Demand Advice & Status
+      if (weatherConditionLabel) {
+        weatherConditionLabel.textContent = `${s.tempF}°F ${s.weather}`;
+      }
+      if (weatherIdealIce) {
+        weatherIdealIce.textContent = `${engine.computeIdealIce(s.tempF)} cubes`;
+      }
+      if (weatherSun && weatherCloudRain && weatherRain) {
+        if (s.weather === 'SUNNY') {
+          weatherSun.style.display = 'block';
+          weatherCloudRain.style.display = 'none';
+        } else if (s.weather === 'CLOUDY') {
+          weatherSun.style.display = 'none';
+          weatherCloudRain.style.display = 'flex';
+          weatherRain.style.display = 'none';
+        } else { // RAINY
+          weatherSun.style.display = 'none';
+          weatherCloudRain.style.display = 'flex';
+          weatherRain.style.display = 'block';
+        }
+      }
+
+      // Mascot Demand Advice & Estimate
       const advice = engine.getKidDemandAdvice();
-      const estEl = document.getElementById('readout-demand-estimate');
-      if (estEl) {
-        const standSubtitle = s.phase >= 2 && Object.values(engine.franchiseStands).some(st => st.hired)
-          ? 'Across all stands'
-          : 'Driveway stand';
+      const standSubtitle = s.phase >= 2 && Object.values(engine.franchiseStands).some(st => st.hired)
+        ? 'Across all stands'
+        : 'Driveway stand';
 
-        setHTMLIfChanged(estEl, `
-          <div class="card" style="margin: 6px 0; background: #1a1e24; border: 2px solid ${advice.isFullyStocked ? '#10b981' : '#f59e0b'}; padding: 8px 10px; border-radius: 6px;">
-            <div style="display:flex; align-items:center; gap:8px;">
-              <span style="font-size: 24px;">${advice.emoji}</span>
-              <div style="flex:1;">
-                <div style="font-weight: bold; font-size: 13px; color: ${advice.isFullyStocked ? '#4ade80' : '#fcd34d'};">
-                  ${advice.phrase}
-                </div>
-                <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">
-                  ${standSubtitle} • Today's Est. Demand: ~<strong style="color:#eee;">${advice.estTotalCups} cups</strong>
-                </div>
-              </div>
-            </div>
-          </div>
-        `);
-      }
+      const mascotPhrase = document.getElementById('mascot-bubble-phrase');
+      const mascotSub = document.getElementById('mascot-bubble-sub');
+      const demandEstVal = document.getElementById('demand-est-cups-val');
 
-      // Pantry Shelf Badges with Warning Exclamation Marks
-      const invEl = document.getElementById('readout-inventory-text');
-      if (invEl) {
-        setHTMLIfChanged(invEl, `
-          <div style="display:flex; flex-wrap:wrap; gap:6px; margin: 6px 0;">
-            <span class="pantry-tag ${advice.lowItems.includes('lemons') ? 'low' : ''}">🍋 Lemons: <strong>${s.inv.lemons}</strong> ${advice.lowItems.includes('lemons') ? '⚠️' : ''}</span>
-            <span class="pantry-tag ${advice.lowItems.includes('sugar') ? 'low' : ''}">🍬 Sugar: <strong>${s.inv.sugar}</strong> ${advice.lowItems.includes('sugar') ? '⚠️' : ''}</span>
-            <span class="pantry-tag ${advice.lowItems.includes('ice') ? 'low' : ''}">🧊 Ice: <strong>${s.inv.ice}</strong> ${advice.lowItems.includes('ice') ? '⚠️' : ''}</span>
-            <span class="pantry-tag ${advice.lowItems.includes('cups') ? 'low' : ''}">🥤 Cups: <strong>${s.inv.cups}</strong> ${advice.lowItems.includes('cups') ? '⚠️' : ''}</span>
-            ${s.phase >= 3 ? `<span class="pantry-tag">🍾 Bottles: <strong>${s.inv.bottles}</strong></span>` : ''}
-          </div>
-        `);
-      }
+      if (mascotPhrase) mascotPhrase.textContent = advice.phrase;
+      if (mascotSub) mascotSub.textContent = standSubtitle;
+      if (demandEstVal) demandEstVal.textContent = `~${advice.estTotalCups} cups`;
+
+      // Morning Prep Stock Numbers & Low Stock Alerts
+      const invLemons = document.getElementById('lbl-inv-lemons');
+      const alertLemons = document.getElementById('alert-lemons');
+      if (invLemons) invLemons.textContent = String(s.inv.lemons);
+      if (alertLemons) alertLemons.style.display = advice.lowItems.includes('lemons') ? 'inline-block' : 'none';
+
+      const invSugar = document.getElementById('lbl-inv-sugar');
+      const alertSugar = document.getElementById('alert-sugar');
+      if (invSugar) invSugar.textContent = String(s.inv.sugar);
+      if (alertSugar) alertSugar.style.display = advice.lowItems.includes('sugar') ? 'inline-block' : 'none';
+
+      const invIce = document.getElementById('lbl-inv-ice');
+      const alertIce = document.getElementById('alert-ice');
+      if (invIce) invIce.textContent = String(s.inv.ice);
+      if (alertIce) alertIce.style.display = advice.lowItems.includes('ice') ? 'inline-block' : 'none';
+
+      const invCups = document.getElementById('lbl-inv-cups');
+      const alertCups = document.getElementById('alert-cups');
+      if (invCups) invCups.textContent = String(s.inv.cups);
+      if (alertCups) alertCups.style.display = advice.lowItems.includes('cups') ? 'inline-block' : 'none';
+
+      const boxBottles = document.getElementById('box-bottles');
+      const invBottles = document.getElementById('lbl-inv-bottles');
+      if (boxBottles) boxBottles.style.display = s.phase >= 3 ? 'flex' : 'none';
+      if (invBottles) invBottles.textContent = String(s.inv.bottles);
 
       const lBaseCost = s.flags.hasCostcoDiscount ? 5.20 : 8.00;
       const sBaseCost = s.flags.hasCostcoDiscount ? 3.90 : 6.00;
@@ -874,30 +1433,35 @@
       const btnB = document.getElementById('btn-buy-bottles');
 
       if (btnL) {
-        btnL.textContent = `+${lQty} Lemons (${lCost})`;
+        btnL.textContent = `+${lQty} (${lCost})`;
         btnL.disabled = s.cash.lt(lBaseCost * buyPackMult);
       }
       if (btnS) {
-        btnS.textContent = `+${sQty} Sugar (${sCost})`;
+        btnS.textContent = `+${sQty} (${sCost})`;
         btnS.disabled = s.cash.lt(sBaseCost * buyPackMult);
       }
       if (btnI) {
-        btnI.textContent = `+${iQty} Ice (${iCost})`;
+        btnI.textContent = `+${iQty} (${iCost})`;
         btnI.disabled = s.cash.lt(iBaseCost * buyPackMult);
       }
       if (btnC) {
-        btnC.textContent = `+${cQty} Cups (${cCost})`;
+        btnC.textContent = `+${cQty} (${cCost})`;
         btnC.disabled = s.cash.lt(cBaseCost * buyPackMult);
       }
       if (btnB) {
-        btnB.style.display = s.phase >= 3 ? 'block' : 'none';
+        btnB.style.display = s.phase >= 3 ? 'flex' : 'none';
         if (s.phase >= 3) {
-          btnB.textContent = `+${bQty} Glass Bottles (${bCost})`;
+          btnB.textContent = `+${bQty} (${bCost})`;
           btnB.disabled = s.cash.lt(bBaseCost * buyPackMult);
         }
       }
 
-      document.getElementById('btn-run-day').textContent = `☀️ RUN DAY ${s.day} BUSINESS SIMULATION`;
+      const runDayTxt = document.getElementById('btn-run-day-text');
+      if (runDayTxt) {
+        runDayTxt.textContent = `☀️ OPEN FOR BUSINESS! (Day ${s.day})`;
+      } else {
+        document.getElementById('btn-run-day').textContent = `☀️ OPEN FOR BUSINESS! (Day ${s.day})`;
+      }
 
       // Expansion sections (Franchise, Wholesale, Patent, CoPacker)
       let expansionHTML = '';
