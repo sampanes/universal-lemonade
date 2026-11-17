@@ -1493,6 +1493,25 @@
       font-weight: 900;
     }
     .report-row.total.neg .amt { color: #be123c; }
+    /* "Neighborhood buzz": reputation after the day, and which way it moved. */
+    .report-rep {
+      margin-top: 8px;
+      padding: 6px 10px;
+      background: #ffffff;
+      border: 2px solid #e9d5ff;
+      border-radius: 12px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 4px 8px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #4a044e;
+    }
+    .report-rep .star-meter { --star: 16px; }
+    .report-rep-trend { flex-basis: 100%; font-size: 11px; color: #6b21a8; }
+    .report-rep-trend.up { color: #047857; }
+    .report-rep-trend.down { color: #be123c; }
     .report-section-title {
       margin: 10px 0 4px 0;
       font-size: 11px;
@@ -2847,6 +2866,18 @@
 
         const sInfo = engine.getSeasonInfo(d.day);
 
+        // Reputation is a running average that favors recent days, so show the direction it moved.
+        let rep = '';
+        if (typeof d.reputationBefore === 'number' && typeof d.reputationAfter === 'number') {
+          const diff = d.reputationAfter - d.reputationBefore;
+          const [cls, msg] = diff > 0.005 ? ['up', 'Going up! More people will stop by, and they will pay a little more.']
+            : diff < -0.005 ? ['down', 'Going down. Tastier lemonade at a fair price brings people back.']
+            : ['', 'About the same as yesterday.'];
+          rep = `<div class="report-rep"><span>Neighborhood buzz</span>` +
+            starMeter(d.reputationAfter, `Reputation ${Math.round(d.reputationAfter * 100)} out of 100`) +
+            `<span class="report-rep-trend ${cls}">${msg}</span></div>`;
+        }
+
         return `<div class="report-card ${isModal ? 'in-modal' : ''}">
           <div class="ratio-banner report-banner">
             <span>DAY ${d.day} REPORT</span>
@@ -2865,6 +2896,7 @@
               </div>
             </div>
             <div class="report-rows">${rows}</div>
+            ${rep}
             ${reviews ? `<div class="report-section-title">What people said</div>${reviews}` : ''}
             <ul class="report-notes">${d.notes.map(n => `<li>${n}</li>`).join('')}</ul>
           </div>

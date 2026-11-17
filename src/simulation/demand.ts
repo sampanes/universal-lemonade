@@ -1,6 +1,7 @@
 // src/simulation/demand.ts — Demand Estimation & Kid-Friendly Advisor
 import type { GameState, FranchiseStand, DailyDemandEstimate, KidDemandAdvice, PourableCapacity } from '../types';
 import { computeRecipeQuality } from './recipe';
+import { buyProbability, drivewayTrafficMult } from './reputation';
 
 export function getDailyDemandEstimate(
   state: GameState,
@@ -10,11 +11,10 @@ export function getDailyDemandEstimate(
   const weatherMult = s.weather === 'SUNNY' ? 1.0 : s.weather === 'CLOUDY' ? 0.65 : 0.25;
   const tempFactor = Math.max(0.3, 1 + 0.8 * ((s.tempF - 70) / 30));
   const quality = computeRecipeQuality(s.recipe, s.tempF);
-  const fairPrice = 2.00 * (1 + 0.02 * (s.tempF - 70));
-  const priceRatio = fairPrice / Math.max(0.25, s.recipe.pricePerCup);
-  const buyProb = Math.max(0, Math.min(1, quality * Math.pow(priceRatio, 1.8)));
+  const buyProb = buyProbability(quality, s.tempF, s.recipe.pricePerCup, s.reputation);
 
-  const estDriveway = Math.floor(65 * weatherMult * tempFactor * (0.5 + s.reputation) * buyProb);
+  // Same rounding order as Engine.runDay so the forecast matches the real day.
+  const estDriveway = Math.floor(Math.floor(65 * weatherMult * tempFactor * drivewayTrafficMult(s.reputation)) * buyProb);
   let totalCups = estDriveway;
 
   const franchiseEstimates: { id: string; name: string; workerName: string; estCups: number }[] = [];

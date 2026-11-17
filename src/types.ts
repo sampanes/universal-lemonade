@@ -169,6 +169,9 @@ export interface DaySummary {
   netProfit: number;
 
   recipeQuality: number;
+  // Reputation at the start and end of the day (0..1). Optional so older saves still load.
+  reputationBefore?: number;
+  reputationAfter?: number;
   reviews: CustomerReview[];
   notes: string[];
 }

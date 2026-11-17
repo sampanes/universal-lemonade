@@ -27,6 +27,10 @@ import { rollWeatherForecast, computeIdealIce, getSeasonInfo } from './simulatio
 import { computeRecipeQuality, getRecipeProfile } from './simulation/recipe';
 import { getDailyDemandEstimate, getKidDemandAdvice, getMaxPourableCups } from './simulation/demand';
 import { generateDailyReviews } from './simulation/reviews';
+import {
+  REPUTATION_ALPHA, ewma, fairPriceFor, buyProbability, drivewayTrafficMult,
+  dailyCustomerScore, nextReputation
+} from './simulation/reputation';
 
 export { BigNum } from './bignum';
 export * from './types';
@@ -396,12 +400,15 @@ export class LemonadeEngine {
     s.bestRecipeQuality = Math.max(s.bestRecipeQuality, quality);
     s.totalQualityDays = (s.totalQualityDays || 0) + 1;
     s.totalQualitySum = (s.totalQualitySum || 0) + quality;
-    s.avgRecipeQuality = s.totalQualitySum / s.totalQualityDays;
+    // Recent recipes count most: an EWMA, seeded with the first day's quality.
+    s.avgRecipeQuality = s.totalQualityDays === 1 || !s.avgRecipeQuality
+      ? quality
+      : ewma(s.avgRecipeQuality, quality, REPUTATION_ALPHA);
 
-    const drivewayTraffic = Math.floor(65 * weatherMult * tempFactor * (0.5 + s.reputation));
-    const fairPrice = 2.00 * (1 + 0.02 * (s.tempF - 70));
-    const priceRatio = fairPrice / Math.max(0.25, s.recipe.pricePerCup);
-    const buyProb = Math.max(0, Math.min(1, quality * Math.pow(priceRatio, 1.8)));
+    const reputationBefore = s.reputation;
+    const drivewayTraffic = Math.floor(65 * weatherMult * tempFactor * drivewayTrafficMult(s.reputation));
+    const fairPrice = fairPriceFor(s.tempF, s.reputation);
+    const buyProb = buyProbability(quality, s.tempF, s.recipe.pricePerCup, s.reputation);
     const drivewayDemand = Math.floor(drivewayTraffic * buyProb);
 
     interface ActiveStandDemand {
@@ -589,7 +596,13 @@ export class LemonadeEngine {
     s.totalRevenueEarned = s.totalRevenueEarned.add(totalRevenue);
 
     if (!s.flags.hasPaidMortgage) {
-      s.reputation = Math.max(0.1, Math.min(1.0, s.reputation + (quality - 0.65) * 0.12));
+      s.reputation = nextReputation(s, dailyCustomerScore({
+        quality,
+        pricePerCup: s.recipe.pricePerCup,
+        fairPrice,
+        cupsWanted: totalCupDemand,
+        cupsSold: drivewayCupsSold + franchiseCupsSold
+      }));
     }
 
     const reviews = this.generateCustomerReviews({
@@ -629,6 +642,8 @@ export class LemonadeEngine {
       totalExpenses,
       netProfit,
       recipeQuality: quality,
+      reputationBefore,
+      reputationAfter: s.reputation,
       reviews,
       notes: notes.length ? notes : ['All operations ran smoothly!']
     };
