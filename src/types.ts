@@ -1,6 +1,18 @@
 import type { BigNum } from './bignum';
 
 export type WeatherCondition = 'SUNNY' | 'CLOUDY' | 'RAINY';
+export type SeasonName = 'SPRING' | 'SUMMER' | 'FALL' | 'WINTER';
+
+export interface SeasonInfo {
+  season: SeasonName;
+  displayName: string;
+  icon: string;
+  dayInSeason: number;
+  seasonLength: number;
+  year: number;
+  badge: string;
+}
+
 export type GamePhase = 1 | 2 | 3 | 4 | 5;
 export type SupplyItem = 'lemons' | 'sugar' | 'ice' | 'cups' | 'bottles';
 
@@ -116,6 +128,8 @@ export interface DaySummary {
   day: number;
   tempF: number;
   weather: WeatherCondition;
+  seasonInfo?: SeasonInfo;
+  seasonBadge?: string;
 
   // Driveway Stand
   drivewayCupsSold: number;
@@ -157,6 +171,7 @@ export interface GameState {
   day: number;
   tempF: number;
   weather: WeatherCondition;
+  seasonInfo?: SeasonInfo;
   reputation: number;        // [0.1, 1.0]
   bestRecipeQuality: number;
   avgRecipeQuality: number;

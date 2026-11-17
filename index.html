@@ -566,6 +566,41 @@
          minimum, wider than a 320 px phone, so the whole page overflowed sideways. */
       text-align: center;
     }
+    .weather-season-pill {
+      font-family: var(--font-ui);
+      font-size: 11px;
+      font-weight: 700;
+      color: #581c87;
+      background: rgba(255, 255, 255, 0.92);
+      border: 1.5px solid #c084fc;
+      border-radius: 12px;
+      padding: 1px 9px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+      letter-spacing: 0.3px;
+      white-space: nowrap;
+    }
+
+    /* Dad Mode Test Controls */
+    body:not(.dad-mode) .dad-test-only {
+      display: none !important;
+    }
+    .dad-pill {
+      font-family: var(--font-ui);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 12px;
+      cursor: pointer;
+      background: #4c1d95;
+      color: #fbcfe8;
+      border: 1.5px solid #a855f7;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+      transition: transform 0.1s ease;
+    }
+    .dad-pill:hover {
+      transform: scale(1.04);
+      background: #5b21b6;
+    }
 
     /* Mascot & Demand Advice */
     .mascot-advice-card {
@@ -1473,12 +1508,13 @@
 </head>
 <body>
   <div class="header-bar">
-    <div class="header-title">🍋 UNIVERSAL LEMONADE</div>
+    <div class="header-title" id="header-title" style="cursor: pointer;" title="Triple-click to toggle Dad Mode">🍋 UNIVERSAL LEMONADE</div>
     <div class="header-controls">
-      <button id="btn-speed-1">1x</button>
-      <button id="btn-speed-10">10x</button>
-      <button id="btn-speed-50">50x</button>
-      <button id="btn-autoday">Auto-Day: OFF</button>
+      <button id="btn-dad-toggle" class="dad-pill dad-test-only">🛠️ DAD MODE: ON</button>
+      <button id="btn-speed-1" class="dad-test-only">1x</button>
+      <button id="btn-speed-10" class="dad-test-only">10x</button>
+      <button id="btn-speed-50" class="dad-test-only">50x</button>
+      <button id="btn-autoday" class="dad-test-only">Auto-Day: OFF</button>
       <button id="btn-reset" style="border-color:#e11d48; color:#f87171;">Reset</button>
     </div>
   </div>
@@ -1550,7 +1586,7 @@
             </div>
           </div>
 
-          <div class="chore-wrap">
+          <div class="chore-wrap dad-test-only">
             <div class="chore-title">Need cash fast? Do a chore!</div>
             <button id="btn-chore" class="chore-btn">
               <span class="chore-fill" id="chore-fill"></span>
@@ -1681,6 +1717,7 @@
             </div>
           </div>
           <div class="weather-details">
+            <div id="weather-season-badge" class="weather-season-pill">🌸 Spring · Day 1 of 5</div>
             <div class="weather-pill-box">
               <span id="weather-condition-label">89°F SUNNY</span>
             </div>
@@ -1890,6 +1927,32 @@
     let victoryDismissed = false;
     let buyPackMult = 1;
 
+    // ---- Dad-Testing Mode Flag ----
+    const urlParams = new URLSearchParams(window.location.search);
+    let dadModeActive = true; // Defaults to true while Dad is testing
+    const savedDadMode = localStorage.getItem('universal_lemonade_dad_mode');
+    if (urlParams.has('dad')) {
+      const p = urlParams.get('dad');
+      dadModeActive = p !== '0' && p !== 'false';
+      localStorage.setItem('universal_lemonade_dad_mode', dadModeActive ? 'true' : 'false');
+    } else if (savedDadMode !== null) {
+      dadModeActive = savedDadMode === 'true';
+    }
+
+    function setDadMode(enabled) {
+      dadModeActive = !!enabled;
+      document.body.classList.toggle('dad-mode', dadModeActive);
+      localStorage.setItem('universal_lemonade_dad_mode', dadModeActive ? 'true' : 'false');
+      const toggleBtn = document.getElementById('btn-dad-toggle');
+      if (toggleBtn) {
+        toggleBtn.textContent = `🛠️ DAD MODE: ${dadModeActive ? 'ON' : 'OFF'}`;
+      }
+      console.log(`[Dad Mode] ${dadModeActive ? 'Enabled' : 'Disabled'}`);
+    }
+    setDadMode(dadModeActive);
+    window.setDadMode = setDadMode;
+    window.isDadMode = () => dadModeActive;
+
     // ---- Money Box (cat cash counter) helpers ----
     const SPRITE_DIR = './sprites/kawaii_cat/';
     // Native glyph widths in px at the shared 68 px glyph height.
@@ -2057,10 +2120,12 @@
         </div>`;
       }).join('');
 
+      const sInfo = engine.getSeasonInfo(d.day);
+
       return `<div class="report-card">
         <div class="ratio-banner report-banner">
           <span>DAY ${d.day} REPORT</span>
-          <span class="report-weather">${d.tempF}&deg;F ${d.weather}</span>
+          <span class="report-weather">${sInfo.icon} ${d.tempF}&deg;F ${d.weather}</span>
         </div>
         <div class="report-body">
           <div class="report-hero">
@@ -2123,6 +2188,25 @@
       }
     };
     document.getElementById('btn-autoice').onclick = window._toggleAutoIce;
+
+    const btnDadToggle = document.getElementById('btn-dad-toggle');
+    if (btnDadToggle) {
+      btnDadToggle.onclick = () => setDadMode(!dadModeActive);
+    }
+    let titleClickCount = 0;
+    let titleClickTimer = null;
+    const headerTitle = document.getElementById('header-title');
+    if (headerTitle) {
+      headerTitle.onclick = () => {
+        titleClickCount++;
+        clearTimeout(titleClickTimer);
+        titleClickTimer = setTimeout(() => { titleClickCount = 0; }, 800);
+        if (titleClickCount >= 3) {
+          titleClickCount = 0;
+          setDadMode(!dadModeActive);
+        }
+      };
+    }
 
     document.getElementById('btn-autoday').onclick = (e) => {
       autoDay = !autoDay;
@@ -2370,6 +2454,12 @@
       const weatherRain = document.getElementById('weather-rain-sprite');
       const weatherConditionLabel = document.getElementById('weather-condition-label');
       const weatherIdealIce = document.getElementById('weather-ideal-ice');
+
+      const weatherSeasonBadge = document.getElementById('weather-season-badge');
+      if (weatherSeasonBadge) {
+        const sInfo = engine.getSeasonInfo(s.day);
+        setText(weatherSeasonBadge, sInfo.badge);
+      }
 
       if (weatherConditionLabel) {
         weatherConditionLabel.textContent = `${s.tempF}°F ${s.weather}`;

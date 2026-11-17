@@ -14,7 +14,8 @@ import type {
   PourableCapacity,
   RecipeProfile,
   DaySummary,
-  SupplyItem
+  SupplyItem,
+  SeasonInfo
 } from './types';
 
 import { rollChore } from './data/chores';
@@ -22,7 +23,7 @@ import { createInitialFranchiseStands } from './data/franchise';
 import { createInitialWholesaleAccounts } from './data/wholesale';
 import { createInitialProjects } from './data/projects';
 import { createInitialTrophies } from './data/trophies';
-import { rollWeatherForecast, computeIdealIce } from './simulation/weather';
+import { rollWeatherForecast, computeIdealIce, getSeasonInfo } from './simulation/weather';
 import { computeRecipeQuality, getRecipeProfile } from './simulation/recipe';
 import { getDailyDemandEstimate, getKidDemandAdvice, getMaxPourableCups } from './simulation/demand';
 import { generateDailyReviews } from './simulation/reviews';
@@ -81,7 +82,7 @@ export class LemonadeEngine {
       totalRevenueEarned: new BigNum(0, 0),
 
       inv: { lemons: 24, sugar: 20, ice: 200, cups: 50, bottles: 0 },
-      recipe: { lemonsPerPitcher: 4, sugarPerPitcher: 4, icePerCup: 4, pricePerCup: 2.00 },
+      recipe: { lemonsPerPitcher: 1, sugarPerPitcher: 1, icePerCup: 1, pricePerCup: 1.00 },
 
       flags: {
         hasCooler: false,
@@ -251,9 +252,18 @@ export class LemonadeEngine {
 
   // Weather & Calculations
   public rollNextForecast(): void {
-    const { weather, tempF } = rollWeatherForecast(() => this.rand(), this.state.flags.weatherLocked95F);
+    const { weather, tempF, seasonInfo } = rollWeatherForecast(
+      () => this.rand(),
+      this.state.flags.weatherLocked95F,
+      this.state.day
+    );
     this.state.weather = weather;
     this.state.tempF = tempF;
+    this.state.seasonInfo = seasonInfo;
+  }
+
+  public getSeasonInfo(day: number = this.state.day): SeasonInfo {
+    return getSeasonInfo(day);
   }
 
   public computeIdealIce(tempF: number = this.state.tempF): number {
@@ -587,10 +597,14 @@ export class LemonadeEngine {
       bottleneck: primaryBottleneck
     });
 
+    const seasonInfo = this.getSeasonInfo(s.day);
+
     const summary: DaySummary = {
       day: s.day,
       tempF: s.tempF,
       weather: s.weather,
+      seasonInfo,
+      seasonBadge: seasonInfo.badge,
       drivewayCupsSold,
       drivewayRevenue,
       franchiseCupsSold,
