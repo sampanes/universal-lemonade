@@ -1134,40 +1134,77 @@
       70% { opacity: 1; }
       100% { opacity: 0; transform: translateY(-34px) scale(1); }
     }
-    .bank-caption {
+    .bank-caption-wrap {
       position: relative;
-      margin-top: 5px;
-      text-align: center;
+      margin-top: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      padding: 0 4px;
+    }
+    .bank-caption {
       font-size: 11px;
       font-weight: 700;
       color: #7e22ce;
     }
+    .fold-pill-btn {
+      font-family: var(--font-ui);
+      font-size: 11px;
+      font-weight: 700;
+      color: #6b21a8;
+      background: rgba(255, 255, 255, 0.88);
+      border: 1.5px solid #c084fc;
+      border-radius: 12px;
+      padding: 2px 8px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      box-shadow: 0 1px 2px rgba(107, 33, 168, 0.1);
+      transition: transform 0.12s ease, background 0.12s ease;
+      white-space: nowrap;
+    }
+    .fold-pill-btn:hover {
+      background: #ffffff;
+      transform: scale(1.03);
+    }
+    .fold-arrow {
+      display: inline-block;
+      font-size: 10px;
+      transition: transform 0.25s ease;
+    }
+    .fold-pill-btn.open .fold-arrow,
+    .foldable-card.is-expanded .fold-arrow {
+      transform: rotate(180deg);
+    }
+
+    /* Generalizable Foldable Drawer */
+    .foldable-drawer {
+      overflow: hidden;
+      max-height: 0;
+      opacity: 0;
+      transform: translateY(-4px);
+      transition: max-height 0.32s cubic-bezier(0.4, 0, 0.2, 1),
+                  opacity 0.24s ease,
+                  transform 0.24s ease,
+                  margin 0.24s ease;
+      pointer-events: none;
+      margin-top: 0;
+    }
+    .foldable-drawer.is-open {
+      max-height: 500px;
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+      margin-top: 8px;
+    }
+
     .bank-stats {
       position: relative;
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 6px;
-      margin-top: 10px;
-    }
-    /* Wide Money Box (a desktop column): the four stat chips move up beside the cat, two per
-       side, instead of adding two rows under the counter. That saves about 105 px of height,
-       which is what keeps the recipe card on screen on a 1080p display once everything is
-       scaled up. 204px = the cheering cat (190 px at full size) plus a little clearance. */
-    @container bank (min-width: 444px) {
-      .bank-stats {
-        position: absolute;
-        top: 46px; /* just under the stage pill */
-        left: 10px;
-        right: 10px;
-        margin-top: 0;
-        grid-template-columns: minmax(0, 1fr) 204px minmax(0, 1fr);
-        align-items: start;
-      }
-      .bank-stats .bank-chip:nth-child(1) { grid-area: 1 / 1; }
-      .bank-stats .bank-chip:nth-child(2) { grid-area: 2 / 1; }
-      .bank-stats .bank-chip:nth-child(3) { grid-area: 1 / 3; }
-      .bank-stats .bank-chip:nth-child(4) { grid-area: 2 / 3; }
-      .bank-counter { z-index: 1; } /* cat and the +$ floaters stay in front of the chips */
     }
     .bank-chip {
       min-width: 0;
@@ -1491,6 +1528,167 @@
     }
     .report-notes li + li { margin-top: 3px; }
 
+    /* ==================================================================
+       Day Report Dock & Modal Architecture
+       ================================================================== */
+    .report-dock-ticket {
+      margin-bottom: 10px;
+      background: linear-gradient(180deg, #2a1538 0%, #1c0e27 100%);
+      border: 2.5px solid #a855f7;
+      border-radius: 14px;
+      padding: 7px 11px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      cursor: pointer;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.28);
+      transition: transform 0.12s ease, border-color 0.12s ease, background 0.12s ease;
+      user-select: none;
+    }
+    .report-dock-ticket:hover {
+      border-color: #c084fc;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);
+    }
+    .report-dock-ticket.placeholder {
+      opacity: 0.85;
+      cursor: default;
+    }
+    .report-dock-ticket.placeholder:hover {
+      transform: none;
+    }
+    .report-dock-cat {
+      width: 40px;
+      height: 40px;
+      object-fit: contain;
+      flex-shrink: 0;
+    }
+    .report-dock-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .report-dock-top {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .report-dock-title {
+      font-family: var(--font-display);
+      font-size: 13.5px;
+      color: #ffd700;
+      letter-spacing: 0.4px;
+    }
+    .report-dock-profit {
+      font-family: var(--font-ui);
+      font-size: 13px;
+      font-weight: 800;
+    }
+    .report-dock-profit.pos { color: #4ade80; }
+    .report-dock-profit.neg { color: #f87171; }
+    .report-dock-sub {
+      font-family: var(--font-ui);
+      font-size: 11px;
+      color: #cbd5e1;
+      margin-top: 1px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .report-dock-stars {
+      color: #ffd700;
+      font-size: 10px;
+      letter-spacing: 0.5px;
+    }
+
+    /* Modal Celebration Dialog */
+    .report-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 7, 25, 0.82);
+      backdrop-filter: blur(5px);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 14px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.22s ease;
+    }
+    .report-modal-backdrop.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .report-modal-dialog {
+      position: relative;
+      max-width: 440px;
+      width: 100%;
+      max-height: 92vh;
+      overflow-y: auto;
+      border-radius: 18px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 0 3px #c084fc;
+      transform: scale(0.92) translateY(18px);
+      transition: transform 0.26s cubic-bezier(0.34, 1.56, 0.64, 1);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      background: #1c0e27;
+      padding: 10px;
+    }
+    .report-modal-backdrop.active .report-modal-dialog {
+      transform: scale(1) translateY(0);
+    }
+    .report-modal-close-x {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      z-index: 20;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1.5px solid rgba(255, 255, 255, 0.5);
+      color: #fff;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      line-height: 1;
+      transition: transform 0.12s ease, background 0.12s ease;
+    }
+    .report-modal-close-x:hover {
+      background: #e11d48;
+      border-color: #fda4af;
+      transform: scale(1.1);
+    }
+    .report-modal-continue-btn {
+      width: 100%;
+      padding: 10px 16px;
+      border-radius: 14px;
+      border: 2px solid #f472b6;
+      background: linear-gradient(180deg, #ec4899 0%, #db2777 100%);
+      color: #fff;
+      font-family: var(--font-display);
+      font-size: 16px;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(219, 39, 119, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: transform 0.12s ease, filter 0.12s ease;
+    }
+    .report-modal-continue-btn:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.08);
+    }
+    .report-modal-continue-btn:active {
+      transform: translateY(1px);
+    }
+
     /* Mouse-only hover effects (see the note on the global button:hover rule). */
     @media (hover: hover) {
       html:not(.touch-input) .chore-btn:hover:not(:disabled) {
@@ -1524,8 +1722,8 @@
     <div class="panel">
       <h3>1. Executive Office</h3>
 
-      <!-- MONEY BOX: CAT CASH COUNTER, STATS & CHORES -->
-      <div class="bank-card">
+      <!-- MONEY BOX: CAT CASH COUNTER, STATS & CHORES (FOLDABLE) -->
+      <div class="bank-card foldable-card" id="bank-card">
         <div class="ratio-banner">
           <img src="./sprites/kawaii_cat/sparkle_small.png" class="ribbon-sparkle" alt="" />
           <span>MY MONEY BOX</span>
@@ -1556,43 +1754,51 @@
               <div class="bank-floaters" id="bank-floaters" aria-hidden="true"></div>
             </div>
           </div>
-          <div class="bank-caption">Cash you can spend</div>
-
-          <div class="bank-stats">
-            <div class="bank-chip">
-              <span class="bank-chip-label">Drinks sold</span>
-              <span class="bank-chip-value fit-text" id="bank-units">0</span>
-            </div>
-            <div class="bank-chip">
-              <span class="bank-chip-label">Total earned</span>
-              <span class="bank-chip-value fit-text" id="bank-revenue">$0.00</span>
-            </div>
-            <div class="bank-chip">
-              <span class="bank-chip-label">Reputation</span>
-              <span class="bank-chip-value">
-                <span class="star-meter" id="bank-rep-stars" title="Neighborhood reputation">
-                  <span class="star-meter-row dim"><img src="./sprites/kawaii_cat/star_small.png" alt="" /><img src="./sprites/kawaii_cat/star_small.png" alt="" /><img src="./sprites/kawaii_cat/star_small.png" alt="" /><img src="./sprites/kawaii_cat/star_small.png" alt="" /><img src="./sprites/kawaii_cat/star_small.png" alt="" /></span>
-                  <span class="star-meter-row lit" id="bank-rep-lit" style="width:50%"><img src="./sprites/kawaii_cat/star_small.png" alt="" /><img src="./sprites/kawaii_cat/star_small.png" alt="" /><img src="./sprites/kawaii_cat/star_small.png" alt="" /><img src="./sprites/kawaii_cat/star_small.png" alt="" /><img src="./sprites/kawaii_cat/star_small.png" alt="" /></span>
-                </span>
-                <span id="bank-rep">50%</span>
-              </span>
-            </div>
-            <div class="bank-chip">
-              <span class="bank-chip-label">Recipe rating</span>
-              <span class="bank-chip-value">
-                <span id="bank-quality">62%</span>
-                <span class="bank-chip-sub" id="bank-quality-avg">avg 62%</span>
-              </span>
-            </div>
+          <div class="bank-caption-wrap">
+            <span class="bank-caption">Cash you can spend</span>
+            <button type="button" class="fold-pill-btn" id="btn-toggle-bank-stats" aria-expanded="false" title="Click to view total earned, ratings & stats">
+              <span id="bank-toggle-text">Stats & Ratings</span>
+              <span class="fold-arrow" id="bank-toggle-arrow">▾</span>
+            </button>
           </div>
 
-          <div class="chore-wrap dad-test-only">
-            <div class="chore-title">Need cash fast? Do a chore!</div>
-            <button id="btn-chore" class="chore-btn">
-              <span class="chore-fill" id="chore-fill"></span>
-              <span class="chore-name" id="chore-name">Chore</span>
-              <span class="chore-reward" id="chore-reward">+$0.00</span>
-            </button>
+          <div class="foldable-drawer" id="bank-stats-drawer">
+            <div class="bank-stats">
+              <div class="bank-chip">
+                <span class="bank-chip-label">Drinks sold</span>
+                <span class="bank-chip-value fit-text" id="bank-units">0</span>
+              </div>
+              <div class="bank-chip">
+                <span class="bank-chip-label">Total earned</span>
+                <span class="bank-chip-value fit-text" id="bank-revenue">$0.00</span>
+              </div>
+              <div class="bank-chip">
+                <span class="bank-chip-label">Reputation</span>
+                <span class="bank-chip-value">
+                  <span class="star-meter" id="bank-rep-stars" title="Neighborhood reputation">
+                    <span class="star-meter-row dim"><img src="./sprites/kawaii_cat/star_small.png" alt="" /><img src="./sprites/kawaii_cat/star_small.png" alt="" /><img src="./sprites/kawaii_cat/star_small.png" alt="" /><img src="./sprites/kawaii_cat/star_small.png" alt="" /><img src="./sprites/kawaii_cat/star_small.png" alt="" /></span>
+                    <span class="star-meter-row lit" id="bank-rep-lit" style="width:50%"><img src="./sprites/kawaii_cat/star_small.png" alt="" /><img src="./sprites/kawaii_cat/star_small.png" alt="" /><img src="./sprites/kawaii_cat/star_small.png" alt="" /><img src="./sprites/kawaii_cat/star_small.png" alt="" /><img src="./sprites/kawaii_cat/star_small.png" alt="" /></span>
+                  </span>
+                  <span id="bank-rep">50%</span>
+                </span>
+              </div>
+              <div class="bank-chip">
+                <span class="bank-chip-label">Recipe rating</span>
+                <span class="bank-chip-value">
+                  <span id="bank-quality">62%</span>
+                  <span class="bank-chip-sub" id="bank-quality-avg">avg 62%</span>
+                </span>
+              </div>
+            </div>
+
+            <div class="chore-wrap dad-test-only">
+              <div class="chore-title">Need cash fast? Do a chore!</div>
+              <button id="btn-chore" class="chore-btn">
+                <span class="chore-fill" id="chore-fill"></span>
+                <span class="chore-name" id="chore-name">Chore</span>
+                <span class="chore-reward" id="chore-reward">+$0.00</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -1907,6 +2113,17 @@
     </div>
   </div>
 
+  <!-- DAY REPORT CELEBRATION MODAL (Morphs/Docks to Column 3) -->
+  <div id="report-modal-backdrop" class="report-modal-backdrop" aria-hidden="true">
+    <div class="report-modal-dialog" id="report-modal-dialog">
+      <button type="button" id="btn-report-modal-x" class="report-modal-close-x" aria-label="Close report">&times;</button>
+      <div id="report-modal-content"></div>
+      <button type="button" id="btn-report-modal-continue" class="report-modal-continue-btn">
+        <span>Ready for Next Day!</span> ➜
+      </button>
+    </div>
+  </div>
+
   <script type="module">
     import { LemonadeEngine, BigNum } from './engine.ts';
 
@@ -2068,80 +2285,112 @@
       return Math.max(0, Math.min(4, Math.round(avg) - 1));
     }
 
-    function renderDayReport(s) {
-      const d = s.lastDaySummary;
-      if (!d) {
-        return `<div class="report-card">
-          <div class="ratio-banner"><span>DAY REPORT</span></div>
+    function reportStarCount(d) {
+        const cust = (d.reviews || []).filter(r => !isTeamNote(r));
+        if (cust.length === 0) return 3;
+        const avg = cust.reduce((sum, r) => sum + r.stars, 0) / cust.length;
+        return Math.max(1, Math.min(5, Math.round(avg)));
+      }
+
+      function renderFullDayReportHTML(d, s, isModal = false) {
+        if (!d) return '';
+        const money = (n) => `$${fmtDollars(n, true)}`;
+        const row = (label, amount, cls = '') =>
+          `<div class="report-row ${cls}"><span>${label}</span><span class="amt">${amount}</span></div>`;
+        const count = (n) => n.toLocaleString('en-US');
+        const units = d.drivewayCupsSold + d.franchiseCupsSold + d.bottlesSold;
+        const rawRevenue = d.drivewayRevenue + d.franchiseGrossRevenue + d.wholesaleRevenue + d.patentRoyalties + d.copackerNet;
+        const brandBonus = d.totalRevenue - rawRevenue;
+
+        let rows = row(`Driveway stand (${count(d.drivewayCupsSold)} cups)`, `+${money(d.drivewayRevenue)}`);
+        if (s.phase >= 2) {
+          rows += row(`Franchise stands (${count(d.franchiseCupsSold)} cups)`, `+${money(d.franchiseGrossRevenue)}`);
+          rows += row('Franchise wages', `-${money(d.franchiseWagesPaid)}`, 'cost');
+        }
+        if (s.phase >= 3) {
+          rows += row(`Wholesale (${count(d.bottlesSold)} bottles)`, `+${money(d.wholesaleRevenue)}`);
+          rows += row('Bottle packaging', `-${money(d.packagingCosts)}`, 'cost');
+        }
+        if (s.phase >= 4) rows += row(`Patent royalties (${count(d.patentUnitsSold)} units)`, `+${money(d.patentRoyalties)}`);
+        if (s.phase >= 5) rows += row(`Co-packer (${count(d.copackerCasesSold)} cases)`, `+${money(d.copackerNet)}`);
+        if (brandBonus > 0.005) rows += row('Famous brand bonus', `+${money(brandBonus)}`);
+        rows += row("Today's profit", fmtSigned(d.netProfit, true), `total ${d.netProfit < 0 ? 'neg' : ''}`);
+
+        const reviews = (d.reviews || []).map(r => {
+          const team = isTeamNote(r);
+          return `<div class="report-review ${team ? 'team' : ''}">
+            <div class="report-review-head">
+              <span class="report-review-who">${r.reviewer}</span>
+              ${team ? '' : starMeter(r.stars / 5, `${r.stars} out of 5 stars`)}
+            </div>
+            <div class="report-review-quote">&quot;${r.quote}&quot;</div>
+          </div>`;
+        }).join('');
+
+        const sInfo = engine.getSeasonInfo(d.day);
+
+        return `<div class="report-card ${isModal ? 'in-modal' : ''}">
+          <div class="ratio-banner report-banner">
+            <span>DAY ${d.day} REPORT</span>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span class="report-weather">${sInfo.icon} ${d.tempF}&deg;F ${d.weather}</span>
+              ${!isModal ? `<button type="button" class="fold-pill-btn" onclick="window._toggleReportInline(event)"><span>Close</span> <span class="fold-arrow" style="transform:rotate(180deg)">▾</span></button>` : ''}
+            </div>
+          </div>
           <div class="report-body">
             <div class="report-hero">
-              <img class="report-cat" src="${SPRITE_DIR}cat0.png" alt="" />
+              <img class="report-cat" src="${SPRITE_DIR}cat${reportCatMood(d)}.png" alt="" />
               <div class="report-hero-text">
-                <div class="report-hero-label">Nothing to report yet!</div>
-                <div class="report-hero-sub">Open for business to see how your first day goes.</div>
+                <div class="report-hero-label">${d.netProfit < 0 ? 'You lost' : 'You made'}</div>
+                <div class="report-profit ${d.netProfit < 0 ? 'neg' : 'pos'}" style="--chars:${fmtSigned(d.netProfit).length}">${fmtSigned(d.netProfit)}</div>
+                <div class="report-hero-sub">${count(units)} drinks sold today</div>
               </div>
             </div>
+            <div class="report-rows">${rows}</div>
+            ${reviews ? `<div class="report-section-title">What people said</div>${reviews}` : ''}
+            <ul class="report-notes">${d.notes.map(n => `<li>${n}</li>`).join('')}</ul>
           </div>
         </div>`;
       }
 
-      const money = (n) => `$${fmtDollars(n, true)}`;
-      const row = (label, amount, cls = '') =>
-        `<div class="report-row ${cls}"><span>${label}</span><span class="amt">${amount}</span></div>`;
-      const count = (n) => n.toLocaleString('en-US');
-      const units = d.drivewayCupsSold + d.franchiseCupsSold + d.bottlesSold;
-      // Rows list raw sales; the brand multiplier is applied on top inside the engine, so show
-      // it as its own line or the rows would not add up to the day's profit.
-      const rawRevenue = d.drivewayRevenue + d.franchiseGrossRevenue + d.wholesaleRevenue + d.patentRoyalties + d.copackerNet;
-      const brandBonus = d.totalRevenue - rawRevenue;
+      function renderDayReport(s) {
+        const d = s.lastDaySummary;
+        if (!d) {
+          return `<div class="report-dock-ticket placeholder">
+            <img class="report-dock-cat" src="${SPRITE_DIR}cat0.png" alt="" />
+            <div class="report-dock-info">
+              <div class="report-dock-top">
+                <span class="report-dock-title">DAY REPORT</span>
+              </div>
+              <div class="report-dock-sub">Open Day 1 to see how your stand performs!</div>
+            </div>
+          </div>`;
+        }
 
-      let rows = row(`Driveway stand (${count(d.drivewayCupsSold)} cups)`, `+${money(d.drivewayRevenue)}`);
-      if (s.phase >= 2) {
-        rows += row(`Franchise stands (${count(d.franchiseCupsSold)} cups)`, `+${money(d.franchiseGrossRevenue)}`);
-        rows += row('Franchise wages', `-${money(d.franchiseWagesPaid)}`, 'cost');
-      }
-      if (s.phase >= 3) {
-        rows += row(`Wholesale (${count(d.bottlesSold)} bottles)`, `+${money(d.wholesaleRevenue)}`);
-        rows += row('Bottle packaging', `-${money(d.packagingCosts)}`, 'cost');
-      }
-      if (s.phase >= 4) rows += row(`Patent royalties (${count(d.patentUnitsSold)} units)`, `+${money(d.patentRoyalties)}`);
-      if (s.phase >= 5) rows += row(`Co-packer (${count(d.copackerCasesSold)} cases)`, `+${money(d.copackerNet)}`);
-      if (brandBonus > 0.005) rows += row('Famous brand bonus', `+${money(brandBonus)}`);
-      rows += row("Today's profit", fmtSigned(d.netProfit, true), `total ${d.netProfit < 0 ? 'neg' : ''}`);
+        if (reportInlineExpanded) {
+          return renderFullDayReportHTML(d, s, false);
+        }
 
-      const reviews = (d.reviews || []).map(r => {
-        const team = isTeamNote(r);
-        return `<div class="report-review ${team ? 'team' : ''}">
-          <div class="report-review-head">
-            <span class="report-review-who">${r.reviewer}</span>
-            ${team ? '' : starMeter(r.stars / 5, `${r.stars} out of 5 stars`)}
-          </div>
-          <div class="report-review-quote">&quot;${r.quote}&quot;</div>
-        </div>`;
-      }).join('');
+        const count = (n) => n.toLocaleString('en-US');
+        const units = d.drivewayCupsSold + d.franchiseCupsSold + d.bottlesSold;
+        const stars = reportStarCount(d);
 
-      const sInfo = engine.getSeasonInfo(d.day);
-
-      return `<div class="report-card">
-        <div class="ratio-banner report-banner">
-          <span>DAY ${d.day} REPORT</span>
-          <span class="report-weather">${sInfo.icon} ${d.tempF}&deg;F ${d.weather}</span>
-        </div>
-        <div class="report-body">
-          <div class="report-hero">
-            <img class="report-cat" src="${SPRITE_DIR}cat${reportCatMood(d)}.png" alt="" />
-            <div class="report-hero-text">
-              <div class="report-hero-label">${d.netProfit < 0 ? 'You lost' : 'You made'}</div>
-              <div class="report-profit ${d.netProfit < 0 ? 'neg' : 'pos'}" style="--chars:${fmtSigned(d.netProfit).length}">${fmtSigned(d.netProfit)}</div>
-              <div class="report-hero-sub">${count(units)} drinks sold today</div>
+        return `<div class="report-dock-ticket" id="report-dock-ticket" onclick="window._toggleReportInline(event)" role="button" tabindex="0" title="Click to expand Day Report">
+          <img class="report-dock-cat" src="${SPRITE_DIR}cat${reportCatMood(d)}.png" alt="" />
+          <div class="report-dock-info">
+            <div class="report-dock-top">
+              <span class="report-dock-title">DAY ${d.day} REPORT</span>
+              <span class="report-dock-profit ${d.netProfit < 0 ? 'neg' : 'pos'}">${fmtSigned(d.netProfit)}</span>
+            </div>
+            <div class="report-dock-sub">
+              <span>${count(units)} drinks sold</span> &bull; <span class="report-dock-stars">${'★'.repeat(stars)}${'☆'.repeat(5 - stars)}</span>
             </div>
           </div>
-          <div class="report-rows">${rows}</div>
-          ${reviews ? `<div class="report-section-title">What people said</div>${reviews}` : ''}
-          <ul class="report-notes">${d.notes.map(n => `<li>${n}</li>`).join('')}</ul>
-        </div>
-      </div>`;
-    }
+          <button type="button" class="fold-pill-btn report-dock-expand-btn" aria-expanded="false">
+            <span>Details</span> <span class="fold-arrow">▾</span>
+          </button>
+        </div>`;
+      }
 
     // Cat mood 0..3 from how the last day went; 4 (cheering) is reserved for money coming in.
     function baseCatMood(s) {
@@ -2236,8 +2485,114 @@
     // Chore Click
     document.getElementById('btn-chore').onclick = () => engine.doChore();
 
-    // Run Day Click
-    document.getElementById('btn-run-day').onclick = () => engine.runDay();
+    // Foldable State & Controllers
+    let reportInlineExpanded = false;
+    let bankExpanded = false;
+
+    window._toggleReportInline = (e) => {
+      if (e) e.stopPropagation();
+      reportInlineExpanded = !reportInlineExpanded;
+      setHTMLIfChanged(document.getElementById('readout-pnl'), renderDayReport(engine.state));
+    };
+
+    function setBankExpanded(expanded) {
+      bankExpanded = expanded;
+      const bankCard = document.getElementById('bank-card');
+      const bankDrawer = document.getElementById('bank-stats-drawer');
+      const btnToggle = document.getElementById('btn-toggle-bank-stats');
+      const toggleText = document.getElementById('bank-toggle-text');
+      if (bankCard) bankCard.classList.toggle('is-expanded', bankExpanded);
+      if (bankDrawer) bankDrawer.classList.toggle('is-open', bankExpanded);
+      if (btnToggle) {
+        btnToggle.classList.toggle('open', bankExpanded);
+        btnToggle.setAttribute('aria-expanded', bankExpanded ? 'true' : 'false');
+      }
+      if (toggleText) {
+        toggleText.textContent = bankExpanded ? 'Hide Stats' : 'Stats & Ratings';
+      }
+    }
+
+    const btnToggleBank = document.getElementById('btn-toggle-bank-stats');
+    if (btnToggleBank) {
+      btnToggleBank.onclick = (e) => {
+        e.stopPropagation();
+        setBankExpanded(!bankExpanded);
+      };
+    }
+
+    function openReportModal(summary) {
+      const modalBackdrop = document.getElementById('report-modal-backdrop');
+      const modalContent = document.getElementById('report-modal-content');
+      if (modalBackdrop && modalContent) {
+        modalContent.innerHTML = renderFullDayReportHTML(summary, engine.state, true);
+        modalBackdrop.classList.add('active');
+        modalBackdrop.setAttribute('aria-hidden', 'false');
+      }
+    }
+
+    function closeReportModal() {
+      const modalBackdrop = document.getElementById('report-modal-backdrop');
+      if (modalBackdrop && modalBackdrop.classList.contains('active')) {
+        modalBackdrop.classList.remove('active');
+        modalBackdrop.setAttribute('aria-hidden', 'true');
+        const ticket = document.getElementById('report-dock-ticket');
+        if (ticket) {
+          ticket.style.transform = 'scale(1.05)';
+          setTimeout(() => { if (ticket) ticket.style.transform = ''; }, 300);
+        }
+      }
+    }
+
+    document.getElementById('btn-report-modal-continue').onclick = closeReportModal;
+    document.getElementById('btn-report-modal-x').onclick = closeReportModal;
+    document.getElementById('report-modal-backdrop').onclick = (e) => {
+      if (e.target === document.getElementById('report-modal-backdrop')) {
+        closeReportModal();
+      }
+    };
+
+    // Click-away listener: collapses open drawers when clicking outside
+    document.addEventListener('click', (e) => {
+      // 1. Collapse Report if expanded and clicked outside #readout-pnl
+      if (reportInlineExpanded) {
+        const pnl = document.getElementById('readout-pnl');
+        if (pnl && !pnl.contains(e.target)) {
+          reportInlineExpanded = false;
+          setHTMLIfChanged(pnl, renderDayReport(engine.state));
+        }
+      }
+      // 2. Collapse Bank if expanded and clicked outside #bank-card
+      if (bankExpanded) {
+        const bCard = document.getElementById('bank-card');
+        if (bCard && !bCard.contains(e.target)) {
+          setBankExpanded(false);
+        }
+      }
+    });
+
+    // Escape key closes modal or collapses open card
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        const modalBackdrop = document.getElementById('report-modal-backdrop');
+        if (modalBackdrop && modalBackdrop.classList.contains('active')) {
+          closeReportModal();
+          return;
+        }
+        if (reportInlineExpanded) {
+          reportInlineExpanded = false;
+          setHTMLIfChanged(document.getElementById('readout-pnl'), renderDayReport(engine.state));
+        }
+        if (bankExpanded) {
+          setBankExpanded(false);
+        }
+      }
+    });
+
+    // Run Day Click (Triggers Day Clear Celebration Modal)
+    document.getElementById('btn-run-day').onclick = () => {
+      const summary = engine.runDay();
+      openReportModal(summary);
+    };
 
     // Buy Supplies Static Click Bindings (Guarantees zero dropped clicks on desktop)
     document.getElementById('btn-buy-lemons').onclick = () => engine.buySupplies('lemons', buyPackMult);
