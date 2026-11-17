@@ -1997,13 +1997,38 @@
         outline-offset: 2px;
       }
 
+    
+      /* --- DAD MODE OFF: ULTRA-CLEAN SIMPLIFIED DAY 1 --- */
+      body:not(.dad-mode) .mascot-advice-card,
+      body:not(.dad-mode) .prep-mult-bar,
+      body:not(.dad-mode) #phase1-milestone-card,
+      body:not(.dad-mode) #panel-column-3,
+      body:not(.dad-mode) #expansion-sections,
+      body:not(.dad-mode) #btn-toggle-bank-stats {
+        display: none !important;
+      }
+
+      body:not(.dad-mode) .grid {
+        grid-template-columns: repeat(2, minmax(320px, 460px)) !important;
+        justify-content: center;
+        max-width: 960px;
+        margin: 0 auto;
+      }
+
+      /* In Kid Mode, only show emergency chore button when cash is low (< $5.00) or bankrupt */
+      body:not(.dad-mode):not(.low-cash) #bank-chore-wrap {
+        display: none !important;
+      }
+      body.low-cash #bank-chore-wrap {
+        animation: pulse 1.2s infinite alternate;
+      }
+
     </style>
 </head>
 <body>
   <div class="header-bar">
     <div class="header-title" id="header-title" style="cursor: pointer;" title="Triple-click to toggle Dad Mode">🍋 UNIVERSAL LEMONADE</div>
     <div class="header-controls">
-        <button id="btn-open-char-header" class="dad-pill" style="background:#581c87; color:#fef08a; border-color:#eab308;" title="Customize Your Lemonade Hero">🪞 <span id="header-hero-name">Kid</span></button>
       <button id="btn-dad-toggle" class="dad-pill">🛠️ DAD MODE: ON</button>
       <button id="btn-speed-1" class="dad-test-only">1x</button>
       <button id="btn-speed-10" class="dad-test-only">10x</button>
@@ -2017,30 +2042,6 @@
     <!-- COLUMN 1: FINANCES, RECIPE & EMERGENCY CHORES -->
     <div class="panel">
       <h3>1. Executive Office</h3>
-
-      <!-- DRIVEWAY STAND HERO & AWNING (IMAGE 2) -->
-      <div class="driveway-hero-card" id="driveway-hero-card">
-        <div class="driveway-awning-stripes"></div>
-        <div class="driveway-hero-row">
-          <div class="driveway-avatar-slot" id="driveway-avatar-slot" title="Click to customize your look!">
-            <!-- Dynamic SVG Kid Avatar -->
-          </div>
-          <div class="driveway-hero-speech">
-            <div class="driveway-speech-bubble" id="driveway-speech-bubble">
-              "Welcome to my Driveway Stand! Mix a fresh batch and let's sell some lemonade!"
-            </div>
-            <div class="driveway-hero-toolbar">
-              <span class="driveway-hero-title" id="driveway-hero-name">🍋 Lemonade Hero</span>
-              <button type="button" class="char-pill-btn" id="btn-open-char-customizer" title="Customize your kid character!">
-                🪞 Customize Look
-              </button>
-            </div>
-          </div>
-          <div class="driveway-cup-showcase" title="Freshly poured lemonade with sweet candy straw!">
-            <img src="./sprites/lemonade_cup.png" alt="Lemonade Cup" class="driveway-cup-img floating-bob-1" />
-          </div>
-        </div>
-      </div>
 
       <!-- MONEY BOX: CAT CASH COUNTER, STATS & CHORES (FOLDABLE) -->
       <div class="bank-card foldable-card" id="bank-card">
@@ -3022,6 +3023,7 @@
       renderSpriteNumber(document.getElementById('bank-cash'), fmtMoney(s.cash));
 
       const cashNum = s.cash.toNumber();
+      document.body.classList.toggle('low-cash', cashNum < 5.0);
       if (prevCashNum !== null) {
         const delta = cashNum - prevCashNum;
         if (Math.abs(delta) >= 0.005) {
