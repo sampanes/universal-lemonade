@@ -1634,6 +1634,32 @@
       font-size: 10px;
       letter-spacing: 0.5px;
     }
+    /* Kid mode's "Yesterday" ticket under Open for Business. It appears (pops in) once Day 1
+       is done; Dad Mode uses the docked report in column 3 instead. */
+    .kid-yesterday {
+      width: 100%;
+      margin: 12px 0 0 0;
+      min-height: 56px;
+      font: inherit;
+      color: inherit;
+      text-align: left;
+      animation: kid-ticket-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .kid-yesterday[hidden],
+    body.dad-mode .kid-yesterday { display: none !important; }
+    .kid-yesterday .report-dock-info,
+    .kid-yesterday .report-dock-top,
+    .kid-yesterday .report-dock-sub { display: flex; }
+    .kid-yesterday .report-dock-info { flex-direction: column; }
+    .kid-yesterday .report-dock-top,
+    .kid-yesterday .report-dock-sub { flex-wrap: wrap; gap: 2px 8px; }
+    .kid-yesterday .report-dock-title { white-space: nowrap; }
+    .kid-yesterday .star-meter { --star: 12px; }
+    .kid-yesterday-pill { flex: none; pointer-events: none; }
+    @keyframes kid-ticket-pop {
+      from { opacity: 0; transform: translateY(-8px) scale(0.92); }
+      to { opacity: 1; transform: none; }
+    }
 
     /* Modal Celebration Dialog */
     .report-modal-backdrop {
@@ -2582,6 +2608,9 @@
         <img src="./sprites/morning_prep/sparkle_small.png" class="btn-sparkle floating-bob-2" alt="" />
       </button>
 
+      <!-- Kid mode: after Day 1 the last Day Report shrinks to this ticket; tapping it reopens it. -->
+      <button type="button" id="btn-kid-yesterday" class="report-dock-ticket kid-yesterday" hidden title="See yesterday's Day Report"></button>
+
       <!-- Legacy containers kept hidden for fallback compatibility -->
       <div id="readout-weather" style="display:none;"></div>
       <div id="readout-demand-estimate" style="display:none;"></div>
@@ -2942,6 +2971,20 @@
         </div>`;
       }
 
+    // Kid mode's "Yesterday" ticket (a button, so the inner pill is a span, not a nested button).
+    function renderKidYesterday(d) {
+      const units = d.drivewayCupsSold + d.franchiseCupsSold + d.bottlesSold;
+      return `<img class="report-dock-cat" src="${SPRITE_DIR}cat${reportCatMood(d)}.png" alt="" />
+        <span class="report-dock-info">
+          <span class="report-dock-top">
+            <span class="report-dock-title">YESTERDAY: DAY ${d.day}</span>
+            <span class="report-dock-profit ${d.netProfit < 0 ? 'neg' : 'pos'}">${fmtSigned(d.netProfit)}</span>
+          </span>
+          <span class="report-dock-sub"><span>${units.toLocaleString('en-US')} drinks sold</span>${starMeter(reportStarCount(d) / 5, `${reportStarCount(d)} out of 5 stars`)}</span>
+        </span>
+        <span class="fold-pill-btn kid-yesterday-pill">See report</span>`;
+    }
+
     // Cat mood 0..3 from how the last day went; 4 (cheering) is reserved for money coming in.
     function baseCatMood(s) {
       const d = s.lastDaySummary;
@@ -3096,6 +3139,10 @@
       }
     }
 
+    document.getElementById('btn-kid-yesterday').onclick = (e) => {
+      e.stopPropagation();
+      if (engine.state.lastDaySummary) openReportModal(engine.state.lastDaySummary);
+    };
     document.getElementById('btn-report-modal-continue').onclick = closeReportModal;
     document.getElementById('btn-report-modal-x').onclick = closeReportModal;
     document.getElementById('report-modal-backdrop').onclick = (e) => {
@@ -3591,6 +3638,14 @@
 
       // 3. Day Report (re-rendered only when the summary changes, i.e. once per day)
       setHTMLIfChanged(document.getElementById('readout-pnl'), renderDayReport(s));
+
+      // Kid mode: yesterday's report as a small ticket under Open for Business (none before Day 1).
+      const kidTicket = document.getElementById('btn-kid-yesterday');
+      if (kidTicket) {
+        const d = s.lastDaySummary;
+        if (kidTicket.hidden === !!d) kidTicket.hidden = !d;
+        if (d) setHTMLIfChanged(kidTicket, renderKidYesterday(d));
+      }
 
       // Projects
       const projectHTML = engine.projects
