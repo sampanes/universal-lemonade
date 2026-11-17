@@ -1,40 +1,86 @@
-// src/simulation/demand.ts — Demand Estimation & Kid-Friendly Advisor
+// src/simulation/demand.ts -- How many cups people want, for the forecast and the real day.
 import type { GameState, FranchiseStand, DailyDemandEstimate, KidDemandAdvice, PourableCapacity } from '../types';
-import { computeRecipeQuality } from './recipe';
-import { buyProbability, drivewayTrafficMult } from './reputation';
+import { computeRecipeQuality, cupsPerPitcher as pitcherCups } from './recipe';
+import { buyProbability, drivewayTrafficMult, fairPriceFor } from './reputation';
+import { BALANCE, type Balance } from '../balance';
 
-export function getDailyDemandEstimate(
-  state: GameState,
-  franchiseStands: Record<string, FranchiseStand>
-): DailyDemandEstimate {
-  const s = state;
-  const weatherMult = s.weather === 'SUNNY' ? 1.0 : s.weather === 'CLOUDY' ? 0.65 : 0.25;
-  const tempFactor = Math.max(0.3, 1 + 0.8 * ((s.tempF - 70) / 30));
-  const quality = computeRecipeQuality(s.recipe, s.tempF);
-  const buyProb = buyProbability(quality, s.tempF, s.recipe.pricePerCup, s.reputation);
+export interface StandDemand {
+  id: string;
+  name: string;
+  workerName: string;
+  demand: number;
+  wage: number;
+  isDriveway: boolean;
+}
 
-  // Same rounding order as Engine.runDay so the forecast matches the real day.
-  const estDriveway = Math.floor(Math.floor(65 * weatherMult * tempFactor * drivewayTrafficMult(s.reputation)) * buyProb);
-  let totalCups = estDriveway;
+export interface DayDemand {
+  weatherMult: number;
+  tempFactor: number;
+  quality: number;
+  fairPrice: number;
+  buyProb: number;
+  stands: StandDemand[];       // driveway first, then hired franchise stands
+  totalCupDemand: number;
+}
 
-  const franchiseEstimates: { id: string; name: string; workerName: string; estCups: number }[] = [];
+// The one place cup demand is computed. Engine.runDay sells against it and the morning
+// forecast shows it, so the two cannot disagree.
+export function computeDayDemand(
+  s: GameState,
+  franchiseStands: Record<string, FranchiseStand>,
+  b: Balance = BALANCE
+): DayDemand {
+  const d = b.demand;
+  const weatherMult = d.weatherMult[s.weather];
+  const tempFactor = Math.max(d.minTempFactor, 1 + d.tempSlope * ((s.tempF - d.refF) / d.tempSpan));
+  const quality = computeRecipeQuality(s.recipe, s.tempF, b);
+  const fairPrice = fairPriceFor(s.tempF, s.reputation, b);
+  const buyProb = buyProbability(quality, s.tempF, s.recipe.pricePerCup, s.reputation, b);
+
+  const drivewayTraffic = Math.floor(d.drivewayBaseTraffic * weatherMult * tempFactor * drivewayTrafficMult(s.reputation, b));
+  const stands: StandDemand[] = [
+    { id: 'driveway', name: 'Driveway Stand', workerName: 'You', demand: Math.floor(drivewayTraffic * buyProb), wage: 0, isDriveway: true }
+  ];
+
   if (s.phase >= 2) {
-    const efficiencyBonus = s.flags.hasIpadPro ? 1.10 : 1.0;
+    const efficiencyBonus = s.flags.hasIpadPro ? d.ipadFranchiseMult : 1.0;
     for (const stand of Object.values(franchiseStands)) {
       if (!stand.hired) continue;
       const standTraffic = Math.floor(
         stand.baseCapacity *
         Math.pow(weatherMult * tempFactor, stand.weatherSens) *
-        (0.6 + s.reputation * 0.4) *
+        (d.franchiseRepBase + s.reputation * d.franchiseRepPerRep) *
         efficiencyBonus
       );
-      const estStand = Math.floor(standTraffic * buyProb);
-      franchiseEstimates.push({ id: stand.id, name: stand.name, workerName: stand.workerName, estCups: estStand });
-      totalCups += estStand;
+      stands.push({
+        id: stand.id,
+        name: stand.name,
+        workerName: stand.workerName,
+        demand: Math.floor(standTraffic * buyProb),
+        wage: stand.dailyWage,
+        isDriveway: false
+      });
     }
   }
 
-  const cupsPerPitcher = 10 + s.recipe.icePerCup;
+  const totalCupDemand = stands.reduce((sum, st) => sum + st.demand, 0);
+  return { weatherMult, tempFactor, quality, fairPrice, buyProb, stands, totalCupDemand };
+}
+
+export function getDailyDemandEstimate(
+  state: GameState,
+  franchiseStands: Record<string, FranchiseStand>,
+  b: Balance = BALANCE
+): DailyDemandEstimate {
+  const s = state;
+  const day = computeDayDemand(s, franchiseStands, b);
+  const estDriveway = day.stands[0].demand;
+  const franchiseEstimates = day.stands
+    .filter(st => !st.isDriveway)
+    .map(st => ({ id: st.id, name: st.name, workerName: st.workerName, estCups: st.demand }));
+  const totalCups = day.totalCupDemand;
+
+  const cupsPerPitcher = pitcherCups(s.recipe.icePerCup, b);
   const pitchers = Math.ceil(totalCups / cupsPerPitcher);
   const neededLemons = pitchers * s.recipe.lemonsPerPitcher;
   const neededSugar = pitchers * s.recipe.sugarPerPitcher;
@@ -54,9 +100,10 @@ export function getDailyDemandEstimate(
 
 export function getKidDemandAdvice(
   state: GameState,
-  franchiseStands: Record<string, FranchiseStand>
+  franchiseStands: Record<string, FranchiseStand>,
+  b: Balance = BALANCE
 ): KidDemandAdvice {
-  const est = getDailyDemandEstimate(state, franchiseStands);
+  const est = getDailyDemandEstimate(state, franchiseStands, b);
   const s = state;
 
   const lowItems: ('lemons' | 'sugar' | 'ice' | 'cups')[] = [];
@@ -146,9 +193,9 @@ export function getKidDemandAdvice(
   };
 }
 
-export function getMaxPourableCups(state: GameState): PourableCapacity {
+export function getMaxPourableCups(state: GameState, b: Balance = BALANCE): PourableCapacity {
   const s = state;
-  const cupsPerPitcher = 10 + s.recipe.icePerCup;
+  const cupsPerPitcher = pitcherCups(s.recipe.icePerCup, b);
   const byCups = s.inv.cups;
   const byIce = s.recipe.icePerCup > 0 ? Math.floor(s.inv.ice / s.recipe.icePerCup) : 999999;
   const byLemons = Math.floor(s.inv.lemons / Math.max(1, s.recipe.lemonsPerPitcher)) * cupsPerPitcher;

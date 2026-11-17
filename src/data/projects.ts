@@ -41,7 +41,7 @@ export function createInitialProjects(): ProjectDef[] {
       unlocked: (s: GameState) => s.phase >= 1 && s.day >= 3,
       effect: (e: any) => {
         e.state.flags.hasMiniFridge = true;
-        e.state.reputation = Math.min(1.0, e.state.reputation + 0.1);
+        e.state.reputation = Math.min(e.balance.reputation.max, e.state.reputation + e.balance.projects.fridgeReputationBump);
         e.log('Upgrade: Mini-fridge online! Lemons stay crisp and fresh.');
       }
     },

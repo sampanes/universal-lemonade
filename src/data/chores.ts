@@ -1,5 +1,6 @@
 // src/data/chores.ts — Emergency kid chore definitions & rolling logic
 import type { ChoreState } from '../types';
+import { BALANCE, type Balance } from '../balance';
 
 export const CHORE_DEFS: { name: string; min: number; max: number }[] = [
   { name: "Mow Neighbor's Lawn", min: 15, max: 25 },
@@ -14,12 +15,13 @@ export const CHORE_DEFS: { name: string; min: number; max: number }[] = [
   { name: "Sweep the Deck & Porch", min: 5, max: 10 }
 ];
 
-export function rollChore(rand: () => number, hasSkateboard: boolean = false): ChoreState {
+export function rollChore(rand: () => number, hasSkateboard: boolean = false, b: Balance = BALANCE): ChoreState {
+  const c = b.chores;
   const chore = CHORE_DEFS[Math.floor(rand() * CHORE_DEFS.length)];
   const reward = chore.min + Math.floor(rand() * (chore.max - chore.min + 1));
-  let cooldownSec = 8 + Math.floor(rand() * 10);
+  let cooldownSec = c.cooldownMinSec + Math.floor(rand() * c.cooldownRandomSec);
   if (hasSkateboard) {
-    cooldownSec = Math.max(5, Math.round(cooldownSec * 0.75)); // Skateboard 25% faster!
+    cooldownSec = Math.max(c.skateboardMinCooldownSec, Math.round(cooldownSec * c.skateboardCooldownMult));
   }
   return {
     name: chore.name,

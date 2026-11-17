@@ -1,6 +1,7 @@
 // src/simulation/recipe.ts — Recipe Quality Scoring & Sensory Profile
 import type { RecipeProfile } from '../types';
 import { computeIdealIce } from './weather';
+import { BALANCE, type Balance } from '../balance';
 
 export interface RecipeConfig {
   lemonsPerPitcher: number;
@@ -9,17 +10,20 @@ export interface RecipeConfig {
   pricePerCup: number;
 }
 
-export function computeRecipeQuality(recipe: RecipeConfig, tempF: number): number {
+export function computeRecipeQuality(recipe: RecipeConfig, tempF: number, b: Balance = BALANCE): number {
   const { lemonsPerPitcher: L, sugarPerPitcher: S, icePerCup: I } = recipe;
-  const idealL = 4;
-  const idealS = 4;
-  const idealI = computeIdealIce(tempF);
-  const distSq = 0.08 * Math.pow(L - idealL, 2) + 0.08 * Math.pow(S - idealS, 2) + 0.12 * Math.pow(I - idealI, 2);
+  const r = b.recipe;
+  const idealI = computeIdealIce(tempF, b);
+  const distSq = r.lemonWeight * Math.pow(L - r.idealLemons, 2) + r.sugarWeight * Math.pow(S - r.idealSugar, 2) + r.iceWeight * Math.pow(I - idealI, 2);
   return Math.exp(-distSq);
 }
 
-export function getRecipeProfile(recipe: RecipeConfig, tempF: number): RecipeProfile {
-  const quality = computeRecipeQuality(recipe, tempF);
+export function cupsPerPitcher(icePerCup: number, b: Balance = BALANCE): number {
+  return b.recipe.cupsPerPitcherBase + icePerCup;
+}
+
+export function getRecipeProfile(recipe: RecipeConfig, tempF: number, b: Balance = BALANCE): RecipeProfile {
+  const quality = computeRecipeQuality(recipe, tempF, b);
   const { lemonsPerPitcher: L, sugarPerPitcher: S } = recipe;
 
   let tasteName = "Refreshing Citrus Balance";

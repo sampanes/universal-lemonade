@@ -27,13 +27,25 @@ import { rollWeatherForecast, computeIdealIce, getSeasonInfo } from './simulatio
 import { computeRecipeQuality, getRecipeProfile } from './simulation/recipe';
 import { getDailyDemandEstimate, getKidDemandAdvice, getMaxPourableCups } from './simulation/demand';
 import { generateDailyReviews } from './simulation/reviews';
-import {
-  REPUTATION_ALPHA, ewma, fairPriceFor, buyProbability, drivewayTrafficMult,
-  dailyCustomerScore, nextReputation
-} from './simulation/reputation';
+import { ewma, dailyCustomerScore, nextReputation } from './simulation/reputation';
+import { computeDayDemand } from './simulation/demand';
+import { cupsPerPitcher as pitcherCups } from './simulation/recipe';
+import { BALANCE, type Balance } from './balance';
 
 export { BigNum } from './bignum';
 export * from './types';
+export { BALANCE } from './balance';
+export type { Balance } from './balance';
+
+export interface EngineOptions {
+  // Seeds the random number generator (weather, chores, review picks). Two engines with
+  // the same seed and the same player actions play out identically. Default 1337.
+  seed?: number;
+  // Tuning numbers; defaults to src/balance.ts. The simulator passes variations here.
+  balance?: Balance;
+}
+
+export const DEFAULT_SEED = 1337;
 
 export class LemonadeEngine {
   public state: GameState;
@@ -43,13 +55,20 @@ export class LemonadeEngine {
   public wholesaleAccounts: Record<string, WholesaleAccount>;
   public patent: PatentSystem;
   public copacker: CoPackerSystem;
-  private rngSeed = 1337;
+  public readonly balance: Balance;
+  public readonly seed: number;
+  private rngSeed: number;
 
-  constructor() {
+  constructor(options: EngineOptions = {}) {
+    this.balance = options.balance ?? BALANCE;
+    // xorshift32 needs a non-zero 32-bit state.
+    this.seed = (options.seed ?? DEFAULT_SEED) | 0 || DEFAULT_SEED;
+    this.rngSeed = this.seed;
+    const b = this.balance;
     this.franchiseStands = createInitialFranchiseStands();
     this.wholesaleAccounts = createInitialWholesaleAccounts();
-    this.patent = { licensed: false, royaltyPerUnit: 2.50, baseUnitsPerDay: 16, level: 1 };
-    this.copacker = { active: false, casesPerDay: 40, netPerCase: 18.00 };
+    this.patent = { licensed: false, royaltyPerUnit: b.patent.royaltyPerUnit, baseUnitsPerDay: b.patent.baseUnitsPerDay, level: 1 };
+    this.copacker = { active: false, casesPerDay: b.copacker.casesPerDay, netPerCase: b.copacker.netPerCase };
     this.projects = createInitialProjects();
     this.trophies = createInitialTrophies();
     this.state = this.createInitialState();
@@ -67,13 +86,14 @@ export class LemonadeEngine {
   }
 
   private createInitialState(): GameState {
+    const start = this.balance.start;
     return {
       phase: 1,
       elapsedSec: 0,
       day: 1,
       tempF: 78,
       weather: 'SUNNY',
-      reputation: 0.5,
+      reputation: start.reputation,
       bestRecipeQuality: 0,
       avgRecipeQuality: 0,
       totalQualityDays: 0,
@@ -81,12 +101,12 @@ export class LemonadeEngine {
       brandMultiplier: 1.0,
       gameWon: false,
 
-      cash: BigNum.fromNumber(60.00),
+      cash: BigNum.fromNumber(start.cash),
       totalCupsSold: new BigNum(0, 0),
       totalRevenueEarned: new BigNum(0, 0),
 
-      inv: { lemons: 24, sugar: 20, ice: 200, cups: 50, bottles: 0 },
-      recipe: { lemonsPerPitcher: 1, sugarPerPitcher: 1, icePerCup: 1, pricePerCup: 1.00 },
+      inv: { ...start.inventory },
+      recipe: { ...start.recipe },
 
       flags: {
         hasCooler: false,
@@ -133,7 +153,7 @@ export class LemonadeEngine {
 
   // Chore Actions
   public rollNextChore(): void {
-    this.state.currentChore = rollChore(() => this.rand(), this.state.flags.hasSkateboard);
+    this.state.currentChore = rollChore(() => this.rand(), this.state.flags.hasSkateboard, this.balance);
   }
 
   public doChore(): { name: string; reward: number } | null {
@@ -152,20 +172,18 @@ export class LemonadeEngine {
   }
 
   // Supply Actions
+  // What one pack of an item holds and costs right now, after upgrades.
+  public supplyPack(item: SupplyItem): { qty: number; cost: number } {
+    const b = this.balance;
+    const discount = this.state.flags.hasCostcoDiscount ? b.costcoPriceMult : 1.0;
+    const bikeBonus = this.state.flags.hasMountainBike ? b.bikePackMult : 1.0;
+    const base = b.supplies[item];
+    return { qty: Math.round(base.qty * bikeBonus), cost: +(base.cost * discount).toFixed(2) };
+  }
+
   public buySupplies(item: SupplyItem, packs: number = 1): boolean {
-    const discount = this.state.flags.hasCostcoDiscount ? 0.65 : 1.0;
-    const bikeBonus = this.state.flags.hasMountainBike ? 1.25 : 1.0;
-
-    const catalog: Record<SupplyItem, { qty: number; cost: number }> = {
-      lemons:  { qty: Math.round(24 * bikeBonus),  cost: +(8.00 * discount).toFixed(2) },
-      sugar:   { qty: Math.round(20 * bikeBonus),  cost: +(6.00 * discount).toFixed(2) },
-      ice:     { qty: Math.round(200 * bikeBonus), cost: +(4.00 * discount).toFixed(2) },
-      cups:    { qty: Math.round(50 * bikeBonus),  cost: +(4.00 * discount).toFixed(2) },
-      bottles: { qty: Math.round(25 * bikeBonus),  cost: +(10.00 * discount).toFixed(2) }
-    };
-
-    const entry = catalog[item];
-    if (!entry) return false;
+    if (!this.balance.supplies[item]) return false;
+    const entry = this.supplyPack(item);
 
     const totalCost = entry.cost * packs;
     if (this.state.cash.lt(totalCost)) return false;
@@ -215,27 +233,29 @@ export class LemonadeEngine {
 
     if (id === 'skateboard') this.state.flags.hasSkateboard = true;
     if (id === 'mountain_bike') this.state.flags.hasMountainBike = true;
+    const tb = this.balance.trophies;
+    const repMax = this.balance.reputation.max;
     if (id === 'nintendo_switch') {
       this.state.flags.hasNintendoSwitch = true;
-      this.state.reputation = Math.min(1.0, this.state.reputation + 0.05);
+      this.state.reputation = Math.min(repMax, this.state.reputation + tb.nintendoReputationBump);
     }
     if (id === 'electric_scooter') {
       this.state.flags.hasElectricScooter = true;
-      Object.values(this.franchiseStands).forEach(st => st.baseCapacity = Math.round(st.baseCapacity * 1.15));
+      Object.values(this.franchiseStands).forEach(st => st.baseCapacity = Math.round(st.baseCapacity * tb.scooterCapacityMult));
     }
     if (id === 'ipad_pro') this.state.flags.hasIpadPro = true;
     if (id === 'disney_vip') {
       this.state.flags.hasDisneyTrip = true;
-      this.state.reputation = Math.min(1.0, this.state.reputation + 0.15);
+      this.state.reputation = Math.min(repMax, this.state.reputation + tb.disneyReputationBump);
     }
     if (id === 'first_car') this.state.flags.hasHondaCivic = true;
     if (id === 'garage_arcade') {
       this.state.flags.hasGarageArcade = true;
-      this.state.brandMultiplier *= 1.15;
+      this.state.brandMultiplier *= tb.arcadeBrandMult;
     }
     if (id === 'college_fund') {
       this.state.flags.hasCollegePrepaid = true;
-      this.state.brandMultiplier *= 1.25;
+      this.state.brandMultiplier *= tb.collegeBrandMult;
     }
     if (id === 'tesla_model_x') this.state.flags.hasTeslaModelX = true;
     if (id === 'pay_mortgage') {
@@ -259,7 +279,8 @@ export class LemonadeEngine {
     const { weather, tempF, seasonInfo } = rollWeatherForecast(
       () => this.rand(),
       this.state.flags.weatherLocked95F,
-      this.state.day
+      this.state.day,
+      this.balance
     );
     this.state.weather = weather;
     this.state.tempF = tempF;
@@ -268,57 +289,44 @@ export class LemonadeEngine {
     // When Auto-Ice is enabled, immediately update recipe.icePerCup to tomorrow's ideal ice
     // so the morning prep screen, demand calculator, and supply warnings are accurate before starting the day.
     if (this.state.flags.hasAutoIce && this.state.flags.autoIceEnabled) {
-      this.state.recipe.icePerCup = computeIdealIce(tempF);
+      this.state.recipe.icePerCup = computeIdealIce(tempF, this.balance);
     }
   }
 
   public getSeasonInfo(day: number = this.state.day): SeasonInfo {
-    return getSeasonInfo(day);
+    return getSeasonInfo(day, this.balance);
   }
 
   public computeIdealIce(tempF: number = this.state.tempF): number {
-    return computeIdealIce(tempF);
+    return computeIdealIce(tempF, this.balance);
   }
 
   public computeRecipeQuality(tempF: number = this.state.tempF): number {
-    return computeRecipeQuality(this.state.recipe, tempF);
+    return computeRecipeQuality(this.state.recipe, tempF, this.balance);
   }
 
   public getRecipeProfile(tempF: number = this.state.tempF): RecipeProfile {
-    return getRecipeProfile(this.state.recipe, tempF);
+    return getRecipeProfile(this.state.recipe, tempF, this.balance);
   }
 
   public getDailyDemandEstimate(): DailyDemandEstimate {
-    return getDailyDemandEstimate(this.state, this.franchiseStands);
+    return getDailyDemandEstimate(this.state, this.franchiseStands, this.balance);
   }
 
   public getKidDemandAdvice(): KidDemandAdvice {
-    return getKidDemandAdvice(this.state, this.franchiseStands);
+    return getKidDemandAdvice(this.state, this.franchiseStands, this.balance);
   }
 
   public getMaxPourableCups(): PourableCapacity {
-    return getMaxPourableCups(this.state);
+    return getMaxPourableCups(this.state, this.balance);
   }
 
   public autoRestockForToday(): { success: boolean; message: string } {
     const est = this.getDailyDemandEstimate();
     const s = this.state;
-    const discount = s.flags.hasCostcoDiscount ? 0.65 : 1.0;
-    const bikeBonus = s.flags.hasMountainBike ? 1.25 : 1.0;
-
-    const packSizes = {
-      lemons: Math.round(24 * bikeBonus),
-      sugar: Math.round(20 * bikeBonus),
-      ice: Math.round(200 * bikeBonus),
-      cups: Math.round(50 * bikeBonus)
-    };
-
-    const packCosts = {
-      lemons: +(8.00 * discount).toFixed(2),
-      sugar: +(6.00 * discount).toFixed(2),
-      ice: +(4.00 * discount).toFixed(2),
-      cups: +(4.00 * discount).toFixed(2)
-    };
+    const L = this.supplyPack('lemons'), S = this.supplyPack('sugar'), I = this.supplyPack('ice'), C = this.supplyPack('cups');
+    const packSizes = { lemons: L.qty, sugar: S.qty, ice: I.qty, cups: C.qty };
+    const packCosts = { lemons: L.cost, sugar: S.cost, ice: I.cost, cups: C.cost };
 
     const defL = Math.max(0, est.neededLemons - s.inv.lemons);
     const defS = Math.max(0, est.neededSugar - s.inv.sugar);
@@ -394,58 +402,24 @@ export class LemonadeEngine {
       s.reputation = 1.0;
     }
 
-    const weatherMult = s.weather === 'SUNNY' ? 1.0 : s.weather === 'CLOUDY' ? 0.65 : 0.25;
-    const tempFactor = Math.max(0.3, 1 + 0.8 * ((s.tempF - 70) / 30));
-    const quality = this.computeRecipeQuality(s.tempF);
+    const b = this.balance;
+    // Same function as the morning forecast (src/simulation/demand.ts).
+    const demand = computeDayDemand(s, this.franchiseStands, b);
+    const { weatherMult, quality, fairPrice, totalCupDemand } = demand;
+    const activeStands = demand.stands;
+    const franchiseWages = activeStands.reduce((sum, st) => sum + st.wage, 0);
+
     s.bestRecipeQuality = Math.max(s.bestRecipeQuality, quality);
     s.totalQualityDays = (s.totalQualityDays || 0) + 1;
     s.totalQualitySum = (s.totalQualitySum || 0) + quality;
     // Recent recipes count most: an EWMA, seeded with the first day's quality.
     s.avgRecipeQuality = s.totalQualityDays === 1 || !s.avgRecipeQuality
       ? quality
-      : ewma(s.avgRecipeQuality, quality, REPUTATION_ALPHA);
+      : ewma(s.avgRecipeQuality, quality, b.reputation.alpha);
 
     const reputationBefore = s.reputation;
-    const drivewayTraffic = Math.floor(65 * weatherMult * tempFactor * drivewayTrafficMult(s.reputation));
-    const fairPrice = fairPriceFor(s.tempF, s.reputation);
-    const buyProb = buyProbability(quality, s.tempF, s.recipe.pricePerCup, s.reputation);
-    const drivewayDemand = Math.floor(drivewayTraffic * buyProb);
 
-    interface ActiveStandDemand {
-      id: string;
-      name: string;
-      workerName: string;
-      demand: number;
-      wage: number;
-      isDriveway: boolean;
-    }
-
-    const activeStands: ActiveStandDemand[] = [
-      { id: 'driveway', name: 'Driveway Stand', workerName: 'You', demand: drivewayDemand, wage: 0, isDriveway: true }
-    ];
-
-    let franchiseWages = 0;
-    if (s.phase >= 2) {
-      const efficiencyBonus = s.flags.hasIpadPro ? 1.10 : 1.0;
-      for (const stand of Object.values(this.franchiseStands)) {
-        if (!stand.hired) continue;
-        franchiseWages += stand.dailyWage;
-        const standTraffic = Math.floor(stand.baseCapacity * Math.pow(weatherMult * tempFactor, stand.weatherSens) * (0.6 + s.reputation * 0.4) * efficiencyBonus);
-        const standDemand = Math.floor(standTraffic * buyProb);
-        activeStands.push({
-          id: stand.id,
-          name: stand.name,
-          workerName: stand.workerName,
-          demand: standDemand,
-          wage: stand.dailyWage,
-          isDriveway: false
-        });
-      }
-    }
-
-    const totalCupDemand = activeStands.reduce((sum, st) => sum + st.demand, 0);
-
-    const cupsPerPitcher = 10 + s.recipe.icePerCup;
+    const cupsPerPitcher = pitcherCups(s.recipe.icePerCup, b);
     const maxByCups = s.inv.cups;
     const maxByIce = s.recipe.icePerCup > 0 ? Math.floor(s.inv.ice / s.recipe.icePerCup) : Infinity;
     const maxByLemons = Math.floor(s.inv.lemons / Math.max(1, s.recipe.lemonsPerPitcher)) * cupsPerPitcher;
@@ -518,25 +492,26 @@ export class LemonadeEngine {
     let packagingCosts = 0;
 
     if (s.phase >= 3) {
-      const civicCostDiscount = s.flags.hasHondaCivic ? 0.70 : 1.0;
+      const w = b.wholesale;
+      const civicCostDiscount = s.flags.hasHondaCivic ? w.civicPackagingMult : 1.0;
 
       for (const acc of Object.values(this.wholesaleAccounts)) {
         if (!acc.active) continue;
 
-        const demand = Math.round(acc.bottlesPerDay * Math.pow(weatherMult, acc.weatherSens));
-        const maxByL = Math.floor(s.inv.lemons / 0.5);
-        const maxByS = Math.floor(s.inv.sugar / 0.4);
-        const maxBottles = Math.min(demand, s.inv.bottles, maxByL, maxByS);
+        const bottleDemand = Math.round(acc.bottlesPerDay * Math.pow(weatherMult, acc.weatherSens));
+        const maxByL = Math.floor(s.inv.lemons / w.lemonsPerBottle);
+        const maxByS = Math.floor(s.inv.sugar / w.sugarPerBottle);
+        const maxBottles = Math.min(bottleDemand, s.inv.bottles, maxByL, maxByS);
 
         if (maxBottles > 0) {
           s.inv.bottles -= maxBottles;
-          s.inv.lemons -= Math.ceil(maxBottles * 0.5);
-          s.inv.sugar -= Math.ceil(maxBottles * 0.4);
+          s.inv.lemons -= Math.ceil(maxBottles * w.lemonsPerBottle);
+          s.inv.sugar -= Math.ceil(maxBottles * w.sugarPerBottle);
 
           bottlesSold += maxBottles;
           wholesaleGross += maxBottles * acc.wholesalePrice;
           packagingCosts += maxBottles * (acc.packagingCost * civicCostDiscount);
-        } else if (demand > 0) {
+        } else if (bottleDemand > 0) {
           const missing: string[] = [];
           if (s.inv.bottles <= 0) missing.push('Glass Bottles');
           if (s.inv.lemons < 1) missing.push('Lemons');
@@ -550,19 +525,21 @@ export class LemonadeEngine {
     let patentUnitsSold = 0;
     let patentRoyalties = 0;
     if (s.phase >= 4 && this.patent.licensed) {
+      const p = b.patent;
       let multiplier = 1.0;
-      if (s.flags.hasTeslaModelX) multiplier += 0.20;
-      if (s.flags.hasPrivateJet) multiplier *= 2.0;
+      if (s.flags.hasTeslaModelX) multiplier += p.teslaBonus;
+      if (s.flags.hasPrivateJet) multiplier *= p.privateJetMult;
 
-      patentUnitsSold = Math.round(this.patent.baseUnitsPerDay * (0.8 + this.rand() * 0.4) * multiplier);
+      patentUnitsSold = Math.round(this.patent.baseUnitsPerDay * (p.randomMin + this.rand() * p.randomRange) * multiplier);
       patentRoyalties = patentUnitsSold * this.patent.royaltyPerUnit;
     }
 
     let copackerCasesSold = 0;
     let copackerNet = 0;
     if (s.phase >= 5 && this.copacker.active) {
-      const arenaMult = s.flags.hasArenaNaming ? 2.0 : 1.0;
-      copackerCasesSold = Math.round(this.copacker.casesPerDay * (0.85 + this.rand() * 0.3) * arenaMult);
+      const c = b.copacker;
+      const arenaMult = s.flags.hasArenaNaming ? c.arenaMult : 1.0;
+      copackerCasesSold = Math.round(this.copacker.casesPerDay * (c.randomMin + this.rand() * c.randomRange) * arenaMult);
       copackerNet = copackerCasesSold * this.copacker.netPerCase;
     }
 
@@ -572,7 +549,7 @@ export class LemonadeEngine {
       s.inv.ice = 0;
     }
     if (!s.flags.hasMiniFridge && s.inv.lemons > 0 && !s.flags.hasLemonGrove) {
-      const rotted = Math.ceil(s.inv.lemons * 0.20);
+      const rotted = Math.ceil(s.inv.lemons * b.spoilage.lemonRotFraction);
       s.inv.lemons -= rotted;
       notes.push(`${rotted} ${rotted === 1 ? 'lemon' : 'lemons'} went bad overnight. Lemons spoil, so don't stock up too far ahead.`);
     }
@@ -603,7 +580,7 @@ export class LemonadeEngine {
         fairPrice,
         cupsWanted: totalCupDemand,
         cupsSold: drivewayCupsSold + franchiseCupsSold
-      }));
+      }, b), b);
     }
 
     const reviews = this.generateCustomerReviews({
@@ -651,7 +628,7 @@ export class LemonadeEngine {
 
     s.lastDaySummary = summary;
     s.day += 1;
-    s.elapsedSec += 30;
+    s.elapsedSec += b.secondsPerDay;
 
     if (reviews.length > 0) {
       const topCust = reviews.find(r => !r.reviewer.includes('(')) || reviews[0];
