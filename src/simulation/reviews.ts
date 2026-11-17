@@ -1,6 +1,7 @@
 // src/simulation/reviews.ts — In-Character Customer Reviews & Teammate Feedback
 import type { CustomerReview, FranchiseStand, GameState } from '../types';
 import { computeIdealIce } from './weather';
+import { BALANCE, type Balance } from '../balance';
 
 export interface ReviewGenerationParams {
   state: GameState;
@@ -14,24 +15,29 @@ export interface ReviewGenerationParams {
   soldOutStands: string[];
   bottleneck?: string;
   rand: () => number;
+  balance?: Balance;
 }
 
 export function generateDailyReviews(params: ReviewGenerationParams): CustomerReview[] {
   const { state: s, franchiseStands, tempF, quality, pricePerCup, fairPrice, soldOutStands, bottleneck, rand } = params;
   const reviews: CustomerReview[] = [];
   const { lemonsPerPitcher: L, sugarPerPitcher: S, icePerCup: I } = s.recipe;
-  const idealI = computeIdealIce(tempF);
+  const idealI = computeIdealIce(tempF, params.balance ?? BALANCE);
   const priceRatio = pricePerCup / fairPrice;
+  // Taste is judged against this game's golden recipe: + means more than golden.
+  const dL = L - s.goldenRecipe.lemons;
+  const dS = S - s.goldenRecipe.sugar;
+  const off = Math.abs(dL) + Math.abs(dS);
 
   // 1. TASTE / RECIPE REVIEW
-  if (L - S >= 2) {
+  if (dL - dS >= 2) {
     reviews.push({
       stars: 1,
       quote: "My whole face puckered up! Did you forget the sugar?!",
       reviewer: "Elm St. neighbor",
       sentiment: "negative"
     });
-  } else if (S - L >= 2) {
+  } else if (dS - dL >= 2) {
     reviews.push({
       stars: 2,
       quote: "Liquid sugar shock! Tastes more like melted candy than lemonade.",
@@ -54,14 +60,25 @@ export function generateDailyReviews(params: ReviewGenerationParams): CustomerRe
       reviewer: "Little League coach",
       sentiment: "negative"
     });
-  } else if (L <= 2 && S <= 2) {
+  } else if (dL <= -2 && dS <= -2) {
     reviews.push({
       stars: 1,
       quote: "Tastes mostly like tap water. Where are the lemons?",
       reviewer: "Dog walker",
       sentiment: "negative"
     });
-  } else if (quality >= 0.88) {
+  } else if (off > 0 && off <= 2) {
+    // Close but not golden: a friendly nudge in the right direction.
+    const hint = Math.abs(dL) >= Math.abs(dS)
+      ? (dL < 0 ? "Tasty! A little more lemon would make it perfect." : "Really good, just a tiny bit too lemony.")
+      : (dS < 0 ? "Yum! Could be just a little sweeter." : "Nice, though a hair too sweet for me.");
+    reviews.push({
+      stars: 4,
+      quote: hint,
+      reviewer: "Lemonade fan next door",
+      sentiment: "positive"
+    });
+  } else if (off === 0 && quality >= 0.88) {
     const praises = [
       { quote: "Absolute perfection! Crisp, ice-cold, and perfectly tangy.", reviewer: "Local foodie" },
       { quote: "Best lemonade on the block! The recipe is dialed in 100%.", reviewer: "Mail carrier" },

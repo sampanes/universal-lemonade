@@ -33,7 +33,7 @@ export function computeDayDemand(
   const d = b.demand;
   const weatherMult = d.weatherMult[s.weather];
   const tempFactor = Math.max(d.minTempFactor, 1 + d.tempSlope * ((s.tempF - d.refF) / d.tempSpan));
-  const quality = computeRecipeQuality(s.recipe, s.tempF, b);
+  const quality = computeRecipeQuality(s.recipe, s.tempF, s.goldenRecipe, b);
   const fairPrice = fairPriceFor(s.tempF, s.reputation, b);
   const buyProb = buyProbability(quality, s.tempF, s.recipe.pricePerCup, s.reputation, b);
 

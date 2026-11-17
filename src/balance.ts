@@ -37,9 +37,10 @@ export const BALANCE = {
   bikePackMult: 1.25,           // Mountain bike trophy: packs hold this much more
 
   recipe: {
-    // The golden ratio. Quality falls off with squared distance from it.
-    idealLemons: 4,
-    idealSugar: 4,
+    // The golden ratio is picked per game (from the game seed) inside these ranges, so a kid
+    // has to taste-test instead of memorizing it. Quality falls off with squared distance.
+    goldenLemons: { min: 3, max: 5 },
+    goldenSugar: { min: 3, max: 5 },
     lemonWeight: 0.08,
     sugarWeight: 0.08,
     iceWeight: 0.12,
@@ -82,7 +83,15 @@ export const BALANCE = {
     pricePerRep: 0.5,
     // Driveway traffic multiplier = trafficBase + reputation
     trafficBase: 0.5,
-    // Day score = taste * value * (servedBase + servedPerServed * fraction served)
+    // Day score = taste * value * (servedBase + servedPerServed * fraction served), where
+    // taste = quality ^ tasteExponent. A higher exponent makes word of mouth pickier: a
+    // "close to golden" recipe sells almost as well today but builds less reputation, so it
+    // earns clearly less over time than the exact golden recipe.
+    tasteExponent: 1,
+    // Word of mouth only raves about the exact golden lemons:sugar. Any other recipe's taste
+    // score is multiplied by this, so "almost golden" builds noticeably less reputation
+    // while far-off recipes (already low) are barely affected. 1 = no golden bonus.
+    offGoldenTasteMult: 0.75,
     servedBase: 0.75,
     servedPerServed: 0.25,
     // Lasting boosts added to every day's score

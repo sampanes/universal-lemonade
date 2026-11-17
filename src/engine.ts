@@ -29,7 +29,7 @@ import { getDailyDemandEstimate, getKidDemandAdvice, getMaxPourableCups } from '
 import { generateDailyReviews } from './simulation/reviews';
 import { ewma, dailyCustomerScore, nextReputation } from './simulation/reputation';
 import { computeDayDemand } from './simulation/demand';
-import { cupsPerPitcher as pitcherCups } from './simulation/recipe';
+import { cupsPerPitcher as pitcherCups, rollGoldenRecipe } from './simulation/recipe';
 import { BALANCE, type Balance } from './balance';
 
 export { BigNum } from './bignum';
@@ -107,6 +107,7 @@ export class LemonadeEngine {
 
       inv: { ...start.inventory },
       recipe: { ...start.recipe },
+      goldenRecipe: rollGoldenRecipe(this.seed, this.balance),
 
       flags: {
         hasCooler: false,
@@ -303,15 +304,15 @@ export class LemonadeEngine {
 
   // The lemon:sugar recipe that tastes best.
   public getGoldenRecipe(): { lemons: number; sugar: number } {
-    return { lemons: this.balance.recipe.idealLemons, sugar: this.balance.recipe.idealSugar };
+    return { ...this.state.goldenRecipe };
   }
 
   public computeRecipeQuality(tempF: number = this.state.tempF): number {
-    return computeRecipeQuality(this.state.recipe, tempF, this.balance);
+    return computeRecipeQuality(this.state.recipe, tempF, this.state.goldenRecipe, this.balance);
   }
 
   public getRecipeProfile(tempF: number = this.state.tempF): RecipeProfile {
-    return getRecipeProfile(this.state.recipe, tempF, this.balance);
+    return getRecipeProfile(this.state.recipe, tempF, this.state.goldenRecipe, this.balance);
   }
 
   public getDailyDemandEstimate(): DailyDemandEstimate {
@@ -383,7 +384,8 @@ export class LemonadeEngine {
       franchiseCupsSold: info.franchiseCupsSold,
       soldOutStands: info.soldOutStands,
       bottleneck: info.bottleneck,
-      rand: () => this.rand()
+      rand: () => this.rand(),
+      balance: this.balance
     });
   }
 
@@ -581,6 +583,7 @@ export class LemonadeEngine {
     if (!s.flags.hasPaidMortgage) {
       s.reputation = nextReputation(s, dailyCustomerScore({
         quality,
+        exactGolden: s.recipe.lemonsPerPitcher === s.goldenRecipe.lemons && s.recipe.sugarPerPitcher === s.goldenRecipe.sugar,
         pricePerCup: s.recipe.pricePerCup,
         fairPrice,
         cupsWanted: totalCupDemand,

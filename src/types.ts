@@ -176,6 +176,11 @@ export interface DaySummary {
   notes: string[];
 }
 
+export interface GoldenRecipe {
+  lemons: number;
+  sugar: number;
+}
+
 export interface GameState {
   phase: GamePhase;
   elapsedSec: number;
@@ -209,6 +214,8 @@ export interface GameState {
     icePerCup: number;
     pricePerCup: number;
   };
+  // This game's best-tasting lemons:sugar per pitcher (picked from the seed at the start).
+  goldenRecipe: GoldenRecipe;
 
   // Upgrades & Flag States
   flags: {

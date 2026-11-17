@@ -596,6 +596,15 @@
     body:not(.dad-mode) .dad-test-only {
       display: none !important;
     }
+    .dad-seed-info {
+      font-family: var(--font-ui);
+      font-size: 11px;
+      font-weight: 600;
+      color: #fef08a;
+      opacity: 0.85;
+      white-space: nowrap;
+      align-self: center;
+    }
     .dad-pill {
       font-family: var(--font-ui);
       font-size: 11px;
@@ -2270,6 +2279,7 @@
     </div>
 
     <div class="header-controls">
+      <span id="dad-seed-info" class="dad-test-only dad-seed-info" title="Replay this exact game by adding ?seed=NUMBER to the address"></span>
       <button id="btn-dad-toggle" class="dad-pill">DAD MODE: ON</button>
       <button id="btn-speed-1" class="dad-test-only">1x</button>
       <button id="btn-speed-10" class="dad-test-only">10x</button>
@@ -2716,7 +2726,26 @@
       if (e.pointerType === 'mouse' && rootEl.classList.contains('touch-input')) rootEl.classList.remove('touch-input');
     }, true);
 
-    let engine = new LemonadeEngine();
+    // Every new game (page load or Reset) gets a fresh seed, so the weather and this game's
+    // golden recipe change. Dad testing: add ?seed=123 to the URL to replay the same game.
+    function newGameSeed() {
+      const fromUrl = parseInt(new URLSearchParams(window.location.search).get('seed') || '', 10);
+      if (Number.isFinite(fromUrl) && fromUrl !== 0) return fromUrl;
+      try {
+        return (crypto.getRandomValues(new Uint32Array(1))[0] | 0) || 1;
+      } catch {
+        return (Math.floor(Math.random() * 0x7fffffff) | 0) || 1;
+      }
+    }
+    function updateDadSeedInfo() {
+      const el = document.getElementById('dad-seed-info');
+      if (!el) return;
+      const g = engine.getGoldenRecipe();
+      el.textContent = `Seed ${engine.seed} / Golden ${g.lemons}:${g.sugar}`;
+    }
+
+    let engine = new LemonadeEngine({ seed: newGameSeed() });
+    updateDadSeedInfo();
     let timeScale = 1;
     let autoDay = false;
     let autoDayTimer = 0;
@@ -3073,7 +3102,8 @@
 
     document.getElementById('btn-reset').onclick = () => {
       if (confirm("Reset lemonade business back to Day 1 with $60 seed capital?")) {
-        engine = new LemonadeEngine();
+        engine = new LemonadeEngine({ seed: newGameSeed() });
+        updateDadSeedInfo();
         victoryDismissed = false;
         prevCashNum = null; // the jump back to $60 is not income: no float, no cheer
         catCheerUntil = 0;

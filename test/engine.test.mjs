@@ -84,6 +84,40 @@ test('every bot can play a full game without throwing', () => {
   }
 });
 
+// ---- Golden recipe ----
+
+test('golden recipe is picked per seed from the balance ranges, all combinations show up', () => {
+  const { goldenLemons: gl, goldenSugar: gs } = BALANCE.recipe;
+  const seen = new Set();
+  for (let seed = 1; seed <= 2000; seed++) {
+    const g = new LemonadeEngine({ seed }).getGoldenRecipe();
+    assert.ok(g.lemons >= gl.min && g.lemons <= gl.max, `lemons ${g.lemons}`);
+    assert.ok(g.sugar >= gs.min && g.sugar <= gs.max, `sugar ${g.sugar}`);
+    seen.add(`${g.lemons}:${g.sugar}`);
+  }
+  assert.equal(seen.size, (gl.max - gl.min + 1) * (gs.max - gs.min + 1));
+  assert.deepEqual(new LemonadeEngine({ seed: 31337 }).getGoldenRecipe(), new LemonadeEngine({ seed: 31337 }).getGoldenRecipe());
+});
+
+test('quality is 100% only at the golden recipe with ideal ice, and only exact golden is named golden', () => {
+  const e = new LemonadeEngine({ seed: 2024 });
+  const g = e.getGoldenRecipe(), r = e.state.recipe;
+  r.lemonsPerPitcher = g.lemons; r.sugarPerPitcher = g.sugar; r.icePerCup = e.computeIdealIce();
+  assert.equal(e.computeRecipeQuality(), 1);
+  assert.equal(e.getRecipeProfile().tasteName, 'Golden Ratio Perfection');
+  r.lemonsPerPitcher = g.lemons + 1;
+  assert.ok(e.computeRecipeQuality() < 1);
+  assert.equal(e.getRecipeProfile().tasteName, 'Almost Golden!');
+});
+
+test('close-to-golden earns clearly less than exact golden at the same price', () => {
+  const golden = summarize(runBatch(5, 0, 400, 'goldenFixedPrice', 20));
+  const near = summarize(runBatch(5, 0, 400, 'nearGolden', 20));
+  assert.ok(near.cashDay20.p50 < golden.cashDay20.p50 * 0.7,
+    `near $${near.cashDay20.p50.toFixed(0)} vs golden $${golden.cashDay20.p50.toFixed(0)} on day 20`);
+  assert.ok(near.avgReputation.p50 < golden.avgReputation.p50);
+});
+
 // ---- Pacing guard rails: loose on purpose, they catch big regressions, not small tuning. ----
 
 test('a careful kid reaches the neighborhood (phase 2) by day 12 in 95% of games', () => {

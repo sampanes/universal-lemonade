@@ -51,6 +51,7 @@ export function reputationBonus(s: GameState, b: Balance = BALANCE): number {
 
 export interface DayCustomerOutcome {
   quality: number;       // recipe quality, 0..1
+  exactGolden: boolean;  // lemons and sugar exactly on this game's golden recipe
   pricePerCup: number;
   fairPrice: number;     // fairPriceFor() at the start of the day
   cupsWanted: number;    // demand across all cup stands
@@ -61,7 +62,7 @@ export interface DayCustomerOutcome {
 // a day with no customers says nothing about the stand.
 export function dailyCustomerScore(o: DayCustomerOutcome, b: Balance = BALANCE): number | null {
   if (o.cupsWanted <= 0) return null;
-  const taste = o.quality;
+  const taste = Math.pow(o.quality, b.reputation.tasteExponent) * (o.exactGolden ? 1 : b.reputation.offGoldenTasteMult);
   // Paying more than they think is fair leaves buyers a bit grumpy; a bargain does not
   // make them happier than "fair".
   const value = Math.sqrt(Math.min(1, o.fairPrice / Math.max(0.01, o.pricePerCup)));
