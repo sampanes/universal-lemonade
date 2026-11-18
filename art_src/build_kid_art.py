@@ -31,7 +31,8 @@ PAD_TOP, PAD_SIDE = 300, 300   # headroom on the source canvas for buns, ponytai
 
 # Order shown in the mirror. Saves store the index, so add new styles at the end.
 HAIRS = ['swoop', 'curly', 'bob', 'ponytail', 'buns',
-         'braids', 'pigtails', 'wavy', 'sidepart', 'afro', 'topknot']
+         'braids', 'pigtails', 'wavy', 'sidepart', 'afro', 'topknot',
+         'locs', 'bangs', 'wavybob', 'spiky', 'messybun', 'crownbraid', 'shaggy']
 FACES = ['happy', 'cheer', 'soldout', 'calm', 'sleepy', 'wink']
 # hole = face-opening width / head width; bang = bang line as a share of head height.
 FIT = {
@@ -48,6 +49,15 @@ FIT = {
     'sidepart': dict(head=(211, 390, 269)),
     'afro': dict(head=(260, 427, 253)),
     'topknot': dict(head=(228, 444, 262)),
+    # From a sheet with no chin lines: width and center from the face opening, chin tuned by
+    # eye. soft = darker gray art, so only the colored (plum) dark pixels count as outline.
+    'locs': dict(head=(152,318,184), soft=True),
+    'bangs': dict(head=(136,268,161), soft=True),
+    'wavybob': dict(head=(155,276,170), soft=True),
+    'spiky': dict(head=(156,280,185), soft=True),
+    'messybun': dict(head=(130,292,164), soft=True),
+    'crownbraid': dict(head=(167,296,174), soft=True),
+    'shaggy': dict(head=(165,300,164), soft=True),
 }
 HEAD_W, CHIN_Y = 1.02, 0.97        # the kid's head width and inner chin line, as shares of the head box
 CHEEK_SPAN, CHEEK_Y = 0.60, 0.66   # face: cheeks apart / cheek height, as shares of the head
@@ -71,10 +81,10 @@ def hue_of(rgb, s):
     return np.where(mx == r, ((g - b) / d) % 6, np.where(mx == g, (b - r) / d + 2, (r - g) / d + 4)) * 60
 
 
-def label(a, s, L, keyed):
+def label(a, s, L, keyed, soft=False):
     """Region id per pixel (0 = fixed color). Edge blends join the nearest region."""
     vis = a[..., 3] > 0.02
-    outline = vis & (L < 0.26)
+    outline = vis & (((L < 0.26) & (s >= 0.10)) | (L < 0.12)) if soft else vis & (L < 0.26)
     lab = np.zeros(L.shape, int)
     if keyed:
         h = hue_of(a[..., :3], s)
@@ -208,7 +218,7 @@ def main():
             k = f['hole'] * hw / max(1, rx - lx)
             placed = place(a, k, hcx - (lx + rx) / 2 * k, htop + f['bang'] * hh - bang * k, full)
         tmp = {}
-        write_layer(f'hair_{hid}', placed, label(*load_arr(placed), False), size, tmp)
+        write_layer(f'hair_{hid}', placed, label(*load_arr(placed), False, f.get('soft', False)), size, tmp)
         hair_L0[hid] = tmp[REGION_IDS['hair']]
 
     # Faces (+ a light rim under the dark lines, used on dark skin)

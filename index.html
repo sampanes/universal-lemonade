@@ -2327,7 +2327,7 @@
       /* --- THE MIRROR: make your lemonade hero --- */
       .kid-mirror {
         position: relative;
-        width: min(880px, 100%);
+        width: min(1060px, 100%);
         max-height: calc(100vh - 28px);
         overflow-y: auto;
         background: linear-gradient(180deg, #fffbeb 0%, #fef3c7 100%);
@@ -2391,7 +2391,7 @@
       .kid-swatch.on { box-shadow: 0 0 0 4px #7c3aed, 0 0 0 7px #facc15; transform: scale(1.08); }
       .kid-hair-opt:active, .kid-swatch:active { transform: scale(0.92); }
       .kid-mirror-done {
-        margin-top: 2px; cursor: pointer;
+        margin-top: 10px; cursor: pointer;
         background: linear-gradient(180deg, #4ade80 0%, #16a34a 100%);
         border: 4px solid #14532d; border-radius: 999px; box-shadow: 0 5px 0 #14532d;
         color: #fff; font-family: var(--font-display); font-size: 24px; letter-spacing: 0.5px;
@@ -2429,6 +2429,65 @@
       }
       .kid-avatar-btn img { width: 100%; height: 100%; display: block; }
       .kid-avatar-btn:active { transform: scale(0.94); }
+      .kid-avatar-btn { position: relative; }
+
+      /* Kid picture with its special-hair layer (rainbow colors flowing, or twinkles). */
+      .kid-pic { position: relative; display: inline-block; line-height: 0; }
+      .kid-pic > img { width: 100%; height: 100%; display: block; }
+      .kid-fx { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+      .kid-fx img { position: absolute; inset: 0; width: 100%; height: 100%; }
+      .kid-fx-rainbow { animation: kid-rainbow 7s linear infinite; }
+      @keyframes kid-rainbow { from { filter: hue-rotate(0deg); } to { filter: hue-rotate(360deg); } }
+      .kid-spark {
+        position: absolute; aspect-ratio: 1; transform: translate(-50%, -50%) scale(0);
+        animation: kid-twinkle 2.6s ease-in-out infinite;
+        filter: drop-shadow(0 0 2px #fff) drop-shadow(0 0 3px rgba(240, 171, 252, 0.9));
+      }
+      .kid-spark::before {
+        content: ''; position: absolute; inset: 0; background: #fff;
+        clip-path: polygon(50% 0, 60% 40%, 100% 50%, 60% 60%, 50% 100%, 40% 60%, 0 50%, 40% 40%);
+      }
+      .kid-spark-galaxy { animation-duration: 3.2s; filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.9)); }
+      .kid-spark-galaxy::before { background: #fffbe8; clip-path: polygon(50% 0, 57% 43%, 100% 50%, 57% 57%, 50% 100%, 43% 57%, 0 50%, 43% 43%); }
+      @keyframes kid-twinkle {
+        0%, 100% { transform: translate(-50%, -50%) scale(0) rotate(0deg); opacity: 0; }
+        25% { opacity: 1; }
+        45% { transform: translate(-50%, -50%) scale(1) rotate(45deg); opacity: 1; }
+        70% { transform: translate(-50%, -50%) scale(0.2) rotate(90deg); opacity: 0; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .kid-fx-rainbow { animation: none; }
+        .kid-spark { animation: none; transform: translate(-50%, -50%) scale(0.8); }
+      }
+
+      /* A secret look just showed up: it glows in the mirror (and so does the kid) until seen. */
+      .kid-hair-opt.is-new, .kid-swatch.is-new, .kid-avatar-btn.has-new {
+        animation: kid-new-glow 0.9s ease-in-out infinite alternate;
+      }
+      @keyframes kid-new-glow {
+        from { box-shadow: 0 0 0 3px #fde68a, 0 0 4px 2px rgba(250, 204, 21, 0.35); }
+        to { box-shadow: 0 0 0 3px #facc15, 0 0 14px 6px rgba(250, 204, 21, 0.85); }
+      }
+      .magic-look {
+        display: flex; align-items: center; gap: 12px; margin: 0 40px 12px 0;   /* clear of the X */
+        padding: 8px 12px; border-radius: 18px; border: 3px solid #facc15;
+        background: linear-gradient(135deg, #fdf4ff 0%, #fef9c3 100%);
+        box-shadow: 0 0 18px rgba(250, 204, 21, 0.55);
+        animation: kid-ticket-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+      }
+      .magic-look-pics { display: flex; flex: none; }
+      .magic-look-pics .kid-pic {
+        width: 62px; height: 62px; border-radius: 50%; overflow: hidden; margin-right: -10px;
+        border: 3px solid #a855f7; background: radial-gradient(circle at 50% 40%, #fef9c3 0%, #fde68a 100%);
+      }
+      .magic-look-text { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.2; padding-left: 10px; }
+      .magic-look-text b { font-family: var(--font-display); font-size: 19px; color: #7c3aed; }
+      .magic-look-text span { font-size: 14px; color: #6b21a8; }
+      .magic-look-try {
+        flex: none; cursor: pointer; border: 3px solid #6d28d9; border-radius: 999px;
+        background: linear-gradient(180deg, #c084fc 0%, #9333ea 100%); color: #fff;
+        font-family: var(--font-display); font-size: 17px; padding: 6px 16px; box-shadow: 0 3px 0 #5b21b6;
+      }
 
     
       
@@ -3168,7 +3227,7 @@
       <!-- Kid mode: after Day 1 the last Day Report shrinks to this ticket; tapping it reopens it. -->
       <!-- The player's kid sits beside it; tapping the kid opens the mirror. -->
       <div class="kid-yesterday-row" id="kid-yesterday-row" hidden>
-        <button type="button" id="btn-kid-avatar" class="kid-avatar-btn" title="Change your look!" aria-label="Change your look"><img id="kid-avatar-img" alt="" /></button>
+        <button type="button" id="btn-kid-avatar" class="kid-avatar-btn" title="Change your look!" aria-label="Change your look"><img id="kid-avatar-img" alt="" /><span class="kid-fx"></span></button>
         <button type="button" id="btn-kid-yesterday" class="report-dock-ticket kid-yesterday" title="See yesterday's Day Report"></button>
       </div>
 
@@ -3251,7 +3310,8 @@
       HAIR_PALETTES,
       UNIFORM_PALETTES
     } from './src/character.ts';
-    import { loadKidArt, kidImageURL, kidHairCount } from './src/kid.ts';
+    import { loadKidArt, kidImageURL, kidHairCount, kidHairIds, kidFx } from './src/kid.ts';
+    import { loadUnlocks, saveUnlocks, newUnlocks, unlockCheckFrom, lookOpen } from './src/unlocks.ts';
 
     // Track which input is in use so mouse-only hover styles switch off after a finger tap.
     // (The touchscreen all-in-one this is played on has a mouse too, so CSS alone cannot tell.)
@@ -3804,6 +3864,7 @@
     document.getElementById('btn-run-day').onclick = () => {
       const summary = engine.runDay();
       openReportModal(summary);
+      checkMagicLooks(summary, !dadModeActive);
     };
 
     // Buy Supplies Static Click Bindings (Guarantees zero dropped clicks on desktop)
@@ -3854,7 +3915,7 @@
         autoDayTimer += dt;
         if (autoDayTimer >= 2.5) { // Run day every 2.5 real seconds (scaled by timeScale)
           autoDayTimer = 0;
-          engine.runDay();
+          checkMagicLooks(engine.runDay(), false);
         }
       }
 
@@ -4538,6 +4599,21 @@
       if (reportCatMood(d) >= 3) return 'cheer';
       return 'happy';
     }
+    // Special hair moves on a layer over the picture: flowing rainbow colors, or twinkles.
+    function kidFxHTML(profile, head) {
+      const fx = kidFx(profile, head);
+      if (!fx.fx) return '';
+      if (fx.hairFill) {
+        return `<img class="kid-fx-rainbow" src="${fx.hairFill}" alt="" /><img src="${fx.hairLines}" alt="" />`;
+      }
+      return fx.sparkles.map(p =>
+        `<span class="kid-spark kid-spark-${fx.fx}" style="left:${p.x.toFixed(1)}%;top:${p.y.toFixed(1)}%;` +
+        `width:${p.size.toFixed(1)}%;animation-delay:-${p.delay.toFixed(2)}s"></span>`).join('');
+    }
+    function kidPicHTML(profile, mood, head) {
+      const url = kidImageURL(profile, mood, head);
+      return url ? `<span class="kid-pic"><img src="${url}" alt="" /><span class="kid-fx">${kidFxHTML(profile, head)}</span></span>` : '';
+    }
     function setKidImg(img, mood, head) {
       if (!img) return;
       const tag = `${kidVersion}/${mood}/${head ? 1 : 0}`;
@@ -4546,6 +4622,51 @@
       if (!url) return;            // art still loading
       img.src = url;
       img.dataset.kid = tag;
+      const fx = img.parentElement.querySelector('.kid-fx');
+      if (fx) setHTMLIfChanged(fx, kidFxHTML(kidProfile, head));
+    }
+
+    // ---- Secret looks (src/unlocks.ts): some hair styles and colors stay out of the mirror
+    // until a milestone happens. Nothing hints at what is next; a new look just shows up,
+    // with a surprise in the Day Report and a glow on it until the mirror is opened.
+    let kidUnlocks = loadUnlocks();
+    const lookOfHair = (i) => `hair:${kidHairIds()[i]}`;
+    const lookOfColor = (i) => `color:${HAIR_PALETTES[i].id}`;
+    function refreshKidNew() {
+      document.getElementById('btn-kid-avatar').classList.toggle('has-new', kidUnlocks.unseen.size > 0);
+    }
+    function profileWithLook(look) {
+      const [kind, id] = look.split(':');
+      if (kind === 'hair') {
+        const i = kidHairIds().indexOf(id);
+        return i < 0 ? null : { ...kidProfile, hairStyle: i };
+      }
+      const i = HAIR_PALETTES.findIndex(p => p.id === id);
+      return i < 0 ? null : { ...kidProfile, hairColor: i };
+    }
+    const MAGIC_LINES = ['Whoa! Magic in the mirror!', 'Something sparkly appeared!', 'Psst... check the mirror!'];
+    function checkMagicLooks(summary, show) {
+      if (!summary) return;
+      const cust = (summary.reviews || []).filter(r => !isTeamNote(r));
+      const best = summary.netProfit > 0 && cust.length >= 3 && cust.reduce((n, r) => n + r.stars, 0) / cust.length >= 4.75;
+      const got = newUnlocks(kidUnlocks.have, unlockCheckFrom(engine.state, summary, best));
+      if (!got.length) return;
+      got.forEach(l => { kidUnlocks.have.add(l); kidUnlocks.unseen.add(l); });
+      saveUnlocks(kidUnlocks);
+      refreshKidNew();
+      const content = document.getElementById('report-modal-content');
+      if (!show || !content) return;
+      const pics = got.map(profileWithLook).filter(Boolean).slice(0, 3).map(p => kidPicHTML(p, 'cheer', true)).join('');
+      content.insertAdjacentHTML('afterbegin',
+        `<div class="magic-look"><div class="magic-look-pics">${pics}</div>` +
+        `<div class="magic-look-text"><b>${MAGIC_LINES[Math.floor(Math.random() * MAGIC_LINES.length)]}</b>` +
+        `<span>${got.length > 1 ? 'New looks showed up' : 'A new look showed up'} in your mirror.</span></div>` +
+        `<button type="button" class="magic-look-try" id="btn-magic-look-try">Try it on!</button></div>`);
+      document.getElementById('btn-magic-look-try').onclick = (e) => {
+        e.stopPropagation();
+        closeReportModal();
+        openMirror(false);
+      };
     }
 
     const mirror = document.getElementById('kid-mirror-backdrop');
@@ -4553,11 +4674,15 @@
     let mirrorMood = 'happy';
     let mirrorCheerTimer = 0;
     const mirrorOpen = () => mirror.classList.contains('active');
-    function swatchesHTML(palettes, current, key, label) {
+    // lookOf: (index) -> look id, for options that can be secret; hidden until earned.
+    function swatchesHTML(palettes, current, key, label, lookOf) {
       return palettes.map((p, i) => {
         const on = i === current;
-        return `<button type="button" class="kid-swatch${on ? ' on' : ''}" data-key="${key}" data-i="${i}" ` +
-          `style="--sw:${p.base}" aria-label="${label} ${i + 1}" aria-pressed="${on}"></button>`;
+        const look = lookOf ? lookOf(i) : '';
+        if (look && !on && !lookOpen(kidUnlocks, look)) return '';
+        const isNew = look && kidUnlocks.unseen.has(look);
+        return `<button type="button" class="kid-swatch${on ? ' on' : ''}${isNew ? ' is-new' : ''}" data-key="${key}" data-i="${i}" ` +
+          `style="--sw:${p.swatch || p.base}" aria-label="${p.name || label + ' ' + (i + 1)}" aria-pressed="${on}"></button>`;
       }).join('');
     }
     function renderMirror() {
@@ -4566,12 +4691,15 @@
       const n = kidHairCount();
       const hairOn = n ? kidProfile.hairStyle % n : -1;
       setHTMLIfChanged(document.getElementById('kid-opt-hair'), Array.from({ length: n }, (_, i) => {
+        const look = lookOfHair(i);
+        if (i !== hairOn && !lookOpen(kidUnlocks, look)) return '';
+        const isNew = kidUnlocks.unseen.has(look);
         const url = kidImageURL({ ...kidProfile, hairStyle: i }, 'happy', true);
-        return `<button type="button" class="kid-hair-opt${i === hairOn ? ' on' : ''}" data-key="hairStyle" data-i="${i}" ` +
+        return `<button type="button" class="kid-hair-opt${i === hairOn ? ' on' : ''}${isNew ? ' is-new' : ''}" data-key="hairStyle" data-i="${i}" ` +
           `aria-label="Hair style ${i + 1}" aria-pressed="${i === hairOn}"><img src="${url}" alt="" /></button>`;
       }).join(''));
       setHTMLIfChanged(document.getElementById('kid-opt-skin'), swatchesHTML(SKIN_PALETTES, kidProfile.skinTone, 'skinTone', 'Skin tone'));
-      setHTMLIfChanged(document.getElementById('kid-opt-haircolor'), swatchesHTML(HAIR_PALETTES, kidProfile.hairColor, 'hairColor', 'Hair color'));
+      setHTMLIfChanged(document.getElementById('kid-opt-haircolor'), swatchesHTML(HAIR_PALETTES, kidProfile.hairColor, 'hairColor', 'Hair color', lookOfColor));
       setHTMLIfChanged(document.getElementById('kid-opt-apron'), swatchesHTML(UNIFORM_PALETTES, kidProfile.uniformColor, 'uniformColor', 'Apron color'));
     }
     mirror.addEventListener('click', (e) => {
@@ -4588,7 +4716,7 @@
     });
     function openMirror(first) {
       setText(document.getElementById('btn-kid-mirror-done'), first ? 'Start My Stand!' : 'Done!');
-      setText(document.getElementById('kid-mirror-bubble'), first ? 'Let\'s make your lemonade hero!' : 'Want a new look?');
+      setText(document.getElementById('kid-mirror-bubble'), first ? 'Let\'s make your lemonade hero!' : 'How do I look?');
       document.getElementById('btn-kid-mirror-x').hidden = first;   // first time: pick, then start
       mirrorMood = 'happy';
       mirror.classList.add('active');
@@ -4598,6 +4726,11 @@
     function closeMirror() {
       if (!mirrorOpen()) return;
       saveCharacterProfile(kidProfile);
+      if (kidUnlocks.unseen.size) {       // seen now: the glows go away
+        kidUnlocks.unseen.clear();
+        saveUnlocks(kidUnlocks);
+        refreshKidNew();
+      }
       mirror.classList.remove('active');
       mirror.setAttribute('aria-hidden', 'true');
     }
@@ -4606,6 +4739,7 @@
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeMirror(); });
     document.getElementById('btn-kid-avatar').onclick = (e) => { e.stopPropagation(); openMirror(false); };
     loadKidArt().then(() => { kidVersion++; renderMirror(); }).catch((e) => console.warn('[Kid]', e.message));
+    refreshKidNew();
     if (!dadModeActive && !hasSavedCharacterProfile() && engine.state.day === 1 && !engine.state.lastDaySummary) openMirror(true);
 
     requestAnimationFrame(loop);
@@ -4619,7 +4753,8 @@
       <div class="kid-mirror-body">
         <div class="kid-mirror-left">
           <div class="kid-mirror-bubble" id="kid-mirror-bubble">Let's make your lemonade hero!</div>
-          <img id="kid-mirror-preview" class="kid-mirror-preview" alt="Your lemonade hero" />
+          <span class="kid-pic kid-mirror-preview"><img id="kid-mirror-preview" alt="Your lemonade hero" /><span class="kid-fx"></span></span>
+          <button type="button" id="btn-kid-mirror-done" class="kid-mirror-done">Start My Stand!</button>
         </div>
         <div class="kid-mirror-rows">
           <div class="kid-mirror-row"><span class="kid-mirror-label">Hair Style</span><div class="kid-mirror-opts" id="kid-opt-hair"></div></div>
@@ -4628,7 +4763,6 @@
           <div class="kid-mirror-row"><span class="kid-mirror-label">Apron Color</span><div class="kid-mirror-opts" id="kid-opt-apron"></div></div>
         </div>
       </div>
-      <button type="button" id="btn-kid-mirror-done" class="kid-mirror-done">Start My Stand!</button>
     </div>
   </div>
 

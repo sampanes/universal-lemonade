@@ -5,6 +5,7 @@
 // layer comes as <name>_shade.png (R = lightness, G = region id * 60, A = coverage) under
 // <name>_fixed.png (outline and anything that never changes color).
 import { SKIN_PALETTES, HAIR_PALETTES, UNIFORM_PALETTES } from './character';
+import type { HairFx, HairPalette } from './character';
 import type { CharacterProfile } from './types';
 
 export type KidMood = 'happy' | 'cheer' | 'soldout' | 'calm' | 'sleepy' | 'wink';
@@ -119,6 +120,89 @@ function rimLayer(face: string, skinHex: string): HTMLCanvasElement {
   return ctx.canvas;
 }
 
+// ---- Special hair (HairFx): a color per pixel instead of one color.
+type RGB = [number, number, number];
+const mix = (a: RGB, b: RGB, t: number): RGB => [0, 1, 2].map(i => a[i] + (b[i] - a[i]) * t) as RGB;
+const clamp01 = (t: number) => Math.max(0, Math.min(1, t));
+function hsl(h: number, s: number, l: number): RGB {
+  const k = (n: number) => (n + h / 30) % 12;
+  const a = s * Math.min(l, 1 - l);
+  return [0, 8, 4].map(n => l - a * Math.max(-1, Math.min(k(n) - 3, 9 - k(n), 1))) as RGB;
+}
+const CANDY: RGB[] = [rgb('#FF9FD2'), rgb('#9FD4FF')];
+const GALAXY: RGB[] = [rgb('#2E2A7A'), rgb('#7B2FBF'), rgb('#D9468F')];
+const GLITTER: RGB[] = [rgb('#D9A7FF'), rgb('#FFC2EA')];
+
+/** The hair color at (u, v), the spot's place across and down the hair (0..1). */
+function fxColor(fx: HairFx, u: number, v: number): RGB {
+  switch (fx) {
+    case 'candy': return mix(CANDY[0], CANDY[1], clamp01((0.35 * u + 0.65 * v - 0.2) / 0.6));
+    case 'rainbow': return hsl(((0.45 * u + 0.8 * v) * 300) % 360, 0.9, 0.64);
+    case 'galaxy': {
+      const t = clamp01(0.3 * u + 0.8 * v - 0.1);
+      return t < 0.5 ? mix(GALAXY[0], GALAXY[1], t * 2) : mix(GALAXY[1], GALAXY[2], (t - 0.5) * 2);
+    }
+    case 'glitter': return mix(GLITTER[0], GLITTER[1], clamp01(v));
+  }
+}
+
+const boxes = new Map<string, [number, number, number, number]>();   // hair id -> x0, y0, x1, y1
+function hairBox(id: string): [number, number, number, number] {
+  let b = boxes.get(id);
+  if (b) return b;
+  const d = shades.get(`hair_${id}_shade`)!;
+  let x0 = d.width, y0 = d.height, x1 = 0, y1 = 0;
+  for (let y = 0; y < d.height; y++) {
+    for (let x = 0; x < d.width; x++) {
+      if (d.data[(y * d.width + x) * 4 + 3] > 128) {
+        if (x < x0) x0 = x;
+        if (x > x1) x1 = x;
+        if (y < y0) y0 = y;
+        if (y > y1) y1 = y;
+      }
+    }
+  }
+  b = [x0, y0, Math.max(x1, x0 + 1), Math.max(y1, y0 + 1)];
+  boxes.set(id, b);
+  return b;
+}
+
+/** The hair's color layer: one color, or a special color that changes across the hair. */
+function hairFill(hairId: string, L0: number, color: HairPalette): ImageData {
+  const src = shades.get(`hair_${hairId}_shade`)!;
+  if (!color.fx) return tint(src, { [REGION.hair]: rgb(color.base) }, { [REGION.hair]: L0 });
+  const fx = color.fx;
+  const [x0, y0, x1, y1] = hairBox(hairId);
+  const out = new ImageData(src.width, src.height);
+  const s = src.data, d = out.data;
+  for (let i = 0; i < s.length; i += 4) {
+    const a = s[i + 3];
+    if (!a || Math.round(s[i + 1] / 60) !== REGION.hair) continue;
+    const px = (i / 4) % src.width, py = Math.floor(i / 4 / src.width);
+    const c = fxColor(fx, (px - x0) / (x1 - x0), (py - y0) / (y1 - y0));
+    const l = s[i] / 255;
+    for (let ch = 0; ch < 3; ch++) {
+      const v = l <= L0 ? c[ch] * (l / L0) : c[ch] + (1 - c[ch]) * Math.min(1, (l - L0) / (1 - L0)) * 0.9;
+      d[i + ch] = Math.round(clamp01(v) * 255);
+    }
+    d[i + 3] = a;
+  }
+  return out;
+}
+
+function pick<T>(list: T[], i: number): T {
+  return list[((i % list.length) + list.length) % list.length];
+}
+
+/** Crop to the head box when head is true, and return a PNG data URL. */
+function toURL(ctx: CanvasRenderingContext2D, head: boolean): string {
+  if (!head) return ctx.canvas.toDataURL('image/png');
+  const [x, y, w, h] = manifest!.head;
+  const crop = canvas(w, h);
+  crop.drawImage(ctx.canvas, x, y, w, h, 0, 0, w, h);
+  return crop.canvas.toDataURL('image/png');
+}
+
 /**
  * The kid as a PNG data URL (cached), or null until loadKidArt() finishes.
  * head = true gives the square head-and-hair crop used for small pictures.
@@ -126,15 +210,14 @@ function rimLayer(face: string, skinHex: string): HTMLCanvasElement {
 export function kidImageURL(p: CharacterProfile, mood: KidMood = 'happy', head = false): string | null {
   const m = manifest;
   if (!m) return null;
-  const hair = m.hairs[((p.hairStyle % m.hairs.length) + m.hairs.length) % m.hairs.length];
+  const hair = pick(m.hairs, p.hairStyle);
   const face = m.faces.includes(mood) ? mood : 'happy';
   const key = [hair.id, p.skinTone, p.hairColor, p.uniformColor, face, head ? 1 : 0].join('/');
   const hit = cache.get(key);
   if (hit) return hit;
 
-  const skin = SKIN_PALETTES[p.skinTone % SKIN_PALETTES.length];
-  const hairC = HAIR_PALETTES[p.hairColor % HAIR_PALETTES.length];
-  const apron = UNIFORM_PALETTES[p.uniformColor % UNIFORM_PALETTES.length];
+  const skin = pick(SKIN_PALETTES, p.skinTone);
+  const apron = pick(UNIFORM_PALETTES, p.uniformColor);
   const ctx = canvas(m.w, m.h);
   drawTinted(ctx, tint(shades.get('body_shade')!,
     { [REGION.skin]: rgb(skin.base), [REGION.shirt]: rgb(SHIRT), [REGION.apron]: rgb(apron.base) },
@@ -142,18 +225,81 @@ export function kidImageURL(p: CharacterProfile, mood: KidMood = 'happy', head =
   ctx.drawImage(images.get('body_fixed')!, 0, 0);
   if (p.skinTone % SKIN_PALETTES.length >= DARK_SKIN_FROM) ctx.drawImage(rimLayer(face, skin.base), 0, 0);
   ctx.drawImage(images.get(`face_${face}`)!, 0, 0);
-  drawTinted(ctx, tint(shades.get(`hair_${hair.id}_shade`)!, { [REGION.hair]: rgb(hairC.base) }, { [REGION.hair]: hair.L0 }));
+  drawTinted(ctx, hairFill(hair.id, hair.L0, pick(HAIR_PALETTES, p.hairColor)));
   ctx.drawImage(images.get(`hair_${hair.id}_fixed`)!, 0, 0);
 
-  let url: string;
-  if (head) {
-    const [x, y, w, h] = m.head;
-    const crop = canvas(w, h);
-    crop.drawImage(ctx.canvas, x, y, w, h, 0, 0, w, h);
-    url = crop.canvas.toDataURL('image/png');
-  } else {
-    url = ctx.canvas.toDataURL('image/png');
-  }
+  const url = toURL(ctx, head);
   cache.set(key, url);
   return url;
+}
+
+/** The hair style ids, in mirror order. */
+export function kidHairIds(): string[] {
+  return manifest ? manifest.hairs.map(h => h.id) : [];
+}
+
+export interface KidSparkle { x: number; y: number; size: number; delay: number }
+export interface KidFx {
+  fx: HairFx | '';
+  hairFill: string | null;     // rainbow: the hair's color alone, for the flowing-color layer
+  hairLines: string | null;    // rainbow: the hair's outline, kept on top of that layer
+  sparkles: KidSparkle[];      // glitter and galaxy: spots on the hair, as % of the picture
+}
+
+const fxCache = new Map<string, KidFx>();
+
+// A small steady random source, so a hair style always gets the same sparkle spots.
+function seeded(text: string): () => number {
+  let h = 2166136261;
+  for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 16777619);
+  return () => {
+    h = Math.imul(h ^ (h >>> 15), 2246822507);
+    h = Math.imul(h ^ (h >>> 13), 3266489909);
+    h ^= h >>> 16;
+    return (h >>> 0) / 4294967296;
+  };
+}
+
+/** What moves on top of the kid picture for special hair (nothing for plain colors). */
+export function kidFx(p: CharacterProfile, head = false): KidFx {
+  const none: KidFx = { fx: '', hairFill: null, hairLines: null, sparkles: [] };
+  const m = manifest;
+  if (!m) return none;
+  const color = pick(HAIR_PALETTES, p.hairColor);
+  if (!color.fx || color.fx === 'candy') return none;
+  const hair = pick(m.hairs, p.hairStyle);
+  const key = [hair.id, p.hairColor, head ? 1 : 0].join('/');
+  const hit = fxCache.get(key);
+  if (hit) return hit;
+
+  const fx: KidFx = { fx: color.fx, hairFill: null, hairLines: null, sparkles: [] };
+  if (color.fx === 'rainbow') {
+    const fill = canvas(m.w, m.h);
+    drawTinted(fill, hairFill(hair.id, hair.L0, color));
+    fx.hairFill = toURL(fill, head);
+    const lines = canvas(m.w, m.h);
+    lines.drawImage(images.get(`hair_${hair.id}_fixed`)!, 0, 0);
+    fx.hairLines = toURL(lines, head);
+  } else {
+    // Spots well inside the hair, spread apart.
+    const [vx, vy, vw, vh] = head ? m.head : [0, 0, m.w, m.h];
+    const d = shades.get(`hair_${hair.id}_shade`)!;
+    const galaxy = color.fx === 'galaxy';
+    const want = galaxy ? (head ? 6 : 10) : (head ? 4 : 7);
+    const [lo, hi] = galaxy ? (head ? [7, 10] : [3.5, 5.5]) : (head ? [13, 17] : [6.5, 9.5]);
+    const gap = (head ? 0.2 : 0.11) * vw;   // pixels between spots
+    const rand = seeded(`${hair.id}/${color.id}/${head ? 1 : 0}`);
+    const solid = (x: number, y: number) =>
+      x >= 0 && y >= 0 && x < d.width && y < d.height && d.data[(y * d.width + x) * 4 + 3] > 230;
+    const placed: [number, number][] = [];
+    for (let tries = 0; tries < 4000 && placed.length < want; tries++) {
+      const x = Math.floor(vx + rand() * vw), y = Math.floor(vy + rand() * vh);
+      if (!solid(x, y) || !solid(x - 4, y) || !solid(x + 4, y) || !solid(x, y - 4) || !solid(x, y + 4)) continue;
+      if (placed.some(([px, py]) => Math.hypot(px - x, py - y) < gap)) continue;
+      placed.push([x, y]);
+      fx.sparkles.push({ x: ((x - vx) / vw) * 100, y: ((y - vy) / vh) * 100, size: lo + rand() * (hi - lo), delay: rand() * 2.4 });
+    }
+  }
+  fxCache.set(key, fx);
+  return fx;
 }
