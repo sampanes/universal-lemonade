@@ -905,31 +905,70 @@
       text-overflow: ellipsis;
     }
 
-    /* Morning Prep Stand Card. The whole card is drawn by morning_prep_frame.png, cut into
-       three slices (342 px wide): top 0-72 (awning + ribbon), mid 72-130 (cream with the side
-       borders, stretched to fit the tiles), bottom 130-185 (gingham). No CSS border or box
-       behind it, so the art's own rounded frame is the edge. */
+    /* Stand frame: the border is drawn in CSS so it stays sharp at any size. Only the
+       pictures are images (sprites/frame, made by art_src/build_frame_art.py): the ribbon
+       on the top edge, the awning repeated across the top and the tablecloth across the
+       bottom. The rounded inner box trims the awning and cloth at the corners.
+         <div class="stand-frame">
+           <div class="stand-ribbon"><span class="stand-ribbon-title">TITLE</span></div>
+           <div class="stand-frame-inner">
+             <div class="stand-awning"></div> ...content... <div class="stand-cloth"></div>
+           </div>
+         </div> */
+    .stand-frame {
+      position: relative;
+      margin-top: 26px;                 /* the ribbon pokes up above the frame */
+      border: 4px solid #6b2fa0;
+      border-radius: 28px;
+      background: #6b2fa0;
+    }
+    .stand-frame-inner {
+      position: relative;
+      border: 6px solid #eebdf8;      /* one colour: mixed side colours leave a diagonal at the corners */
+      border-radius: 24px;
+      overflow: hidden;
+      background: #fef5e4;
+    }
+    .stand-awning {
+      height: 42px;
+      background: url('./sprites/frame/awning_tile.png') repeat-x center top / auto 100%;
+    }
+    .stand-cloth {
+      height: 36px;
+      /* drawn 72px tall and only the bottom 36 shown: bigger gingham squares, thin strip */
+      background: url('./sprites/frame/tablecloth_tile.png') repeat-x center bottom / auto 72px;
+    }
+    .stand-ribbon {
+      position: absolute;
+      z-index: 2;
+      top: 0;
+      left: 50%;
+      width: 64%;
+      max-width: 420px;
+      transform: translate(-50%, -29%);
+      aspect-ratio: 1000 / 226;
+      background: url('./sprites/frame/ribbon.png') no-repeat center / 100% 100%;
+      container-type: inline-size;     /* the title sizes itself from the ribbon width */
+    }
+
+    /* Morning Prep Stand Card (a stand-frame). */
     .prep-stand-card {
-      margin-top: 4px;
       color: #1e1b4b;
       filter: drop-shadow(0 4px 8px rgba(124, 58, 237, 0.25));
     }
-    .prep-stand-header {
-      position: relative;
-      text-align: center;
-    }
-    /* Sits on the purple ribbon drawn into prep_frame_top.png (342 x 72; ribbon at y 12-46). */
-    .prep-ribbon-title {
+    /* Inside the ribbon's flat band (ribbon.png: band at 6-70% of the height, 9% in from
+       each end). */
+    .stand-ribbon-title {
       position: absolute;
-      left: 24%;
-      right: 24%;
-      top: 17.2%;
-      height: 46.5%;
+      left: 10%;
+      right: 10%;
+      top: 8%;
+      height: 60%;
       color: #fff;
       font-family: var(--font-display);
       font-weight: 400;
       font-size: 16px;
-      font-size: clamp(12px, 4.8cqw, 26px); /* follows the ribbon as the banner grows or shrinks */
+      font-size: clamp(12px, 6.6cqw, 28px); /* follows the ribbon as it grows or shrinks */
       letter-spacing: 0.8px;
       -webkit-text-stroke: 2px #5b21b6;
       paint-order: stroke fill;
@@ -944,17 +983,8 @@
       height: 17px;
       object-fit: contain;
     }
-    .prep-awning-banner {
-      position: relative;
-      container-type: inline-size; /* the ribbon title sizes itself from the banner width */
-      width: 100%;
-      aspect-ratio: 342 / 72;
-      background: url('./sprites/morning_prep/prep_frame_top.png') no-repeat center bottom / 100% 100%;
-    }
-    /* Side padding keeps the tiles inside the frame's side borders (cream starts at x 18 of 342). */
     .prep-stand-body {
-      padding: 0 6% 0 6%;
-      background: url('./sprites/morning_prep/prep_frame_mid.png') no-repeat center / 100% 100%;
+      padding: 12px 10px 6px;
     }
     .prep-mult-bar {
       display: flex;
@@ -1085,16 +1115,6 @@
       cursor: not-allowed;
       transform: none;
     }
-    /* Bottom slice of the frame (342 x 55): drawn at its own aspect but only the lower 32 px
-       of it show, so the gingham strip is thinner and Open for Business fits on the MSI. */
-    .prep-gingham-footer {
-      background: url('./sprites/morning_prep/prep_frame_bottom.png') no-repeat center bottom / 100% auto;
-      /* Bottom 38 of the art's 55 rows: starts above the corner curve so the side
-         walls line up with prep_frame_mid (a shorter crop left a step). */
-      aspect-ratio: 342 / 38;
-      width: 100%;
-    }
-
     /* Juicy Run Day Simulation Button */
     .kawaii-run-day-btn {
       width: 100%;
@@ -2767,12 +2787,10 @@
       <h3 id="panel2-title" class="panel-exec-heading">🍋 2. Operations & Expansion</h3>
 
       <!-- 3. MORNING PREP & SUPPLIES STAND -->
-      <div class="prep-stand-card">
-        <div class="prep-stand-header">
-          <div class="prep-awning-banner">
-            <div class="prep-ribbon-title">MORNING PREP</div>
-          </div>
-        </div>
+      <div class="prep-stand-card stand-frame">
+        <div class="stand-ribbon"><span class="stand-ribbon-title">MORNING PREP</span></div>
+        <div class="stand-frame-inner">
+        <div class="stand-awning"></div>
 
         <div class="prep-stand-body">
           <!-- Multiplier Packs Bar -->
@@ -2877,7 +2895,8 @@
           </div>
         </div>
 
-        <div class="prep-gingham-footer"></div>
+        <div class="stand-cloth"></div>
+        </div>
       </div>
 
       <!-- 4. BIG ACTION BUTTON: OPEN FOR BUSINESS -->

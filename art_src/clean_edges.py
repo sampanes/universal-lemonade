@@ -1,6 +1,6 @@
 """Clean the cut-out edges of small UI sprites and enlarge the stretched ones.
 
-The morning-prep frame and weather panel were cut off a white background with
+The weather panel (and the old morning-prep frame) were cut off a white background with
 hard (on/off) alpha and are only ~340 px wide, but the MSI shows them ~960
 device px wide. That leaves a whitish fringe and stair-stepped edges.
 
@@ -28,9 +28,6 @@ DST = os.path.join('public', 'sprites', 'morning_prep')
 
 # name -> enlargement factor (1 = only clean the edge)
 JOBS = {
-    'prep_frame_top': 3,
-    'prep_frame_mid': 3,
-    'prep_frame_bottom': 3,
     'weather_panel_bg': 3,
     'sun_happy': 1,
 }
