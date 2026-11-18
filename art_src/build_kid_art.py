@@ -41,7 +41,9 @@ FIT = {
 }
 CHEEK_SPAN, CHEEK_Y = 0.60, 0.66   # face: cheeks apart / cheek height, as shares of the head
 REGION_IDS = {'skin': 1, 'shirt': 2, 'apron': 3, 'hair': 4}
-RIM_COLOR = (255, 236, 220)        # light edge drawn under dark face lines on dark skin
+# Dark skin: a thin edge under the dark face lines, tinted in the game to a shade lighter
+# than the skin (a white mask here), so lines stay readable without a pale halo.
+RIM_SIZE, RIM_ALPHA = 5, 0.7       # edge width (game pixels, odd) and strength
 
 
 def load(path):
@@ -199,14 +201,16 @@ def main():
         (lx, ly), (rx, ry) = cheeks(a, s)
         k = CHEEK_SPAN * hw / (rx - lx)
         placed = place(a, k, hcx - (lx + rx) / 2 * k, htop + CHEEK_Y * hh - (ly + ry) / 2 * k, full)
-        shrink_rgba(placed, size).save(os.path.join(DST, f'face_{fid}.png'), optimize=True)
-        pL = (placed[..., :3].max(-1) + placed[..., :3].min(-1)) / 2
-        dark = ((placed[..., 3] > 0.5) & (pL < 0.4)).astype(np.uint8) * 255
-        grown = np.asarray(Image.fromarray(dark, 'L').filter(ImageFilter.MaxFilter(15))).astype(float) / 255
-        rim = np.zeros(placed.shape)
-        rim[..., 0], rim[..., 1], rim[..., 2] = (c / 255 for c in RIM_COLOR)
-        rim[..., 3] = grown * 0.7
-        shrink_rgba(rim, size).save(os.path.join(DST, f'face_{fid}_rim.png'), optimize=True)
+        small = shrink_rgba(placed, size)
+        small.save(os.path.join(DST, f'face_{fid}.png'), optimize=True)
+        f = np.asarray(small).astype(float) / 255
+        fL = (f[..., :3].max(-1) + f[..., :3].min(-1)) / 2
+        dark = ((f[..., 3] > 0.5) & (fL < 0.4)).astype(np.uint8) * 255
+        grown = Image.fromarray(dark, 'L').filter(ImageFilter.MaxFilter(RIM_SIZE)).filter(ImageFilter.GaussianBlur(0.6))
+        rim = np.zeros(f.shape, np.uint8)
+        rim[..., :3] = 255
+        rim[..., 3] = (np.asarray(grown).astype(float) * RIM_ALPHA).round()
+        Image.fromarray(rim, 'RGBA').save(os.path.join(DST, f'face_{fid}_rim.png'), optimize=True)
 
     # Square head box (for the small head pictures), in game canvas pixels.
     side = 1.55 * hw

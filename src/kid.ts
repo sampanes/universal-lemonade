@@ -1,7 +1,7 @@
 // src/kid.ts -- the player's kid, stacked from paper-doll layers (public/sprites/kid/, built by
 // art_src/build_kid_art.py) and recolored with the kid's picks.
 //
-// Layers share one canvas: body, face (plus a light rim on dark skin), hair. A recolorable
+// Layers share one canvas: body, face (plus a skin-tinted rim on dark skin), hair. A recolorable
 // layer comes as <name>_shade.png (R = lightness, G = region id * 60, A = coverage) under
 // <name>_fixed.png (outline and anything that never changes color).
 import { SKIN_PALETTES, HAIR_PALETTES, UNIFORM_PALETTES } from './character';
@@ -21,7 +21,8 @@ interface KidManifest {
 const DIR = './sprites/kid/';
 const REGION = { skin: 1, shirt: 2, apron: 3, hair: 4 } as const;
 const SHIRT = '#FFFFFF';
-const DARK_SKIN_FROM = 3;   // skin palettes from here on get the light rim around face lines
+const DARK_SKIN_FROM = 3;   // skin palettes from here on get a rim around the face lines
+const RIM_LIGHTEN = 0.22;   // rim color: the skin moved this far toward white
 
 let manifest: KidManifest | null = null;
 const images = new Map<string, HTMLImageElement>();
@@ -106,6 +107,18 @@ function drawTinted(ctx: CanvasRenderingContext2D, data: ImageData) {
   ctx.drawImage(tmp.canvas, 0, 0);
 }
 
+// The rim art is a white mask; paint it a shade lighter than the skin.
+function rimLayer(face: string, skinHex: string): HTMLCanvasElement {
+  const mask = images.get(`face_${face}_rim`)!;
+  const ctx = canvas(mask.width, mask.height);
+  ctx.drawImage(mask, 0, 0);
+  const c = rgb(skinHex).map(v => Math.round((v + (1 - v) * RIM_LIGHTEN) * 255));
+  ctx.globalCompositeOperation = 'source-in';
+  ctx.fillStyle = `rgb(${c[0]}, ${c[1]}, ${c[2]})`;
+  ctx.fillRect(0, 0, mask.width, mask.height);
+  return ctx.canvas;
+}
+
 /**
  * The kid as a PNG data URL (cached), or null until loadKidArt() finishes.
  * head = true gives the square head-and-hair crop used for small pictures.
@@ -127,7 +140,7 @@ export function kidImageURL(p: CharacterProfile, mood: KidMood = 'happy', head =
     { [REGION.skin]: rgb(skin.base), [REGION.shirt]: rgb(SHIRT), [REGION.apron]: rgb(apron.base) },
     { [REGION.skin]: m.L0.skin, [REGION.shirt]: m.L0.shirt, [REGION.apron]: m.L0.apron }));
   ctx.drawImage(images.get('body_fixed')!, 0, 0);
-  if (p.skinTone % SKIN_PALETTES.length >= DARK_SKIN_FROM) ctx.drawImage(images.get(`face_${face}_rim`)!, 0, 0);
+  if (p.skinTone % SKIN_PALETTES.length >= DARK_SKIN_FROM) ctx.drawImage(rimLayer(face, skin.base), 0, 0);
   ctx.drawImage(images.get(`face_${face}`)!, 0, 0);
   drawTinted(ctx, tint(shades.get(`hair_${hair.id}_shade`)!, { [REGION.hair]: rgb(hairC.base) }, { [REGION.hair]: hair.L0 }));
   ctx.drawImage(images.get(`hair_${hair.id}_fixed`)!, 0, 0);
