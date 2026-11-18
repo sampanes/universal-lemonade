@@ -87,6 +87,15 @@ export function saveUnlocks(u: Unlocks): void {
   }
 }
 
+/** Forget every earned look (Reset). */
+export function clearUnlocks(): void {
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch (e) {
+    console.warn('[Unlocks] Error clearing unlocks:', e);
+  }
+}
+
 /** True when the look is free or already earned. */
 export function lookOpen(u: Unlocks, look: string): boolean {
   return !SECRET_LOOKS.has(look) || u.have.has(look);

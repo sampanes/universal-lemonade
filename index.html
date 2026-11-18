@@ -2414,6 +2414,36 @@
         .kid-mirror-done { font-size: 20px; padding: 6px 28px; }
       }
 
+      /* Reset: a hold-to-confirm button fills up; let go early and nothing happens. */
+      .reset-card {
+        width: min(420px, 100%); box-sizing: border-box; text-align: center;
+        background: linear-gradient(180deg, #fff1f2 0%, #ffe4e6 100%); color: #4c0519;
+        border: 5px solid #e11d48; border-radius: 26px; padding: 18px 20px 16px;
+        box-shadow: inset 0 0 0 4px #fecdd3, 0 14px 40px rgba(0, 0, 0, 0.5);
+        display: flex; flex-direction: column; align-items: center; gap: 12px;
+      }
+      .reset-title { font-family: var(--font-display); font-size: 28px; color: #be123c; }
+      .reset-text { margin: 0; font-size: 16px; line-height: 1.35; }
+      .reset-hold {
+        position: relative; overflow: hidden; width: 100%; padding: 14px 10px; cursor: pointer;
+        border: 4px solid #9f1239; border-radius: 999px; background: #fecdd3;
+        box-shadow: 0 4px 0 #9f1239; touch-action: none; user-select: none; -webkit-user-select: none;
+        -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent;
+      }
+      .reset-hold-fill {
+        position: absolute; left: 0; top: 0; bottom: 0; width: 0%;
+        background: linear-gradient(180deg, #fb7185 0%, #e11d48 100%);
+      }
+      .reset-hold-label {
+        position: relative; font-family: var(--font-display); font-size: 21px; color: #fff;
+        -webkit-text-stroke: 1px #881337; paint-order: stroke fill;
+      }
+      .reset-no {
+        cursor: pointer; border: 3px solid #15803d; border-radius: 999px; padding: 8px 26px;
+        background: linear-gradient(180deg, #4ade80 0%, #16a34a 100%); color: #fff;
+        font-family: var(--font-display); font-size: 18px; box-shadow: 0 3px 0 #14532d;
+      }
+
       /* The player's kid beside the Yesterday ticket; tapping it opens the mirror. */
       .kid-yesterday-row { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
       .kid-yesterday-row[hidden],
@@ -2514,10 +2544,15 @@
         background: linear-gradient(180deg, #2d2438 0%, #1e1828 100%);
         border: 2px solid #facc15;
         border-radius: 999px;
-        padding: 3px 14px 3px 6px;
+        padding: 7px 14px;
         box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35), 0 0 10px rgba(250, 204, 21, 0.25);
         position: relative;
       }
+      /* The kid's head beside the cash pill; it shows from Day 1 (tap: the mirror). */
+      .header-money-wrap { display: flex; align-items: center; gap: 10px; }
+      .header-kid-btn { width: 52px; height: 52px; animation: none; }
+      /* The cat is resting for now (the kid took its spot); the markup and art stay. */
+      .header-cat-slot { display: none !important; }
       .header-cat-slot {
         width: 36px;
         height: 36px;
@@ -2827,7 +2862,9 @@
       <div class="header-title" id="header-title" style="cursor: pointer;" title="Triple-click to toggle Dad Mode"><img src="./sprites/lemon.png" class="header-title-lemon" alt="" /> UNIVERSAL LEMONADE</div>
     </div>
 
-    <!-- COMPACT HEADER CASH COUNTER & CAT -->
+    <!-- COMPACT HEADER CASH COUNTER, with the player's kid beside it (tap: the mirror) -->
+    <div class="header-money-wrap">
+    <button type="button" id="btn-header-kid" class="kid-avatar-btn header-kid-btn" title="Change your look!" aria-label="Change your look"><img id="header-kid-img" alt="" /><span class="kid-fx"></span></button>
     <div class="header-cash-pill" id="header-cash-pill" title="Tap to see where your money went" role="button" tabindex="0" aria-expanded="false" aria-controls="money-bag">
       <div class="header-cat-slot" id="header-cat-slot">
         <img src="./sprites/kawaii_cat/cat1.png" id="header-cat-img" alt="Cat" />
@@ -2842,6 +2879,7 @@
         <div class="money-bag-banner">MONEY BAG</div>
         <div class="money-bag-body" id="money-bag-body"></div>
       </div>
+    </div>
     </div>
 
     <div class="header-controls">
@@ -3306,12 +3344,13 @@
       loadCharacterProfile,
       saveCharacterProfile,
       hasSavedCharacterProfile,
+      clearCharacterProfile,
       SKIN_PALETTES,
       HAIR_PALETTES,
       UNIFORM_PALETTES
     } from './src/character.ts';
     import { loadKidArt, kidImageURL, kidHairCount, kidHairIds, kidFx } from './src/kid.ts';
-    import { loadUnlocks, saveUnlocks, newUnlocks, unlockCheckFrom, lookOpen } from './src/unlocks.ts';
+    import { loadUnlocks, saveUnlocks, clearUnlocks, newUnlocks, unlockCheckFrom, lookOpen } from './src/unlocks.ts';
 
     // Track which input is in use so mouse-only hover styles switch off after a finger tap.
     // (The touchscreen all-in-one this is played on has a mouse too, so CSS alone cannot tell.)
@@ -3728,18 +3767,19 @@
       e.target.style.color = autoDay ? '#4ade80' : '#fff';
     };
 
-    document.getElementById('btn-reset').onclick = () => {
-      if (confirm("Reset lemonade business back to Day 1 with $60 seed capital?")) {
-        engine = new LemonadeEngine({ seed: newGameSeed() });
-        updateDadSeedInfo();
-        victoryDismissed = false;
-        prevCashNum = null; // the jump back to $60 is not income: no float, no cheer
-        catCheerUntil = 0;
-        choreMaxRemain = 0;
-        const vModal = document.getElementById('victory-modal');
-        if (vModal) vModal.style.display = 'none';
-      }
-    };
+    // Reset (see the hold-to-confirm card near the mirror code): a brand-new game, and the
+    // saved look and secret looks are forgotten, so the mirror greets a new player.
+    function startOver() {
+      engine = new LemonadeEngine({ seed: newGameSeed() });
+      updateDadSeedInfo();
+      victoryDismissed = false;
+      prevCashNum = null; // the jump back to $60 is not income: no float, no cheer
+      catCheerUntil = 0;
+      choreMaxRemain = 0;
+      const vModal = document.getElementById('victory-modal');
+      if (vModal) vModal.style.display = 'none';
+      resetKid();
+    }
 
     document.getElementById('btn-victory-dismiss').onclick = () => {
       victoryDismissed = true;
@@ -4352,6 +4392,10 @@
           setKidImg(document.getElementById('kid-avatar-img'), kidMoodFor(d), true);
         }
       }
+      // The kid beside the cash pill: there from Day 1, with the same face as above.
+      const dHead = s.lastDaySummary;
+      setKidImg(document.getElementById('header-kid-img'),
+        dHead ? kidMoodFor(dHead) : (Date.now() < kidFlashUntil ? kidFlashMood : 'happy'), true);
 
       renderStandShop(s);
       renderMoneyBag(s);
@@ -4644,7 +4688,9 @@
     const lookOfHair = (i) => `hair:${kidHairIds()[i]}`;
     const lookOfColor = (i) => `color:${HAIR_PALETTES[i].id}`;
     function refreshKidNew() {
-      document.getElementById('btn-kid-avatar').classList.toggle('has-new', kidUnlocks.unseen.size > 0);
+      for (const id of ['btn-kid-avatar', 'btn-header-kid']) {
+        document.getElementById(id).classList.toggle('has-new', kidUnlocks.unseen.size > 0);
+      }
     }
     function profileWithLook(look) {
       const [kind, id] = look.split(':');
@@ -4750,6 +4796,70 @@
     document.getElementById('btn-kid-mirror-x').onclick = closeMirror;
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeMirror(); });
     document.getElementById('btn-kid-avatar').onclick = (e) => { e.stopPropagation(); openMirror(false); };
+    document.getElementById('btn-header-kid').onclick = (e) => { e.stopPropagation(); setMoneyBag(false); openMirror(false); };
+
+    // Reset: forget the look and the secret looks, then meet the mirror like a new player.
+    function resetKid() {
+      clearCharacterProfile();
+      clearUnlocks();
+      kidProfile = loadCharacterProfile();
+      kidUnlocks = loadUnlocks();
+      kidFlashUntil = 0;
+      kidVersion++;
+      refreshKidNew();
+      openMirror(true);
+    }
+    // The Reset card: hold "Yes, I'm sure" for RESET_HOLD_MS; letting go early starts it over.
+    const RESET_HOLD_MS = 3000;
+    const resetBackdrop = document.getElementById('reset-backdrop');
+    const resetHold = document.getElementById('btn-reset-hold');
+    const resetFill = document.getElementById('reset-hold-fill');
+    const resetLabel = document.getElementById('reset-hold-label');
+    let resetHoldStart = 0;
+    function showResetCard(on) {
+      resetBackdrop.classList.toggle('active', on);
+      resetBackdrop.setAttribute('aria-hidden', on ? 'false' : 'true');
+      stopResetHold();
+    }
+    function stopResetHold() {
+      resetHoldStart = 0;
+      resetFill.style.width = '0%';
+      setText(resetLabel, 'Hold: Yes, I\'m sure');
+    }
+    function stepResetHold() {
+      if (!resetHoldStart) return;
+      const t = Math.min(1, (performance.now() - resetHoldStart) / RESET_HOLD_MS);
+      resetFill.style.width = `${(t * 100).toFixed(1)}%`;
+      if (t >= 1) {
+        showResetCard(false);
+        startOver();
+        return;
+      }
+      requestAnimationFrame(stepResetHold);
+    }
+    function beginResetHold() {
+      if (resetHoldStart) return;
+      resetHoldStart = performance.now();
+      setText(resetLabel, 'Keep holding...');
+      requestAnimationFrame(stepResetHold);
+    }
+    resetHold.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      resetHold.setPointerCapture?.(e.pointerId);
+      beginResetHold();
+    });
+    for (const ev of ['pointerup', 'pointercancel', 'lostpointercapture']) resetHold.addEventListener(ev, stopResetHold);
+    resetHold.addEventListener('contextmenu', (e) => e.preventDefault());   // long press on a touchscreen
+    resetHold.addEventListener('keydown', (e) => {
+      if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); beginResetHold(); }
+    });
+    resetHold.addEventListener('keyup', (e) => { if (e.key === ' ' || e.key === 'Enter') stopResetHold(); });
+    resetHold.addEventListener('blur', stopResetHold);
+    document.getElementById('btn-reset-no').onclick = () => showResetCard(false);
+    resetBackdrop.addEventListener('click', (e) => { if (e.target === resetBackdrop) showResetCard(false); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') showResetCard(false); });
+    document.getElementById('btn-reset').onclick = (e) => { e.stopPropagation(); setMoneyBag(false); showResetCard(true); };
+
     loadKidArt().then(() => { kidVersion++; renderMirror(); }).catch((e) => console.warn('[Kid]', e.message));
     refreshKidNew();
     if (!dadModeActive && !hasSavedCharacterProfile() && engine.state.day === 1 && !engine.state.lastDaySummary) openMirror(true);
@@ -4775,6 +4885,19 @@
           <div class="kid-mirror-row"><span class="kid-mirror-label">Apron Color</span><div class="kid-mirror-opts" id="kid-opt-apron"></div></div>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- RESET: hold the button for a few seconds to really start over -->
+  <div id="reset-backdrop" class="report-modal-backdrop" aria-hidden="true">
+    <div class="reset-card" role="dialog" aria-modal="true" aria-labelledby="reset-title">
+      <div class="reset-title" id="reset-title">Start over?</div>
+      <p class="reset-text">Your money, your stand, your hero's look, and every secret look go away. Back to Day 1!</p>
+      <button type="button" id="btn-reset-hold" class="reset-hold">
+        <span class="reset-hold-fill" id="reset-hold-fill"></span>
+        <span class="reset-hold-label" id="reset-hold-label">Hold: Yes, I'm sure</span>
+      </button>
+      <button type="button" id="btn-reset-no" class="reset-no">No, keep playing</button>
     </div>
   </div>
 

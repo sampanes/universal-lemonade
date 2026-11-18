@@ -97,6 +97,15 @@ export function hasSavedCharacterProfile(): boolean {
   }
 }
 
+/** Forget the saved look (Reset): the next mirror is a new player's mirror. */
+export function clearCharacterProfile(): void {
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch (e) {
+    console.warn('[Character] Error clearing profile:', e);
+  }
+}
+
 export function saveCharacterProfile(profile: CharacterProfile): void {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
