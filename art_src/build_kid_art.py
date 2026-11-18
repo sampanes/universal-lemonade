@@ -14,6 +14,7 @@ the color down, lighter blends it toward white (the shine). kid.json holds each 
 middle tone, the layer lists and the head box used for small head pictures.
 
 Faces are lined up by their blush cheeks; hair by its face opening. FIT tunes one hair.
+The game draws the face over the hair (eyes show through bangs, like anime).
 
 Run from the repo root:
     py -3.11 -I art_src/build_kid_art.py
@@ -33,7 +34,7 @@ PAD_TOP, PAD_SIDE = 300, 300   # headroom on the source canvas for buns, ponytai
 HAIRS = ['swoop', 'curly', 'bob', 'ponytail', 'buns',
          'braids', 'pigtails', 'wavy', 'sidepart', 'afro', 'topknot',
          'locs', 'bangs', 'wavybob', 'spiky', 'messybun', 'crownbraid', 'shaggy']
-FACES = ['happy', 'cheer', 'soldout', 'calm', 'sleepy', 'wink']
+FACES = ['happy', 'cheer', 'soldout', 'calm', 'sleepy', 'wink', 'grumpy', 'smug', 'surprised', 'ennui', 'sly', 'determined']
 # hole = face-opening width / head width; bang = bang line as a share of head height.
 FIT = {
     'curly': dict(hole=0.78, bang=0.30),

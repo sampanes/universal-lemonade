@@ -4495,7 +4495,10 @@
       const item = KID_SHOP.find(x => x.id === id);
       if (!item || item.teaser) return;
       const p = engine.projects.find(x => x.id === id);
-      if (p && engine.state.cash.toNumber() - engine.restockCostForToday() >= p.costCash) engine.buyProject(id);
+      if (p && engine.state.cash.toNumber() - engine.restockCostForToday() >= p.costCash) {
+        engine.buyProject(id);
+        kidFlash('determined', 2500);      // new gear: let's do this
+      }
     };
 
     // Money Bag: tap the cash pill. Shows the last finished day as money in, money out and
@@ -4593,15 +4596,23 @@
     // tapping it opens the mirror. A new player meets the mirror before Day 1.
     let kidProfile = loadCharacterProfile();
     let kidVersion = 0;            // bumps when the look changes or the art finishes loading
+    // The kid's face for how yesterday went, or a quick face for something that just happened.
+    let kidFlashMood = '', kidFlashUntil = 0;
+    function kidFlash(mood, ms) { kidFlashMood = mood; kidFlashUntil = Date.now() + ms; }
     function kidMoodFor(d) {
+      if (Date.now() < kidFlashUntil) return kidFlashMood;
       if (d.soldOut) return 'soldout';
-      if (d.weather === 'RAINY' || d.netProfit <= 0) return 'calm';
-      if (reportCatMood(d) >= 3) return 'cheer';
+      if (d.drivewayCupsSold + d.franchiseCupsSold + d.bottlesSold === 0) return 'ennui';   // nobody came
+      if (d.netProfit < 0) return 'grumpy';
+      if (d.weather === 'RAINY' || d.netProfit === 0) return 'calm';
+      const stars = reportCatMood(d);
+      if (stars >= 4) return 'smug';       // five-star day
+      if (stars >= 3) return 'cheer';
       return 'happy';
     }
     // Special hair moves on a layer over the picture: flowing rainbow colors, or twinkles.
-    function kidFxHTML(profile, head) {
-      const fx = kidFx(profile, head);
+    function kidFxHTML(profile, mood, head) {
+      const fx = kidFx(profile, mood, head);
       if (!fx.fx) return '';
       if (fx.hairFill) {
         return `<img class="kid-fx-rainbow" src="${fx.hairFill}" alt="" /><img src="${fx.hairLines}" alt="" />`;
@@ -4612,7 +4623,7 @@
     }
     function kidPicHTML(profile, mood, head) {
       const url = kidImageURL(profile, mood, head);
-      return url ? `<span class="kid-pic"><img src="${url}" alt="" /><span class="kid-fx">${kidFxHTML(profile, head)}</span></span>` : '';
+      return url ? `<span class="kid-pic"><img src="${url}" alt="" /><span class="kid-fx">${kidFxHTML(profile, mood, head)}</span></span>` : '';
     }
     function setKidImg(img, mood, head) {
       if (!img) return;
@@ -4623,7 +4634,7 @@
       img.src = url;
       img.dataset.kid = tag;
       const fx = img.parentElement.querySelector('.kid-fx');
-      if (fx) setHTMLIfChanged(fx, kidFxHTML(kidProfile, head));
+      if (fx) setHTMLIfChanged(fx, kidFxHTML(kidProfile, mood, head));
     }
 
     // ---- Secret looks (src/unlocks.ts): some hair styles and colors stay out of the mirror
@@ -4656,7 +4667,7 @@
       refreshKidNew();
       const content = document.getElementById('report-modal-content');
       if (!show || !content) return;
-      const pics = got.map(profileWithLook).filter(Boolean).slice(0, 3).map(p => kidPicHTML(p, 'cheer', true)).join('');
+      const pics = got.map(profileWithLook).filter(Boolean).slice(0, 3).map(p => kidPicHTML(p, 'surprised', true)).join('');
       content.insertAdjacentHTML('afterbegin',
         `<div class="magic-look"><div class="magic-look-pics">${pics}</div>` +
         `<div class="magic-look-text"><b>${MAGIC_LINES[Math.floor(Math.random() * MAGIC_LINES.length)]}</b>` +
@@ -4671,6 +4682,7 @@
 
     const mirror = document.getElementById('kid-mirror-backdrop');
     const MIRROR_CHEERS = ['Looking good!', 'So cool!', 'Love it!', 'Ready to sell!', 'Lookin\' fresh!'];
+    const MIRROR_POSES = ['cheer', 'smug', 'sly', 'wink'];
     let mirrorMood = 'happy';
     let mirrorCheerTimer = 0;
     const mirrorOpen = () => mirror.classList.contains('active');
@@ -4708,10 +4720,10 @@
       kidProfile = { ...kidProfile, [b.dataset.key]: Number(b.dataset.i) };
       saveCharacterProfile(kidProfile);
       kidVersion++;
-      mirrorMood = 'cheer';
+      mirrorMood = MIRROR_POSES[Math.floor(Math.random() * MIRROR_POSES.length)];
       setText(document.getElementById('kid-mirror-bubble'), MIRROR_CHEERS[Math.floor(Math.random() * MIRROR_CHEERS.length)]);
       clearTimeout(mirrorCheerTimer);
-      mirrorCheerTimer = setTimeout(() => { mirrorMood = 'happy'; renderMirror(); }, 900);
+      mirrorCheerTimer = setTimeout(() => { mirrorMood = 'happy'; renderMirror(); }, 1100);
       renderMirror();
     });
     function openMirror(first) {

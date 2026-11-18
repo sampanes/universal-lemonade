@@ -86,7 +86,13 @@
   "soldout",
   "calm",
   "sleepy",
-  "wink"
+  "wink",
+  "grumpy",
+  "smug",
+  "surprised",
+  "ennui",
+  "sly",
+  "determined"
  ],
  "head": [
   117,

@@ -1,14 +1,16 @@
 // src/kid.ts -- the player's kid, stacked from paper-doll layers (public/sprites/kid/, built by
 // art_src/build_kid_art.py) and recolored with the kid's picks.
 //
-// Layers share one canvas: body, face (plus a skin-tinted rim on dark skin), hair. A recolorable
+// Layers share one canvas: body, a skin-tinted rim on dark skin, hair, then the face on top
+// (eyes and brows show through bangs, like anime). A recolorable
 // layer comes as <name>_shade.png (R = lightness, G = region id * 60, A = coverage) under
 // <name>_fixed.png (outline and anything that never changes color).
 import { SKIN_PALETTES, HAIR_PALETTES, UNIFORM_PALETTES } from './character';
 import type { HairFx, HairPalette } from './character';
 import type { CharacterProfile } from './types';
 
-export type KidMood = 'happy' | 'cheer' | 'soldout' | 'calm' | 'sleepy' | 'wink';
+export type KidMood = 'happy' | 'cheer' | 'soldout' | 'calm' | 'sleepy' | 'wink'
+  | 'grumpy' | 'smug' | 'surprised' | 'ennui' | 'sly' | 'determined';
 
 interface KidManifest {
   w: number;
@@ -224,9 +226,10 @@ export function kidImageURL(p: CharacterProfile, mood: KidMood = 'happy', head =
     { [REGION.skin]: m.L0.skin, [REGION.shirt]: m.L0.shirt, [REGION.apron]: m.L0.apron }));
   ctx.drawImage(images.get('body_fixed')!, 0, 0);
   if (p.skinTone % SKIN_PALETTES.length >= DARK_SKIN_FROM) ctx.drawImage(rimLayer(face, skin.base), 0, 0);
-  ctx.drawImage(images.get(`face_${face}`)!, 0, 0);
   drawTinted(ctx, hairFill(hair.id, hair.L0, pick(HAIR_PALETTES, p.hairColor)));
   ctx.drawImage(images.get(`hair_${hair.id}_fixed`)!, 0, 0);
+  // The face goes over the hair, like anime: eyes and brows show through the bangs.
+  ctx.drawImage(images.get(`face_${face}`)!, 0, 0);
 
   const url = toURL(ctx, head);
   cache.set(key, url);
@@ -242,11 +245,24 @@ export interface KidSparkle { x: number; y: number; size: number; delay: number 
 export interface KidFx {
   fx: HairFx | '';
   hairFill: string | null;     // rainbow: the hair's color alone, for the flowing-color layer
-  hairLines: string | null;    // rainbow: the hair's outline, kept on top of that layer
+  hairLines: string | null;    // rainbow: the hair's outline and the face, kept on top of that layer
   sparkles: KidSparkle[];      // glitter and galaxy: spots on the hair, as % of the picture
 }
 
 const fxCache = new Map<string, KidFx>();
+
+// Where any face draws (all moods together), so sparkles stay off the eyes and stay put
+// when the mood changes.
+let faceArea: ImageData | null = null;
+function anyFace(): ImageData {
+  if (!faceArea) {
+    const m = manifest!;
+    const ctx = canvas(m.w, m.h);
+    for (const f of m.faces) ctx.drawImage(images.get(`face_${f}`)!, 0, 0);
+    faceArea = ctx.getImageData(0, 0, m.w, m.h);
+  }
+  return faceArea;
+}
 
 // A small steady random source, so a hair style always gets the same sparkle spots.
 function seeded(text: string): () => number {
@@ -261,14 +277,15 @@ function seeded(text: string): () => number {
 }
 
 /** What moves on top of the kid picture for special hair (nothing for plain colors). */
-export function kidFx(p: CharacterProfile, head = false): KidFx {
+export function kidFx(p: CharacterProfile, mood: KidMood = 'happy', head = false): KidFx {
   const none: KidFx = { fx: '', hairFill: null, hairLines: null, sparkles: [] };
   const m = manifest;
   if (!m) return none;
   const color = pick(HAIR_PALETTES, p.hairColor);
   if (!color.fx || color.fx === 'candy') return none;
   const hair = pick(m.hairs, p.hairStyle);
-  const key = [hair.id, p.hairColor, head ? 1 : 0].join('/');
+  const face = m.faces.includes(mood) ? mood : 'happy';
+  const key = [hair.id, p.hairColor, color.fx === 'rainbow' ? face : '', head ? 1 : 0].join('/');
   const hit = fxCache.get(key);
   if (hit) return hit;
 
@@ -279,6 +296,7 @@ export function kidFx(p: CharacterProfile, head = false): KidFx {
     fx.hairFill = toURL(fill, head);
     const lines = canvas(m.w, m.h);
     lines.drawImage(images.get(`hair_${hair.id}_fixed`)!, 0, 0);
+    lines.drawImage(images.get(`face_${face}`)!, 0, 0);
     fx.hairLines = toURL(lines, head);
   } else {
     // Spots well inside the hair, spread apart.
@@ -289,8 +307,10 @@ export function kidFx(p: CharacterProfile, head = false): KidFx {
     const [lo, hi] = galaxy ? (head ? [7, 10] : [3.5, 5.5]) : (head ? [13, 17] : [6.5, 9.5]);
     const gap = (head ? 0.2 : 0.11) * vw;   // pixels between spots
     const rand = seeded(`${hair.id}/${color.id}/${head ? 1 : 0}`);
+    const fa = anyFace();
     const solid = (x: number, y: number) =>
-      x >= 0 && y >= 0 && x < d.width && y < d.height && d.data[(y * d.width + x) * 4 + 3] > 230;
+      x >= 0 && y >= 0 && x < d.width && y < d.height && d.data[(y * d.width + x) * 4 + 3] > 230 &&
+      fa.data[(y * fa.width + x) * 4 + 3] < 20;
     const placed: [number, number][] = [];
     for (let tries = 0; tries < 4000 && placed.length < want; tries++) {
       const x = Math.floor(vx + rand() * vw), y = Math.floor(vy + rand() * vh);
