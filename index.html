@@ -492,6 +492,103 @@
     .ratio-card.golden-locked .golden-badge-row span { display: none; }
     .ratio-card.golden-locked .golden-badge-row .golden-seal { width: 52px; height: 52px; }
     .ratio-card.golden-locked #autoice-container { flex-basis: 100%; margin-top: 0 !important; }
+    /* Kid Stand Shop: one upgrade at a time under the recipe card. */
+    .stand-shop {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 10px;
+      padding: 8px 10px 8px 8px;
+      background: #ffffff;
+      border: 3px solid #c4b5fd;
+      border-radius: 18px;
+      box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2);
+      color: #3b0764;
+      animation: golden-stamp 0.45s ease-out;
+    }
+    .stand-shop[hidden] { display: none; }
+    body.dad-mode .stand-shop { display: none; }
+    .stand-shop-pic {
+      flex: 0 0 auto;
+      width: 64px;
+      height: 64px;
+      object-fit: contain;
+    }
+    .stand-shop-info { flex: 1 1 auto; min-width: 0; }
+    .stand-shop-title {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--font-display);
+      font-size: 17px;
+      letter-spacing: 0.4px;
+      line-height: 1.1;
+    }
+    .stand-shop-tag {
+      font-size: 10px;
+      letter-spacing: 1px;
+      padding: 2px 6px;
+      border-radius: 999px;
+      background: #ede9fe;
+      color: #6d28d9;
+    }
+    .stand-shop-desc {
+      margin-top: 2px;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.25;
+      color: #5b21b6;
+    }
+    .stand-shop-save {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 5px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #6b7280;
+    }
+    .stand-shop-save[hidden] { display: none; }
+    .stand-shop-bar {
+      flex: 1 1 auto;
+      height: 8px;
+      border-radius: 999px;
+      background: #ede9fe;
+      overflow: hidden;
+    }
+    .stand-shop-bar span {
+      display: block;
+      height: 100%;
+      width: 0;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #fde047, #facc15);
+      transition: width 0.4s ease-out;
+    }
+    .stand-shop-buy {
+      flex: 0 0 auto;
+      min-width: 76px;
+      padding: 10px 12px;
+      border: 3px solid #6ee7b7;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: #ffffff;
+      font-family: var(--font-display);
+      font-size: 17px;
+      letter-spacing: 0.5px;
+      -webkit-text-stroke: 2px #065f46;
+      paint-order: stroke fill;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+    .stand-shop-buy:disabled {
+      background: #e5e7eb;
+      border-color: #d1d5db;
+      -webkit-text-stroke-color: #6b7280;
+      opacity: 1;                     /* the global button:disabled fade made it unreadable */
+      cursor: not-allowed;
+    }
+    .stand-shop.teaser .stand-shop-buy { display: none; }
+
     /* Day Report banner on the day the recipe locks. */
     .report-golden {
       display: flex;
@@ -2806,6 +2903,21 @@
           </div>
         </div>
       </div>
+
+      <!-- KID STAND SHOP: one upgrade at a time (cooler, ice machine, mini-fridge, then a
+           second stand as a "coming soon" goal). Filled by renderStandShop(). -->
+      <div class="stand-shop" id="stand-shop" hidden>
+        <img class="stand-shop-pic" id="stand-shop-pic" src="./sprites/shop/cooler.png" alt="" />
+        <div class="stand-shop-info">
+          <div class="stand-shop-title"><span class="stand-shop-tag" id="stand-shop-tag">SHOP</span><span id="stand-shop-name">Ice Cooler</span></div>
+          <div class="stand-shop-desc" id="stand-shop-desc"></div>
+          <div class="stand-shop-save" id="stand-shop-save">
+            <div class="stand-shop-bar"><span id="stand-shop-fill"></span></div>
+            <span id="stand-shop-save-text"></span>
+          </div>
+        </div>
+        <button class="stand-shop-buy" id="btn-stand-shop-buy">$45</button>
+      </div>
     </div>
 
     <!-- COLUMN 2: PANTRY & OPEN FOR BUSINESS -->
@@ -4072,6 +4184,8 @@
         if (d) setHTMLIfChanged(kidTicket, renderKidYesterday(d));
       }
 
+      renderStandShop(s);
+
       // Projects
       const projectHTML = engine.projects
         .filter(p => !p.purchased && p.unlocked(s))
@@ -4151,6 +4265,62 @@
     window._signWholesale = (id) => engine.signWholesaleAccount(id);
     window._proj = (id) => engine.buyProject(id);
     window._buyTrophy = (id) => engine.buyTrophy(id);
+    // Kid Stand Shop: the next upgrade in this order, one at a time. An item shows once the
+    // game unlocks it (the cooler on Day 2, the others on Day 3), so the card can be hidden
+    // for a day between buys. The second stand is only a goal for now ("coming soon"):
+    // buying it would start Phase 2, which has no kid screens yet.
+    const KID_SHOP = [
+      { id: 'cooler', name: 'Ice Cooler', desc: 'Leftover ice stays frozen overnight.', pic: 'cooler' },
+      { id: 'auto_ice_dispenser', name: 'Ice Machine', desc: 'Picks the right ice for the weather every morning.', pic: 'ice_dispenser' },
+      { id: 'fridge', name: 'Mini-Fridge', desc: 'Lemons stay fresh overnight, and neighbors notice.', pic: 'mini_fridge' },
+      { id: 'franchise_license', name: 'A Second Stand', desc: 'Coming soon: hire a friend to run another stand!', pic: 'second_stand', teaser: true },
+    ];
+    function kidShopNext(s) {
+      for (const item of KID_SHOP) {
+        const p = engine.projects.find(x => x.id === item.id);
+        if (!p || p.purchased) continue;
+        if (item.teaser) return { item, p };
+        return p.unlocked(s) ? { item, p } : null;
+      }
+      return null;
+    }
+    function renderStandShop(s) {
+      const card = document.getElementById('stand-shop');
+      if (!card) return;
+      const next = kidShopNext(s);
+      if (card.hidden === !!next) card.hidden = !next;
+      if (!next) { card._item = null; return; }
+      const { item, p } = next;
+      if (card._item !== item.id) {
+        card._item = item.id;
+        card.classList.toggle('teaser', !!item.teaser);
+        setText(document.getElementById('stand-shop-tag'), item.teaser ? 'SOON' : 'SHOP');
+        document.getElementById('stand-shop-pic').src = `./sprites/shop/${item.pic}.png`;
+        card.style.animation = 'none';
+        void card.offsetWidth;      // replay the pop-in for the new item
+        card.style.animation = '';
+      }
+      setText(document.getElementById('stand-shop-name'), item.name);
+      setText(document.getElementById('stand-shop-desc'), item.desc);
+      const cash = s.cash.toNumber();
+      const cost = p.costCash;
+      const short = !item.teaser && cash < cost;
+      const save = document.getElementById('stand-shop-save');
+      if (save.hidden === short) save.hidden = !short;
+      if (short) {
+        document.getElementById('stand-shop-fill').style.width = `${Math.max(0, Math.min(100, (cash / cost) * 100)).toFixed(1)}%`;
+        setText(document.getElementById('stand-shop-save-text'), `Saving up: $${Math.floor(cash)} of $${cost}`);
+      }
+      const btn = document.getElementById('btn-stand-shop-buy');
+      btn.dataset.id = item.id;
+      if (btn.disabled !== short) btn.disabled = short;
+      setText(btn, `$${cost}`);
+    }
+    document.getElementById('btn-stand-shop-buy').onclick = (e) => {
+      const id = e.currentTarget.dataset.id;
+      const item = KID_SHOP.find(x => x.id === id);
+      if (item && !item.teaser) engine.buyProject(id);
+    };
 
     requestAnimationFrame(loop);
   </script>
