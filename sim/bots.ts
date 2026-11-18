@@ -165,6 +165,39 @@ export const BOTS: Record<string, Bot> = {
     }
   },
 
+  // Price-strategy bots: same perfect recipe, different prices, to see what cheap does.
+  cheapskate: {
+    name: 'cheapskate',
+    description: 'Perfect recipe and upgrades like perfect, but always charges 50 cents.',
+    morning(e) {
+      BOTS.perfect.morning(e, { rand: () => 0, day: 0, memory: {} });
+      e.state.recipe.pricePerCup = 0.5;
+      e.autoRestockForToday();
+    }
+  },
+
+  quarter: {
+    name: 'quarter',
+    description: 'Perfect recipe and upgrades like perfect, but always charges 25 cents.',
+    morning(e) {
+      BOTS.perfect.morning(e, { rand: () => 0, day: 0, memory: {} });
+      e.state.recipe.pricePerCup = 0.25;
+      e.autoRestockForToday();
+    }
+  },
+
+  grandOpening: {
+    name: 'grandOpening',
+    description: 'Like perfect, but runs a 50-cent grand opening sale for the first 5 days.',
+    morning(e, ctx) {
+      BOTS.perfect.morning(e, ctx);
+      if (ctx.day <= 5) {
+        e.state.recipe.pricePerCup = 0.5;
+        e.autoRestockForToday();
+      }
+    }
+  },
+
   sloppy: {
     name: 'sloppy',
     description: 'Fiddles with the recipe at random, ignores the ice hint, random prices, forgets to restock sometimes.',

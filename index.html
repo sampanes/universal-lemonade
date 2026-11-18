@@ -577,6 +577,45 @@
       /* May wrap: as one unbreakable line this hint made the weather card 306 px wide at
          minimum, wider than a 320 px phone, so the whole page overflowed sideways. */
       text-align: center;
+      transition: border-color 0.2s, background-color 0.2s;
+    }
+    /* Busy-day meter: 1 to 4 cups light up (data-level), the rest stay faded. */
+    .weather-crowd-meter {
+      display: inline-flex;
+      align-items: center;
+      gap: 1px;
+      background: rgba(255, 255, 255, 0.9);
+      border: 1.5px solid #a855f7;
+      border-radius: 14px;
+      padding: 1px 7px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .weather-crowd-meter img {
+      width: 20px;
+      height: 20px;
+      object-fit: contain;
+      transition: opacity 0.2s, filter 0.2s;
+    }
+    /* Glowing cups: the neighborhood knows about the stand (buzz). */
+    .weather-crowd-meter img.glow {
+      filter: drop-shadow(0 0 3px #facc15) drop-shadow(0 0 2px #fde047);
+      animation: crowd-cup-glow 1.6s ease-in-out infinite alternate;
+    }
+    @keyframes crowd-cup-glow {
+      from { filter: drop-shadow(0 0 2px #facc15); }
+      to { filter: drop-shadow(0 0 5px #facc15) drop-shadow(0 0 2px #fde047); }
+    }
+    .weather-crowd-meter[data-level="1"] img:nth-child(n+2),
+    .weather-crowd-meter[data-level="2"] img:nth-child(n+3),
+    .weather-crowd-meter[data-level="3"] img:nth-child(n+4) {
+      opacity: 0.25;
+      filter: grayscale(1);
+    }
+    /* The ice hint turns green once the kid's ice per cup matches today's heat. */
+    .weather-ice-hint[data-mood="right"] {
+      border-color: #22c55e;
+      background: #f0fdf4;
+      color: #166534;
     }
     .weather-season-pill {
       font-family: var(--font-ui);
@@ -1516,7 +1555,8 @@
       font-weight: 900;
     }
     .report-row.total.neg .amt { color: #be123c; }
-    /* "Neighborhood buzz": reputation after the day, and which way it moved. */
+    /* "What neighbors say": reputation after the day, and which way it moved. (Buzz, how
+       many neighbors know the stand, is shown as glowing cups on the weather card.) */
     .report-rep {
       margin-top: 8px;
       padding: 6px 10px;
@@ -2185,8 +2225,9 @@
         color: #4338ca;
         margin-bottom: 3px;
       }
-      .weather-bullet {
-        opacity: 0.5;
+      .weather-mid-row {
+        flex-wrap: wrap;
+        justify-content: center;
       }
       .weather-tip-row {
         display: flex;
@@ -2310,9 +2351,10 @@
               <span id="weather-season-badge" class="weather-season-pill">🌸 Spring · Day 1 of 5</span>
             </div>
             <div class="weather-mid-row">
-              <span class="weather-cust-text">Expect ~<strong id="demand-est-cups-val">22 cups</strong></span>
-              <span class="weather-bullet">·</span>
-              <span class="weather-ice-hint"><img src="./sprites/ice_cubes.png" class="weather-ice-icon" alt="" /> Ideal: <strong id="weather-ideal-ice">1 cube</strong>/cup</span>
+              <span class="weather-crowd-meter" id="weather-crowd-meter" data-level="2" title="How busy today looks. Glowing cups: neighbors who know your stand." aria-label="How busy today looks">
+                <img src="./sprites/lemonade_cup.png" alt="" /><img src="./sprites/lemonade_cup.png" alt="" /><img src="./sprites/lemonade_cup.png" alt="" /><img src="./sprites/lemonade_cup.png" alt="" />
+              </span>
+              <span class="weather-ice-hint" id="weather-ice-hint" data-mood="more"><img src="./sprites/ice_cubes.png" class="weather-ice-icon" alt="" /> <span id="weather-ice-hint-text">More ice</span></span>
             </div>
             <div class="weather-tip-row" id="weather-tip-row">
               <img src="./sprites/morning_prep/mascot_lemon_head.png" alt="Tip" class="weather-tip-lemon" />
@@ -2945,7 +2987,7 @@
           const [cls, msg] = diff > 0.005 ? ['up', 'Going up! More people will stop by, and they will pay a little more.']
             : diff < -0.005 ? ['down', 'Going down. Tastier lemonade at a fair price brings people back.']
             : ['', 'About the same as yesterday.'];
-          rep = `<div class="report-rep"><span>Neighborhood buzz</span>` +
+          rep = `<div class="report-rep"><span>What neighbors say</span>` +
             starMeter(d.reputationAfter, `Reputation ${Math.round(d.reputationAfter * 100)} out of 100`) +
             `<span class="report-rep-trend ${cls}">${msg}</span></div>`;
         }
@@ -3485,7 +3527,8 @@
       const weatherCloudRain = document.getElementById('weather-cloud-rain-wrap');
       const weatherRain = document.getElementById('weather-rain-sprite');
       const weatherConditionLabel = document.getElementById('weather-condition-label');
-      const weatherIdealIce = document.getElementById('weather-ideal-ice');
+      const weatherIceHint = document.getElementById('weather-ice-hint');
+      const weatherIceHintText = document.getElementById('weather-ice-hint-text');
 
       const weatherSeasonBadge = document.getElementById('weather-season-badge');
       if (weatherSeasonBadge) {
@@ -3496,9 +3539,25 @@
       if (weatherConditionLabel) {
         weatherConditionLabel.textContent = `${s.tempF}°F ${s.weather}`;
       }
-      if (weatherIdealIce) {
-        const idealIce = engine.computeIdealIce(s.tempF);
-        setText(weatherIdealIce, `${idealIce} ${idealIce === 1 ? 'cube' : 'cubes'}`);
+      // Busy-day meter: lit cups = how busy the weather makes today; of those, the share that
+      // glow gold = how much of the neighborhood knows the stand (buzz). A brand-new stand
+      // has no glowing cups; a famous one has every lit cup glowing.
+      const crowdMeter = document.getElementById('weather-crowd-meter');
+      if (crowdMeter) {
+        const lit = engine.getCrowdLevel();
+        const level = String(lit);
+        if (crowdMeter.dataset.level !== level) crowdMeter.dataset.level = level;
+        const glowing = Math.round(lit * engine.getBuzz());
+        crowdMeter.querySelectorAll('img').forEach((img, i) => {
+          const on = i < glowing;
+          if (img.classList.contains('glow') !== on) img.classList.toggle('glow', on);
+        });
+      }
+      // Ice hint in words instead of a number; it follows the kid's ice setting.
+      if (weatherIceHint && weatherIceHintText) {
+        const hint = engine.getIceHint();
+        setText(weatherIceHintText, hint.text);
+        if (weatherIceHint.dataset.mood !== hint.mood) weatherIceHint.dataset.mood = hint.mood;
       }
       if (weatherSun && weatherCloudRain && weatherRain) {
         if (s.weather === 'SUNNY') {
@@ -3523,11 +3582,9 @@
 
       const mascotPhrase = document.getElementById('mascot-bubble-phrase');
       const mascotSub = document.getElementById('mascot-bubble-sub');
-      const demandEstVal = document.getElementById('demand-est-cups-val');
 
       if (mascotPhrase) mascotPhrase.textContent = advice.phrase;
       if (mascotSub) mascotSub.textContent = standSubtitle;
-      if (demandEstVal) demandEstVal.textContent = `${advice.estTotalCups.toLocaleString('en-US')} cups`; // the "~" is in the markup
 
       // Morning Prep Stock Numbers & Low Stock Alerts
       const invLemons = document.getElementById('lbl-inv-lemons');

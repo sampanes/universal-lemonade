@@ -1,7 +1,7 @@
 // src/simulation/demand.ts -- How many cups people want, for the forecast and the real day.
 import type { GameState, FranchiseStand, DailyDemandEstimate, KidDemandAdvice, PourableCapacity } from '../types';
 import { computeRecipeQuality, cupsPerPitcher as pitcherCups } from './recipe';
-import { buyProbability, drivewayTrafficMult, fairPriceFor } from './reputation';
+import { buyProbability, drivewayPeople, fairPriceFor } from './reputation';
 import { BALANCE, type Balance } from '../balance';
 
 export interface StandDemand {
@@ -37,7 +37,7 @@ export function computeDayDemand(
   const fairPrice = fairPriceFor(s.tempF, s.reputation, b);
   const buyProb = buyProbability(quality, s.tempF, s.recipe.pricePerCup, s.reputation, b);
 
-  const drivewayTraffic = Math.floor(d.drivewayBaseTraffic * weatherMult * tempFactor * drivewayTrafficMult(s.reputation, b));
+  const drivewayTraffic = Math.floor(drivewayPeople(s.buzz ?? 0, s.reputation, b) * weatherMult * tempFactor);
   const stands: StandDemand[] = [
     { id: 'driveway', name: 'Driveway Stand', workerName: 'You', demand: Math.floor(drivewayTraffic * buyProb), wage: 0, isDriveway: true }
   ];

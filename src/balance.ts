@@ -56,7 +56,6 @@ export const BALANCE = {
   },
 
   demand: {
-    drivewayBaseTraffic: 65,
     weatherMult: { SUNNY: 1.0, CLOUDY: 0.65, RAINY: 0.25 },
     // Temperature traffic factor = max(minTempFactor, 1 + tempSlope * (tempF - refF) / tempSpan)
     minTempFactor: 0.3,
@@ -67,21 +66,43 @@ export const BALANCE = {
     fairPriceBase: 2.0,
     fairPriceTempSlope: 0.02,
     minPriceForRatio: 0.25,
-    priceExponent: 1.8,         // buy chance = quality * (fair / price) ^ priceExponent
+    // buy chance = quality * (fair / price) ^ priceExponent. Charging under the fair price
+    // only helps until everyone who walks by buys; below that it just earns less per cup.
+    // There is no "too cheap looks fake" penalty: the simulator showed ingredient costs
+    // already punish it (always charging 50 cents rarely gets past the driveway stage).
+    priceExponent: 1.8,
     // Franchise stand traffic reputation factor = base + perRep * reputation
     franchiseRepBase: 0.6,
     franchiseRepPerRep: 0.4,
     ipadFranchiseMult: 1.10,
   },
 
+  // Buzz: how much of the neighborhood knows the stand exists (0..1). A new stand is a
+  // secret, so business starts slow. It spreads like a meme (the Bass diffusion model):
+  //   new fans = (1 - buzz) * (discovery + wordOfMouth * happyCustomers / neighbors)
+  // where happyCustomers = cups sold today * how happy they were (the reputation day score).
+  // Cheap prices mean more customers, so the word spreads faster but each cup earns less.
+  // A small share forget each day, so a stand that stops selling slowly fades.
+  // Driveway foot traffic = (walkBy + buzz * neighbors * (trafficBase + reputation)) * weather.
+  // Tuned with the simulator: a perfect player sells about 10 cups on day 1, 40 on day 5
+  // and 85 on day 10 (a hot summer day); buzz is around 0.9 by day 10.
+  buzz: {
+    start: 0.0,
+    walkBy: 18,                 // people who pass by anyway, before weather
+    neighbors: 60,              // people who would come if the whole neighborhood knew
+    discovery: 0.02,            // share of the unaware who notice the stand each day
+    wordOfMouth: 0.25,          // how strongly each happy customer spreads the word
+    forget: 0.02,               // share of buzz lost each day
+  },
+
   reputation: {
-    alpha: 0.3,                 // EWMA weight of today's customer score
+    alpha: 0.3,                // EWMA weight of today's customer score
     min: 0.1,
     max: 1.0,
     // Pricing power: fair price is multiplied by priceBase + pricePerRep * reputation
     priceBase: 0.75,
     pricePerRep: 0.5,
-    // Driveway traffic multiplier = trafficBase + reputation
+    // Neighbors who know the stand come more if they hear good things: trafficBase + reputation
     trafficBase: 0.5,
     // Day score = taste * value * (servedBase + servedPerServed * fraction served), where
     // taste = quality ^ tasteExponent. A higher exponent makes word of mouth pickier: a

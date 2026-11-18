@@ -24,10 +24,11 @@ import { createInitialWholesaleAccounts } from './data/wholesale';
 import { createInitialProjects } from './data/projects';
 import { createInitialTrophies } from './data/trophies';
 import { rollWeatherForecast, computeIdealIce, getSeasonInfo } from './simulation/weather';
+import { iceHint, crowdLevel, type IceHint } from './simulation/hints';
 import { computeRecipeQuality, getRecipeProfile } from './simulation/recipe';
 import { getDailyDemandEstimate, getKidDemandAdvice, getMaxPourableCups } from './simulation/demand';
 import { generateDailyReviews } from './simulation/reviews';
-import { ewma, dailyCustomerScore, nextReputation } from './simulation/reputation';
+import { ewma, dailyCustomerScore, nextReputation, nextBuzz } from './simulation/reputation';
 import { computeDayDemand } from './simulation/demand';
 import { cupsPerPitcher as pitcherCups, rollGoldenRecipe } from './simulation/recipe';
 import { BALANCE, type Balance } from './balance';
@@ -94,6 +95,7 @@ export class LemonadeEngine {
       tempF: 78,
       weather: 'SUNNY',
       reputation: start.reputation,
+      buzz: this.balance.buzz.start,
       bestRecipeQuality: 0,
       avgRecipeQuality: 0,
       totalQualityDays: 0,
@@ -300,6 +302,24 @@ export class LemonadeEngine {
 
   public computeIdealIce(tempF: number = this.state.tempF): number {
     return computeIdealIce(tempF, this.balance);
+  }
+
+  // Word hint for the morning weather card: is the kid's ice per cup too little, too much,
+  // or just right for today's heat.
+  public getIceHint(): IceHint {
+    const s = this.state;
+    return iceHint(s.recipe.icePerCup, this.computeIdealIce(s.tempF), s.tempF);
+  }
+
+  // How busy today looks, 1 (slow) to 4 (huge crowd), from weather and heat alone.
+  public getCrowdLevel(): 1 | 2 | 3 | 4 {
+    const day = computeDayDemand(this.state, this.franchiseStands, this.balance);
+    return crowdLevel(day.weatherMult * day.tempFactor);
+  }
+
+  // Share of the neighborhood that knows the stand, 0..1.
+  public getBuzz(): number {
+    return this.state.buzz ?? 0;
   }
 
   // The lemon:sugar recipe that tastes best.
@@ -580,16 +600,20 @@ export class LemonadeEngine {
     s.totalCupsSold = s.totalCupsSold.add(totalCupsToday);
     s.totalRevenueEarned = s.totalRevenueEarned.add(totalRevenue);
 
+    const customerScore = dailyCustomerScore({
+      quality,
+      exactGolden: s.recipe.lemonsPerPitcher === s.goldenRecipe.lemons && s.recipe.sugarPerPitcher === s.goldenRecipe.sugar,
+      pricePerCup: s.recipe.pricePerCup,
+      fairPrice,
+      cupsWanted: totalCupDemand,
+      cupsSold: drivewayCupsSold + franchiseCupsSold
+    }, b);
     if (!s.flags.hasPaidMortgage) {
-      s.reputation = nextReputation(s, dailyCustomerScore({
-        quality,
-        exactGolden: s.recipe.lemonsPerPitcher === s.goldenRecipe.lemons && s.recipe.sugarPerPitcher === s.goldenRecipe.sugar,
-        pricePerCup: s.recipe.pricePerCup,
-        fairPrice,
-        cupsWanted: totalCupDemand,
-        cupsSold: drivewayCupsSold + franchiseCupsSold
-      }, b), b);
+      s.reputation = nextReputation(s, customerScore, b);
     }
+    // Happy driveway customers tell their neighbors (franchise stands are in other neighborhoods).
+    const buzzBefore = s.buzz ?? 0;
+    s.buzz = nextBuzz(buzzBefore, drivewayCupsSold * (customerScore ?? 0), b);
 
     const reviews = this.generateCustomerReviews({
       tempF: s.tempF,
@@ -630,6 +654,8 @@ export class LemonadeEngine {
       recipeQuality: quality,
       reputationBefore,
       reputationAfter: s.reputation,
+      buzzBefore,
+      buzzAfter: s.buzz,
       reviews,
       notes: notes.length ? notes : ['All operations ran smoothly!']
     };

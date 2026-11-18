@@ -172,6 +172,8 @@ export interface DaySummary {
   // Reputation at the start and end of the day (0..1). Optional so older saves still load.
   reputationBefore?: number;
   reputationAfter?: number;
+  buzzBefore?: number;
+  buzzAfter?: number;
   reviews: CustomerReview[];
   notes: string[];
 }
@@ -188,7 +190,8 @@ export interface GameState {
   tempF: number;
   weather: WeatherCondition;
   seasonInfo?: SeasonInfo;
-  reputation: number;        // [0.1, 1.0]
+  reputation: number;        // [0.1, 1.0] what neighbors say about the lemonade
+  buzz: number;              // [0, 1] share of the neighborhood that knows the stand exists
   bestRecipeQuality: number;
   avgRecipeQuality: number;
   totalQualityDays: number;

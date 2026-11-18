@@ -63,7 +63,7 @@ reached), money, going broke, chores and reputation as p10 / median / p90 across
 ```bash
 npm run sim                                          # 1,000 games per bot, 60 days
 npm run sim -- --games 100000 --bots careful,sloppy  # more games, chosen bots
-npm run sim -- --vs demand.drivewayBaseTraffic=70    # current vs a changed setting
+npm run sim -- --vs buzz.wordOfMouth=0.4    # current vs a changed setting
 npm run sim -- --help                                # all options and bot descriptions
 ```
 

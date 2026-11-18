@@ -23,11 +23,16 @@ export interface GameResult {
   choresDone: number;
   avgReputation: number;
   avgQuality: number;
+  cupsDay1: number;          // cups sold at the driveway stand that day (not hired stands)
+  cupsDay5: number;
+  cupsDay10: number;
+  buzzDay10: number;         // share of the neighborhood that knows the stand
 }
 
 export const METRICS: (keyof GameResult)[] = [
   'phase2Day', 'phase3Day', 'phase4Day', 'phase5Day', 'wonDay', 'finalPhase', 'finalCash', 'totalEarned',
-  'cashDay10', 'cashDay20', 'cashDay40', 'zeroCashDays', 'hitZero', 'lossDays', 'choresDone', 'avgReputation', 'avgQuality'
+  'cashDay10', 'cashDay20', 'cashDay40', 'zeroCashDays', 'hitZero', 'lossDays', 'choresDone', 'avgReputation', 'avgQuality',
+  'cupsDay1', 'cupsDay5', 'cupsDay10', 'buzzDay10'
 ];
 
 const PHASE_KEYS = ['phase2Day', 'phase3Day', 'phase4Day', 'phase5Day'] as const;
@@ -60,7 +65,8 @@ export function runGame(seed: number, botName: string, days: number, balance: Ba
   const r: GameResult = {
     seed, phase2Day: NaN, phase3Day: NaN, phase4Day: NaN, phase5Day: NaN, wonDay: NaN, finalPhase: 1,
     finalCash: 0, totalEarned: 0, cashDay10: NaN, cashDay20: NaN, cashDay40: NaN,
-    zeroCashDays: 0, hitZero: 0, lossDays: 0, choresDone: 0, avgReputation: 0, avgQuality: 0
+    zeroCashDays: 0, hitZero: 0, lossDays: 0, choresDone: 0, avgReputation: 0, avgQuality: 0,
+    cupsDay1: NaN, cupsDay5: NaN, cupsDay10: NaN, buzzDay10: NaN
   };
   const origDoChore = e.doChore.bind(e);
   e.doChore = () => { const res = origDoChore(); if (res) r.choresDone++; return res; };
@@ -83,6 +89,10 @@ export function runGame(seed: number, botName: string, days: number, balance: Ba
       if (Number.isNaN(r[k])) r[k] = d;
     }
     if (s.gameWon && Number.isNaN(r.wonDay)) r.wonDay = d;
+    const cups = sum.drivewayCupsSold;
+    if (d === 1) r.cupsDay1 = cups;
+    if (d === 5) r.cupsDay5 = cups;
+    if (d === 10) { r.cupsDay10 = cups; r.buzzDay10 = s.buzz; }
     if (d === 10) r.cashDay10 = s.cash.toNumber();
     if (d === 20) r.cashDay20 = s.cash.toNumber();
     if (d === 40) r.cashDay40 = s.cash.toNumber();

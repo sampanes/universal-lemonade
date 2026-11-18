@@ -3,8 +3,8 @@
 //   npm run sim                                   1,000 games per bot, 60 days, all bots
 //   npm run sim -- --games 100000 --bots careful,sloppy
 //   npm run sim -- --days 40 --seed 7
-//   npm run sim -- --set demand.drivewayBaseTraffic=70
-//   npm run sim -- --vs demand.drivewayBaseTraffic=70     compare current vs changed
+//   npm run sim -- --set buzz.wordOfMouth=0.4
+//   npm run sim -- --vs buzz.wordOfMouth=0.4     compare current vs changed
 //   npm run sim -- --json results.json                    also save the numbers
 //
 // --set changes the balance for the whole run; --vs runs each bot twice (current settings,

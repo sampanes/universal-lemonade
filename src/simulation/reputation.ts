@@ -8,8 +8,9 @@
 //
 // Reputation drives two things, and both the morning forecast and the real day use the
 // functions below so they always agree:
-//   1. Foot traffic: how many people stop by (see drivewayTrafficMult).
+//   1. Foot traffic: neighbors who know the stand (buzz) come more often (drivewayPeople).
 //   2. Pricing power: the price people consider fair goes up with reputation.
+// Buzz (how many neighbors know the stand at all) is updated by nextBuzz below.
 // All the numbers are in src/balance.ts.
 
 import type { GameState } from '../types';
@@ -33,9 +34,17 @@ export function buyProbability(quality: number, tempF: number, pricePerCup: numb
   return Math.max(0, Math.min(1, quality * Math.pow(priceRatio, b.demand.priceExponent)));
 }
 
-// Multiplier on how many people walk past the driveway stand.
-export function drivewayTrafficMult(reputation: number, b: Balance = BALANCE): number {
-  return b.reputation.trafficBase + reputation;
+// People who come by the driveway stand before weather: a few passers-by, plus the
+// neighbors who know about it (buzz), who come more often when they hear good things.
+export function drivewayPeople(buzz: number, reputation: number, b: Balance = BALANCE): number {
+  return b.buzz.walkBy + buzz * b.buzz.neighbors * (b.reputation.trafficBase + reputation);
+}
+
+// Tomorrow's buzz after today's happy customers (Bass diffusion plus a little forgetting).
+export function nextBuzz(buzz: number, happyCustomers: number, b: Balance = BALANCE): number {
+  const z = b.buzz;
+  const spread = (1 - buzz) * Math.min(1, z.discovery + z.wordOfMouth * happyCustomers / z.neighbors);
+  return Math.max(0, Math.min(1, (buzz + spread) * (1 - z.forget)));
 }
 
 // Lasting reputation boosts from upgrades and trophies. Under an EWMA a one-time bump
