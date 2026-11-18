@@ -3,7 +3,7 @@ import type { GameState, FranchiseStand, DailyDemandEstimate, KidDemandAdvice, P
 import { computeRecipeQuality, cupsPerPitcher as pitcherCups } from './recipe';
 import { buyProbability, drivewayPeople, fairPriceFor } from './reputation';
 import { BALANCE, type Balance } from '../balance';
-import { storageCap, storageName, storageUpgradeHint } from './storage';
+import { storageCap } from './storage';
 
 export interface StandDemand {
   id: string;
@@ -129,7 +129,10 @@ export function getKidDemandAdvice(
   if (fullItems.length === lowItems.length) {
     const item = fullItems[0];
     return {
-      phrase: `Your ${storageName(s, item)} is full, but today needs more ${item}! ${storageUpgradeHint(s, item, b)}`,
+      // Short enough for one line in the tip row (the Day Report spells it out).
+      phrase: item === 'ice'
+        ? (s.flags.hasCooler ? "Cooler full! An ice machine makes all you need!" : "Ice bucket full! A cooler holds 1,000!")
+        : "Fruit bowl full! A mini-fridge holds all you want!",
       emoji: "",
       lowItems,
       fullItems,
@@ -165,7 +168,7 @@ export function getKidDemandAdvice(
     }
     if (single === 'lemons') {
       return {
-        phrase: "Almost out of lemons! Squeeze some more into the pantry!",
+        phrase: "Almost out of lemons! Grab another bag!",
         emoji: "🍋",
         lowItems,
         fullItems,
@@ -175,7 +178,7 @@ export function getKidDemandAdvice(
     }
     if (single === 'sugar') {
       return {
-        phrase: "Need a little more sugar to keep the lemonade sweet!",
+        phrase: "Need more sugar to keep it sweet!",
         emoji: "🍬",
         lowItems,
         fullItems,
@@ -208,7 +211,7 @@ export function getKidDemandAdvice(
     : `${itemNames[0]}, ${itemNames[1]}, and ${itemNames[2]}`;
 
   return {
-    phrase: `Stock up on ${readable} before opening!`,
+    phrase: itemNames.length === 2 ? `Stock up on ${readable} before opening!` : `Stock up on ${readable}!`,
     emoji: "🛒",
     lowItems,
     fullItems,
