@@ -162,6 +162,69 @@ test('each chore today makes the next rest longer, and a new day resets it', () 
   assert.equal(e.state.currentChore.remainingSec, base, 'rest is back to normal on a new day');
 });
 
+// ---- Taste feedback and the golden lock ----
+
+// Sets the recipe to golden plus the given offsets, with plenty of supplies, and runs a day.
+function playDay(e, dL = 0, dS = 0) {
+  const g = e.getGoldenRecipe(), s = e.state;
+  s.recipe.lemonsPerPitcher = g.lemons + dL; s.recipe.sugarPerPitcher = g.sugar + dS;
+  s.recipe.icePerCup = e.computeIdealIce(); s.recipe.pricePerCup = 1;
+  s.inv.lemons = 9999; s.inv.sugar = 9999; s.inv.ice = 99999; s.inv.cups = 9999;
+  return e.runDay();
+}
+
+test('every off-golden recipe gets a taste hint that points toward golden, never a number', () => {
+  for (let dL = -2; dL <= 2; dL++) {
+    for (let dS = -2; dS <= 2; dS++) {
+      const e = new LemonadeEngine({ seed: 5 });
+      const r = playDay(e, dL, dS).reviews.find(x => x.topic === 'taste');
+      assert.ok(r, `a taste review for ${dL},${dS}`);
+      const q = r.quote;
+      assert.ok(!/\d/.test(q), q);
+      assert.equal(/more lemon/.test(q), dL < 0, `${dL},${dS}: ${q}`);
+      assert.equal(/less lemon/.test(q), dL > 0, `${dL},${dS}: ${q}`);
+      assert.equal(/more sugar/.test(q), dS < 0, `${dL},${dS}: ${q}`);
+      assert.equal(/less sugar/.test(q), dS > 0, `${dL},${dS}: ${q}`);
+      if (dL === 0 && dS === 0) assert.equal(r.stars, 5);
+      const face = dL === 0 && dS === 0 ? 'happy' : dL < 0 && dS < 0 ? 'watery' : dL > 0 || dS < 0 ? 'sour' : 'sweet';
+      assert.equal(r.face, face, `${dL},${dS}: face`);
+    }
+  }
+});
+
+test('three golden open days in a row lock the recipe; an off day starts the count over', () => {
+  const need = BALANCE.recipe.lockStreak;
+  const e = new LemonadeEngine({ seed: 21 });
+  for (let i = 0; i < need - 1; i++) playDay(e);
+  playDay(e, 1, 0);                                   // one step off resets the streak
+  assert.equal(e.state.goldenStreak, 0);
+  for (let i = 0; i < need - 1; i++) assert.ok(!playDay(e).recipeJustLocked);
+  assert.equal(e.isRecipeLocked(), false);
+  const sum = playDay(e);
+  assert.ok(sum.recipeJustLocked && e.isRecipeLocked());
+  assert.ok(sum.reviews.some(r => r.topic === 'taste' && /GOLDEN/.test(r.quote)));
+
+  // Locked: the controls do nothing, and a recipe changed behind its back is put back.
+  const g = e.getGoldenRecipe();
+  assert.equal(e.adjustRecipe('lemons', 1), false);
+  e.state.recipe.sugarPerPitcher = g.sugar + 3;
+  e.runDay();
+  assert.equal(e.state.recipe.sugarPerPitcher, g.sugar);
+  assert.ok(!e.state.lastDaySummary.recipeJustLocked, 'the lock moment happens once');
+});
+
+test('a day with no sales does not count toward the golden lock', () => {
+  const e = new LemonadeEngine({ seed: 21 });
+  playDay(e);
+  const s = e.state, g = e.getGoldenRecipe();
+  s.recipe.lemonsPerPitcher = g.lemons; s.recipe.sugarPerPitcher = g.sugar;
+  s.inv.cups = 0;
+  const sum = e.runDay();
+  assert.equal(sum.drivewayCupsSold, 0);
+  assert.equal(e.state.goldenStreak, 1, 'unchanged by the empty day');
+  assert.ok(!sum.reviews.some(r => r.topic === 'taste'), 'nobody tasted it');
+});
+
 // ---- Pacing guard rails: loose on purpose, they catch big regressions, not small tuning. ----
 
 test('a careful kid reaches the neighborhood (phase 2) around day 12', () => {

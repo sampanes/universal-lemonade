@@ -45,6 +45,11 @@ export const BALANCE = {
     sugarWeight: 0.08,
     iceWeight: 0.12,
     cupsPerPitcherBase: 10,     // cups per pitcher = this + ice per cup
+    // Selling the exact golden lemons:sugar this many open days in a row makes the neighbors
+    // ask the kid to never change it: the recipe locks at golden and its controls go away.
+    // Only days with at least one cup sold count (nobody tasted otherwise); ice and price
+    // do not matter. Changing lemons or sugar away from golden starts the count over.
+    lockStreak: 3,
   },
 
   ice: {

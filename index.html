@@ -351,6 +351,129 @@
         grid-template-columns: 1fr;
       }
     }
+    /* Yesterday's taste comment under the pitcher: a speech bubble pointing up at it. */
+    .recipe-taste-bubble {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      text-align: left;
+      margin: 10px auto 0;
+      max-width: 250px;
+      padding: 6px 10px 6px 6px;
+      background: #ffffff;
+      border: 2px solid #e9d5ff;
+      border-radius: 14px;
+      color: #4a044e;
+      font-weight: 700;
+      font-size: 12px;
+      line-height: 1.3;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
+    }
+    .recipe-taste-bubble::before {
+      content: '';
+      position: absolute;
+      top: -9px;
+      left: 50%;
+      margin-left: -8px;
+      border: 8px solid transparent;
+      border-top: 0;
+      border-bottom: 9px solid #e9d5ff;
+    }
+    .recipe-taste-face {
+      flex: 0 0 auto;
+      width: 44px;
+      height: 44px;
+      object-fit: contain;
+    }
+    .recipe-taste-bubble[data-mood="happy"] { border-color: #86efac; background: #f0fdf4; color: #14532d; }
+    .recipe-taste-bubble[data-mood="happy"]::before { border-bottom-color: #86efac; }
+    .recipe-taste-bubble[data-mood="off"] { border-color: #fdba74; background: #fff7ed; color: #7c2d12; }
+    .recipe-taste-bubble[data-mood="off"]::before { border-bottom-color: #fdba74; }
+
+    /* Golden recipe lock: the lemon and sugar rows fold away and the seal row says it. */
+    .golden-badge-row {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin: 2px 0 4px;
+      padding: 2px 14px 2px 4px;
+      background: rgba(255, 255, 255, 0.9);
+      border: 2px solid #fde047;
+      border-radius: 30px;
+      color: #713f12;
+      font-family: var(--font-display);
+      font-size: 18px;
+      letter-spacing: 0.5px;
+      animation: golden-stamp 0.5s ease-out;
+    }
+    .golden-seal {
+      width: 60px;
+      height: 60px;
+      object-fit: contain;
+      filter: drop-shadow(0 0 6px rgba(250, 204, 21, 0.7));
+    }
+    @keyframes golden-stamp {
+      0% { transform: scale(1.6); opacity: 0; }
+      70% { transform: scale(0.95); opacity: 1; }
+      100% { transform: scale(1); }
+    }
+    .ratio-card.golden-locked .golden-badge-row { display: flex; }
+    .ratio-card.golden-locked .ratio-row-lemons,
+    .ratio-card.golden-locked .ratio-row-sugar,
+    .ratio-card.golden-locked .recipe-taste-bubble { display: none; }
+    /* Locked header: the purple bar becomes the gold ribbon (golden_ribbon.png, 900 x 217;
+       its flat band is y 12-133, x 12%-88%, where the title sits). */
+    .ratio-card.golden-locked .ratio-banner {
+      position: relative;
+      width: min(92%, 340px);
+      margin: 8px auto 0;
+      aspect-ratio: 900 / 217;
+      padding: 0;
+      background: url('./sprites/golden_ribbon.png') no-repeat center / 100% 100%;
+      border-bottom: none;
+      -webkit-text-stroke-color: #581c87;
+      animation: golden-stamp 0.5s ease-out;
+    }
+    .ratio-card.golden-locked .ratio-banner .ribbon-sparkle { display: none; }
+    .ratio-card.golden-locked #ratio-banner-text {
+      position: absolute;
+      left: 12%;
+      right: 12%;
+      top: 5%;
+      height: 56%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+    }
+    .ratio-card.golden-locked #ratio-banner-text { font-size: 21px; }
+    /* One background for the whole card, so the ribbon area and the body do not meet in a seam. */
+    .ratio-card.golden-locked {
+      border-color: #eab308;
+      background: linear-gradient(180deg, #fffdf5 0%, #fef9c3 60%, #fed7aa 100%);
+    }
+    .ratio-card.golden-locked .ratio-body { padding-top: 2px; background: transparent; }
+    /* Day Report banner on the day the recipe locks. */
+    .report-golden {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+      padding: 8px 12px;
+      background: linear-gradient(180deg, #fef9c3 0%, #fde047 100%);
+      border: 2px solid #eab308;
+      border-radius: 14px;
+      color: #713f12;
+      font-family: var(--font-display);
+      font-size: 16px;
+      line-height: 1.2;
+      animation: golden-stamp 0.5s ease-out;
+    }
+    .report-golden .golden-seal { width: 72px; height: 72px; flex-shrink: 0; }
+    .ratio-card.golden-locked .pitcher-container { height: 110px !important; max-width: 110px !important; }
+
     .ratio-row {
       display: flex;
       align-items: center;
@@ -2464,17 +2587,23 @@
       </div>
 
       <!-- RECIPE RATIO WORKBENCH CARD -->
-      <div class="ratio-card">
+      <div class="ratio-card" id="ratio-card">
         <div class="ratio-banner">
           <img src="./sprites/lemon.png" class="ribbon-sparkle" alt="" />
-          <span>RECIPE RATIO</span>
+          <span id="ratio-banner-text">RECIPE RATIO</span>
           <img src="./sprites/lemon.png" class="ribbon-sparkle" alt="" />
         </div>
         <div class="ratio-body">
           <!-- LEFT COLUMN: INGREDIENTS & PRICE CONTROLS -->
           <div class="ratio-controls">
+            <!-- Shown instead of the lemon and sugar rows once the recipe is locked golden. -->
+            <div class="golden-badge-row">
+              <img src="./sprites/golden_seal.png" class="golden-seal" alt="" />
+              <span>Ratio is golden!</span>
+            </div>
+
             <!-- LEMONS ROW -->
-            <div class="ratio-row">
+            <div class="ratio-row ratio-row-lemons">
               <img src="./sprites/lemon.png" class="ratio-icon" alt="Lemons" title="Lemons per Pitcher" />
               <button id="btn-lemons-down" class="ratio-btn" title="Decrease Lemons">
                 <img src="./sprites/btn_minus.png" alt="-" />
@@ -2486,7 +2615,7 @@
             </div>
 
             <!-- SUGAR ROW -->
-            <div class="ratio-row">
+            <div class="ratio-row ratio-row-sugar">
               <img src="./sprites/sugar_scoop.png" class="ratio-icon" alt="Sugar" title="Sugar per Pitcher" />
               <button id="btn-sugar-down" class="ratio-btn" title="Decrease Sugar">
                 <img src="./sprites/btn_minus.png" alt="-" />
@@ -2559,9 +2688,10 @@
               </svg>
             </div>
 
-            <!-- Taste Profile Pill -->
-            <div id="recipe-taste-pill" style="margin-top:6px; font-weight:bold; font-size:11px; padding:3px 8px; border-radius:12px; display:inline-block; border:1px solid #c084fc; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
-              Refreshing Balance
+            <!-- What a customer said about the taste yesterday (no score on screen) -->
+            <div id="recipe-taste-bubble" class="recipe-taste-bubble" data-mood="none">
+              <img id="recipe-taste-face" class="recipe-taste-face" src="./sprites/faces/taste_happy.png" alt="" />
+              <span id="recipe-taste-text">Open the stand to hear what neighbors think!</span>
             </div>
           </div>
         </div>
@@ -3028,6 +3158,10 @@
             </div>
           </div>
           <div class="report-body">
+            ${d.recipeJustLocked ? `<div class="report-golden">
+              <img src="./sprites/golden_seal.png" class="golden-seal" alt="" />
+              <span>The whole neighborhood agrees: your recipe is GOLDEN!</span>
+            </div>` : ''}
             <div class="report-hero">
               <img class="report-cat" src="${SPRITE_DIR}cat${reportCatMood(d)}.png" alt="" />
               <div class="report-hero-text">
@@ -3328,18 +3462,11 @@
     document.getElementById('btn-price-up').onclick = () => {
       engine.state.recipe.pricePerCup = +(engine.state.recipe.pricePerCup + 0.25).toFixed(2);
     };
-    document.getElementById('btn-lemons-down').onclick = () => {
-      engine.state.recipe.lemonsPerPitcher = Math.max(1, engine.state.recipe.lemonsPerPitcher - 1);
-    };
-    document.getElementById('btn-lemons-up').onclick = () => {
-      engine.state.recipe.lemonsPerPitcher++;
-    };
-    document.getElementById('btn-sugar-down').onclick = () => {
-      engine.state.recipe.sugarPerPitcher = Math.max(1, engine.state.recipe.sugarPerPitcher - 1);
-    };
-    document.getElementById('btn-sugar-up').onclick = () => {
-      engine.state.recipe.sugarPerPitcher++;
-    };
+    // Lemons and sugar go through the engine so a locked golden recipe cannot change.
+    document.getElementById('btn-lemons-down').onclick = () => engine.adjustRecipe('lemons', -1);
+    document.getElementById('btn-lemons-up').onclick = () => engine.adjustRecipe('lemons', 1);
+    document.getElementById('btn-sugar-down').onclick = () => engine.adjustRecipe('sugar', -1);
+    document.getElementById('btn-sugar-up').onclick = () => engine.adjustRecipe('sugar', 1);
     document.getElementById('btn-ice-down').onclick = () => {
       if (engine.state.flags.autoIceEnabled) engine.state.flags.autoIceEnabled = false;
       engine.state.recipe.icePerCup = Math.max(0, engine.state.recipe.icePerCup - 1);
@@ -3509,12 +3636,36 @@
         setHTMLIfChanged(iceLayer, iceHTML);
       }
 
-      // Taste profile pill badge
-      const tastePill = document.getElementById('recipe-taste-pill');
-      if (tastePill) {
-        tastePill.textContent = `${prof.tasteName} (${(prof.quality * 100).toFixed(0)}%)`;
-        tastePill.style.backgroundColor = prof.liquidColor;
-        tastePill.style.color = '#3b1d54';
+      // No taste score on screen: the kid finds the golden recipe from what customers said
+      // yesterday. Once the neighbors lock it in, the lemon and sugar rows fold away.
+      const locked = engine.isRecipeLocked();
+      const ratioCard = document.getElementById('ratio-card');
+      if (ratioCard && ratioCard.classList.contains('golden-locked') !== locked) {
+        ratioCard.classList.toggle('golden-locked', locked);
+      }
+      setText(document.getElementById('ratio-banner-text'), locked ? 'GOLDEN RECIPE' : 'RECIPE RATIO');
+      const tasteBubble = document.getElementById('recipe-taste-bubble');
+      if (tasteBubble) {
+        const last = s.lastDaySummary;
+        const tasteReview = last && (last.reviews || []).find(r => r.topic === 'taste');
+        let say;
+        if (!last) say = 'Open the stand to hear what neighbors think!';
+        else if (tasteReview) say = `"${tasteReview.quote}"`;
+        else say = 'Nobody got to taste it yesterday.';
+        setText(document.getElementById('recipe-taste-text'), say);
+        const faceImg = document.getElementById('recipe-taste-face');
+        const face = tasteReview && tasteReview.face;
+        if (faceImg) {
+          const want = face ? `./sprites/faces/taste_${face}.png` : '';
+          if (faceImg.dataset.face !== (face || '')) {
+            faceImg.dataset.face = face || '';
+            if (want) faceImg.src = want;
+          }
+          const display = face ? '' : 'none';
+          if (faceImg.style.display !== display) faceImg.style.display = display;
+        }
+        const mood = tasteReview ? (tasteReview.stars >= 5 ? 'happy' : tasteReview.stars >= 3 ? 'close' : 'off') : 'none';
+        if (tasteBubble.dataset.mood !== mood) tasteBubble.dataset.mood = mood;
       }
 
       // Auto-Ice toggle. The button is static and updated in place: it used to be rebuilt

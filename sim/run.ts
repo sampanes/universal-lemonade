@@ -27,12 +27,13 @@ export interface GameResult {
   cupsDay5: number;
   cupsDay10: number;
   buzzDay10: number;         // share of the neighborhood that knows the stand
+  lockDay: number;           // day the neighbors locked the golden recipe in
 }
 
 export const METRICS: (keyof GameResult)[] = [
   'phase2Day', 'phase3Day', 'phase4Day', 'phase5Day', 'wonDay', 'finalPhase', 'finalCash', 'totalEarned',
   'cashDay10', 'cashDay20', 'cashDay40', 'zeroCashDays', 'hitZero', 'lossDays', 'choresDone', 'avgReputation', 'avgQuality',
-  'cupsDay1', 'cupsDay5', 'cupsDay10', 'buzzDay10'
+  'cupsDay1', 'cupsDay5', 'cupsDay10', 'buzzDay10', 'lockDay'
 ];
 
 const PHASE_KEYS = ['phase2Day', 'phase3Day', 'phase4Day', 'phase5Day'] as const;
@@ -66,7 +67,7 @@ export function runGame(seed: number, botName: string, days: number, balance: Ba
     seed, phase2Day: NaN, phase3Day: NaN, phase4Day: NaN, phase5Day: NaN, wonDay: NaN, finalPhase: 1,
     finalCash: 0, totalEarned: 0, cashDay10: NaN, cashDay20: NaN, cashDay40: NaN,
     zeroCashDays: 0, hitZero: 0, lossDays: 0, choresDone: 0, avgReputation: 0, avgQuality: 0,
-    cupsDay1: NaN, cupsDay5: NaN, cupsDay10: NaN, buzzDay10: NaN
+    cupsDay1: NaN, cupsDay5: NaN, cupsDay10: NaN, buzzDay10: NaN, lockDay: NaN
   };
   const origDoChore = e.doChore.bind(e);
   e.doChore = () => { const res = origDoChore(); if (res) r.choresDone++; return res; };
@@ -89,6 +90,7 @@ export function runGame(seed: number, botName: string, days: number, balance: Ba
       if (Number.isNaN(r[k])) r[k] = d;
     }
     if (s.gameWon && Number.isNaN(r.wonDay)) r.wonDay = d;
+    if (sum.recipeJustLocked) r.lockDay = d;
     const cups = sum.drivewayCupsSold;
     if (d === 1) r.cupsDay1 = cups;
     if (d === 5) r.cupsDay5 = cups;

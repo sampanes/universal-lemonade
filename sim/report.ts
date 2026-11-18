@@ -76,6 +76,7 @@ const ROWS: [string, (s: Summary) => string][] = [
   ['cups sold day 5', s => `${num(s.cupsDay5.p10)} / ${num(s.cupsDay5.p50)} / ${num(s.cupsDay5.p90)}`],
   ['cups sold day 10', s => `${num(s.cupsDay10.p10)} / ${num(s.cupsDay10.p50)} / ${num(s.cupsDay10.p90)}`],
   ['buzz day 10 (p10/p50/p90)', s => `${num(s.buzzDay10.p10, 2)} / ${num(s.buzzDay10.p50, 2)} / ${num(s.buzzDay10.p90, 2)}`],
+  ['golden recipe locked (day)', s => `${pct(s.lockDay.reached)}  ${num(s.lockDay.p10)}/${num(s.lockDay.p50)}/${num(s.lockDay.p90)}`],
 ];
 
 // One column per run (e.g. per bot, or base vs --vs).

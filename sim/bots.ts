@@ -1,8 +1,8 @@
 // sim/bots.ts -- Simulated players. Each bot gets called once per in-game morning, makes its
 // choices through the same engine API the page uses, and then the runner opens the stand.
 //
-// Bots only use what a kid can see on screen (the quality percentage under the pitcher, the
-// ideal-ice hint, the customer estimate) unless they are explicitly "perfect" players.
+// Bots only use what a kid can see on screen (yesterday's customer comments, the ice hint,
+// the customer estimate) unless they are explicitly "perfect" players.
 
 import type { LemonadeEngine } from '../src/engine';
 
@@ -47,21 +47,16 @@ function bestForecastPrice(e: LemonadeEngine): number {
   return best;
 }
 
-// Hill-climb the recipe one tap at a time using the quality % the page shows.
-function nudgeTowardBetterRecipe(e: LemonadeEngine): void {
-  const r = e.state.recipe;
-  const q0 = e.computeRecipeQuality();
-  const moves: [keyof typeof r, number][] = [['lemonsPerPitcher', 1], ['lemonsPerPitcher', -1], ['sugarPerPitcher', 1], ['sugarPerPitcher', -1]];
-  let best: [keyof typeof r, number] | null = null, bestQ = q0;
-  for (const [k, d] of moves) {
-    const v = r[k] + d;
-    if (v < 1) continue;
-    r[k] += d;
-    const q = e.computeRecipeQuality();
-    r[k] -= d;
-    if (q > bestQ + 1e-9) { bestQ = q; best = [k, d]; }
+// Follows yesterday's taste comment (the page shows no taste score): one tap on each
+// ingredient the customer mentioned ("a little more lemon and way less sugar").
+function nudgeFromCustomers(e: LemonadeEngine): void {
+  const last = e.state.lastDaySummary;
+  const q = last?.reviews.find(r => r.topic === 'taste')?.quote ?? '';
+  for (const item of ['lemons', 'sugar'] as const) {
+    const word = item === 'lemons' ? 'lemon' : 'sugar';
+    const m = q.match(new RegExp(`(a little|way) (more|less) ${word}`));
+    if (m) e.adjustRecipe(item, m[2] === 'more' ? 1 : -1);
   }
-  if (best) r[best[0]] += best[1];
 }
 
 function buyUpgrades(e: LemonadeEngine, reserve: number, chance: number, rand: () => number): void {
@@ -117,10 +112,10 @@ export const BOTS: Record<string, Bot> = {
 
   careful: {
     name: 'careful',
-    description: 'Tweaks the recipe one tap a day toward a higher quality %, uses the ice hint, charges $1.50, restocks to the forecast.',
+    description: "Taps lemon and sugar once each as yesterday's customers suggest, uses the ice hint, charges $1.50, restocks to the forecast.",
     morning(e, ctx) {
       const s = e.state;
-      nudgeTowardBetterRecipe(e);
+      nudgeFromCustomers(e);
       s.recipe.icePerCup = e.computeIdealIce();
       s.recipe.pricePerCup = 1.5;
       choresIfBroke(e, 10, 3);

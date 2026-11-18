@@ -1,4 +1,4 @@
-// src/engine.ts — Lemonade Business Simulation Engine Facade & API
+// src/engine.ts -- Lemonade Business Simulation Engine Facade & API
 import { BigNum } from './bignum';
 import type {
   GameState,
@@ -110,6 +110,8 @@ export class LemonadeEngine {
       inv: { ...start.inventory },
       recipe: { ...start.recipe },
       goldenRecipe: rollGoldenRecipe(this.seed, this.balance),
+      goldenStreak: 0,
+      recipeLocked: false,
 
       flags: {
         hasCooler: false,
@@ -276,7 +278,7 @@ export class LemonadeEngine {
       this.state.gameWon = true;
     }
 
-    this.log(`🎉 TROPHY PURCHASED: ${t.emoji} ${t.name} ($${t.costCash.toLocaleString()})! ${t.perkDesc}`);
+    this.log(`TROPHY PURCHASED: ${t.emoji} ${t.name} ($${t.costCash.toLocaleString()})! ${t.perkDesc}`);
     return true;
   }
 
@@ -328,6 +330,27 @@ export class LemonadeEngine {
   // The lemon:sugar recipe that tastes best.
   public getGoldenRecipe(): { lemons: number; sugar: number } {
     return { ...this.state.goldenRecipe };
+  }
+
+  public isExactGolden(): boolean {
+    const r = this.state.recipe, g = this.state.goldenRecipe;
+    return r.lemonsPerPitcher === g.lemons && r.sugarPerPitcher === g.sugar;
+  }
+
+  // True once the neighbors asked the kid to keep the golden recipe (see balance.recipe.lockStreak).
+  public isRecipeLocked(): boolean {
+    return !!this.state.recipeLocked;
+  }
+
+  // Lemons or sugar per pitcher up or down by one (never below 1). Does nothing once the
+  // recipe is locked; returns whether it changed.
+  public adjustRecipe(item: 'lemons' | 'sugar', delta: number): boolean {
+    if (this.state.recipeLocked) return false;
+    const key = item === 'lemons' ? 'lemonsPerPitcher' : 'sugarPerPitcher';
+    const next = Math.max(1, this.state.recipe[key] + delta);
+    if (next === this.state.recipe[key]) return false;
+    this.state.recipe[key] = next;
+    return true;
   }
 
   public computeRecipeQuality(tempF: number = this.state.tempF): number {
@@ -395,8 +418,10 @@ export class LemonadeEngine {
     franchiseCupsSold: number;
     soldOutStands: string[];
     bottleneck?: string;
+    recipeJustLocked?: boolean;
   }): CustomerReview[] {
     return generateDailyReviews({
+      recipeJustLocked: info.recipeJustLocked,
       state: this.state,
       franchiseStands: this.franchiseStands,
       tempF: info.tempF,
@@ -430,6 +455,12 @@ export class LemonadeEngine {
 
     if (s.flags.hasPaidMortgage) {
       s.reputation = 1.0;
+    }
+
+    // A locked recipe is always golden, whatever else touched state.recipe.
+    if (s.recipeLocked) {
+      s.recipe.lemonsPerPitcher = s.goldenRecipe.lemons;
+      s.recipe.sugarPerPitcher = s.goldenRecipe.sugar;
     }
 
     const b = this.balance;
@@ -603,9 +634,21 @@ export class LemonadeEngine {
     s.totalCupsSold = s.totalCupsSold.add(totalCupsToday);
     s.totalRevenueEarned = s.totalRevenueEarned.add(totalRevenue);
 
+    // Golden streak: only days when somebody tasted it count; a day with no sales leaves it alone.
+    const exactGolden = this.isExactGolden();
+    let recipeJustLocked = false;
+    if (drivewayCupsSold + franchiseCupsSold > 0) {
+      s.goldenStreak = exactGolden ? (s.goldenStreak ?? 0) + 1 : 0;
+      if (!s.recipeLocked && s.goldenStreak >= b.recipe.lockStreak) {
+        s.recipeLocked = true;
+        recipeJustLocked = true;
+        this.log(`Recipe locked golden (${s.goldenRecipe.lemons} lemons : ${s.goldenRecipe.sugar} sugar) after ${s.goldenStreak} golden days in a row.`);
+      }
+    }
+
     const customerScore = dailyCustomerScore({
       quality,
-      exactGolden: s.recipe.lemonsPerPitcher === s.goldenRecipe.lemons && s.recipe.sugarPerPitcher === s.goldenRecipe.sugar,
+      exactGolden,
       pricePerCup: s.recipe.pricePerCup,
       fairPrice,
       cupsWanted: totalCupDemand,
@@ -626,7 +669,8 @@ export class LemonadeEngine {
       drivewayCupsSold,
       franchiseCupsSold,
       soldOutStands,
-      bottleneck: primaryBottleneck
+      bottleneck: primaryBottleneck,
+      recipeJustLocked
     });
 
     const seasonInfo = this.getSeasonInfo(s.day);
@@ -659,6 +703,8 @@ export class LemonadeEngine {
       reputationAfter: s.reputation,
       buzzBefore,
       buzzAfter: s.buzz,
+      goldenStreak: s.goldenStreak,
+      recipeJustLocked,
       reviews,
       notes: notes.length ? notes : ['All operations ran smoothly!']
     };
@@ -669,10 +715,10 @@ export class LemonadeEngine {
 
     if (reviews.length > 0) {
       const topCust = reviews.find(r => !r.reviewer.includes('(')) || reviews[0];
-      this.log(`Review: ${'★'.repeat(topCust.stars)} "${topCust.quote}" — ${topCust.reviewer}`);
+      this.log(`Review (${topCust.stars}/5): "${topCust.quote}" -- ${topCust.reviewer}`);
       const teamMsg = reviews.find(r => r.reviewer.includes('('));
       if (teamMsg) {
-        this.log(`Team: "${teamMsg.quote}" — ${teamMsg.reviewer}`);
+        this.log(`Team: "${teamMsg.quote}" -- ${teamMsg.reviewer}`);
       }
     }
 
