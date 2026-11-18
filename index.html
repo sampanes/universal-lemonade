@@ -448,21 +448,34 @@
       justify-content: center;
       white-space: nowrap;
     }
-    .ratio-card.golden-locked #ratio-banner-text { font-size: 21px; }
-    /* One background for the whole card, so the ribbon area and the body do not meet in a seam. */
+    .ratio-card.golden-locked .ratio-banner { container-type: inline-size; }
+    .ratio-card.golden-locked #ratio-banner-text { font-size: min(21px, 7.4cqw); }
+    /* One background for the whole card, so the ribbon area and the body do not meet in a seam.
+       Locked layout: the gold ribbon and a small pitcher share the top row; the seal, ice and
+       price sit on one line under them (they wrap on narrow screens). The body box steps aside
+       (display: contents) so its controls and pitcher can be placed on the card's grid. */
     .ratio-card.golden-locked {
       border-color: #eab308;
       background: linear-gradient(180deg, #fffdf5 0%, #fef9c3 60%, #fed7aa 100%);
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
     }
-    /* Locked body: no pitcher, no ratio rows. Just the seal, ice and price on one line (they
-       wrap on narrow screens). */
-    .ratio-card.golden-locked .ratio-body {
-      display: block;
-      padding: 2px 10px 10px;
-      background: transparent;
+    .ratio-card.golden-locked .ratio-banner { grid-column: 1; grid-row: 1; }
+    .ratio-card.golden-locked .ratio-body { display: contents; }
+    .ratio-card.golden-locked .pitcher-col {
+      grid-column: 2;
+      grid-row: 1;
+      padding: 6px 14px 0 0;
     }
-    .ratio-card.golden-locked .pitcher-col { display: none; }
+    .ratio-card.golden-locked .pitcher-container {
+      width: 96px !important;
+      height: 96px !important;
+    }
     .ratio-card.golden-locked .ratio-controls {
+      grid-column: 1 / -1;
+      grid-row: 2;
+      padding: 2px 10px 10px;
       display: flex;
       flex-wrap: wrap;
       align-items: center;
