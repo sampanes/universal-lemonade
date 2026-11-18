@@ -32,6 +32,7 @@ import { ewma, dailyCustomerScore, nextReputation, nextBuzz } from './simulation
 import { computeDayDemand } from './simulation/demand';
 import { cupsPerPitcher as pitcherCups, rollGoldenRecipe } from './simulation/recipe';
 import { BALANCE, type Balance } from './balance';
+import { storageCap, storageName, storageUpgradeHint } from './simulation/storage';
 
 export { BigNum } from './bignum';
 export * from './types';
@@ -189,15 +190,28 @@ export class LemonadeEngine {
     return { qty: Math.round(base.qty * bikeBonus), cost: +(base.cost * discount).toFixed(2) };
   }
 
+  // How much the stand can hold of an item (Infinity = no limit). See src/simulation/storage.ts.
+  public storageCap(item: SupplyItem): number {
+    return storageCap(this.state, item, this.balance);
+  }
+
+  // What tapping buy would get right now: whole packs, or only the part that still fits
+  // (a part pack costs its share, rounded to the cent). qty 0 means storage is full.
+  public buyOffer(item: SupplyItem, packs: number = 1): { qty: number; cost: number; full: boolean } {
+    const pack = this.supplyPack(item);
+    const room = Math.max(0, this.storageCap(item) - this.state.inv[item]);
+    const qty = Math.min(pack.qty * packs, room);
+    const cost = qty === pack.qty * packs ? +(pack.cost * packs).toFixed(2) : +(pack.cost * qty / pack.qty).toFixed(2);
+    return { qty, cost, full: room <= 0 };
+  }
+
   public buySupplies(item: SupplyItem, packs: number = 1): boolean {
     if (!this.balance.supplies[item]) return false;
-    const entry = this.supplyPack(item);
+    const { qty, cost } = this.buyOffer(item, packs);
+    if (qty <= 0 || this.state.cash.lt(cost)) return false;
 
-    const totalCost = entry.cost * packs;
-    if (this.state.cash.lt(totalCost)) return false;
-
-    this.state.cash = this.state.cash.sub(totalCost);
-    this.state.inv[item] += entry.qty * packs;
+    this.state.cash = this.state.cash.sub(cost);
+    this.state.inv[item] += qty;
     return true;
   }
 
@@ -373,17 +387,23 @@ export class LemonadeEngine {
     return getMaxPourableCups(this.state, this.balance);
   }
 
-  // The packs still needed to cover today's forecast, and what they cost.
+  // The packs still needed to cover today's forecast (as much as storage holds; the ice
+  // machine makes ice itself), and what they cost.
   private restockPlan(): { packsL: number; packsS: number; packsI: number; packsC: number; totalCost: number } {
     const est = this.getDailyDemandEstimate();
     const s = this.state;
-    const L = this.supplyPack('lemons'), S = this.supplyPack('sugar'), I = this.supplyPack('ice'), C = this.supplyPack('cups');
-    const packsL = Math.ceil(Math.max(0, est.neededLemons - s.inv.lemons) / L.qty);
-    const packsS = Math.ceil(Math.max(0, est.neededSugar - s.inv.sugar) / S.qty);
-    const packsI = Math.ceil(Math.max(0, est.neededIce - s.inv.ice) / I.qty);
-    const packsC = Math.ceil(Math.max(0, est.neededCups - s.inv.cups) / C.qty);
-    const totalCost = packsL * L.cost + packsS * S.cost + packsI * I.cost + packsC * C.cost;
-    return { packsL, packsS, packsI, packsC, totalCost };
+    let totalCost = 0;
+    const plan = (item: SupplyItem, need: number) => {
+      const pack = this.supplyPack(item);
+      const packs = Math.ceil(Math.max(0, need - s.inv[item]) / pack.qty);
+      if (packs > 0) totalCost += this.buyOffer(item, packs).cost;
+      return packs;
+    };
+    const packsL = plan('lemons', est.neededLemons);
+    const packsS = plan('sugar', est.neededSugar);
+    const packsI = s.flags.hasAutoIce ? 0 : plan('ice', est.neededIce);
+    const packsC = plan('cups', est.neededCups);
+    return { packsL, packsS, packsI, packsC, totalCost: +totalCost.toFixed(2) };
   }
 
   // Money today's supplies will still cost (0 once the stand is stocked for the forecast).
@@ -484,6 +504,13 @@ export class LemonadeEngine {
 
     const reputationBefore = s.reputation;
 
+    // The ice machine makes exactly the ice today needs, free.
+    let iceMadeByMachine = 0;
+    if (s.flags.hasAutoIce) {
+      const want = totalCupDemand * s.recipe.icePerCup;
+      if (s.inv.ice < want) { iceMadeByMachine = want - s.inv.ice; s.inv.ice = want; }
+    }
+
     const cupsPerPitcher = pitcherCups(s.recipe.icePerCup, b);
     const maxByCups = s.inv.cups;
     const maxByIce = s.recipe.icePerCup > 0 ? Math.floor(s.inv.ice / s.recipe.icePerCup) : Infinity;
@@ -496,6 +523,7 @@ export class LemonadeEngine {
     let franchiseCupsSold = 0;
     let franchiseGross = 0;
     let primaryBottleneck = '';
+    let storageShort: '' | 'ice' | 'lemons' = '';
 
     if (maxTotalPour <= 0 && totalCupDemand > 0) {
       const missing: string[] = [];
@@ -545,7 +573,16 @@ export class LemonadeEngine {
         if (maxByIce === maxTotalPour) { bottlenecks.push(`Ice (${had.ice} cubes only poured ${maxByIce} cups at ${s.recipe.icePerCup}/cup; needed ${totalCupDemand * s.recipe.icePerCup})`); primaryBottleneck = 'ice'; }
         if (maxByLemons === maxTotalPour) { bottlenecks.push(`Lemons (had ${had.lemons}, needed ${Math.ceil(totalCupDemand / cupsPerPitcher) * s.recipe.lemonsPerPitcher})`); primaryBottleneck = 'lemons'; }
         if (maxBySugar === maxTotalPour) { bottlenecks.push(`Sugar (had ${had.sugar}, needed ${Math.ceil(totalCupDemand / cupsPerPitcher) * s.recipe.sugarPerPitcher})`); primaryBottleneck = 'sugar'; }
-        notes.push(`Stands sold out early: out of ${bottlenecks.join(' & ') || 'supplies'}! Sold ${totalSold}/${totalCupDemand} cups. Leftover supplies could not be poured without matching ingredients.`);
+        // Sold out because the stand could not hold more: say so simply and point at the
+        // upgrade that fixes it (instead of the long supply breakdown).
+        const full = (['ice', 'lemons'] as const).find(it =>
+          (it === 'ice' ? maxByIce : maxByLemons) === maxTotalPour && had[it] >= this.storageCap(it));
+        if (full) {
+          storageShort = full;
+          notes.push(`Sold ${totalSold} of ${totalCupDemand} cups, then ran out of ${full}: your ${storageName(s, full)} only holds ${this.storageCap(full).toLocaleString('en-US')}. ${storageUpgradeHint(s, full, b)}`);
+        } else {
+          notes.push(`Stands sold out early: out of ${bottlenecks.join(' & ') || 'supplies'}! Sold ${totalSold}/${totalCupDemand} cups. Leftover supplies could not be poured without matching ingredients.`);
+        }
       }
     }
 
@@ -608,9 +645,24 @@ export class LemonadeEngine {
       copackerNet = copackerCasesSold * this.copacker.netPerCase;
     }
 
-    // Overnight spoilage. Kid-facing: the cooler and fridge upgrades are not on the kid's
-    // screen, so each tip says what to do. The full tip shows the first TIP_FULL_TIMES days it
-    // happens; after that both go on one short line.
+    // What the stand upgrades saved today, in cubes, lemons and dollars (for the Day Report).
+    const perCube = this.supplyPack('ice').cost / this.supplyPack('ice').qty;
+    const perLemon = this.supplyPack('lemons').cost / this.supplyPack('lemons').qty;
+    const iceKeptByCooler = s.flags.hasCooler && !s.flags.hasAutoIce ? s.inv.ice : 0;
+    const lemonsKeptByFridge = s.flags.hasMiniFridge && !s.flags.hasLemonGrove
+      ? Math.ceil(s.inv.lemons * b.spoilage.lemonRotFraction) : 0;
+    const upgradeSavings = +((iceMadeByMachine + iceKeptByCooler) * perCube + lemonsKeptByFridge * perLemon).toFixed(2);
+    if (upgradeSavings >= 0.01) {
+      const parts: string[] = [];
+      if (iceMadeByMachine > 0) parts.push(`${iceMadeByMachine.toLocaleString('en-US')} free ice cubes`);
+      if (iceKeptByCooler > 0) parts.push(`${iceKeptByCooler.toLocaleString('en-US')} cubes kept frozen`);
+      if (lemonsKeptByFridge > 0) parts.push(`${lemonsKeptByFridge} lemons kept fresh`);
+      notes.push(`Your upgrades saved $${upgradeSavings.toFixed(2)} today: ${parts.join(', ')}.`);
+    }
+
+    // Overnight spoilage. Each tip says what to do (the cooler and fridge are in the kid
+    // shop). The full tip shows the first TIP_FULL_TIMES days it happens; after that both
+    // go on one short line.
     const TIP_FULL_TIMES = 2;
     s.tipCounts = s.tipCounts ?? {};
     const shortSpoil: string[] = [];
@@ -622,14 +674,14 @@ export class LemonadeEngine {
     };
     if (!s.flags.hasCooler && s.inv.ice > 0) {
       const cubes = `${s.inv.ice} ice ${s.inv.ice === 1 ? 'cube' : 'cubes'}`;
-      spoilNote('melt', `${cubes} melted overnight. Ice only lasts one day, so buy just what today needs.`, `${cubes} melted`);
+      spoilNote('melt', `${cubes} melted overnight. Ice only lasts one day, so buy just what today needs (a cooler keeps it frozen).`, `${cubes} melted`);
       s.inv.ice = 0;
     }
     if (!s.flags.hasMiniFridge && s.inv.lemons > 0 && !s.flags.hasLemonGrove) {
       const rotted = Math.ceil(s.inv.lemons * b.spoilage.lemonRotFraction);
       s.inv.lemons -= rotted;
       const lemons = `${rotted} ${rotted === 1 ? 'lemon' : 'lemons'}`;
-      spoilNote('rot', `${lemons} went bad overnight. Lemons spoil, so don't stock up too far ahead.`, `${lemons} went bad`);
+      spoilNote('rot', `${lemons} went bad overnight. Lemons spoil, so don't stock up too far ahead (a mini-fridge keeps them fresh).`, `${lemons} went bad`);
     }
     if (shortSpoil.length) notes.push(`Overnight: ${shortSpoil.join(', ')}.`);
 
@@ -723,6 +775,11 @@ export class LemonadeEngine {
       buzzAfter: s.buzz,
       goldenStreak: s.goldenStreak,
       recipeJustLocked,
+      iceMadeByMachine,
+      iceKeptByCooler,
+      lemonsKeptByFridge,
+      upgradeSavings,
+      storageShort,
       reviews,
       notes: notes.length ? notes : ['All operations ran smoothly!']
     };

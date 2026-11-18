@@ -126,6 +126,7 @@ export interface KidDemandAdvice {
   phrase: string;
   emoji: string;
   lowItems: ('lemons' | 'sugar' | 'ice' | 'cups')[];
+  fullItems: ('lemons' | 'ice')[];   // low, but storage is full (only an upgrade helps)
   isFullyStocked: boolean;
   estTotalCups: number;
 }
@@ -180,6 +181,12 @@ export interface DaySummary {
   buzzAfter?: number;
   goldenStreak?: number;        // golden open days in a row, counting today
   recipeJustLocked?: boolean;   // today the neighbors asked to keep the recipe forever
+  // Stand upgrades (optional so older saves still load).
+  iceMadeByMachine?: number;    // cubes the ice machine made today
+  iceKeptByCooler?: number;     // leftover cubes the cooler kept frozen overnight
+  lemonsKeptByFridge?: number;  // lemons that would have gone bad without the mini-fridge
+  upgradeSavings?: number;      // what those were worth at store prices
+  storageShort?: '' | 'ice' | 'lemons';  // sold out because the stand could not hold more
   reviews: CustomerReview[];
   notes: string[];
 }

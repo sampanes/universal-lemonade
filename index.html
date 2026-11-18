@@ -4012,10 +4012,15 @@
       if (mascotPhrase) mascotPhrase.textContent = advice.phrase;
       if (mascotSub) mascotSub.textContent = standSubtitle;
 
-      // Morning Prep Stock Numbers & Low Stock Alerts
+      // Morning Prep Stock Numbers & Low Stock Alerts. While there is a storage limit the
+      // pill shows it ("200/400"); the ice machine's ice just says Auto.
+      const stockText = (item) => {
+        const cap = engine.storageCap(item);
+        return Number.isFinite(cap) ? `${s.inv[item]}/${cap}` : String(s.inv[item]);
+      };
       const invLemons = document.getElementById('lbl-inv-lemons');
       const alertLemons = document.getElementById('alert-lemons');
-      if (invLemons) invLemons.textContent = String(s.inv.lemons);
+      if (invLemons) setText(invLemons, stockText('lemons'));
       if (alertLemons) alertLemons.style.display = advice.lowItems.includes('lemons') ? 'inline-block' : 'none';
 
       const invSugar = document.getElementById('lbl-inv-sugar');
@@ -4025,7 +4030,7 @@
 
       const invIce = document.getElementById('lbl-inv-ice');
       const alertIce = document.getElementById('alert-ice');
-      if (invIce) invIce.textContent = String(s.inv.ice);
+      if (invIce) setText(invIce, s.flags.hasAutoIce ? 'Auto' : stockText('ice'));
       if (alertIce) alertIce.style.display = advice.lowItems.includes('ice') ? 'inline-block' : 'none';
 
       const invCups = document.getElementById('lbl-inv-cups');
@@ -4038,54 +4043,30 @@
       if (boxBottles) boxBottles.style.display = s.phase >= 3 ? 'flex' : 'none';
       if (invBottles) invBottles.textContent = String(s.inv.bottles);
 
-      const lBaseCost = s.flags.hasCostcoDiscount ? 5.20 : 8.00;
-      const sBaseCost = s.flags.hasCostcoDiscount ? 3.90 : 6.00;
-      const iBaseCost = s.flags.hasCostcoDiscount ? 2.60 : 4.00;
-      const cBaseCost = s.flags.hasCostcoDiscount ? 2.60 : 4.00;
-      const bBaseCost = s.flags.hasCostcoDiscount ? 6.50 : 10.00;
-
-      const lCost = `$${(lBaseCost * buyPackMult).toFixed(2)}`;
-      const sCost = `$${(sBaseCost * buyPackMult).toFixed(2)}`;
-      const iCost = `$${(iBaseCost * buyPackMult).toFixed(2)}`;
-      const cCost = `$${(cBaseCost * buyPackMult).toFixed(2)}`;
-      const bCost = `$${(bBaseCost * buyPackMult).toFixed(2)}`;
-
-      const bikeBonus = s.flags.hasMountainBike ? 1.25 : 1.0;
-      const lQty = Math.round(24 * bikeBonus) * buyPackMult;
-      const sQty = Math.round(20 * bikeBonus) * buyPackMult;
-      const iQty = Math.round(200 * bikeBonus) * buyPackMult;
-      const cQty = Math.round(50 * bikeBonus) * buyPackMult;
-      const bQty = Math.round(25 * bikeBonus) * buyPackMult;
-
-      // Update static purchase buttons in-place (never replace elements, completely eliminates dropped clicks)
-      const btnL = document.getElementById('btn-buy-lemons');
-      const btnS = document.getElementById('btn-buy-sugar');
-      const btnI = document.getElementById('btn-buy-ice');
-      const btnC = document.getElementById('btn-buy-cups');
+      // Buy buttons sell what fits: a whole pack, the part that still fits (it costs its
+      // share), or "Full!" when the bucket or bowl is full. The ice machine makes its own ice.
+      // Updated in place (never replaced), so no click is dropped.
+      const setBuyBtn = (id, item) => {
+        const btn = document.getElementById(id);
+        if (!btn) return;
+        if (item === 'ice' && s.flags.hasAutoIce) {
+          setText(btn, 'Machine makes it');
+          if (!btn.disabled) btn.disabled = true;
+          return;
+        }
+        const o = engine.buyOffer(item, buyPackMult);
+        setText(btn, o.full ? 'Full!' : `+${o.qty} ($${o.cost.toFixed(2)})`);
+        const off = o.full || s.cash.lt(o.cost);
+        if (btn.disabled !== off) btn.disabled = off;
+      };
+      setBuyBtn('btn-buy-lemons', 'lemons');
+      setBuyBtn('btn-buy-sugar', 'sugar');
+      setBuyBtn('btn-buy-ice', 'ice');
+      setBuyBtn('btn-buy-cups', 'cups');
       const btnB = document.getElementById('btn-buy-bottles');
-
-      if (btnL) {
-        btnL.textContent = `+${lQty} (${lCost})`;
-        btnL.disabled = s.cash.lt(lBaseCost * buyPackMult);
-      }
-      if (btnS) {
-        btnS.textContent = `+${sQty} (${sCost})`;
-        btnS.disabled = s.cash.lt(sBaseCost * buyPackMult);
-      }
-      if (btnI) {
-        btnI.textContent = `+${iQty} (${iCost})`;
-        btnI.disabled = s.cash.lt(iBaseCost * buyPackMult);
-      }
-      if (btnC) {
-        btnC.textContent = `+${cQty} (${cCost})`;
-        btnC.disabled = s.cash.lt(cBaseCost * buyPackMult);
-      }
       if (btnB) {
         btnB.style.display = s.phase >= 3 ? 'flex' : 'none';
-        if (s.phase >= 3) {
-          btnB.textContent = `+${bQty} (${bCost})`;
-          btnB.disabled = s.cash.lt(bBaseCost * buyPackMult);
-        }
+        if (s.phase >= 3) setBuyBtn('btn-buy-bottles', 'bottles');
       }
 
       // "?" and a worried sun (no sparkles) when the forecast says something will run out today.
@@ -4270,9 +4251,9 @@
     // for a day between buys. The second stand is only a goal for now ("coming soon"):
     // buying it would start Phase 2, which has no kid screens yet.
     const KID_SHOP = [
-      { id: 'cooler', name: 'Ice Cooler', desc: 'Leftover ice stays frozen overnight.', pic: 'cooler' },
-      { id: 'auto_ice_dispenser', name: 'Ice Machine', desc: 'Picks the right ice for the weather every morning.', pic: 'ice_dispenser' },
-      { id: 'fridge', name: 'Mini-Fridge', desc: 'Lemons stay fresh overnight, and neighbors notice.', pic: 'mini_fridge' },
+      { id: 'cooler', name: 'Ice Cooler', desc: 'Holds 1,000 ice cubes (your bucket holds 400) and keeps them frozen overnight.', pic: 'cooler' },
+      { id: 'auto_ice_dispenser', name: 'Ice Machine', desc: 'Makes all the ice you need, free, and picks the right amount.', pic: 'ice_dispenser' },
+      { id: 'fridge', name: 'Mini-Fridge', desc: 'No lemon limit, and they never go bad. Neighbors notice!', pic: 'mini_fridge' },
       { id: 'franchise_license', name: 'A Second Stand', desc: 'Coming soon: hire a friend to run another stand!', pic: 'second_stand', teaser: true },
     ];
     function kidShopNext(s) {

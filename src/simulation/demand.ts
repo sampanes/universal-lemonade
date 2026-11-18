@@ -3,6 +3,7 @@ import type { GameState, FranchiseStand, DailyDemandEstimate, KidDemandAdvice, P
 import { computeRecipeQuality, cupsPerPitcher as pitcherCups } from './recipe';
 import { buyProbability, drivewayPeople, fairPriceFor } from './reputation';
 import { BALANCE, type Balance } from '../balance';
+import { storageCap, storageName, storageUpgradeHint } from './storage';
 
 export interface StandDemand {
   id: string;
@@ -109,36 +110,55 @@ export function getKidDemandAdvice(
   const lowItems: ('lemons' | 'sugar' | 'ice' | 'cups')[] = [];
   if (s.inv.lemons < est.neededLemons) lowItems.push('lemons');
   if (s.inv.sugar < est.neededSugar) lowItems.push('sugar');
-  if (s.inv.ice < est.neededIce) lowItems.push('ice');
+  if (s.inv.ice < est.neededIce && !s.flags.hasAutoIce) lowItems.push('ice');   // the machine makes it
   if (s.inv.cups < est.neededCups) lowItems.push('cups');
+  // Low, but the stand cannot hold any more: only an upgrade fixes it.
+  const fullItems = lowItems.filter(i => s.inv[i] >= storageCap(s, i, b)) as ('lemons' | 'ice')[];
 
   if (lowItems.length === 0) {
     return {
       phrase: "Pantry is fully stocked and ready to pour!",
       emoji: "✨",
       lowItems: [],
+      fullItems: [],
       isFullyStocked: true,
       estTotalCups: est.totalEstCups
     };
   }
 
-  if (lowItems.length === 4) {
+  if (fullItems.length === lowItems.length) {
+    const item = fullItems[0];
     return {
-      phrase: "You need more of everything today!",
-      emoji: "📦",
+      phrase: `Your ${storageName(s, item)} is full, but today needs more ${item}! ${storageUpgradeHint(s, item, b)}`,
+      emoji: "",
       lowItems,
+      fullItems,
       isFullyStocked: false,
       estTotalCups: est.totalEstCups
     };
   }
 
-  if (lowItems.length === 1) {
-    const single = lowItems[0];
+  const buyable = lowItems.filter(i => !(fullItems as string[]).includes(i));
+
+  if (buyable.length === 4) {
+    return {
+      phrase: "You need more of everything today!",
+      emoji: "📦",
+      lowItems,
+      fullItems,
+      isFullyStocked: false,
+      estTotalCups: est.totalEstCups
+    };
+  }
+
+  if (buyable.length === 1) {
+    const single = buyable[0];
     if (single === 'ice') {
       return {
         phrase: s.tempF >= 80 ? "You'll need a lot more ice for today's heat!" : "Running low on ice cubes!",
         emoji: "🧊",
         lowItems,
+        fullItems,
         isFullyStocked: false,
         estTotalCups: est.totalEstCups
       };
@@ -148,6 +168,7 @@ export function getKidDemandAdvice(
         phrase: "Almost out of lemons! Squeeze some more into the pantry!",
         emoji: "🍋",
         lowItems,
+        fullItems,
         isFullyStocked: false,
         estTotalCups: est.totalEstCups
       };
@@ -157,6 +178,7 @@ export function getKidDemandAdvice(
         phrase: "Need a little more sugar to keep the lemonade sweet!",
         emoji: "🍬",
         lowItems,
+        fullItems,
         isFullyStocked: false,
         estTotalCups: est.totalEstCups
       };
@@ -166,6 +188,7 @@ export function getKidDemandAdvice(
         phrase: "Running low on paper cups! Grab another pack!",
         emoji: "🥤",
         lowItems,
+        fullItems,
         isFullyStocked: false,
         estTotalCups: est.totalEstCups
       };
@@ -173,7 +196,7 @@ export function getKidDemandAdvice(
   }
 
   // 2 or 3 items low
-  const itemNames = lowItems.map(i => {
+  const itemNames = buyable.map(i => {
     if (i === 'lemons') return 'lemons';
     if (i === 'sugar') return 'sugar';
     if (i === 'ice') return 'ice';
@@ -188,6 +211,7 @@ export function getKidDemandAdvice(
     phrase: `Stock up on ${readable} before opening!`,
     emoji: "🛒",
     lowItems,
+    fullItems,
     isFullyStocked: false,
     estTotalCups: est.totalEstCups
   };
@@ -197,7 +221,7 @@ export function getMaxPourableCups(state: GameState, b: Balance = BALANCE): Pour
   const s = state;
   const cupsPerPitcher = pitcherCups(s.recipe.icePerCup, b);
   const byCups = s.inv.cups;
-  const byIce = s.recipe.icePerCup > 0 ? Math.floor(s.inv.ice / s.recipe.icePerCup) : 999999;
+  const byIce = s.recipe.icePerCup > 0 && !s.flags.hasAutoIce ? Math.floor(s.inv.ice / s.recipe.icePerCup) : 999999;
   const byLemons = Math.floor(s.inv.lemons / Math.max(1, s.recipe.lemonsPerPitcher)) * cupsPerPitcher;
   const bySugar = Math.floor(s.inv.sugar / Math.max(1, s.recipe.sugarPerPitcher)) * cupsPerPitcher;
   const maxCups = Math.min(byCups, byIce, byLemons, bySugar);

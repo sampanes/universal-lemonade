@@ -263,6 +263,64 @@ test('a careful kid does not go broke too often', () => {
   assert.ok(s.hitZero.mean <= 0.40, `${(s.hitZero.mean * 100).toFixed(1)}% of games hit $0`);
 });
 
+// ---- Storage: the bucket and bowl hold only so much; the upgrades lift the limits ----
+
+test('buying sells only what fits, and a part pack costs its share', () => {
+  const e = new LemonadeEngine({ seed: 3 });
+  const s = e.state;
+  s.cash = s.cash.add(500);
+  s.inv.ice = 300;                                   // bucket holds 400
+  assert.deepEqual(e.buyOffer('ice'), { qty: 100, cost: 2, full: false });
+  assert.ok(e.buySupplies('ice'));
+  assert.equal(s.inv.ice, 400);
+  assert.equal(e.buyOffer('ice').full, true);
+  assert.equal(e.buySupplies('ice'), false, 'a full bucket sells nothing');
+  s.inv.lemons = 40;                                 // bowl holds 48
+  assert.equal(e.buyOffer('lemons').qty, 8);
+  assert.equal(e.buyOffer('cups').qty, 50, 'cups have no limit');
+});
+
+test('each upgrade lifts its limit', () => {
+  const e = new LemonadeEngine({ seed: 3 });
+  const s = e.state, B = e.balance.storage;
+  assert.equal(e.storageCap('ice'), B.iceBucket);
+  s.flags.hasCooler = true;
+  assert.equal(e.storageCap('ice'), B.iceCooler);
+  s.flags.hasAutoIce = true;
+  assert.equal(e.storageCap('ice'), Infinity);
+  assert.equal(e.storageCap('lemons'), B.lemonBowl);
+  s.flags.hasMiniFridge = true;
+  assert.equal(e.storageCap('lemons'), Infinity);
+});
+
+test('the ice machine makes the ice a day needs, free', () => {
+  const e = new LemonadeEngine({ seed: 11 });
+  playDay(e);
+  const s = e.state, g = e.getGoldenRecipe();
+  s.recipe.lemonsPerPitcher = g.lemons; s.recipe.sugarPerPitcher = g.sugar;
+  s.flags.hasAutoIce = true;
+  s.inv.ice = 0; s.inv.lemons = 200; s.inv.sugar = 200; s.inv.cups = 500;
+  const want = e.getDailyDemandEstimate().totalEstCups;
+  const sum = e.runDay();
+  assert.ok(want > 0);
+  assert.equal(sum.drivewayCupsSold, want, 'ice never runs out');
+  assert.ok(sum.iceMadeByMachine > 0 && sum.upgradeSavings > 0);
+});
+
+test('a full ice bucket on a big day says the cooler would help', () => {
+  const e = new LemonadeEngine({ seed: 11 });
+  playDay(e);
+  const s = e.state, g = e.getGoldenRecipe();
+  s.recipe.lemonsPerPitcher = g.lemons; s.recipe.sugarPerPitcher = g.sugar;
+  s.buzz = 1; s.reputation = 1; s.tempF = 100; s.weather = 'SUNNY';
+  s.recipe.icePerCup = e.computeIdealIce();
+  s.inv.ice = e.storageCap('ice'); s.inv.lemons = 48; s.inv.sugar = 200; s.inv.cups = 500;
+  assert.ok(e.getKidDemandAdvice().fullItems.includes('ice'));
+  const sum = e.runDay();
+  assert.equal(sum.storageShort, 'ice');
+  assert.ok(sum.notes.some(n => n.includes('A cooler holds')));
+});
+
 // The kid Stand Shop only spends money left over after today's supplies. Played that way,
 // the upgrades never leave the stand broke, and nobody gets the cooler right away.
 test('the kid shop never leaves a careful kid broke in Phase 1', () => {

@@ -1,16 +1,19 @@
-// src/data/projects.ts — Business Investments & Technology Upgrades (Phases 1-5)
+// src/data/projects.ts -- Business Investments & Technology Upgrades (Phases 1-5)
 import type { ProjectDef, GameState } from '../types';
 
-// The three Phase 1 stand upgrades get 2.2x pricier each: $125, $275, $605. The kid shop
-// only spends money left over after today's supplies (engine.restockCostForToday), so
-// buying one never leaves the stand without lemons. With a careful player (sim) that is
-// about Day 8, Day 11 and Day 25; with a perfect player Day 5, Day 8 and Day 10.
+// The three Phase 1 stand upgrades get 2.2x pricier each: $125, $275, $605. Each one lifts
+// a storage limit (src/simulation/storage.ts): a busy summer day needs more ice than the
+// 400-cube bucket holds, the second summer more than the 1,000-cube cooler, and a second
+// stand more lemons than the 48-lemon bowl. The kid shop only spends money left over after
+// today's supplies (engine.restockCostForToday), so buying one never leaves the stand
+// without lemons. Sim, 40 days: a careful player buys them around Day 7, 11 and 24; a
+// perfect player around Day 5, 8 and 10 and ends with about 40% more cash than without them.
 export function createInitialProjects(): ProjectDef[] {
   return [
     {
       id: 'cooler',
       name: 'Insulated 50-Qt Cooler',
-      desc: 'Stops unused ice from melting overnight.',
+      desc: 'Holds 1,000 ice cubes instead of 400 and stops leftover ice from melting overnight.',
       phase: 1,
       costCash: 125,
       purchased: false,
@@ -23,7 +26,7 @@ export function createInitialProjects(): ProjectDef[] {
     {
       id: 'auto_ice_dispenser',
       name: 'Digital Weather-Synced Ice Dispenser',
-      desc: 'Reads the morning thermometer and automatically dials in ideal ice cubes per cup! Includes an Auto toggle.',
+      desc: 'Makes all the ice the day needs for free, with no storage limit, and dials in ideal ice per cup (Auto toggle).',
       phase: 1,
       costCash: 275,
       purchased: false,
@@ -38,7 +41,7 @@ export function createInitialProjects(): ProjectDef[] {
     {
       id: 'fridge',
       name: 'Garage Mini-Fridge',
-      desc: 'Eliminates overnight lemon spoilage (+10% Reputation).',
+      desc: 'No lemon storage limit (was 48), no overnight spoilage, +10% Reputation.',
       phase: 1,
       costCash: 605,
       purchased: false,

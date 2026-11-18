@@ -126,6 +126,15 @@ export const BALANCE = {
     bonusDisneyTrip: 0.15,
   },
 
+  // How much the stand can hold (src/simulation/storage.ts). The ice machine and the
+  // mini-fridge remove the limit for ice and lemons. A buy button only sells what fits
+  // (a part pack costs its share), so leftovers never waste room.
+  storage: {
+    iceBucket: 400,             // cubes, before the cooler (2 bags)
+    iceCooler: 1000,            // cubes, with the cooler (5 bags)
+    lemonBowl: 48,              // lemons, before the mini-fridge (2 bags)
+  },
+
   spoilage: {
     lemonRotFraction: 0.20,     // share of leftover lemons lost overnight without a fridge
   },
