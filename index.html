@@ -2916,7 +2916,7 @@
             <span id="stand-shop-save-text"></span>
           </div>
         </div>
-        <button class="stand-shop-buy" id="btn-stand-shop-buy">$45</button>
+        <button class="stand-shop-buy" id="btn-stand-shop-buy">$125</button>
       </div>
     </div>
 
@@ -4302,14 +4302,18 @@
       }
       setText(document.getElementById('stand-shop-name'), item.name);
       setText(document.getElementById('stand-shop-desc'), item.desc);
-      const cash = s.cash.toNumber();
+      // Only spare money counts: what is left after today's supplies are paid for. Buying an
+      // upgrade with the lemon money left kids stuck doing chores just to reopen the stand.
       const cost = p.costCash;
-      const short = !item.teaser && cash < cost;
+      const need = item.teaser ? 0 : engine.restockCostForToday();
+      const spare = Math.max(0, s.cash.toNumber() - need);
+      const short = !item.teaser && spare < cost;
       const save = document.getElementById('stand-shop-save');
       if (save.hidden === short) save.hidden = !short;
       if (short) {
-        document.getElementById('stand-shop-fill').style.width = `${Math.max(0, Math.min(100, (cash / cost) * 100)).toFixed(1)}%`;
-        setText(document.getElementById('stand-shop-save-text'), `Saving up: $${Math.floor(cash)} of $${cost}`);
+        document.getElementById('stand-shop-fill').style.width = `${Math.min(100, (spare / cost) * 100).toFixed(1)}%`;
+        setText(document.getElementById('stand-shop-save-text'),
+          `Saving up: $${Math.floor(spare)} of $${cost}${need > 0 ? ' after supplies' : ''}`);
       }
       const btn = document.getElementById('btn-stand-shop-buy');
       btn.dataset.id = item.id;
@@ -4319,7 +4323,9 @@
     document.getElementById('btn-stand-shop-buy').onclick = (e) => {
       const id = e.currentTarget.dataset.id;
       const item = KID_SHOP.find(x => x.id === id);
-      if (item && !item.teaser) engine.buyProject(id);
+      if (!item || item.teaser) return;
+      const p = engine.projects.find(x => x.id === id);
+      if (p && engine.state.cash.toNumber() - engine.restockCostForToday() >= p.costCash) engine.buyProject(id);
     };
 
     requestAnimationFrame(loop);

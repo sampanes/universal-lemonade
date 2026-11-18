@@ -1,6 +1,10 @@
 // src/data/projects.ts — Business Investments & Technology Upgrades (Phases 1-5)
 import type { ProjectDef, GameState } from '../types';
 
+// The three Phase 1 stand upgrades get 2.2x pricier each: $125, $275, $605. The kid shop
+// only spends money left over after today's supplies (engine.restockCostForToday), so
+// buying one never leaves the stand without lemons. With a careful player (sim) that is
+// about Day 8, Day 11 and Day 25; with a perfect player Day 5, Day 8 and Day 10.
 export function createInitialProjects(): ProjectDef[] {
   return [
     {
@@ -8,7 +12,7 @@ export function createInitialProjects(): ProjectDef[] {
       name: 'Insulated 50-Qt Cooler',
       desc: 'Stops unused ice from melting overnight.',
       phase: 1,
-      costCash: 45,
+      costCash: 125,
       purchased: false,
       unlocked: (s: GameState) => s.phase >= 1 && s.day >= 2,
       effect: (e: any) => {
@@ -21,7 +25,7 @@ export function createInitialProjects(): ProjectDef[] {
       name: 'Digital Weather-Synced Ice Dispenser',
       desc: 'Reads the morning thermometer and automatically dials in ideal ice cubes per cup! Includes an Auto toggle.',
       phase: 1,
-      costCash: 60,
+      costCash: 275,
       purchased: false,
       unlocked: (s: GameState) => s.phase >= 1 && s.day >= 3,
       effect: (e: any) => {
@@ -36,7 +40,7 @@ export function createInitialProjects(): ProjectDef[] {
       name: 'Garage Mini-Fridge',
       desc: 'Eliminates overnight lemon spoilage (+10% Reputation).',
       phase: 1,
-      costCash: 120,
+      costCash: 605,
       purchased: false,
       unlocked: (s: GameState) => s.phase >= 1 && s.day >= 3,
       effect: (e: any) => {

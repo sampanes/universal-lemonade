@@ -255,10 +255,44 @@ test('a careful kid reaches the neighborhood (phase 2) around day 12', () => {
 // Known problem, not yet fixed: once 3 neighborhood stands are hired their wages are owed
 // every day and a kid cannot let a stand go, so a bad stretch drives cash to $0 again and
 // again. Every $0 day in the sim is in phase 2-3 with stands hired, never the slow start.
-// Loosened from 15% when the slow start (buzz) arrived; tighten it after that is fixed.
+// Loosened from 15% when the slow start (buzz) arrived, and from 30% when the stand upgrades
+// went up to $125 / $275 / $605 (this bot buys all three, so it starts Phase 2 with less
+// cushion for wages). Tighten it after the wage problem is fixed.
 test('a careful kid does not go broke too often', () => {
   const s = summarize(runBatch(99, 0, 300, 'careful', 60));
-  assert.ok(s.hitZero.mean <= 0.30, `${(s.hitZero.mean * 100).toFixed(1)}% of games hit $0`);
+  assert.ok(s.hitZero.mean <= 0.40, `${(s.hitZero.mean * 100).toFixed(1)}% of games hit $0`);
+});
+
+// The kid Stand Shop only spends money left over after today's supplies. Played that way,
+// the upgrades never leave the stand broke, and nobody gets the cooler right away.
+test('the kid shop never leaves a careful kid broke in Phase 1', () => {
+  const SHOP = ['cooler', 'auto_ice_dispenser', 'fridge'];
+  let zeroDays = 0, shortMornings = 0, firstCooler = Infinity, games = 0, gotAll = 0;
+  for (let g = 0; g < 100; g++) {
+    const e = new LemonadeEngine({ seed: 5000 + g });
+    const buy = e.buyProject.bind(e);
+    e.buyProject = () => false;               // the bot's own upgrade buying is off
+    const ctx = { rand: () => 0.5, day: 1, memory: {} };
+    for (let d = 1; d <= 40; d++) {
+      ctx.day = d;
+      BOTS.careful.morning(e, ctx);
+      if (e.restockCostForToday() > 0) shortMornings++;   // could not afford today's supplies
+      const p = SHOP.map(id => e.projects.find(x => x.id === id)).find(x => !x.purchased);
+      if (p && p.unlocked(e.state) && e.state.cash.toNumber() - e.restockCostForToday() >= p.costCash) {
+        buy(p.id);
+        if (p.id === 'cooler') firstCooler = Math.min(firstCooler, d);
+      }
+      const sum = e.runDay();
+      e.tick(e.balance.secondsPerDay);
+      if (sum.notes.some(n => n.includes('Balance hit $0.00'))) zeroDays++;
+    }
+    games++;
+    if (SHOP.every(id => e.projects.find(x => x.id === id).purchased)) gotAll++;
+  }
+  assert.equal(zeroDays, 0, `${zeroDays} days hit $0`);
+  assert.ok(shortMornings / games <= 0.5, `${(shortMornings / games).toFixed(2)} short mornings per game`);
+  assert.ok(firstCooler >= 4, `earliest cooler on day ${firstCooler}`);
+  assert.ok(gotAll / games >= 0.8, `${gotAll}/${games} games bought all three by day 40`);
 });
 
 // ---- Slow start: buzz ----

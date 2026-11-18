@@ -373,24 +373,28 @@ export class LemonadeEngine {
     return getMaxPourableCups(this.state, this.balance);
   }
 
-  public autoRestockForToday(): { success: boolean; message: string } {
+  // The packs still needed to cover today's forecast, and what they cost.
+  private restockPlan(): { packsL: number; packsS: number; packsI: number; packsC: number; totalCost: number } {
     const est = this.getDailyDemandEstimate();
     const s = this.state;
     const L = this.supplyPack('lemons'), S = this.supplyPack('sugar'), I = this.supplyPack('ice'), C = this.supplyPack('cups');
-    const packSizes = { lemons: L.qty, sugar: S.qty, ice: I.qty, cups: C.qty };
-    const packCosts = { lemons: L.cost, sugar: S.cost, ice: I.cost, cups: C.cost };
+    const packsL = Math.ceil(Math.max(0, est.neededLemons - s.inv.lemons) / L.qty);
+    const packsS = Math.ceil(Math.max(0, est.neededSugar - s.inv.sugar) / S.qty);
+    const packsI = Math.ceil(Math.max(0, est.neededIce - s.inv.ice) / I.qty);
+    const packsC = Math.ceil(Math.max(0, est.neededCups - s.inv.cups) / C.qty);
+    const totalCost = packsL * L.cost + packsS * S.cost + packsI * I.cost + packsC * C.cost;
+    return { packsL, packsS, packsI, packsC, totalCost };
+  }
 
-    const defL = Math.max(0, est.neededLemons - s.inv.lemons);
-    const defS = Math.max(0, est.neededSugar - s.inv.sugar);
-    const defI = Math.max(0, est.neededIce - s.inv.ice);
-    const defC = Math.max(0, est.neededCups - s.inv.cups);
+  // Money today's supplies will still cost (0 once the stand is stocked for the forecast).
+  // The kid shop keeps this much back, so an upgrade never eats the lemon money.
+  public restockCostForToday(): number {
+    return this.restockPlan().totalCost;
+  }
 
-    const packsL = Math.ceil(defL / packSizes.lemons);
-    const packsS = Math.ceil(defS / packSizes.sugar);
-    const packsI = Math.ceil(defI / packSizes.ice);
-    const packsC = Math.ceil(defC / packSizes.cups);
-
-    const totalCost = packsL * packCosts.lemons + packsS * packCosts.sugar + packsI * packCosts.ice + packsC * packCosts.cups;
+  public autoRestockForToday(): { success: boolean; message: string } {
+    const s = this.state;
+    const { packsL, packsS, packsI, packsC, totalCost } = this.restockPlan();
 
     if (totalCost === 0) {
       return { success: true, message: "Inventory is already fully stocked for today's forecast!" };
