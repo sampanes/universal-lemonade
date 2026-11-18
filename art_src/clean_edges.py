@@ -1,8 +1,9 @@
 """Clean the cut-out edges of small UI sprites and enlarge the stretched ones.
 
-The weather panel (and the old morning-prep frame) were cut off a white background with
-hard (on/off) alpha and are only ~340 px wide, but the MSI shows them ~960
-device px wide. That leaves a whitish fringe and stair-stepped edges.
+Some sprites were cut off a white background with hard (on/off) alpha, which
+leaves a whitish fringe on dark backgrounds, and small ones stretched wide get
+stair-stepped edges. (The old frame and weather panel art had both problems;
+those are drawn in CSS now.)
 
 For each sprite this script:
   1. removes light fringe pixels on the outer edge (lighter than the art
@@ -28,7 +29,6 @@ DST = os.path.join('public', 'sprites', 'morning_prep')
 
 # name -> enlargement factor (1 = only clean the edge)
 JOBS = {
-    'weather_panel_bg': 3,
     'sun_happy': 1,
 }
 
