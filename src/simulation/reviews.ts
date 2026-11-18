@@ -35,11 +35,11 @@ export function tasteReview(dL: number, dS: number, streak: number, justLocked: 
   });
 
   if (justLocked) {
-    return taste(5, "Everybody is talking about it: your recipe is GOLDEN! Promise you'll never change it!", "The whole neighborhood");
+    return taste(5, "Everybody is talking about it: your lemon and sugar are GOLDEN!", "The whole neighborhood");
   }
   if (dL === 0 && dS === 0) {
     if (streak >= 2) {
-      return taste(5, "Perfect again! Don't change a thing!", "Your regular customers");
+      return taste(5, "Perfect again! Keep the same lemon and sugar!", "Your regular customers");
     }
     const praises = [
       { quote: "This is the PERFECT amount of lemon and sugar!", reviewer: "Local foodie" },
