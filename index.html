@@ -759,34 +759,31 @@
       text-overflow: ellipsis;
     }
 
-    /* Morning Prep Stand Card */
+    /* Morning Prep Stand Card. The whole card is drawn by morning_prep_frame.png, cut into
+       three slices (342 px wide): top 0-72 (awning + ribbon), mid 72-130 (cream with the side
+       borders, stretched to fit the tiles), bottom 130-185 (gingham). No CSS border or box
+       behind it, so the art's own rounded frame is the edge. */
     .prep-stand-card {
-      background: #fffdf7;
-      border: 3px solid #7c3aed;
-      border-radius: 18px;
-      overflow: hidden;
-      box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25);
       margin-top: 8px;
       color: #1e1b4b;
+      filter: drop-shadow(0 4px 8px rgba(124, 58, 237, 0.25));
     }
     .prep-stand-header {
       position: relative;
-      background: linear-gradient(180deg, #7e22ce 0%, #9333ea 50%, #a855f7 100%);
-      padding: 8px 8px 0 8px;
       text-align: center;
     }
-    /* Sits on the purple ribbon drawn into prep_awning_top.png (342 x 62). */
+    /* Sits on the purple ribbon drawn into prep_frame_top.png (342 x 72; ribbon at y 12-46). */
     .prep-ribbon-title {
       position: absolute;
       left: 24%;
       right: 24%;
-      top: 20%;
-      height: 54%;
+      top: 17.2%;
+      height: 46.5%;
       color: #fff;
       font-family: var(--font-display);
       font-weight: 400;
       font-size: 16px;
-      font-size: clamp(12px, 4.8cqw, 18px); /* follows the ribbon as the banner shrinks on phones */
+      font-size: clamp(12px, 4.8cqw, 26px); /* follows the ribbon as the banner grows or shrinks */
       letter-spacing: 0.8px;
       -webkit-text-stroke: 2px #5b21b6;
       paint-order: stroke fill;
@@ -805,14 +802,13 @@
       position: relative;
       container-type: inline-size; /* the ribbon title sizes itself from the banner width */
       width: 100%;
-      max-width: 380px;
-      margin: 0 auto;
-      aspect-ratio: 342 / 62;
-      background: url('./sprites/morning_prep/prep_awning_top.png') no-repeat center bottom / 100% 100%;
+      aspect-ratio: 342 / 72;
+      background: url('./sprites/morning_prep/prep_frame_top.png') no-repeat center bottom / 100% 100%;
     }
+    /* Side padding keeps the tiles inside the frame's side borders (cream starts at x 18 of 342). */
     .prep-stand-body {
-      padding: 10px 10px 8px 10px;
-      background: linear-gradient(180deg, #fefce8 0%, #fffdf5 40%, #fef3c7 100%);
+      padding: 0 6% 4px 6%;
+      background: url('./sprites/morning_prep/prep_frame_mid.png') no-repeat center / 100% 100%;
     }
     .prep-mult-bar {
       display: flex;
@@ -944,8 +940,8 @@
       transform: none;
     }
     .prep-gingham-footer {
-      background: url('./sprites/morning_prep/prep_gingham_bottom.png') no-repeat center bottom / 100% 100%;
-      height: 18px;
+      background: url('./sprites/morning_prep/prep_frame_bottom.png') no-repeat center bottom / 100% 100%;
+      aspect-ratio: 342 / 55;
       width: 100%;
     }
 
@@ -2250,19 +2246,13 @@
       }
 
       /* Kid Mode chore banner: always shown, calm; yellow and pulsing when cash < $5. */
+      /* Looks like the supply tiles above it (supply-item-box); only the row layout differs. */
       .emergency-chore-pill {
         display: none;
+        flex-direction: row;
         align-items: center;
-        justify-content: space-between;
-        gap: 8px;
-        background: rgba(255, 255, 255, 0.85);
-        border: 2px solid #e9d5ff;
-        border-radius: 12px;
-        padding: 6px 10px;
-        margin-bottom: 10px;
-        color: #581c87;
-        font-weight: 700;
-        font-size: 12px;
+        gap: 6px;
+        margin-top: 8px;
         transition: background-color 0.3s, border-color 0.3s;
       }
       body:not(.dad-mode) .emergency-chore-pill {
@@ -2275,12 +2265,23 @@
       #btn-chore-emergency {
         flex: 1;
         min-width: 0;
+        min-height: 38px; /* same height as the buy buttons */
+        padding: 4px 6px 4px 12px;
+        font-size: 13px;
+      }
+      #btn-chore-emergency .chore-reward { font-size: 13px; padding: 3px 8px; }
+      #btn-chore-emergency .chore-name { overflow-wrap: anywhere; }
+      /* Phones: the coin jar says "need cash" by itself; give the chore name the room. */
+      @media (max-width: 480px) {
+        .emergency-chore-text { display: none; }
       }
       body:not(.dad-mode).low-cash .emergency-chore-pill {
         background: #fef08a;
         border-color: #eab308;
-        color: #713f12;
         animation: pulse 1s infinite alternate;
+      }
+      body:not(.dad-mode).low-cash .emergency-chore-text {
+        color: #713f12;
       }
 
       /* Kid Mode Rules: Hide executive office titles and giant bank card */
@@ -2667,20 +2668,22 @@
               <button id="btn-buy-bottles" class="kawaii-buy-btn">+25 ($10.00)</button>
             </div>
           </div>
+
+          <!-- KID MODE CHORE TILE: always there (chores are how a kid catches up after a slow
+               day); it sits inside the stand like the supply tiles, and turns yellow and pulses
+               when cash is under $5. Dad Mode uses the money box instead. -->
+          <div class="supply-item-box emergency-chore-pill" id="emergency-chore-banner">
+            <img src="./sprites/morning_prep/coin_jar.png" class="supply-item-icon" alt="" />
+            <span id="emergency-chore-text" class="supply-item-title emergency-chore-text">Need cash?</span>
+            <button id="btn-chore-emergency" class="chore-btn">
+              <span class="chore-fill" id="chore-fill-em"></span>
+              <span class="chore-name" id="chore-name-em">Chore</span>
+              <span class="chore-reward" id="chore-reward-em">+$0.00</span>
+            </button>
+          </div>
         </div>
 
         <div class="prep-gingham-footer"></div>
-      </div>
-
-      <!-- KID MODE CHORE BANNER: always there (chores are how a kid catches up after a slow
-           day); it turns yellow and pulses when cash is under $5. Dad Mode uses the money box. -->
-      <div class="emergency-chore-pill" id="emergency-chore-banner">
-        <span id="emergency-chore-text" class="emergency-chore-text">Need cash?</span>
-        <button id="btn-chore-emergency" class="chore-btn" style="min-height:36px; padding:4px 10px; font-size:12px;">
-          <span class="chore-fill" id="chore-fill-em"></span>
-          <span class="chore-name" id="chore-name-em">Chore</span>
-          <span class="chore-reward" id="chore-reward-em">+$0.00</span>
-        </button>
       </div>
 
       <!-- 4. BIG ACTION BUTTON: OPEN FOR BUSINESS -->
