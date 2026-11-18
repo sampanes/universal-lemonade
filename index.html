@@ -1166,14 +1166,15 @@
       background: url('./sprites/morning_prep/inventory_number_pill_bg.png') no-repeat center / 100% 100%;
       min-width: 44px;
       height: 24px;
-      padding: 0 4px;
+      padding: 0 8px;   /* clears the pill art's thick rim, so "200/400" never touches it */
+      white-space: nowrap;
       display: flex;
       align-items: center;
       justify-content: center;
       font-weight: 800;
       font-size: 12px;
       color: #581c87;
-      letter-spacing: 0.3px;
+      letter-spacing: 0;
     }
     .supply-alert {
       font-size: 13px;
@@ -4118,7 +4119,7 @@
       const invLemons = document.getElementById('lbl-inv-lemons');
       const alertLemons = document.getElementById('alert-lemons');
       if (invLemons) setText(invLemons, stockText('lemons'));
-      if (alertLemons) alertLemons.style.display = advice.lowItems.includes('lemons') ? 'inline-block' : 'none';
+      if (alertLemons) alertLemons.style.display = advice.lowItems.includes('lemons') && !advice.fullItems.includes('lemons') ? 'inline-block' : 'none';
 
       const invSugar = document.getElementById('lbl-inv-sugar');
       const alertSugar = document.getElementById('alert-sugar');
@@ -4128,7 +4129,7 @@
       const invIce = document.getElementById('lbl-inv-ice');
       const alertIce = document.getElementById('alert-ice');
       if (invIce) setText(invIce, s.flags.hasAutoIce ? 'Auto' : stockText('ice'));
-      if (alertIce) alertIce.style.display = advice.lowItems.includes('ice') ? 'inline-block' : 'none';
+      if (alertIce) alertIce.style.display = advice.lowItems.includes('ice') && !advice.fullItems.includes('ice') ? 'inline-block' : 'none';
 
       const invCups = document.getElementById('lbl-inv-cups');
       const alertCups = document.getElementById('alert-cups');
