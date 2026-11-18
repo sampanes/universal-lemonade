@@ -29,7 +29,9 @@ DST = os.path.join('public', 'sprites', 'kid')
 OUT_W = 480            # canvas width in the game (about 2x the biggest kid on the MSI)
 PAD_TOP, PAD_SIDE = 300, 300   # headroom on the source canvas for buns, ponytails, spikes
 
-HAIRS = ['swoop', 'curly', 'bob', 'ponytail', 'buns']      # order shown in the mirror
+# Order shown in the mirror. Saves store the index, so add new styles at the end.
+HAIRS = ['swoop', 'curly', 'bob', 'ponytail', 'buns',
+         'braids', 'pigtails', 'wavy', 'sidepart', 'afro', 'topknot']
 FACES = ['happy', 'cheer', 'soldout', 'calm', 'sleepy', 'wink']
 # hole = face-opening width / head width; bang = bang line as a share of head height.
 FIT = {
@@ -38,7 +40,16 @@ FIT = {
     'bob': dict(hole=0.74, bang=0.32),
     'buns': dict(hole=0.80, bang=0.30),
     'swoop': dict(hole=0.80, bang=0.28),
+    # head = (center x, chin y, width) of the head the hair was drawn on, in the source's
+    # pixels (measured from the same sheet drawn with chin lines).
+    'braids': dict(head=(213, 368, 254)),
+    'pigtails': dict(head=(254, 357, 255)),
+    'wavy': dict(head=(261, 361, 260)),
+    'sidepart': dict(head=(211, 390, 269)),
+    'afro': dict(head=(260, 427, 253)),
+    'topknot': dict(head=(228, 444, 262)),
 }
+HEAD_W, CHIN_Y = 1.02, 0.97        # the kid's head width and inner chin line, as shares of the head box
 CHEEK_SPAN, CHEEK_Y = 0.60, 0.66   # face: cheeks apart / cheek height, as shares of the head
 REGION_IDS = {'skin': 1, 'shirt': 2, 'apron': 3, 'hair': 4}
 # Dark skin: a thin edge under the dark face lines, tinted in the game to a shade lighter
@@ -187,10 +198,15 @@ def main():
     hair_L0 = {}
     for hid in HAIRS:
         a, s, L = load(os.path.join(SRC, f'hair_{hid}.png'))
-        bang, lx, rx = hole_box(a)
         f = FIT[hid]
-        k = f['hole'] * hw / max(1, rx - lx)
-        placed = place(a, k, hcx - (lx + rx) / 2 * k, htop + f['bang'] * hh - bang * k, full)
+        if 'head' in f:
+            cx, chin, w = f['head']
+            k = HEAD_W * hw / w
+            placed = place(a, k, hcx - cx * k, htop + CHIN_Y * hh - chin * k, full)
+        else:
+            bang, lx, rx = hole_box(a)
+            k = f['hole'] * hw / max(1, rx - lx)
+            placed = place(a, k, hcx - (lx + rx) / 2 * k, htop + f['bang'] * hh - bang * k, full)
         tmp = {}
         write_layer(f'hair_{hid}', placed, label(*load_arr(placed), False), size, tmp)
         hair_L0[hid] = tmp[REGION_IDS['hair']]
