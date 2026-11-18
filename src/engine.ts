@@ -140,10 +140,11 @@ export class LemonadeEngine {
 
       currentChore: {
         name: "Mow Neighbor's Lawn",
-        reward: 18.00,
+        reward: 11.00,
         cooldownSec: 10,
         remainingSec: 0
       },
+      choresToday: 0,
       lastDaySummary: null,
       logs: ['Day 1: Opened the driveway stand! Check the forecast and set your recipe.']
     };
@@ -168,7 +169,9 @@ export class LemonadeEngine {
     this.state.cash = this.state.cash.add(reward);
     this.log(`Completed chore: ${name} (Earned +$${reward.toFixed(2)})`);
 
-    const cd = chore.cooldownSec;
+    // The more chores today, the longer the rest before the next one (resets each new day).
+    this.state.choresToday = (this.state.choresToday ?? 0) + 1;
+    const cd = chore.cooldownSec * Math.pow(this.balance.chores.cooldownGrowth, this.state.choresToday - 1);
     this.rollNextChore();
     this.state.currentChore.remainingSec = cd;
     return { name, reward };
@@ -674,9 +677,11 @@ export class LemonadeEngine {
     }
 
     this.rollNextForecast();
+    // A new day: chores are ready again and the rest time goes back to normal.
     if (s.currentChore) {
       s.currentChore.remainingSec = 0;
     }
+    s.choresToday = 0;
 
     return summary;
   }

@@ -2249,22 +2249,37 @@
         flex-shrink: 0;
       }
 
-      /* Emergency Chore Banner (shown when cash < $5 in Kid Mode) */
+      /* Kid Mode chore banner: always shown, calm; yellow and pulsing when cash < $5. */
       .emergency-chore-pill {
         display: none;
         align-items: center;
         justify-content: space-between;
-        background: #fef08a;
-        border: 2px solid #eab308;
+        gap: 8px;
+        background: rgba(255, 255, 255, 0.85);
+        border: 2px solid #e9d5ff;
         border-radius: 12px;
         padding: 6px 10px;
         margin-bottom: 10px;
-        color: #713f12;
+        color: #581c87;
         font-weight: 700;
         font-size: 12px;
+        transition: background-color 0.3s, border-color 0.3s;
       }
-      body.low-cash .emergency-chore-pill {
+      body:not(.dad-mode) .emergency-chore-pill {
         display: flex !important;
+      }
+      .emergency-chore-text {
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+      #btn-chore-emergency {
+        flex: 1;
+        min-width: 0;
+      }
+      body:not(.dad-mode).low-cash .emergency-chore-pill {
+        background: #fef08a;
+        border-color: #eab308;
+        color: #713f12;
         animation: pulse 1s infinite alternate;
       }
 
@@ -2657,10 +2672,12 @@
         <div class="prep-gingham-footer"></div>
       </div>
 
-            <!-- EMERGENCY BANKRUPTCY CHORE BANNER (Kid Mode: Appears when cash < $5) -->
+      <!-- KID MODE CHORE BANNER: always there (chores are how a kid catches up after a slow
+           day); it turns yellow and pulses when cash is under $5. Dad Mode uses the money box. -->
       <div class="emergency-chore-pill" id="emergency-chore-banner">
-        <span>Low on cash? Do a quick chore!</span>
+        <span id="emergency-chore-text" class="emergency-chore-text">Need cash?</span>
         <button id="btn-chore-emergency" class="chore-btn" style="min-height:36px; padding:4px 10px; font-size:12px;">
+          <span class="chore-fill" id="chore-fill-em"></span>
           <span class="chore-name" id="chore-name-em">Chore</span>
           <span class="chore-reward" id="chore-reward-em">+$0.00</span>
         </button>
@@ -2827,6 +2844,13 @@
     const DIGIT_W = { '0': 51, '1': 33, '2': 47, '3': 47, '4': 54, '5': 47, '6': 49, '7': 47, '8': 49, '9': 50, ',': 24 };
     const digitSrc = (ch) => `${SPRITE_DIR}${ch === ',' ? 'nc' : 'n' + ch}.png`;
     Object.keys(DIGIT_W).forEach(ch => { new Image().src = digitSrc(ch); }); // warm the cache
+
+    // Chore rest countdown: "8.2s" under a minute, then "2:05" (rests grow with each chore today).
+    function fmtRest(sec) {
+      if (sec < 60) return `${sec.toFixed(1)}s`;
+      const whole = Math.ceil(sec);
+      return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, '0')}`;
+    }
 
     function setText(el, text) {
       if (el && el._lastText !== text) {
@@ -3510,7 +3534,7 @@
         if (choreBtn.disabled !== busy) choreBtn.disabled = busy;
         choreBtn.classList.toggle('is-busy', busy);
         setText(document.getElementById('chore-name'), busy ? `Resting... next: ${chore.name}` : chore.name);
-        setText(document.getElementById('chore-reward'), busy ? `${chore.remainingSec.toFixed(1)}s` : `+$${chore.reward.toFixed(2)}`);
+        setText(document.getElementById('chore-reward'), busy ? fmtRest(chore.remainingSec) : `+$${chore.reward.toFixed(2)}`);
         if (choreFill) choreFill.style.width = busy ? `${((1 - chore.remainingSec / choreMaxRemain) * 100).toFixed(1)}%` : '0%';
       }
 
@@ -3518,8 +3542,14 @@
       const choreEmReward = document.getElementById('chore-reward-em');
       if (chore && choreEmName && choreEmReward) {
         const busy = chore.remainingSec > 0;
-        choreEmName.textContent = busy ? `Resting...` : chore.name;
-        choreEmReward.textContent = busy ? `${chore.remainingSec.toFixed(1)}s` : `+$${chore.reward.toFixed(2)}`;
+        const btnEm = document.getElementById('btn-chore-emergency');
+        if (btnEm.disabled !== busy) btnEm.disabled = busy;
+        btnEm.classList.toggle('is-busy', busy);
+        setText(choreEmName, busy ? `Resting...` : chore.name);
+        setText(choreEmReward, busy ? fmtRest(chore.remainingSec) : `+$${chore.reward.toFixed(2)}`);
+        const fillEm = document.getElementById('chore-fill-em');
+        if (fillEm) fillEm.style.width = busy && choreMaxRemain > 0 ? `${((1 - chore.remainingSec / choreMaxRemain) * 100).toFixed(1)}%` : '0%';
+        setText(document.getElementById('emergency-chore-text'), cashNum < 5 ? 'Low on cash!' : 'Need cash?');
       }
 
       // 2. Weather & Operations (Kawaii Weather Panel)

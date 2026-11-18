@@ -1,4 +1,5 @@
-// src/data/chores.ts — Emergency kid chore definitions & rolling logic
+// src/data/chores.ts -- Kid chore definitions and rolling logic. The dollar ranges below are
+// scaled by balance.chores.rewardMult; the rest grows with each chore done in a day (engine).
 import type { ChoreState } from '../types';
 import { BALANCE, type Balance } from '../balance';
 
@@ -18,7 +19,8 @@ export const CHORE_DEFS: { name: string; min: number; max: number }[] = [
 export function rollChore(rand: () => number, hasSkateboard: boolean = false, b: Balance = BALANCE): ChoreState {
   const c = b.chores;
   const chore = CHORE_DEFS[Math.floor(rand() * CHORE_DEFS.length)];
-  const reward = chore.min + Math.floor(rand() * (chore.max - chore.min + 1));
+  const listed = chore.min + Math.floor(rand() * (chore.max - chore.min + 1));
+  const reward = Math.max(1, Math.round(listed * c.rewardMult));
   let cooldownSec = c.cooldownMinSec + Math.floor(rand() * c.cooldownRandomSec);
   if (hasSkateboard) {
     cooldownSec = Math.max(c.skateboardMinCooldownSec, Math.round(cooldownSec * c.skateboardCooldownMult));

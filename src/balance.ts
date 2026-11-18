@@ -162,8 +162,14 @@ export const BALANCE = {
   },
 
   chores: {
+    rewardMult: 0.6,            // chore pay = the chore's listed dollars * this, rounded
     cooldownMinSec: 8,
     cooldownRandomSec: 10,
+    // Each chore done today makes the next rest longer: rest = rolled rest * growth^(chores
+    // done today - 1). It resets when a new day starts. No hard limit, but tapping chores
+    // all day stops paying: with 1.8 the 6th chore of a day rests about 2 minutes, the 10th
+    // about 25 minutes.
+    cooldownGrowth: 1.8,
     skateboardCooldownMult: 0.75,
     skateboardMinCooldownSec: 5,
   },

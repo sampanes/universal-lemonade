@@ -192,6 +192,7 @@ export interface GameState {
   seasonInfo?: SeasonInfo;
   reputation: number;        // [0.1, 1.0] what neighbors say about the lemonade
   buzz: number;              // [0, 1] share of the neighborhood that knows the stand exists
+  choresToday: number;       // chores done since the day started; each makes the next rest longer
   bestRecipeQuality: number;
   avgRecipeQuality: number;
   totalQualityDays: number;

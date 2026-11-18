@@ -143,6 +143,25 @@ test('busy-day meter: hot sunny days look busier than cold rainy ones', () => {
   assert.equal(e.getCrowdLevel(), 4);
 });
 
+test('each chore today makes the next rest longer, and a new day resets it', () => {
+  const e = new LemonadeEngine({ seed: 11 });
+  const g = BALANCE.chores.cooldownGrowth;
+  const rests = [];
+  for (let i = 0; i < 5; i++) {
+    const base = e.state.currentChore.cooldownSec;
+    assert.ok(e.doChore());
+    rests.push(e.state.currentChore.remainingSec);
+    assert.ok(Math.abs(e.state.currentChore.remainingSec - base * Math.pow(g, i)) < 1e-9);
+    assert.equal(e.doChore(), null, 'cannot do a chore while resting');
+    e.tick(e.state.currentChore.remainingSec);
+  }
+  e.runDay();
+  assert.equal(e.state.currentChore.remainingSec, 0);
+  const base = e.state.currentChore.cooldownSec;
+  e.doChore();
+  assert.equal(e.state.currentChore.remainingSec, base, 'rest is back to normal on a new day');
+});
+
 // ---- Pacing guard rails: loose on purpose, they catch big regressions, not small tuning. ----
 
 test('a careful kid reaches the neighborhood (phase 2) around day 12', () => {
