@@ -910,7 +910,7 @@
        borders, stretched to fit the tiles), bottom 130-185 (gingham). No CSS border or box
        behind it, so the art's own rounded frame is the edge. */
     .prep-stand-card {
-      margin-top: 8px;
+      margin-top: 4px;
       color: #1e1b4b;
       filter: drop-shadow(0 4px 8px rgba(124, 58, 237, 0.25));
     }
@@ -953,7 +953,7 @@
     }
     /* Side padding keeps the tiles inside the frame's side borders (cream starts at x 18 of 342). */
     .prep-stand-body {
-      padding: 0 6% 4px 6%;
+      padding: 0 6% 0 6%;
       background: url('./sprites/morning_prep/prep_frame_mid.png') no-repeat center / 100% 100%;
     }
     .prep-mult-bar {
@@ -1089,7 +1089,9 @@
        of it show, so the gingham strip is thinner and Open for Business fits on the MSI. */
     .prep-gingham-footer {
       background: url('./sprites/morning_prep/prep_frame_bottom.png') no-repeat center bottom / 100% auto;
-      aspect-ratio: 342 / 32;
+      /* Bottom 38 of the art's 55 rows: starts above the corner curve so the side
+         walls line up with prep_frame_mid (a shorter crop left a step). */
+      aspect-ratio: 342 / 38;
       width: 100%;
     }
 
