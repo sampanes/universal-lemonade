@@ -454,7 +454,31 @@
       border-color: #eab308;
       background: linear-gradient(180deg, #fffdf5 0%, #fef9c3 60%, #fed7aa 100%);
     }
-    .ratio-card.golden-locked .ratio-body { padding-top: 2px; background: transparent; }
+    /* Locked body: no pitcher, no ratio rows. Just the seal, ice and price on one line (they
+       wrap on narrow screens). */
+    .ratio-card.golden-locked .ratio-body {
+      display: block;
+      padding: 2px 10px 10px;
+      background: transparent;
+    }
+    .ratio-card.golden-locked .pitcher-col { display: none; }
+    .ratio-card.golden-locked .ratio-controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 4px 10px;
+    }
+    .ratio-card.golden-locked .ratio-controls > .ratio-row { flex: 1 1 150px; max-width: 200px; margin: 0 !important; }
+    .ratio-card.golden-locked .golden-badge-row {
+      padding: 0;
+      margin: 0;
+      background: none;
+      border: none;
+    }
+    .ratio-card.golden-locked .golden-badge-row span { display: none; }
+    .ratio-card.golden-locked .golden-badge-row .golden-seal { width: 52px; height: 52px; }
+    .ratio-card.golden-locked #autoice-container { flex-basis: 100%; margin-top: 0 !important; }
     /* Day Report banner on the day the recipe locks. */
     .report-golden {
       display: flex;
@@ -472,7 +496,6 @@
       animation: golden-stamp 0.5s ease-out;
     }
     .report-golden .golden-seal { width: 72px; height: 72px; flex-shrink: 0; }
-    .ratio-card.golden-locked .pitcher-container { height: 110px !important; max-width: 110px !important; }
 
     .ratio-row {
       display: flex;
@@ -3643,7 +3666,7 @@
       if (ratioCard && ratioCard.classList.contains('golden-locked') !== locked) {
         ratioCard.classList.toggle('golden-locked', locked);
       }
-      setText(document.getElementById('ratio-banner-text'), locked ? 'GOLDEN RECIPE' : 'RECIPE RATIO');
+      setText(document.getElementById('ratio-banner-text'), locked ? 'RATIO IS GOLDEN!' : 'RECIPE RATIO');
       const tasteBubble = document.getElementById('recipe-taste-bubble');
       if (tasteBubble) {
         const last = s.lastDaySummary;
