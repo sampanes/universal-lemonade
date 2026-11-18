@@ -18,7 +18,7 @@ export type SupplyItem = 'lemons' | 'sugar' | 'ice' | 'cups' | 'bottles';
 
 export interface CharacterProfile {
   name: string;
-  hairStyle: number; // 0..11
+  hairStyle: number; // index into the hair art (wraps around)
   skinTone: number;  // 0..4
   hairColor: number; // 0..4
   uniformColor: number; // 0..4
@@ -187,6 +187,7 @@ export interface DaySummary {
   lemonsKeptByFridge?: number;  // lemons that would have gone bad without the mini-fridge
   upgradeSavings?: number;      // what those were worth at store prices
   storageShort?: '' | 'ice' | 'lemons';  // sold out because the stand could not hold more
+  soldOut?: boolean;            // some stand ran out before every customer got a cup
   reviews: CustomerReview[];
   notes: string[];
 }

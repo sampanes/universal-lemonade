@@ -803,6 +803,7 @@ export class LemonadeEngine {
       lemonsKeptByFridge,
       upgradeSavings,
       storageShort,
+      soldOut: totalCupDemand > 0 && soldOutStands.length > 0,
       reviews,
       notes: notes.length ? notes : ['All operations ran smoothly!']
     };

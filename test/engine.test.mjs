@@ -339,6 +339,7 @@ test('a full ice bucket on a big day says the cooler would help', () => {
   assert.ok(e.getKidDemandAdvice().fullItems.includes('ice'));
   const sum = e.runDay();
   assert.equal(sum.storageShort, 'ice');
+  assert.equal(sum.soldOut, true, 'a sold-out day is flagged (the kid makes the sold-out face)');
   assert.ok(sum.notes.some(n => n.includes('A cooler holds')));
 });
 

@@ -2324,95 +2324,110 @@
         color: #f1f5f9;
         box-shadow: 0 10px 30px rgba(0,0,0,0.6);
       }
-      .char-modal-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        border-bottom: 2px solid #3b2d54;
-        padding-bottom: 10px;
-        margin-bottom: 12px;
+      /* --- THE MIRROR: make your lemonade hero --- */
+      .kid-mirror {
+        position: relative;
+        width: min(880px, 100%);
+        max-height: calc(100vh - 28px);
+        overflow-y: auto;
+        background: linear-gradient(180deg, #fffbeb 0%, #fef3c7 100%);
+        border: 5px solid #7c3aed;
+        border-radius: 28px;
+        box-shadow: inset 0 0 0 4px #ede9fe, 0 14px 40px rgba(0, 0, 0, 0.5);
+        padding: 0 18px 16px;
+        display: flex; flex-direction: column; align-items: center; gap: 10px;
       }
-      .char-preview-row {
-        display: flex;
-        align-items: center;
-        gap: 16px;
-        background: #2a223f;
-        padding: 12px;
-        border-radius: 14px;
-        border: 1.5px solid #6b46c1;
-        margin-bottom: 14px;
+      .kid-mirror-banner {
+        margin-top: 12px;
+        background: linear-gradient(180deg, #a855f7 0%, #7c3aed 100%);
+        color: #fff; font-family: var(--font-display); font-size: 24px; letter-spacing: 1px;
+        text-transform: uppercase; text-align: center;
+        padding: 8px 28px 6px; border-radius: 999px; border: 4px solid #4c1d95;
+        -webkit-text-stroke: 1px #4c1d95; paint-order: stroke fill;
+        box-shadow: 0 4px 0 #4c1d95;
       }
-      .char-avatar-frame {
-        width: 110px;
-        height: 117px;
-        background: radial-gradient(circle, #fef9c3 30%, #fef08a 100%);
-        border: 3px solid #f59e0b;
-        border-radius: 16px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        overflow: hidden;
-        flex: none;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.25);
+      .kid-mirror-x { position: absolute; top: 10px; right: 12px; }
+      .kid-mirror-x[hidden] { display: none; }
+      .kid-mirror-body { display: flex; gap: 16px; align-items: center; width: 100%; }
+      .kid-mirror-left { flex: none; width: 290px; display: flex; flex-direction: column; align-items: center; }
+      .kid-mirror-bubble {
+        position: relative; background: #fff; border: 4px solid #7c3aed; border-radius: 22px;
+        padding: 8px 14px; font-family: var(--font-display); font-size: 18px; color: #6d28d9;
+        text-align: center; line-height: 1.15; max-width: 250px;
       }
-      .char-section-title {
-        font-family: var(--font-display);
-        font-size: 13px;
-        color: #fde047;
-        margin: 12px 0 6px 0;
+      .kid-mirror-bubble::after {
+        content: ''; position: absolute; left: 50%; bottom: -14px; transform: translateX(-50%);
+        border: 10px solid transparent; border-top: 12px solid #7c3aed; border-bottom: 0;
       }
-      .char-options-grid {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 6px;
+      .kid-mirror-preview {
+        width: 290px; height: auto; aspect-ratio: 480 / 402; margin-top: 4px;
+        background: radial-gradient(ellipse at 50% 45%, #fef9c3 0%, rgba(254, 240, 138, 0) 70%);
       }
-      .char-style-chip {
-        background: #2d2645;
-        border: 1.5px solid #4c3a6e;
-        color: #e2e8f0;
-        border-radius: 10px;
-        padding: 6px 4px;
-        font-size: 11px;
-        font-weight: 600;
-        text-align: center;
-        cursor: pointer;
-        transition: all 0.1s ease;
+      .kid-mirror-rows { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+      .kid-mirror-row {
+        display: flex; align-items: center; gap: 12px;
+        background: #fff; border: 4px solid #e9d5ff; border-radius: 22px; padding: 8px 12px;
       }
-      .char-style-chip:hover {
-        background: #3e3260;
-        border-color: #8b5cf6;
+      .kid-mirror-label {
+        flex: none; width: 112px; text-align: center;
+        background: linear-gradient(180deg, #a855f7 0%, #7c3aed 100%); color: #fff;
+        font-family: var(--font-display); font-size: 15px; line-height: 1.1;
+        padding: 7px 8px; border-radius: 14px; box-shadow: 0 3px 0 #5b21b6;
       }
-      .char-style-chip.active {
-        background: #581c87;
-        border-color: #facc15;
-        color: #fef08a;
-        box-shadow: 0 0 8px rgba(250, 204, 21, 0.4);
+      .kid-mirror-opts { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+      .kid-hair-opt {
+        width: 64px; height: 64px; padding: 0; cursor: pointer;
+        background: #fffbeb; border: 3px solid #e9d5ff; border-radius: 16px; overflow: hidden;
+        transition: transform 0.12s ease, border-color 0.12s ease;
       }
-      .char-swatch-row {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
+      .kid-hair-opt img { width: 100%; height: 100%; display: block; }
+      .kid-swatch {
+        width: 42px; height: 42px; padding: 0; cursor: pointer; border-radius: 50%;
+        background: var(--sw); border: 4px solid #fff; box-shadow: 0 0 0 3px #e9d5ff, 0 3px 6px rgba(0, 0, 0, 0.18);
+        transition: transform 0.12s ease, box-shadow 0.12s ease;
       }
-      .color-swatch-btn {
-        width: 36px;
-        height: 36px;
-        border-radius: 50%;
-        border: 2px solid #ffffff;
-        cursor: pointer;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      .kid-hair-opt.on { border-color: #7c3aed; box-shadow: 0 0 0 3px #facc15; transform: scale(1.06); }
+      .kid-swatch.on { box-shadow: 0 0 0 4px #7c3aed, 0 0 0 7px #facc15; transform: scale(1.08); }
+      .kid-hair-opt:active, .kid-swatch:active { transform: scale(0.92); }
+      .kid-mirror-done {
+        margin-top: 2px; cursor: pointer;
+        background: linear-gradient(180deg, #4ade80 0%, #16a34a 100%);
+        border: 4px solid #14532d; border-radius: 999px; box-shadow: 0 5px 0 #14532d;
+        color: #fff; font-family: var(--font-display); font-size: 24px; letter-spacing: 0.5px;
+        padding: 8px 40px; -webkit-text-stroke: 1px #14532d; paint-order: stroke fill;
+      }
+      .kid-mirror-done:active { transform: translateY(3px); box-shadow: 0 2px 0 #14532d; }
+      /* Phones: kid on top, rows below, the card scrolls. */
+      @media (max-width: 700px) {
+        .kid-mirror { padding: 0 10px 12px; border-width: 4px; }
+        .kid-mirror-banner { font-size: 17px; padding: 6px 16px 4px; margin-right: 34px; }
+        .kid-mirror-body { flex-direction: column; gap: 8px; }
+        .kid-mirror-left { width: 100%; }
+        .kid-mirror-bubble { font-size: 15px; }
+        .kid-mirror-preview { width: 190px; }
+        .kid-mirror-row { flex-direction: column; align-items: stretch; gap: 6px; padding: 6px 8px; }
+        .kid-mirror-label { width: auto; align-self: flex-start; font-size: 13px; padding: 4px 12px; }
+        .kid-hair-opt { width: 50px; height: 50px; }
+        .kid-mirror-opts { gap: 6px; }
+        .kid-swatch { width: 36px; height: 36px; }
+        .kid-mirror-done { font-size: 20px; padding: 6px 28px; }
+      }
+
+      /* The player's kid beside the Yesterday ticket; tapping it opens the mirror. */
+      .kid-yesterday-row { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
+      .kid-yesterday-row[hidden],
+      body.dad-mode .kid-yesterday-row { display: none !important; }
+      .kid-yesterday-row .kid-yesterday { margin: 0; flex: 1; min-width: 0; }
+      .kid-avatar-btn {
+        flex: none; width: 56px; height: 56px; padding: 0; cursor: pointer; box-sizing: border-box;
+        border-radius: 50%; border: 3px solid #a855f7; overflow: hidden;
+        background: radial-gradient(circle at 50% 40%, #fef9c3 0%, #fde68a 100%);
+        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.28);
+        animation: kid-ticket-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
         transition: transform 0.12s ease;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 14px;
       }
-      .color-swatch-btn:hover {
-        transform: scale(1.15);
-      }
-      .color-swatch-btn.active {
-        outline: 3px solid #facc15;
-        outline-offset: 2px;
-      }
+      .kid-avatar-btn img { width: 100%; height: 100%; display: block; }
+      .kid-avatar-btn:active { transform: scale(0.94); }
 
     
       
@@ -2728,6 +2743,12 @@
         justify-content: center;
         max-width: 960px;
         margin: 0 auto;
+      }
+      /* Too narrow for two 320px columns (phones): one column. Without this the two-column
+         rules above made the page wider than the screen and it scrolled sideways. */
+      @media (max-width: 680px) {
+        body:not(.dad-mode) .grid,
+        body.phase-1-driveway .grid { grid-template-columns: minmax(0, 1fr) !important; }
       }
 
       /* In Kid Mode, only show emergency chore button when cash is low (< $5.00) or bankrupt */
@@ -3144,7 +3165,11 @@
       </button>
 
       <!-- Kid mode: after Day 1 the last Day Report shrinks to this ticket; tapping it reopens it. -->
-      <button type="button" id="btn-kid-yesterday" class="report-dock-ticket kid-yesterday" hidden title="See yesterday's Day Report"></button>
+      <!-- The player's kid sits beside it; tapping the kid opens the mirror. -->
+      <div class="kid-yesterday-row" id="kid-yesterday-row" hidden>
+        <button type="button" id="btn-kid-avatar" class="kid-avatar-btn" title="Change your look!" aria-label="Change your look"><img id="kid-avatar-img" alt="" /></button>
+        <button type="button" id="btn-kid-yesterday" class="report-dock-ticket kid-yesterday" title="See yesterday's Day Report"></button>
+      </div>
 
       <!-- Legacy containers kept hidden for fallback compatibility -->
       <div id="readout-weather" style="display:none;"></div>
@@ -3220,12 +3245,12 @@
     import {
       loadCharacterProfile,
       saveCharacterProfile,
-      renderKidAvatarSVG,
-      HAIR_STYLES,
+      hasSavedCharacterProfile,
       SKIN_PALETTES,
       HAIR_PALETTES,
       UNIFORM_PALETTES
     } from './src/character.ts';
+    import { loadKidArt, kidImageURL, kidHairCount } from './src/kid.ts';
 
     // Track which input is in use so mouse-only hover styles switch off after a finger tap.
     // (The touchscreen all-in-one this is played on has a mouse too, so CSS alone cannot tell.)
@@ -3560,8 +3585,7 @@
     // Kid mode's "Yesterday" ticket (a button, so the inner pill is a span, not a nested button).
     function renderKidYesterday(d) {
       const units = d.drivewayCupsSold + d.franchiseCupsSold + d.bottlesSold;
-      return `<img class="report-dock-cat" src="${SPRITE_DIR}cat${reportCatMood(d)}.png" alt="" />
-        <span class="report-dock-info">
+      return `<span class="report-dock-info">
           <span class="report-dock-top">
             <span class="report-dock-title">YESTERDAY: DAY ${d.day}</span>
             <span class="report-dock-profit ${d.netProfit < 0 ? 'neg' : 'pos'}">${fmtSigned(d.netProfit)}</span>
@@ -4257,10 +4281,14 @@
 
       // Kid mode: yesterday's report as a small ticket under Open for Business (none before Day 1).
       const kidTicket = document.getElementById('btn-kid-yesterday');
-      if (kidTicket) {
+      const kidRow = document.getElementById('kid-yesterday-row');
+      if (kidTicket && kidRow) {
         const d = s.lastDaySummary;
-        if (kidTicket.hidden === !!d) kidTicket.hidden = !d;
-        if (d) setHTMLIfChanged(kidTicket, renderKidYesterday(d));
+        if (kidRow.hidden === !!d) kidRow.hidden = !d;
+        if (d) {
+          setHTMLIfChanged(kidTicket, renderKidYesterday(d));
+          setKidImg(document.getElementById('kid-avatar-img'), kidMoodFor(d), true);
+        }
       }
 
       renderStandShop(s);
@@ -4498,50 +4526,108 @@
     document.addEventListener('click', (e) => { if (!moneyBag.hidden && !moneyPill.contains(e.target)) setMoneyBag(false); });
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !moneyBag.hidden) setMoneyBag(false); });
 
+    // ---- The player's kid: paper-doll art (public/sprites/kid/) stacked and recolored by
+    // src/kid.ts. It sits beside the Yesterday ticket with a face for how the day went, and
+    // tapping it opens the mirror. A new player meets the mirror before Day 1.
+    let kidProfile = loadCharacterProfile();
+    let kidVersion = 0;            // bumps when the look changes or the art finishes loading
+    function kidMoodFor(d) {
+      if (d.soldOut) return 'soldout';
+      if (d.weather === 'RAINY' || d.netProfit <= 0) return 'calm';
+      if (reportCatMood(d) >= 3) return 'cheer';
+      return 'happy';
+    }
+    function setKidImg(img, mood, head) {
+      if (!img) return;
+      const tag = `${kidVersion}/${mood}/${head ? 1 : 0}`;
+      if (img.dataset.kid === tag) return;
+      const url = kidImageURL(kidProfile, mood, head);
+      if (!url) return;            // art still loading
+      img.src = url;
+      img.dataset.kid = tag;
+    }
+
+    const mirror = document.getElementById('kid-mirror-backdrop');
+    const MIRROR_CHEERS = ['Looking good!', 'So cool!', 'Love it!', 'Ready to sell!', 'Lookin\' fresh!'];
+    let mirrorMood = 'happy';
+    let mirrorCheerTimer = 0;
+    const mirrorOpen = () => mirror.classList.contains('active');
+    function swatchesHTML(palettes, current, key, label) {
+      return palettes.map((p, i) => {
+        const on = i === current;
+        return `<button type="button" class="kid-swatch${on ? ' on' : ''}" data-key="${key}" data-i="${i}" ` +
+          `style="--sw:${p.base}" aria-label="${label} ${i + 1}" aria-pressed="${on}"></button>`;
+      }).join('');
+    }
+    function renderMirror() {
+      if (!mirrorOpen()) return;
+      setKidImg(document.getElementById('kid-mirror-preview'), mirrorMood, false);
+      const n = kidHairCount();
+      const hairOn = n ? kidProfile.hairStyle % n : -1;
+      setHTMLIfChanged(document.getElementById('kid-opt-hair'), Array.from({ length: n }, (_, i) => {
+        const url = kidImageURL({ ...kidProfile, hairStyle: i }, 'happy', true);
+        return `<button type="button" class="kid-hair-opt${i === hairOn ? ' on' : ''}" data-key="hairStyle" data-i="${i}" ` +
+          `aria-label="Hair style ${i + 1}" aria-pressed="${i === hairOn}"><img src="${url}" alt="" /></button>`;
+      }).join(''));
+      setHTMLIfChanged(document.getElementById('kid-opt-skin'), swatchesHTML(SKIN_PALETTES, kidProfile.skinTone, 'skinTone', 'Skin tone'));
+      setHTMLIfChanged(document.getElementById('kid-opt-haircolor'), swatchesHTML(HAIR_PALETTES, kidProfile.hairColor, 'hairColor', 'Hair color'));
+      setHTMLIfChanged(document.getElementById('kid-opt-apron'), swatchesHTML(UNIFORM_PALETTES, kidProfile.uniformColor, 'uniformColor', 'Apron color'));
+    }
+    mirror.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-key]');
+      if (!b) return;
+      kidProfile = { ...kidProfile, [b.dataset.key]: Number(b.dataset.i) };
+      saveCharacterProfile(kidProfile);
+      kidVersion++;
+      mirrorMood = 'cheer';
+      setText(document.getElementById('kid-mirror-bubble'), MIRROR_CHEERS[Math.floor(Math.random() * MIRROR_CHEERS.length)]);
+      clearTimeout(mirrorCheerTimer);
+      mirrorCheerTimer = setTimeout(() => { mirrorMood = 'happy'; renderMirror(); }, 900);
+      renderMirror();
+    });
+    function openMirror(first) {
+      setText(document.getElementById('btn-kid-mirror-done'), first ? 'Start My Stand!' : 'Done!');
+      setText(document.getElementById('kid-mirror-bubble'), first ? 'Let\'s make your lemonade hero!' : 'Want a new look?');
+      document.getElementById('btn-kid-mirror-x').hidden = first;   // first time: pick, then start
+      mirrorMood = 'happy';
+      mirror.classList.add('active');
+      mirror.setAttribute('aria-hidden', 'false');
+      renderMirror();
+    }
+    function closeMirror() {
+      if (!mirrorOpen()) return;
+      saveCharacterProfile(kidProfile);
+      mirror.classList.remove('active');
+      mirror.setAttribute('aria-hidden', 'true');
+    }
+    document.getElementById('btn-kid-mirror-done').onclick = closeMirror;
+    document.getElementById('btn-kid-mirror-x').onclick = closeMirror;
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeMirror(); });
+    document.getElementById('btn-kid-avatar').onclick = (e) => { e.stopPropagation(); openMirror(false); };
+    loadKidArt().then(() => { kidVersion++; renderMirror(); }).catch((e) => console.warn('[Kid]', e.message));
+    if (!dadModeActive && !hasSavedCharacterProfile() && engine.state.day === 1 && !engine.state.lastDaySummary) openMirror(true);
+
     requestAnimationFrame(loop);
   </script>
 
-  <!-- CHARACTER CUSTOMIZER MIRROR MODAL -->
-  <div id="character-modal-backdrop" class="report-modal-backdrop" aria-hidden="true" style="display:none;">
-    <div class="char-modal-dialog" id="character-modal-dialog">
-      <div class="char-modal-header">
-        <h2 style="font-family: var(--font-display); color: #fde047; margin: 0; font-size: 20px;">🪞 LEMONADE HERO MIRROR</h2>
-        <button type="button" id="btn-char-modal-x" class="report-modal-close-x" aria-label="Close">&times;</button>
-      </div>
-      <div class="char-modal-body">
-        <!-- TOP: LIVE AVATAR PREVIEW & NAME -->
-        <div class="char-preview-row">
-          <div class="char-avatar-frame" id="char-preview-frame">
-            <!-- Live SVG renders here -->
-          </div>
-          <div class="char-hero-info" style="flex:1;">
-            <label style="font-size: 12px; font-weight: bold; color: #fbcfe8;">Hero Name:</label>
-            <input type="text" id="char-name-input" value="Lemonade Kid" maxlength="20" style="width: 100%; box-sizing: border-box; padding: 6px 10px; border-radius: 8px; border: 2px solid #a855f7; background: #262636; color: #fff; font-family: var(--font-display); font-size: 14px; margin-top: 4px;" />
-            <div style="font-size: 11px; color: #94a3b8; margin-top: 6px;">Pick your hairstyle from Image 1, skin tone, hair color, and stand apron!</div>
-          </div>
+  <!-- THE MIRROR: make your lemonade hero (opens for a new player, or by tapping the kid) -->
+  <div id="kid-mirror-backdrop" class="report-modal-backdrop" aria-hidden="true">
+    <div class="kid-mirror" role="dialog" aria-modal="true" aria-labelledby="kid-mirror-title">
+      <div class="kid-mirror-banner" id="kid-mirror-title">Create Your Lemonade Hero</div>
+      <button type="button" id="btn-kid-mirror-x" class="report-modal-close-x kid-mirror-x" aria-label="Close">&times;</button>
+      <div class="kid-mirror-body">
+        <div class="kid-mirror-left">
+          <div class="kid-mirror-bubble" id="kid-mirror-bubble">Let's make your lemonade hero!</div>
+          <img id="kid-mirror-preview" class="kid-mirror-preview" alt="Your lemonade hero" />
         </div>
-
-        <!-- 1. HAIRSTYLE SELECTOR (12 STYLES) -->
-        <div class="char-section-title">1. Hairstyle (12 Styles):</div>
-        <div class="char-options-grid" id="char-hair-styles-grid"></div>
-
-        <!-- 2. SKIN TONE (5 SWATCHES) -->
-        <div class="char-section-title">2. Skin Tone (5 Shades):</div>
-        <div class="char-swatch-row" id="char-skin-swatches"></div>
-
-        <!-- 3. HAIR COLOR (5 SWATCHES) -->
-        <div class="char-section-title">3. Hair Color (5 Colors):</div>
-        <div class="char-swatch-row" id="char-hair-swatches"></div>
-
-        <!-- 4. APRON / UNIFORM COLOR (5 SWATCHES) -->
-        <div class="char-section-title">4. Apron Uniform Color:</div>
-        <div class="char-swatch-row" id="char-uniform-swatches"></div>
+        <div class="kid-mirror-rows">
+          <div class="kid-mirror-row"><span class="kid-mirror-label">Hair Style</span><div class="kid-mirror-opts" id="kid-opt-hair"></div></div>
+          <div class="kid-mirror-row"><span class="kid-mirror-label">Skin Tone</span><div class="kid-mirror-opts" id="kid-opt-skin"></div></div>
+          <div class="kid-mirror-row"><span class="kid-mirror-label">Hair Color</span><div class="kid-mirror-opts" id="kid-opt-haircolor"></div></div>
+          <div class="kid-mirror-row"><span class="kid-mirror-label">Apron Color</span><div class="kid-mirror-opts" id="kid-opt-apron"></div></div>
+        </div>
       </div>
-      <div style="margin-top: 16px;">
-        <button type="button" id="btn-char-save" class="btn-trigger-expansion" style="font-size: 15px; padding: 12px; background: linear-gradient(180deg, #ec4899 0%, #db2777 100%); border-color: #be185d; box-shadow: 0 3px 0 #9d174d;">
-          ✨ Lookin' Great! Save & Squeeze! 🍋
-        </button>
-      </div>
+      <button type="button" id="btn-kid-mirror-done" class="kid-mirror-done">Start My Stand!</button>
     </div>
   </div>
 
