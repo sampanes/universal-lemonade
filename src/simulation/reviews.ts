@@ -42,7 +42,7 @@ export function tasteReview(dL: number, dS: number, streak: number, justLocked: 
       return taste(5, "Perfect again! Don't change a thing!", "Your regular customers");
     }
     const praises = [
-      { quote: "Wow, this is PERFECT lemonade! Just the right lemon and sugar.", reviewer: "Local foodie" },
+      { quote: "This is the PERFECT amount of lemon and sugar!", reviewer: "Local foodie" },
       { quote: "Best lemonade on the block! Not too sour, not too sweet.", reviewer: "Mail carrier" },
       { quote: "This is exactly how lemonade should taste!", reviewer: "Little League parent" },
       { quote: "Crisp, sweet and tangy. Perfect!", reviewer: "Bicycle kid" }
