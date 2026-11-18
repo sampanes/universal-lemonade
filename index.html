@@ -143,9 +143,11 @@
     /* Hover styles are for a mouse only. After a finger tap :hover sticks to the tapped
        button, which left it gold-bordered / enlarged until the next tap. Two guards:
        the media query covers phones, and html.touch-input (set by the script from the last
-       pointer type) covers a touchscreen PC that also has a mouse, where the query is true. */
+       pointer type) covers a touchscreen PC that also has a mouse, where the query is true.
+       :where() keeps this rule as weak as a bare `button`, so it only dresses plain buttons;
+       a button with its own colors (See report, the mirror, Reset) keeps them under the mouse. */
     @media (hover: hover) {
-      html:not(.touch-input) button:hover:not(:disabled) {
+      :where(html:not(.touch-input)) button:where(:hover:not(:disabled)) {
         background: #444;
         border-color: #ffd700;
       }
@@ -1782,6 +1784,8 @@
       object-fit: contain;
       object-position: center bottom;
     }
+    .report-kid { flex: none; width: 84px; height: 84px; margin: -4px 0; }
+    .report-kid .kid-pic { width: 100%; height: 100%; }
     .report-hero-text { flex: 1 1 0; min-width: 0; container-type: inline-size; }
     .report-hero-label {
       font-size: 11px;
@@ -2631,7 +2635,9 @@
         max-height: calc(100vh - 140px); overflow-y: auto;   /* later phases add rows */
       }
       .mb-day { font-family: var(--font-display); font-size: 15px; color: #6d28d9; text-align: center; }
-      .mb-day-row { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; }
+      .mb-day-row { display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; }
+      .mb-stars { display: inline-flex; line-height: 0; }
+      .mb-stars .star-meter { --star: 17px; }
       .mb-see-report {
         cursor: pointer; border: 3px solid #6d28d9; border-radius: 999px; padding: 4px 14px;
         background: linear-gradient(180deg, #c084fc 0%, #9333ea 100%); color: #fff;
@@ -3379,6 +3385,7 @@
       dadModeActive = !!enabled;
       document.body.classList.toggle('dad-mode', dadModeActive);
       localStorage.setItem('universal_lemonade_dad_mode', dadModeActive ? 'true' : 'false');
+      document.dispatchEvent(new Event('dadmodechange'));
       const toggleBtn = document.getElementById('btn-dad-toggle');
       if (toggleBtn) {
         toggleBtn.textContent = dadModeActive ? 'DAD MODE: ON' : 'Dad Mode: OFF';
@@ -3512,6 +3519,14 @@
       return Math.max(0, Math.min(4, Math.round(avg) - 1));
     }
 
+    // The report's hero picture: the player's own kid with a face for the day (the cat until
+    // the kid art has loaded).
+    function reportKidHTML(d) {
+      const pic = kidPicHTML(kidProfile, kidMoodFor(d), true);
+      return pic ? `<span class="report-kid">${pic}</span>`
+        : `<img class="report-cat" src="${SPRITE_DIR}cat${reportCatMood(d)}.png" alt="" />`;
+    }
+
     // Stars everywhere mean one thing: how much the neighborhood likes the stand (reputation).
     const repStars = (d) => {
       const rep = typeof d.reputationAfter === 'number' ? d.reputationAfter : 0.6;
@@ -3604,7 +3619,7 @@
               <span>The whole neighborhood agrees: your recipe is GOLDEN!</span>
             </div>` : ''}
             <div class="report-hero">
-              <img class="report-cat" src="${SPRITE_DIR}cat${reportCatMood(d)}.png" alt="" />
+              ${reportKidHTML(d)}
               <div class="report-hero-text">
                 <div class="report-hero-label">${d.netProfit < 0 ? 'You lost' : 'You made'}</div>
                 <div class="report-profit ${d.netProfit < 0 ? 'neg' : 'pos'}" style="--chars:${fmtSigned(d.netProfit).length}">${fmtSigned(d.netProfit)}</div>
@@ -4340,9 +4355,10 @@
       setHTMLIfChanged(document.getElementById('readout-pnl'), renderDayReport(s));
 
       // The kid beside the cash pill: there from Day 1, with a face for how yesterday went.
+      // Nobody has touched the game for a while: the kid dozes off until the next tap.
       const dHead = s.lastDaySummary;
-      setKidImg(document.getElementById('header-kid-img'),
-        dHead ? kidMoodFor(dHead) : (Date.now() < kidFlashUntil ? kidFlashMood : 'happy'), true);
+      setKidImg(document.getElementById('header-kid-img'), kidDozing() ? 'sleepy'
+        : dHead ? kidMoodFor(dHead) : (Date.now() < kidFlashUntil ? kidFlashMood : 'happy'), true);
 
       renderStandShop(s);
       renderMoneyBag(s);
@@ -4527,8 +4543,11 @@
         const kept = last.sales + last.chores - (Object.values(last.supplies).reduce((a, b) => a + b, 0)
           + last.shop + last.treats + last.hiring + last.wages + last.packaging);
         // Yesterday's whole Day Report is one tap away (this took over the old bottom ticket).
+        // The stars are how much the neighbors like the stand (same meter as the report).
+        const dLast = s.lastDaySummary;
         html += `<div class="mb-day-row"><span class="mb-day">Yesterday: Day ${last.day}</span>` +
-          (s.lastDaySummary ? `<button type="button" class="mb-see-report" id="btn-mb-see-report">See report</button>` : '') + `</div>`;
+          (dLast ? `<span class="mb-stars">${repStars(dLast)}</span>` +
+            `<button type="button" class="mb-see-report" id="btn-mb-see-report">See report</button>` : '') + `</div>`;
         html += `<div class="mb-label in">Money in</div>`;
         html += mbRow('in', './sprites/lemonade_cup.png', 'Lemonade', `${last.cups.toLocaleString('en-US')} ${last.cups === 1 ? 'cup' : 'cups'} sold`, last.sales);
         if (last.chores > 0.004) html += mbRow('in', './sprites/morning_prep/coin_jar.png', 'Chores', '', last.chores);
@@ -4592,11 +4611,17 @@
     // ---- The player's kid: paper-doll art (public/sprites/kid/) stacked and recolored by
     // src/kid.ts. It sits beside the cash pill with a face for how the day went, and
     // tapping it opens the mirror. A new player meets the mirror before Day 1.
-    let kidProfile = loadCharacterProfile();
+    let kidProfile = loadCharacterProfile(dadModeActive);   // Dad Mode has its own look
     let kidVersion = 0;            // bumps when the look changes or the art finishes loading
     // The kid's face for how yesterday went, or a quick face for something that just happened.
     let kidFlashMood = '', kidFlashUntil = 0;
     function kidFlash(mood, ms) { kidFlashMood = mood; kidFlashUntil = Date.now() + ms; }
+    const KID_DOZE_MS = 45000;
+    let kidLastInput = Date.now();
+    for (const ev of ['pointerdown', 'keydown', 'wheel']) {
+      document.addEventListener(ev, () => { kidLastInput = Date.now(); }, { capture: true, passive: true });
+    }
+    const kidDozing = () => Date.now() - kidLastInput > KID_DOZE_MS;
     function kidMoodFor(d) {
       if (Date.now() < kidFlashUntil) return kidFlashMood;
       if (d.soldOut) return 'soldout';
@@ -4655,10 +4680,8 @@
     }
     const MAGIC_LINES = ['Whoa! Magic in the mirror!', 'Something sparkly appeared!', 'Psst... check the mirror!'];
     function checkMagicLooks(summary, show) {
-      if (!summary) return;
-      const cust = (summary.reviews || []).filter(r => !isTeamNote(r));
-      const best = summary.netProfit > 0 && cust.length >= 3 && cust.reduce((n, r) => n + r.stars, 0) / cust.length >= 4.75;
-      const got = newUnlocks(kidUnlocks.have, unlockCheckFrom(engine.state, summary, best));
+      if (!summary || dadModeActive) return;   // Dad's test days do not spend the kid's surprises
+      const got = newUnlocks(kidUnlocks.have, unlockCheckFrom(engine.state, summary));
       if (!got.length) return;
       got.forEach(l => { kidUnlocks.have.add(l); kidUnlocks.unseen.add(l); });
       saveUnlocks(kidUnlocks);
@@ -4684,13 +4707,16 @@
     let mirrorMood = 'happy';
     let mirrorCheerTimer = 0;
     const mirrorOpen = () => mirror.classList.contains('active');
+    // Dad Mode's mirror is the selfie room: every secret look is out, with no glows.
+    const lookShown = (look) => dadModeActive || lookOpen(kidUnlocks, look);
+    const lookIsNew = (look) => !dadModeActive && kidUnlocks.unseen.has(look);
     // lookOf: (index) -> look id, for options that can be secret; hidden until earned.
     function swatchesHTML(palettes, current, key, label, lookOf) {
       return palettes.map((p, i) => {
         const on = i === current;
         const look = lookOf ? lookOf(i) : '';
-        if (look && !on && !lookOpen(kidUnlocks, look)) return '';
-        const isNew = look && kidUnlocks.unseen.has(look);
+        if (look && !on && !lookShown(look)) return '';
+        const isNew = look && lookIsNew(look);
         return `<button type="button" class="kid-swatch${on ? ' on' : ''}${isNew ? ' is-new' : ''}" data-key="${key}" data-i="${i}" ` +
           `style="--sw:${p.swatch || p.base}" aria-label="${p.name || label + ' ' + (i + 1)}" aria-pressed="${on}"></button>`;
       }).join('');
@@ -4702,8 +4728,8 @@
       const hairOn = n ? kidProfile.hairStyle % n : -1;
       setHTMLIfChanged(document.getElementById('kid-opt-hair'), Array.from({ length: n }, (_, i) => {
         const look = lookOfHair(i);
-        if (i !== hairOn && !lookOpen(kidUnlocks, look)) return '';
-        const isNew = kidUnlocks.unseen.has(look);
+        if (i !== hairOn && !lookShown(look)) return '';
+        const isNew = lookIsNew(look);
         const url = kidImageURL({ ...kidProfile, hairStyle: i }, 'happy', true);
         return `<button type="button" class="kid-hair-opt${i === hairOn ? ' on' : ''}${isNew ? ' is-new' : ''}" data-key="hairStyle" data-i="${i}" ` +
           `aria-label="Hair style ${i + 1}" aria-pressed="${i === hairOn}"><img src="${url}" alt="" /></button>`;
@@ -4716,7 +4742,7 @@
       const b = e.target.closest('[data-key]');
       if (!b) return;
       kidProfile = { ...kidProfile, [b.dataset.key]: Number(b.dataset.i) };
-      saveCharacterProfile(kidProfile);
+      saveCharacterProfile(kidProfile, dadModeActive);
       kidVersion++;
       mirrorMood = MIRROR_POSES[Math.floor(Math.random() * MIRROR_POSES.length)];
       setText(document.getElementById('kid-mirror-bubble'), MIRROR_CHEERS[Math.floor(Math.random() * MIRROR_CHEERS.length)]);
@@ -4735,8 +4761,8 @@
     }
     function closeMirror() {
       if (!mirrorOpen()) return;
-      saveCharacterProfile(kidProfile);
-      if (kidUnlocks.unseen.size) {       // seen now: the glows go away
+      saveCharacterProfile(kidProfile, dadModeActive);
+      if (!dadModeActive && kidUnlocks.unseen.size) {       // seen now: the glows go away
         kidUnlocks.unseen.clear();
         saveUnlocks(kidUnlocks);
         refreshKidNew();
@@ -4748,12 +4774,18 @@
     document.getElementById('btn-kid-mirror-x').onclick = closeMirror;
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeMirror(); });
     document.getElementById('btn-header-kid').onclick = (e) => { e.stopPropagation(); setMoneyBag(false); openMirror(false); };
+    // Switching Dad Mode swaps between the kid's look and Dad's selfie-room look.
+    document.addEventListener('dadmodechange', () => {
+      kidProfile = loadCharacterProfile(dadModeActive);
+      kidVersion++;
+      renderMirror();
+    });
 
     // Reset: forget the look and the secret looks, then meet the mirror like a new player.
     function resetKid() {
       clearCharacterProfile();
       clearUnlocks();
-      kidProfile = loadCharacterProfile();
+      kidProfile = loadCharacterProfile(dadModeActive);
       kidUnlocks = loadUnlocks();
       kidFlashUntil = 0;
       kidVersion++;

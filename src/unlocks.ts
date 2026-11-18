@@ -11,26 +11,34 @@ export interface UnlockCheck {
   totalCupsSold: number;   // all game long
   cash: number;
   reputation: number;      // 0..1
-  bestReviews: boolean;    // the customers' stars averaged five today
+  phase: number;           // 1 = driveway stand ... 5 = the last phase
   hasTreat: boolean;       // bought any trophy (skateboard, bike, ...)
 }
 
-/** Every secret look and the milestone that brings it. Order is the usual order kids meet them. */
+/**
+ * Every secret look and the milestone that brings it, in the usual order kids meet them.
+ * Pacing (from the simulator, a careful player; a game runs about 70 to 150 days): plain colors
+ * and hair come in the first two weeks so a kid sees early that things change; the special
+ * colors (gradients, sparkles, rainbow, galaxy) wait for the big moments of the game.
+ */
 export const MILESTONES: { look: string; earned: (c: UnlockCheck) => boolean }[] = [
-  { look: 'color:grape', earned: c => c.summary.netProfit > 0 },
-  { look: 'hair:spiky', earned: c => c.totalCupsSold >= 100 },
-  { look: 'hair:messybun', earned: c => !!c.summary.soldOut },
-  { look: 'color:ocean', earned: c => c.summary.weather === 'RAINY' && c.summary.netProfit > 0 },
-  { look: 'color:mint', earned: c => c.summary.tempF >= 90 },
+  { look: 'color:grape', earned: c => c.summary.day >= 3 && c.summary.netProfit > 0 },   // about day 3
   { look: 'hair:bangs', earned: c => c.summary.day >= 5 },
-  { look: 'color:candy', earned: c => c.bestReviews },
+  { look: 'color:ocean', earned: c => c.summary.weather === 'RAINY' && c.summary.netProfit > 0 },
+  { look: 'hair:spiky', earned: c => c.totalCupsSold >= 100 },                            // about day 7
+  { look: 'color:mint', earned: c => c.summary.tempF >= 90 },
+  { look: 'hair:messybun', earned: c => !!c.summary.soldOut },
   { look: 'hair:wavybob', earned: c => c.reputation >= 0.8 },
-  { look: 'color:glitter', earned: c => (c.summary.goldenStreak ?? 0) >= 3 },
+  { look: 'hair:windswept', earned: c => !!c.summary.recipeJustLocked },                  // golden recipe
+  { look: 'hair:undercut', earned: c => c.phase >= 2 },                                   // about day 10
+  { look: 'hair:mohawk', earned: c => c.totalCupsSold >= 1000 },                          // about day 20
+  { look: 'color:snow', earned: c => c.summary.day >= 20 },
   { look: 'hair:crownbraid', earned: c => c.cash >= 500 },
   { look: 'hair:shaggy', earned: c => c.hasTreat },
-  { look: 'color:rainbow', earned: c => !!c.summary.recipeJustLocked },
-  { look: 'color:snow', earned: c => c.summary.day >= 20 },
-  { look: 'color:galaxy', earned: c => c.totalCupsSold >= 1000 },
+  { look: 'color:candy', earned: c => c.phase >= 3 },                                     // about day 28
+  { look: 'color:glitter', earned: c => c.phase >= 4 },                                   // about day 46
+  { look: 'color:rainbow', earned: c => c.phase >= 5 },                                   // about day 68
+  { look: 'color:galaxy', earned: c => c.summary.day >= 100 },
 ];
 
 const TREAT_FLAGS = ['hasSkateboard', 'hasMountainBike', 'hasNintendoSwitch', 'hasElectricScooter',
@@ -38,14 +46,14 @@ const TREAT_FLAGS = ['hasSkateboard', 'hasMountainBike', 'hasNintendoSwitch', 'h
   'hasPaidMortgage', 'hasLemonGrove', 'hasTeslaModelX', 'hasPrivateJet', 'hasArenaNaming',
   'hasPrivateIsland'] as const;
 
-/** The check for the day that just ended. bestReviews: today's customer stars averaged five. */
-export function unlockCheckFrom(s: GameState, summary: DaySummary, bestReviews: boolean): UnlockCheck {
+/** The check for the day that just ended. */
+export function unlockCheckFrom(s: GameState, summary: DaySummary): UnlockCheck {
   return {
     summary,
     totalCupsSold: s.totalCupsSold.toNumber(),
     cash: s.cash.toNumber(),
     reputation: s.reputation,
-    bestReviews,
+    phase: s.phase,
     hasTreat: TREAT_FLAGS.some(f => s.flags[f]),
   };
 }

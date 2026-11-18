@@ -33,7 +33,8 @@ PAD_TOP, PAD_SIDE = 300, 300   # headroom on the source canvas for buns, ponytai
 # Order shown in the mirror. Saves store the index, so add new styles at the end.
 HAIRS = ['swoop', 'curly', 'bob', 'ponytail', 'buns',
          'braids', 'pigtails', 'wavy', 'sidepart', 'afro', 'topknot',
-         'locs', 'bangs', 'wavybob', 'spiky', 'messybun', 'crownbraid', 'shaggy']
+         'locs', 'bangs', 'wavybob', 'spiky', 'messybun', 'crownbraid', 'shaggy',
+         'undercut', 'mohawk', 'windswept']
 FACES = ['happy', 'cheer', 'soldout', 'calm', 'sleepy', 'wink', 'grumpy', 'smug', 'surprised', 'ennui', 'sly', 'determined']
 # hole = face-opening width / head width; bang = bang line as a share of head height.
 FIT = {
@@ -59,6 +60,11 @@ FIT = {
     'messybun': dict(head=(130,292,164), soft=True),
     'crownbraid': dict(head=(167,296,174), soft=True),
     'shaggy': dict(head=(165,300,164), soft=True),
+    # The shaved parts of these two are see-through stubble in the source (gray at the
+    # hair's middle tone, low alpha), so they take the hair color over the skin.
+    'undercut': dict(head=(140,268,175), soft=True),
+    'mohawk': dict(head=(122,335,205), soft=True),
+    'windswept': dict(head=(152,284,170), soft=True),
 }
 HEAD_W, CHIN_Y = 0.97, 1.04        # the kid's head width and inner chin line, as shares of the head box
 CHEEK_SPAN, CHEEK_Y = 0.60, 0.66   # face: cheeks apart / cheek height, as shares of the head

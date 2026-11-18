@@ -68,10 +68,14 @@ export const DEFAULT_CHARACTER: CharacterProfile = {
 };
 
 const STORAGE_KEY = 'universal_lemonade_character_profile';
+// Dad Mode keeps its own look: its mirror has every secret look open, and trying them on
+// there must not hand the kid a look they have not earned yet.
+const DAD_STORAGE_KEY = 'universal_lemonade_dad_look';
 
-export function loadCharacterProfile(): CharacterProfile {
+/** The saved look; dad = Dad Mode's own look (a copy of the kid's until Dad changes it). */
+export function loadCharacterProfile(dad = false): CharacterProfile {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = (dad ? localStorage.getItem(DAD_STORAGE_KEY) : null) ?? localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
       return {
@@ -106,9 +110,9 @@ export function clearCharacterProfile(): void {
   }
 }
 
-export function saveCharacterProfile(profile: CharacterProfile): void {
+export function saveCharacterProfile(profile: CharacterProfile, dad = false): void {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
+    localStorage.setItem(dad ? DAD_STORAGE_KEY : STORAGE_KEY, JSON.stringify(profile));
   } catch (e) {
     console.warn('[Character] Error saving profile:', e);
   }

@@ -78,6 +78,18 @@
   {
    "id": "shaggy",
    "L0": 0.3824
+  },
+  {
+   "id": "undercut",
+   "L0": 0.4059
+  },
+  {
+   "id": "mohawk",
+   "L0": 0.4
+  },
+  {
+   "id": "windswept",
+   "L0": 0.3922
   }
  ],
  "faces": [
