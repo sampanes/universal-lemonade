@@ -218,6 +218,19 @@ test('three golden open days in a row lock the recipe; an off day starts the cou
   assert.ok(!later.reviews.some(r => r.topic === 'taste'), 'no taste review once locked');
 });
 
+test('melted ice and spoiled lemons get the full tip twice, then one short line', () => {
+  const e = new LemonadeEngine({ seed: 21 });
+  const spoil = (n) => /melted|went bad/.test(n);
+  for (let day = 1; day <= 2; day++) {
+    const notes = playDay(e).notes.filter(spoil);
+    assert.equal(notes.length, 2, `day ${day}: ${notes}`);
+    assert.ok(notes.some(n => /Ice only lasts one day/.test(n)) && notes.some(n => /Lemons spoil/.test(n)));
+  }
+  const notes = playDay(e).notes.filter(spoil);
+  assert.equal(notes.length, 1, String(notes));
+  assert.match(notes[0], /^Overnight: \d+ ice cubes melted, \d+ lemons went bad\.$/);
+});
+
 test('a day with no sales does not count toward the golden lock', () => {
   const e = new LemonadeEngine({ seed: 21 });
   playDay(e);

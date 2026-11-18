@@ -604,16 +604,30 @@ export class LemonadeEngine {
       copackerNet = copackerCasesSold * this.copacker.netPerCase;
     }
 
+    // Overnight spoilage. Kid-facing: the cooler and fridge upgrades are not on the kid's
+    // screen, so each tip says what to do. The full tip shows the first TIP_FULL_TIMES days it
+    // happens; after that both go on one short line.
+    const TIP_FULL_TIMES = 2;
+    s.tipCounts = s.tipCounts ?? {};
+    const shortSpoil: string[] = [];
+    const spoilNote = (key: string, full: string, short: string) => {
+      const seen = s.tipCounts![key] ?? 0;
+      s.tipCounts![key] = seen + 1;
+      if (seen < TIP_FULL_TIMES) notes.push(full);
+      else shortSpoil.push(short);
+    };
     if (!s.flags.hasCooler && s.inv.ice > 0) {
-      // Kid-facing: the cooler upgrade is not on the kid's screen, so the tip says what to do today.
-      notes.push(`${s.inv.ice} ice ${s.inv.ice === 1 ? 'cube' : 'cubes'} melted overnight. Ice only lasts one day, so buy just what today needs.`);
+      const cubes = `${s.inv.ice} ice ${s.inv.ice === 1 ? 'cube' : 'cubes'}`;
+      spoilNote('melt', `${cubes} melted overnight. Ice only lasts one day, so buy just what today needs.`, `${cubes} melted`);
       s.inv.ice = 0;
     }
     if (!s.flags.hasMiniFridge && s.inv.lemons > 0 && !s.flags.hasLemonGrove) {
       const rotted = Math.ceil(s.inv.lemons * b.spoilage.lemonRotFraction);
       s.inv.lemons -= rotted;
-      notes.push(`${rotted} ${rotted === 1 ? 'lemon' : 'lemons'} went bad overnight. Lemons spoil, so don't stock up too far ahead.`);
+      const lemons = `${rotted} ${rotted === 1 ? 'lemon' : 'lemons'}`;
+      spoilNote('rot', `${lemons} went bad overnight. Lemons spoil, so don't stock up too far ahead.`, `${lemons} went bad`);
     }
+    if (shortSpoil.length) notes.push(`Overnight: ${shortSpoil.join(', ')}.`);
 
     const totalRevenue = (drivewayRevenue + franchiseGross + wholesaleGross + patentRoyalties + copackerNet) * s.brandMultiplier;
     const totalExpenses = franchiseWages + packagingCosts;

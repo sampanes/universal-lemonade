@@ -226,7 +226,9 @@ export interface GameState {
   };
   // This game's best-tasting lemons:sugar per pitcher (picked from the seed at the start).
   goldenRecipe: GoldenRecipe;
-  goldenStreak: number;      // open days in a row sold at the exact golden lemons:sugar
+  goldenStreak: number;
+  // How many days each kid tip has been shown ('melt', 'rot'), so long tips can get shorter.
+  tipCounts?: Record<string, number>;      // open days in a row sold at the exact golden lemons:sugar
   recipeLocked: boolean;     // neighbors asked to keep it: lemons:sugar stay golden for good
 
   // Upgrades & Flag States

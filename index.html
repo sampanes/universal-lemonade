@@ -1137,6 +1137,7 @@
       height: 20px;
       object-fit: contain;
     }
+    .kawaii-run-day-btn.short-stock .btn-sparkle { visibility: hidden; }
     .btn-sun {
       width: 30px;
       height: 30px;
@@ -1716,9 +1717,24 @@
       color: #4a044e;
     }
     .report-rep .star-meter { --star: 16px; }
-    .report-rep-trend { flex-basis: 100%; font-size: 11px; color: #6b21a8; }
+    .report-rep-trend {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin-left: auto;
+      font-size: 12px;
+      color: #6b21a8;
+    }
     .report-rep-trend.up { color: #047857; }
     .report-rep-trend.down { color: #be123c; }
+    /* CSS triangle arrows (no glyphs): up for going up, down for going down. */
+    .report-rep-trend.up::before,
+    .report-rep-trend.down::before {
+      content: '';
+      border: 6px solid transparent;
+    }
+    .report-rep-trend.up::before { border-top: 0; border-bottom: 9px solid currentColor; }
+    .report-rep-trend.down::before { border-bottom: 0; border-top: 9px solid currentColor; }
     .report-section-title {
       margin: 10px 0 4px 0;
       font-size: 11px;
@@ -1726,15 +1742,30 @@
       color: #6b21a8;
     }
     .report-review {
+      display: flex;
+      align-items: center;
+      gap: 8px;
       margin-top: 5px;
       padding: 6px 10px;
       background: #ffffff;
       border: 2px solid #e9d5ff;
+      border-left-width: 6px;
       border-radius: 12px;
+    }
+    /* No stars on comments: a green edge for happy ones, orange for complaints. */
+    .report-review.good { border-color: #bbf7d0; border-left-color: #22c55e; }
+    .report-review.bad { border-color: #fed7aa; border-left-color: #f97316; }
+    .report-review-text { min-width: 0; }
+    .report-review-face {
+      flex: 0 0 auto;
+      width: 40px;
+      height: 40px;
+      object-fit: contain;
     }
     .report-review.team {
       background: #eff6ff;
       border-color: #bfdbfe;
+      border-left-color: #3b82f6;
     }
     .report-review-head {
       display: flex;
@@ -3124,12 +3155,11 @@
       return Math.max(0, Math.min(4, Math.round(avg) - 1));
     }
 
-    function reportStarCount(d) {
-        const cust = (d.reviews || []).filter(r => !isTeamNote(r));
-        if (cust.length === 0) return 3;
-        const avg = cust.reduce((sum, r) => sum + r.stars, 0) / cust.length;
-        return Math.max(1, Math.min(5, Math.round(avg)));
-      }
+    // Stars everywhere mean one thing: how much the neighborhood likes the stand (reputation).
+    const repStars = (d) => {
+      const rep = typeof d.reputationAfter === 'number' ? d.reputationAfter : 0.6;
+      return starMeter(rep, `Neighbors like the stand ${Math.round(rep * 100)} out of 100`);
+    };
 
       function renderFullDayReportHTML(d, s, isModal = false) {
         if (!d) return '';
@@ -3141,6 +3171,8 @@
         const rawRevenue = d.drivewayRevenue + d.franchiseGrossRevenue + d.wholesaleRevenue + d.patentRoyalties + d.copackerNet;
         const brandBonus = d.totalRevenue - rawRevenue;
 
+        // With only the driveway stand, the rows would just repeat the big number above them.
+        const showRows = s.phase >= 2 || brandBonus > 0.005;
         let rows = row(`Driveway stand (${count(d.drivewayCupsSold)} cups)`, `+${money(d.drivewayRevenue)}`);
         if (s.phase >= 2) {
           rows += row(`Franchise stands (${count(d.franchiseCupsSold)} cups)`, `+${money(d.franchiseGrossRevenue)}`);
@@ -3155,16 +3187,37 @@
         if (brandBonus > 0.005) rows += row('Famous brand bonus', `+${money(brandBonus)}`);
         rows += row("Today's profit", fmtSigned(d.netProfit, true), `total ${d.netProfit < 0 ? 'neg' : ''}`);
 
-        const reviews = (d.reviews || []).map(r => {
+        // At most two comments, the most useful first: taste (how to find golden), then ice,
+        // then a stand that ran out, then price, then happy team chatter. No stars on comments:
+        // stars only mean how much the neighborhood likes the stand. On the lock day the gold
+        // banner already says it, so the taste comment is left out.
+        const reviewRank = (r) => {
+          if (r.topic === 'taste') return 0;
+          if (r.topic === 'ice') return 1;
+          if ((r.topic === 'stock' || r.topic === 'team') && r.sentiment !== 'positive') return 2;
+          if (r.topic === 'price') return 3;
+          return 4;
+        };
+        const shown = (d.reviews || [])
+          .filter(r => !(d.recipeJustLocked && r.topic === 'taste'))
+          .map((r, i) => ({ r, i }))
+          .sort((a, b) => reviewRank(a.r) - reviewRank(b.r) || a.i - b.i)
+          .slice(0, 2)
+          .map(x => x.r);
+        const reviews = shown.map(r => {
           const team = isTeamNote(r);
-          return `<div class="report-review ${team ? 'team' : ''}">
-            <div class="report-review-head">
-              <span class="report-review-who">${r.reviewer}</span>
-              ${team ? '' : starMeter(r.stars / 5, `${r.stars} out of 5 stars`)}
+          const mood = team ? 'team' : r.sentiment === 'positive' ? 'good' : 'bad';
+          const face = r.topic === 'taste' && r.face
+            ? `<img class="report-review-face" src="./sprites/faces/taste_${r.face}.png" alt="" />` : '';
+          return `<div class="report-review ${mood}">
+            ${face}
+            <div class="report-review-text">
+              <div class="report-review-who">${r.reviewer}</div>
+              <div class="report-review-quote">&quot;${r.quote}&quot;</div>
             </div>
-            <div class="report-review-quote">&quot;${r.quote}&quot;</div>
           </div>`;
         }).join('');
+        const notes = (d.notes || []).filter(n => n !== 'All operations ran smoothly!');
 
         const sInfo = engine.getSeasonInfo(d.day);
 
@@ -3172,9 +3225,9 @@
         let rep = '';
         if (typeof d.reputationBefore === 'number' && typeof d.reputationAfter === 'number') {
           const diff = d.reputationAfter - d.reputationBefore;
-          const [cls, msg] = diff > 0.005 ? ['up', 'Going up! More people will stop by, and they will pay a little more.']
-            : diff < -0.005 ? ['down', 'Going down. Tastier lemonade at a fair price brings people back.']
-            : ['', 'About the same as yesterday.'];
+          const [cls, msg] = diff > 0.005 ? ['up', 'Going up!']
+            : diff < -0.005 ? ['down', 'Going down']
+            : ['same', 'Same as yesterday'];
           rep = `<div class="report-rep"><span>What neighbors say</span>` +
             starMeter(d.reputationAfter, `Reputation ${Math.round(d.reputationAfter * 100)} out of 100`) +
             `<span class="report-rep-trend ${cls}">${msg}</span></div>`;
@@ -3201,10 +3254,10 @@
                 <div class="report-hero-sub">${count(units)} drinks sold today</div>
               </div>
             </div>
-            <div class="report-rows">${rows}</div>
+            ${showRows ? `<div class="report-rows">${rows}</div>` : ''}
             ${rep}
             ${reviews ? `<div class="report-section-title">What people said</div>${reviews}` : ''}
-            <ul class="report-notes">${d.notes.map(n => `<li>${n}</li>`).join('')}</ul>
+            ${notes.length ? `<ul class="report-notes">${notes.map(n => `<li>${n}</li>`).join('')}</ul>` : ''}
           </div>
         </div>`;
       }
@@ -3229,7 +3282,6 @@
 
         const count = (n) => n.toLocaleString('en-US');
         const units = d.drivewayCupsSold + d.franchiseCupsSold + d.bottlesSold;
-        const stars = reportStarCount(d);
 
         return `<div class="report-dock-ticket" id="report-dock-ticket" onclick="window._toggleReportInline(event)" role="button" tabindex="0" title="Click to expand Day Report">
           <img class="report-dock-cat" src="${SPRITE_DIR}cat${reportCatMood(d)}.png" alt="" />
@@ -3239,7 +3291,7 @@
               <span class="report-dock-profit ${d.netProfit < 0 ? 'neg' : 'pos'}">${fmtSigned(d.netProfit)}</span>
             </div>
             <div class="report-dock-sub">
-              <span>${count(units)} drinks sold</span> &bull; <span class="report-dock-stars">${'★'.repeat(stars)}${'☆'.repeat(5 - stars)}</span>
+              <span>${count(units)} drinks sold</span> &bull; ${repStars(d)}
             </div>
           </div>
           <button type="button" class="fold-pill-btn report-dock-expand-btn" aria-expanded="false">
@@ -3257,7 +3309,7 @@
             <span class="report-dock-title">YESTERDAY: DAY ${d.day}</span>
             <span class="report-dock-profit ${d.netProfit < 0 ? 'neg' : 'pos'}">${fmtSigned(d.netProfit)}</span>
           </span>
-          <span class="report-dock-sub"><span>${units.toLocaleString('en-US')} drinks sold</span>${starMeter(reportStarCount(d) / 5, `${reportStarCount(d)} out of 5 stars`)}</span>
+          <span class="report-dock-sub"><span>${units.toLocaleString('en-US')} drinks sold</span>${repStars(d)}</span>
         </span>
         <span class="fold-pill-btn kid-yesterday-pill">See report</span>`;
     }
@@ -3877,8 +3929,15 @@
         }
       }
 
-      // "?" instead of "!" when the forecast says something will run out today.
-      const runDayLabel = `OPEN FOR BUSINESS${engine.getKidDemandAdvice().isFullyStocked ? '!' : '?'} (Day ${s.day})`;
+      // "?" and a worried sun (no sparkles) when the forecast says something will run out today.
+      const stocked = engine.getKidDemandAdvice().isFullyStocked;
+      const runDayLabel = `OPEN FOR BUSINESS${stocked ? '!' : '?'} (Day ${s.day})`;
+      const runDayBtn = document.getElementById('btn-run-day');
+      if (runDayBtn && runDayBtn.classList.contains('short-stock') === stocked) {
+        runDayBtn.classList.toggle('short-stock', !stocked);
+        const sun = runDayBtn.querySelector('.btn-sun');
+        if (sun) sun.src = `./sprites/morning_prep/${stocked ? 'sun_happy' : 'sun_worried'}.png`;
+      }
       const runDayTxt = document.getElementById('btn-run-day-text');
       if (runDayTxt) {
         setText(runDayTxt, runDayLabel);
