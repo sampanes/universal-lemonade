@@ -211,6 +211,11 @@ test('three golden open days in a row lock the recipe; an off day starts the cou
   e.runDay();
   assert.equal(e.state.recipe.sugarPerPitcher, g.sugar);
   assert.ok(!e.state.lastDaySummary.recipeJustLocked, 'the lock moment happens once');
+
+  // After the lock the kid already knows: no more taste comments, even on a day with sales.
+  const later = playDay(e);
+  assert.ok(later.drivewayCupsSold > 0);
+  assert.ok(!later.reviews.some(r => r.topic === 'taste'), 'no taste review once locked');
 });
 
 test('a day with no sales does not count toward the golden lock', () => {

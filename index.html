@@ -1085,9 +1085,11 @@
       cursor: not-allowed;
       transform: none;
     }
+    /* Bottom slice of the frame (342 x 55): drawn at its own aspect but only the lower 32 px
+       of it show, so the gingham strip is thinner and Open for Business fits on the MSI. */
     .prep-gingham-footer {
-      background: url('./sprites/morning_prep/prep_frame_bottom.png') no-repeat center bottom / 100% 100%;
-      aspect-ratio: 342 / 55;
+      background: url('./sprites/morning_prep/prep_frame_bottom.png') no-repeat center bottom / 100% auto;
+      aspect-ratio: 342 / 32;
       width: 100%;
     }
 
@@ -1891,6 +1893,8 @@
       width: 100%;
       max-height: 92vh;
       overflow-y: auto;
+      overflow-x: hidden; /* the full-width Continue button was 4 px too wide: a sideways scrollbar */
+      box-sizing: border-box;
       border-radius: 18px;
       box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 0 3px #c084fc;
       transform: scale(0.92) translateY(18px);
@@ -1930,6 +1934,7 @@
     }
     .report-modal-continue-btn {
       width: 100%;
+      box-sizing: border-box;
       padding: 10px 16px;
       border-radius: 14px;
       border: 2px solid #f472b6;
@@ -2404,9 +2409,12 @@
       body:not(.dad-mode) .emergency-chore-pill {
         display: flex !important;
       }
+      /* "Need cash?" may wrap onto two short lines, so a long chore name keeps one line
+         and the tile does not grow taller. */
       .emergency-chore-text {
-        white-space: nowrap;
         flex-shrink: 0;
+        max-width: 4.6em;
+        line-height: 1.1;
       }
       #btn-chore-emergency {
         flex: 1;
@@ -3869,11 +3877,13 @@
         }
       }
 
+      // "?" instead of "!" when the forecast says something will run out today.
+      const runDayLabel = `OPEN FOR BUSINESS${engine.getKidDemandAdvice().isFullyStocked ? '!' : '?'} (Day ${s.day})`;
       const runDayTxt = document.getElementById('btn-run-day-text');
       if (runDayTxt) {
-        runDayTxt.textContent = `OPEN FOR BUSINESS! (Day ${s.day})`;
+        setText(runDayTxt, runDayLabel);
       } else {
-        document.getElementById('btn-run-day').textContent = `OPEN FOR BUSINESS! (Day ${s.day})`;
+        setText(document.getElementById('btn-run-day'), runDayLabel);
       }
 
       // Expansion sections (Franchise, Wholesale, Patent, CoPacker)

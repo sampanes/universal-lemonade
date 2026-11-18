@@ -92,7 +92,11 @@ export function generateDailyReviews(params: ReviewGenerationParams): CustomerRe
   // numbers. Nobody tastes anything on a day with no sales.
   const sold = params.drivewayCupsSold + params.franchiseCupsSold;
   if (sold > 0) {
-    reviews.push(tasteReview(dL, dS, s.goldenStreak ?? 0, !!params.recipeJustLocked, rand));
+    // Once the recipe is locked the kid already knows it is golden: no more taste comments
+    // (the lock day itself still gets its announcement).
+    if (!s.recipeLocked || params.recipeJustLocked) {
+      reviews.push(tasteReview(dL, dS, s.goldenStreak ?? 0, !!params.recipeJustLocked, rand));
+    }
 
     if (idealI - I >= 2) {
       reviews.push({
