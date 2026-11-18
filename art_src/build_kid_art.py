@@ -60,7 +60,7 @@ FIT = {
     'crownbraid': dict(head=(167,296,174), soft=True),
     'shaggy': dict(head=(165,300,164), soft=True),
 }
-HEAD_W, CHIN_Y = 1.02, 0.97        # the kid's head width and inner chin line, as shares of the head box
+HEAD_W, CHIN_Y = 0.97, 1.04        # the kid's head width and inner chin line, as shares of the head box
 CHEEK_SPAN, CHEEK_Y = 0.60, 0.66   # face: cheeks apart / cheek height, as shares of the head
 REGION_IDS = {'skin': 1, 'shirt': 2, 'apron': 3, 'hair': 4}
 # Dark skin: a thin edge under the dark face lines, tinted in the game to a shade lighter
