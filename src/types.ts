@@ -191,6 +191,22 @@ export interface DaySummary {
   notes: string[];
 }
 
+// Where one day's money came from and went (the Money Bag). A day's ledger starts after the
+// previous day closes, so it holds that morning's shopping and that day's sales.
+export interface MoneyLedger {
+  day: number;
+  sales: number;        // everything the business earned (lemonade, and later bottles etc.)
+  cups: number;         // drinks sold
+  chores: number;
+  supplies: Record<SupplyItem, number>;
+  shop: number;         // stand upgrades and business projects
+  shopIds: string[];    // which ones, for the picture
+  treats: number;       // trophies
+  hiring: number;       // franchise stand setup and wholesale sign-up
+  wages: number;        // franchise workers
+  packaging: number;    // wholesale bottles
+}
+
 export interface GoldenRecipe {
   lemons: number;
   sugar: number;
@@ -269,5 +285,8 @@ export interface GameState {
 
   currentChore: ChoreState;
   lastDaySummary: DaySummary | null;
+  ledger?: MoneyLedger;         // today so far
+  lastLedger?: MoneyLedger;     // the last finished day
+  upgradeSavingsTotal?: number; // everything the stand upgrades have saved, all game
   logs: string[];
 }

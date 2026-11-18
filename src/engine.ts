@@ -14,6 +14,7 @@ import type {
   PourableCapacity,
   RecipeProfile,
   DaySummary,
+  MoneyLedger,
   SupplyItem,
   SeasonInfo
 } from './types';
@@ -153,6 +154,13 @@ export class LemonadeEngine {
     };
   }
 
+  // Today's money diary (created on first use).
+  public get ledger(): MoneyLedger {
+    const s = this.state;
+    if (!s.ledger || s.ledger.day !== s.day) s.ledger = emptyLedger(s.day);
+    return s.ledger;
+  }
+
   public log(msg: string): void {
     this.state.logs.unshift(`[Day ${this.state.day}] ${msg}`);
     if (this.state.logs.length > 50) this.state.logs.pop();
@@ -170,6 +178,7 @@ export class LemonadeEngine {
     const reward = chore.reward;
     const name = chore.name;
     this.state.cash = this.state.cash.add(reward);
+    this.ledger.chores += reward;
     this.log(`Completed chore: ${name} (Earned +$${reward.toFixed(2)})`);
 
     // The more chores today, the longer the rest before the next one (resets each new day).
@@ -212,6 +221,7 @@ export class LemonadeEngine {
 
     this.state.cash = this.state.cash.sub(cost);
     this.state.inv[item] += qty;
+    this.ledger.supplies[item] += cost;
     return true;
   }
 
@@ -221,6 +231,7 @@ export class LemonadeEngine {
     if (!stand || stand.hired || this.state.cash.lt(stand.setupCost)) return false;
 
     this.state.cash = this.state.cash.sub(stand.setupCost);
+    this.ledger.hiring += stand.setupCost;
     stand.hired = true;
     this.log(`Hired ${stand.workerName} for ${stand.name}! ($${stand.setupCost} setup, $${stand.dailyWage}/day wage)`);
     return true;
@@ -231,6 +242,7 @@ export class LemonadeEngine {
     if (!account || account.active || this.state.cash.lt(account.setupCost)) return false;
 
     this.state.cash = this.state.cash.sub(account.setupCost);
+    this.ledger.hiring += account.setupCost;
     account.active = true;
     this.log(`Signed wholesale contract with ${account.name}!`);
     return true;
@@ -241,6 +253,8 @@ export class LemonadeEngine {
     if (!p || p.purchased || !p.unlocked(this.state) || this.state.cash.lt(p.costCash)) return false;
 
     this.state.cash = this.state.cash.sub(p.costCash);
+    this.ledger.shop += p.costCash;
+    this.ledger.shopIds.push(p.id);
     p.purchased = true;
     p.effect(this);
     return true;
@@ -251,6 +265,7 @@ export class LemonadeEngine {
     if (!t || t.purchased || this.state.cash.lt(t.costCash)) return false;
 
     this.state.cash = this.state.cash.sub(t.costCash);
+    this.ledger.treats += t.costCash;
     t.purchased = true;
 
     if (id === 'skateboard') this.state.flags.hasSkateboard = true;
@@ -701,6 +716,14 @@ export class LemonadeEngine {
       s.cash = s.cash.add(netProfit);
     }
     const totalCupsToday = drivewayCupsSold + franchiseCupsSold + bottlesSold;
+    // Close today's money diary: the morning's shopping is already in it.
+    const led = this.ledger;
+    led.sales += totalRevenue;
+    led.cups += totalCupsToday;
+    led.wages += franchiseWages;
+    led.packaging += packagingCosts;
+    s.lastLedger = led;
+    s.upgradeSavingsTotal = (s.upgradeSavingsTotal ?? 0) + upgradeSavings;
     s.totalCupsSold = s.totalCupsSold.add(totalCupsToday);
     s.totalRevenueEarned = s.totalRevenueEarned.add(totalRevenue);
 
@@ -817,6 +840,20 @@ export class LemonadeEngine {
   public manualAction(): void {
     this.doChore();
   }
+}
+
+function emptyLedger(day: number): MoneyLedger {
+  return {
+    day, sales: 0, cups: 0, chores: 0,
+    supplies: { lemons: 0, sugar: 0, ice: 0, cups: 0, bottles: 0 },
+    shop: 0, shopIds: [], treats: 0, hiring: 0, wages: 0, packaging: 0,
+  };
+}
+
+// Money in minus money out for one ledger (what the kid really kept that day).
+export function ledgerKept(l: MoneyLedger): number {
+  const out = Object.values(l.supplies).reduce((a, b) => a + b, 0) + l.shop + l.treats + l.hiring + l.wages + l.packaging;
+  return l.sales + l.chores - out;
 }
 
 export function runHeadlessPacingTest(simDays: number = 35): {

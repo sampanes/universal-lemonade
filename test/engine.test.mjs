@@ -263,6 +263,27 @@ test('a careful kid does not go broke too often', () => {
   assert.ok(s.hitZero.mean <= 0.40, `${(s.hitZero.mean * 100).toFixed(1)}% of games hit $0`);
 });
 
+// ---- Money Bag: the day's money diary always matches the cash ----
+
+test('money in minus money out is exactly how much cash changed', () => {
+  for (let seed = 1; seed <= 20; seed++) {
+    const e = new LemonadeEngine({ seed });
+    const ctx = { rand: () => 0.5, day: 1, memory: {} };
+    for (let d = 1; d <= 30; d++) {
+      const before = e.state.cash.toNumber();
+      ctx.day = d;
+      BOTS.careful.morning(e, ctx);      // shopping, chores, upgrades
+      const sum = e.runDay();
+      e.tick(e.balance.secondsPerDay);
+      if (sum.notes.some(n => n.includes('Balance hit $0.00'))) continue;   // bailout day
+      const l = e.state.lastLedger;
+      assert.equal(l.day, d);
+      assert.ok(Math.abs(before + sim.ledgerKept(l) - e.state.cash.toNumber()) < 0.01,
+        `seed ${seed} day ${d}: ${before} + ${sim.ledgerKept(l)} != ${e.state.cash.toNumber()}`);
+    }
+  }
+});
+
 // ---- Storage: the bucket and bowl hold only so much; the upgrades lift the limits ----
 
 test('buying sells only what fits, and a part pack costs its share', () => {

@@ -2497,6 +2497,87 @@
         font-size: 14px;
       }
 
+      /* Money Bag: tap the cash pill to see where the money came from and went. Floats over
+         the page, so it never changes the layout. */
+      .header-cash-pill { cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent; }
+      .header-cash-pill:focus-visible { outline: 3px solid #fef08a; outline-offset: 3px; }
+      .header-cash-caret {
+        width: 0; height: 0; margin-left: 2px;
+        border-left: 6px solid transparent; border-right: 6px solid transparent;
+        border-top: 7px solid #facc15;
+        transition: transform 0.2s ease;
+      }
+      .header-cash-pill[aria-expanded="true"] .header-cash-caret { transform: rotate(180deg); }
+      .money-bag {
+        position: absolute; z-index: 60; top: calc(100% + 12px); left: 50%;
+        transform: translateX(-50%);
+        width: min(380px, calc(100vw - 32px));
+        background: #fffdf7; color: #1e1b4b;
+        border: 4px solid #6b2fa0; border-radius: 24px;
+        box-shadow: inset 0 0 0 4px #eebdf8, 0 12px 28px rgba(0, 0, 0, 0.45);
+        overflow: hidden; cursor: default;
+        animation: money-bag-drop 0.18s ease-out;
+      }
+      .money-bag[hidden] { display: none; }
+      /* Phones: the pill is not centered, so pin the card to the screen edges instead. */
+      @media (max-width: 600px) {
+        .money-bag {
+          position: fixed; top: 70px; left: 16px; width: calc(100vw - 32px);
+          transform: none; animation-name: money-bag-drop-phone;
+        }
+      }
+      @keyframes money-bag-drop-phone {
+        from { opacity: 0; transform: translateY(-8px); }
+        to { opacity: 1; transform: none; }
+      }
+      @keyframes money-bag-drop {
+        from { opacity: 0; transform: translate(-50%, -8px) scale(0.97); }
+        to { opacity: 1; transform: translate(-50%, 0) scale(1); }
+      }
+      .money-bag-banner {
+        background: linear-gradient(180deg, #a855f7 0%, #7c3aed 100%);
+        color: #fff; font-family: var(--font-display); font-size: 20px; letter-spacing: 1px;
+        text-align: center; padding: 8px 12px 6px; margin: 4px 4px 0; border-radius: 18px 18px 8px 8px;
+        -webkit-text-stroke: 1px #4c1d95; paint-order: stroke fill;
+      }
+      .money-bag-body {
+        padding: 10px 14px 14px; display: flex; flex-direction: column; gap: 8px;
+        max-height: calc(100vh - 140px); overflow-y: auto;   /* later phases add rows */
+      }
+      .mb-day { font-family: var(--font-display); font-size: 15px; color: #6d28d9; text-align: center; }
+      .mb-label { font-family: var(--font-display); font-size: 14px; margin: 2px 0 -2px 4px; }
+      .mb-label.in { color: #15803d; }
+      .mb-label.out { color: #be185d; }
+      .mb-row {
+        display: flex; align-items: center; gap: 10px;
+        background: #fff; border: 3px solid #e9d5ff; border-radius: 16px;
+        padding: 5px 12px 5px 8px; min-height: 42px; font-weight: 700; font-size: 15px;
+      }
+      .mb-row.in { border-color: #bbf7d0; background: #f0fdf4; }
+      .mb-row.out { border-color: #fbcfe8; background: #fdf2f8; }
+      .mb-row img { width: 30px; height: 30px; object-fit: contain; flex-shrink: 0; }
+      .mb-row .mb-what { flex: 1; line-height: 1.15; }
+      .mb-row .mb-what small { display: block; font-size: 12px; font-weight: 600; color: #6b7280; }
+      .mb-amt { font-family: var(--font-display); font-size: 18px; white-space: nowrap; }
+      .mb-row.in .mb-amt { color: #15803d; }
+      .mb-row.out .mb-amt { color: #be185d; }
+      .mb-chips { display: flex; flex-wrap: wrap; gap: 4px 8px; margin-top: 2px; }
+      .mb-chip { display: inline-flex; align-items: center; gap: 2px; font-size: 12px; font-weight: 700; color: #6b7280; }
+      .mb-chip img { width: 16px; height: 16px; }
+      .mb-kept {
+        display: flex; align-items: center; justify-content: space-between; gap: 10px;
+        border-radius: 18px; padding: 8px 14px;
+        background: linear-gradient(180deg, #fef9c3 0%, #fde68a 100%); border: 3px solid #eab308;
+      }
+      .mb-kept-label { font-family: var(--font-display); font-size: 16px; color: #713f12; line-height: 1.1; }
+      .mb-kept-label small { display: block; font-family: inherit; font-size: 12px; font-weight: 600; color: #92400e; }
+      .mb-kept-amt { font-family: var(--font-display); font-size: 28px; -webkit-text-stroke: 1px rgba(0,0,0,0.15); }
+      .mb-kept-amt.pos { color: #15803d; }
+      .mb-kept-amt.neg { color: #be185d; }
+      .mb-note { font-size: 13px; font-weight: 700; color: #6b7280; text-align: center; line-height: 1.3; }
+      .mb-note b { color: #6d28d9; }
+      .mb-saved { font-size: 13px; font-weight: 800; color: #92400e; text-align: center; }
+
       /* Unified Weather Window */
       .weather-card {
         max-width: 100%;
@@ -2654,7 +2735,7 @@
     </div>
 
     <!-- COMPACT HEADER CASH COUNTER & CAT -->
-    <div class="header-cash-pill" id="header-cash-pill" title="Cash available to spend">
+    <div class="header-cash-pill" id="header-cash-pill" title="Tap to see where your money went" role="button" tabindex="0" aria-expanded="false" aria-controls="money-bag">
       <div class="header-cat-slot" id="header-cat-slot">
         <img src="./sprites/kawaii_cat/cat1.png" id="header-cat-img" alt="Cat" />
       </div>
@@ -2662,7 +2743,12 @@
         <span class="header-coin-symbol">$</span>
         <span class="header-cash-num" id="header-cash-num">60.00</span>
       </div>
+      <span class="header-cash-caret" aria-hidden="true"></span>
       <div class="header-cash-float" id="header-cash-float" aria-hidden="true"></div>
+      <div class="money-bag" id="money-bag" hidden>
+        <div class="money-bag-banner">MONEY BAG</div>
+        <div class="money-bag-body" id="money-bag-body"></div>
+      </div>
     </div>
 
     <div class="header-controls">
@@ -4166,6 +4252,7 @@
       }
 
       renderStandShop(s);
+      renderMoneyBag(s);
 
       // Projects
       const projectHTML = engine.projects
@@ -4308,6 +4395,89 @@
       const p = engine.projects.find(x => x.id === id);
       if (p && engine.state.cash.toNumber() - engine.restockCostForToday() >= p.costCash) engine.buyProject(id);
     };
+
+    // Money Bag: tap the cash pill. Shows the last finished day as money in, money out and
+    // what the kid really kept (the Day Report's "You made" leaves out the morning shopping),
+    // then what today has cost so far.
+    const SUPPLY_PICS = { lemons: 'lemon', sugar: 'sugar_scoop', ice: 'ice_cubes', cups: 'lemonade_cup' };
+    const mbMoney = (n) => `$${fmtDollars(Math.abs(n), true)}`;
+    const mbRow = (kind, pic, what, sub, amount) =>
+      `<div class="mb-row ${kind}">${pic ? `<img src="${pic}" alt="" />` : ''}` +
+      `<div class="mb-what">${what}${sub ? `<small>${sub}</small>` : ''}</div>` +
+      `<span class="mb-amt">${kind === 'in' ? '+' : '-'}${mbMoney(amount)}</span></div>`;
+    function mbSupplyChips(l) {
+      return Object.entries(SUPPLY_PICS).filter(([k]) => l.supplies[k] > 0.004)
+        .map(([k, pic]) => `<span class="mb-chip"><img src="./sprites/${pic}.png" alt="${k}" />${mbMoney(l.supplies[k])}</span>`).join('');
+    }
+    function mbOutRows(l) {
+      let rows = '';
+      const supplies = Object.values(l.supplies).reduce((a, b) => a + b, 0);
+      if (supplies > 0.004) rows += mbRow('out', './sprites/lemon.png', 'Supplies', `<span class="mb-chips">${mbSupplyChips(l)}</span>`, supplies);
+      if (l.shop > 0.004) {
+        const kid = l.shopIds.map(id => KID_SHOP.find(x => x.id === id)).filter(Boolean);
+        const name = kid.length === 1 ? kid[0].name : 'Upgrades';
+        rows += mbRow('out', kid.length ? `./sprites/shop/${kid[0].pic}.png` : '', name, 'for the stand', l.shop);
+      }
+      if (l.treats > 0.004) rows += mbRow('out', '', 'Prizes', '', l.treats);
+      if (l.hiring > 0.004) rows += mbRow('out', '', 'Hiring', 'new stands and deals', l.hiring);
+      if (l.wages > 0.004) rows += mbRow('out', '', "Helpers' pay", 'your stand workers', l.wages);
+      if (l.packaging > 0.004) rows += mbRow('out', '', 'Bottles and labels', '', l.packaging);
+      return rows;
+    }
+    function moneyBagHTML(s) {
+      const last = s.lastLedger;
+      let html = '';
+      if (last) {
+        const kept = last.sales + last.chores - (Object.values(last.supplies).reduce((a, b) => a + b, 0)
+          + last.shop + last.treats + last.hiring + last.wages + last.packaging);
+        html += `<div class="mb-day">Yesterday: Day ${last.day}</div>`;
+        html += `<div class="mb-label in">Money in</div>`;
+        html += mbRow('in', './sprites/lemonade_cup.png', 'Lemonade', `${last.cups.toLocaleString('en-US')} ${last.cups === 1 ? 'cup' : 'cups'} sold`, last.sales);
+        if (last.chores > 0.004) html += mbRow('in', './sprites/morning_prep/coin_jar.png', 'Chores', '', last.chores);
+        const out = mbOutRows(last);
+        html += `<div class="mb-label out">Money out</div>`;
+        html += out || `<div class="mb-note">Nothing! You had everything already.</div>`;
+        html += `<div class="mb-kept"><div class="mb-kept-label">${kept >= 0 ? 'You kept' : 'You used savings'}` +
+          `<small>${kept >= 0 ? 'money in minus money out' : 'you spent more than you made'}</small></div>` +
+          `<span class="mb-kept-amt ${kept >= 0 ? 'pos' : 'neg'}">${kept >= 0 ? '+' : '-'}${mbMoney(kept)}</span></div>`;
+      } else {
+        html += `<div class="mb-note">Open the stand! Tomorrow this shows where every dollar went.</div>`;
+      }
+      // Today so far (the morning's shopping and chores, before the stand opens).
+      const today = engine.ledger;
+      const spent = Object.values(today.supplies).reduce((a, b) => a + b, 0) + today.shop + today.treats + today.hiring;
+      const bits = [];
+      if (spent > 0.004) bits.push(`spent <b>${mbMoney(spent)}</b>`);
+      if (today.chores > 0.004) bits.push(`earned <b>${mbMoney(today.chores)}</b> from chores`);
+      if (bits.length) html += `<div class="mb-note">Today so far: ${bits.join(', ')}</div>`;
+      const saved = s.upgradeSavingsTotal || 0;
+      if (saved >= 1) html += `<div class="mb-saved">Your upgrades have saved ${mbMoney(saved)} so far!</div>`;
+      return html;
+    }
+    const moneyPill = document.getElementById('header-cash-pill');
+    const moneyBag = document.getElementById('money-bag');
+    let moneyBagSig = '';
+    function renderMoneyBag(s) {
+      if (moneyBag.hidden) return;
+      const sig = JSON.stringify([s.lastLedger, engine.ledger, Math.floor(s.upgradeSavingsTotal || 0)]);
+      if (sig === moneyBagSig) return;
+      moneyBagSig = sig;
+      document.getElementById('money-bag-body').innerHTML = moneyBagHTML(s);
+    }
+    function setMoneyBag(open) {
+      moneyBag.hidden = !open;
+      moneyPill.setAttribute('aria-expanded', open ? 'true' : 'false');
+      if (open) { moneyBagSig = ''; renderMoneyBag(engine.state); }
+    }
+    moneyPill.addEventListener('click', (e) => {
+      if (moneyBag.contains(e.target)) return;      // taps inside the card keep it open
+      setMoneyBag(moneyBag.hidden);
+    });
+    moneyPill.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setMoneyBag(moneyBag.hidden); }
+    });
+    document.addEventListener('click', (e) => { if (!moneyBag.hidden && !moneyPill.contains(e.target)) setMoneyBag(false); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !moneyBag.hidden) setMoneyBag(false); });
 
     requestAnimationFrame(loop);
   </script>
