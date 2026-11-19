@@ -348,8 +348,8 @@ export class LemonadeEngine {
     return true;
   }
 
-  // Give a hired friend today off (or call them back in). A friend with the day off sells
-  // nothing and is not paid: the choice for a rainy day. Everyone works again tomorrow.
+  // A hired friend stays off (or working) until the player toggles them again.
+  // Friends who are off sell nothing and are not paid.
   public toggleFriendDayOff(id: string): boolean {
     const stand = this.franchiseStands[id];
     if (!stand || !stand.hired) return false;
@@ -1015,8 +1015,6 @@ export class LemonadeEngine {
 
     s.lastDaySummary = summary;
     s.day += 1;
-    // A day off is for one day: everyone is back at work tomorrow.
-    Object.values(this.franchiseStands).forEach(st => { st.dayOff = false; });
     s.elapsedSec += b.secondsPerDay;
 
     if (reviews.length > 0) {

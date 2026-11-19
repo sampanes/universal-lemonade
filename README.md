@@ -24,8 +24,8 @@ Day Report of what customers said.
 - **Friends' stands.** Timmy (Elm Street), Leo (Ballpark) and Sarah (Pool) can each be hired
   to run a stand with the kid's recipe, price and supplies. Each is paid a flat wage every
   day they work, even a slow one, so a friend can cost money; tapping a friend gives them
-  the day off (no sales, no pay) for a rainy day. The Day Report shows each friend's cups
-  and pay.
+  a day off (no sales, no pay). They stay off until tapped again. The Day Report shows each
+  friend's cups and pay.
 - **Stores.** After Bottle It!, the friends card gets a Stores tab: a Corner Store, a
   Farmers Market and a Ballfield snack bar. Each is signed up once and then buys bottles
   every day (more on hot days), filled from the same lemons and sugar. Save up to expand

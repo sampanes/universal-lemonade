@@ -417,12 +417,8 @@ test('a careful player can reach the neighborhood without rushing the opening', 
   assert.ok(s.phase2Day.p90 <= 20, `p90 day ${s.phase2Day.p90}`);
 });
 
-// Known problem, not yet fixed: once 3 neighborhood stands are hired their wages are owed
-// every day and a kid cannot let a stand go, so a bad stretch drives cash to $0 again and
-// again. Every $0 day in the sim is in phase 2-3 with stands hired, never the slow start.
-// Loosened from 15% when the slow start (buzz) arrived, and from 30% when the stand upgrades
-// went up to $125 / $275 / $605 (this bot buys all three, so it starts Phase 2 with less
-// cushion for wages). Tighten it after the wage problem is fixed.
+// This bot keeps every hired friend working, even on slow days. A player can pause them
+// to avoid wages; the bot's result does not measure that strategy.
 test('a careful kid does not go broke too often', () => {
   const s = summarize(runBatch(99, 0, 300, 'careful', 60));
   assert.ok(s.hitZero.mean <= 0.40, `${(s.hitZero.mean * 100).toFixed(1)}% of games hit $0`);
@@ -799,22 +795,39 @@ test('a broken or unknown save gives no game (a new one starts instead)', () => 
   assert.equal(LemonadeEngine.fromSave({ v: 1, seed: 1 }), null);
 });
 
-test('a friend with the day off sells nothing, is not paid, and is back tomorrow', () => {
-  const e = new LemonadeEngine({ seed: 31 });
+test('friends keep their work or day-off state across days and reloads', () => {
+  let e = new LemonadeEngine({ seed: 31 });
   e.dadJumpToPhase(2);
   e.state.cash = e.state.cash.add(500);
-  assert.ok(e.hireFranchiseStand('timmy') && e.hireFranchiseStand('leo'));
-  assert.equal(e.toggleFriendDayOff('leo'), true);
   assert.equal(e.toggleFriendDayOff('sarah'), false, 'not hired');
+  for (const id of ['timmy', 'leo', 'sarah']) assert.ok(e.hireFranchiseStand(id));
+  assert.ok(e.toggleFriendDayOff('timmy'));
+  assert.ok(e.toggleFriendDayOff('sarah'));
+  for (let day = 0; day < 2; day++) {
+    e.autoRestockForToday();
+    const result = e.runDay();
+    for (const id of ['timmy', 'sarah']) {
+      const friend = result.friends.find(f => f.id === id);
+      assert.deepEqual([friend.dayOff, friend.cups, friend.wage], [true, 0, 0]);
+      assert.ok(!result.reviews.some(r => r.reviewer.startsWith(friend.workerName)));
+      assert.equal(e.franchiseStands[id].dayOff, true);
+    }
+    assert.equal(result.franchiseWagesPaid, e.franchiseStands.leo.dailyWage);
+    assert.ok(!e.franchiseStands.leo.dayOff, 'working friend stays working');
+  }
+  e = LemonadeEngine.fromSave(JSON.parse(JSON.stringify(e.toSave())));
+  assert.equal(e.franchiseStands.timmy.dayOff, true);
+  assert.equal(e.franchiseStands.sarah.dayOff, true);
+  assert.ok(!e.franchiseStands.leo.dayOff);
+  assert.ok(e.toggleFriendDayOff('timmy'));
+  assert.ok(e.toggleFriendDayOff('leo'));
   e.autoRestockForToday();
-  const d = e.runDay();
-  const leo = d.friends.find(f => f.id === 'leo');
-  const timmy = d.friends.find(f => f.id === 'timmy');
-  assert.deepEqual([leo.dayOff, leo.cups, leo.wage], [true, 0, 0]);
-  assert.equal(timmy.wage, 12);
-  assert.equal(d.franchiseWagesPaid, 12);
-  assert.equal(d.franchiseCupsSold, timmy.cups);
-  assert.equal(e.franchiseStands.leo.dayOff, false, 'back at work the next day');
+  const next = e.runDay();
+  assert.equal(next.friends.find(f => f.id === 'timmy').wage, e.franchiseStands.timmy.dailyWage);
+  assert.deepEqual([next.friends.find(f => f.id === 'leo').dayOff, next.friends.find(f => f.id === 'leo').wage], [true, 0]);
+  assert.equal(next.friends.find(f => f.id === 'sarah').wage, 0);
+  assert.equal(next.franchiseWagesPaid, e.franchiseStands.timmy.dailyWage);
+  assert.ok(!e.franchiseStands.timmy.dayOff && e.franchiseStands.leo.dayOff && e.franchiseStands.sarah.dayOff);
 });
 
 test('a friend with the day off says nothing in the report', () => {

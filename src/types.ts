@@ -35,7 +35,7 @@ export interface FranchiseStand {
   baseCapacity: number;
   weatherSens: number;
   desc: string;
-  dayOff?: boolean;      // the kid gave this friend today off: no sales, no pay (resets each day)
+  dayOff?: boolean;      // stays off until toggled back: no sales or pay
 }
 
 // How one hired friend's stand did today (for the Day Report).
