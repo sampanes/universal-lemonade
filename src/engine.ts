@@ -32,7 +32,7 @@ import { computeRecipeQuality, getRecipeProfile } from './simulation/recipe';
 import { getDailyDemandEstimate, getKidDemandAdvice, getMaxPourableCups } from './simulation/demand';
 import { generateDailyReviews } from './simulation/reviews';
 import { ewma, dailyCustomerScore, nextReputation, nextBuzz } from './simulation/reputation';
-import { computeDayDemand, storeDemand } from './simulation/demand';
+import { allocateStandSales, computeDayDemand, storeDemand } from './simulation/demand';
 import { cupsPerPitcher as pitcherCups, rollGoldenRecipe } from './simulation/recipe';
 import { BALANCE, type Balance } from './balance';
 import { storageCap, storageName, storageUpgradeHint } from './simulation/storage';
@@ -630,6 +630,7 @@ export class LemonadeEngine {
     quality: number;
     pricePerCup: number;
     fairPrice: number;
+    totalTraffic: number;
     drivewayCupsSold: number;
     franchiseCupsSold: number;
     soldOutStands: string[];
@@ -643,6 +644,7 @@ export class LemonadeEngine {
       tempF: info.tempF,
       pricePerCup: info.pricePerCup,
       fairPrice: info.fairPrice,
+      totalTraffic: info.totalTraffic,
       drivewayCupsSold: info.drivewayCupsSold,
       franchiseCupsSold: info.franchiseCupsSold,
       soldOutStands: info.soldOutStands,
@@ -695,7 +697,8 @@ export class LemonadeEngine {
 
     const reputationBefore = s.reputation;
 
-    // The ice machine makes exactly the ice today needs, free.
+    // The ice machine prepares enough for the forecast, including any ice already owned.
+    const iceAtOpening = s.inv.ice;
     let iceMadeByMachine = 0;
     if (s.flags.hasAutoIce) {
       const want = totalCupDemand * s.recipe.icePerCup;
@@ -724,17 +727,14 @@ export class LemonadeEngine {
       if (s.inv.sugar < s.recipe.sugarPerPitcher) missing.push('Sugar');
       if (s.recipe.icePerCup > 0 && s.inv.ice < s.recipe.icePerCup) missing.push('Ice');
       primaryBottleneck = missing[0] || 'supplies';
-      notes.push(`All stands had 0 sales (out of ${missing.join(' & ') || 'supplies'})! Full worker wages paid: -$${franchiseWages.toFixed(2)}.`);
-      activeStands.forEach(st => { if (!st.isDriveway) soldOutStands.push(st.name); });
+      notes.push(`No cups sold: out of ${missing.join(' & ') || 'supplies'}!`);
+      if (franchiseWages > 0) notes.push(`Workers' pay: -$${franchiseWages.toFixed(2)}.`);
+      activeStands.forEach(st => { if (st.demand > 0) soldOutStands.push(st.name); });
     } else {
-      const ratio = totalCupDemand > 0 ? Math.min(1.0, maxTotalPour / totalCupDemand) : 0;
-      let remainingPour = maxTotalPour;
+      const allocation = allocateStandSales(activeStands, maxTotalPour);
 
       activeStands.forEach((st, idx) => {
-        const sold = (idx === activeStands.length - 1)
-          ? remainingPour
-          : Math.min(st.demand, Math.floor(st.demand * ratio));
-        remainingPour = Math.max(0, remainingPour - sold);
+        const sold = allocation[idx];
 
         if (!st.isDriveway) {
           franchiseCupsSold += sold;
@@ -844,10 +844,13 @@ export class LemonadeEngine {
     const iceKeptByCooler = s.flags.hasCooler && !s.flags.hasAutoIce ? s.inv.ice : 0;
     const lemonsKeptByFridge = s.flags.hasMiniFridge && !s.flags.hasLemonGrove
       ? Math.ceil(s.inv.lemons * b.spoilage.lemonRotFraction) : 0;
-    const upgradeSavings = +((iceMadeByMachine + iceKeptByCooler) * perCube + lemonsKeptByFridge * perLemon).toFixed(2);
+    // Unsold drinks do not save ice: unused machine ice melts at the end of the day.
+    const iceUsed = (drivewayCupsSold + franchiseCupsSold) * s.recipe.icePerCup;
+    const freeIceUsed = Math.min(iceMadeByMachine, Math.max(0, iceUsed - iceAtOpening));
+    const upgradeSavings = +((freeIceUsed + iceKeptByCooler) * perCube + lemonsKeptByFridge * perLemon).toFixed(2);
     if (upgradeSavings >= 0.01) {
       const parts: string[] = [];
-      if (iceMadeByMachine > 0) parts.push(`${iceMadeByMachine.toLocaleString('en-US')} free ice cubes`);
+      if (freeIceUsed > 0) parts.push(`${freeIceUsed.toLocaleString('en-US')} free ice cubes`);
       if (iceKeptByCooler > 0) parts.push(`${iceKeptByCooler.toLocaleString('en-US')} cubes kept frozen`);
       if (lemonsKeptByFridge > 0) parts.push(`${lemonsKeptByFridge} lemons kept fresh`);
       notes.push(`Your upgrades saved $${upgradeSavings.toFixed(2)} today: ${parts.join(', ')}.`);
@@ -942,6 +945,7 @@ export class LemonadeEngine {
       quality,
       pricePerCup: s.recipe.pricePerCup,
       fairPrice,
+      totalTraffic,
       drivewayCupsSold,
       franchiseCupsSold,
       soldOutStands,

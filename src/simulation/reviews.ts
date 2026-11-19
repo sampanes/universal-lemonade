@@ -9,6 +9,7 @@ export interface ReviewGenerationParams {
   tempF: number;
   pricePerCup: number;
   fairPrice: number;
+  totalTraffic: number;
   drivewayCupsSold: number;
   franchiseCupsSold: number;
   soldOutStands: string[];
@@ -125,7 +126,7 @@ export function generateDailyReviews(params: ReviewGenerationParams): CustomerRe
     : tempF < 65 ? 'cool' : tempF < 75 ? 'warm' : tempF < 85 ? 'very warm'
     : tempF < 95 ? 'hot' : 'very hot';
   const weatherDay = `a ${dayDescription} day`;
-  if (sold === 0 && priceRatio < 1.18) {
+  if (params.totalTraffic === 0 || (sold === 0 && priceRatio < 1.18)) {
     // no price comment
   } else if (priceRatio >= (params.balance ?? BALANCE).reputation.excessivePriceRatio) {
     reviews.push({
@@ -174,49 +175,37 @@ export function generateDailyReviews(params: ReviewGenerationParams): CustomerRe
   for (const r of reviews.slice(priceStart)) r.topic = 'price';
 
   // 3. TEAM CHATTER & SIMPLE FRANCHISE MESSAGES (Timmy, Leo, Sarah)
-  const teamStart = reviews.length;
-  // Only friends who worked today have something to say (a day off is quiet).
+  // Only friends who worked and actually ran short can report their own shortage.
   const hiredStands = Object.values(franchiseStands).filter(st => st.hired && !st.dayOff);
-  if (hiredStands.length > 0) {
-    const stand = hiredStands[Math.floor(rand() * hiredStands.length)];
-    if (soldOutStands.length > 0) {
-      const item = bottleneck || 'supplies';
-      let msg = `Hey boss, we had a line of customers today, but ran out of ${item}! Buy extra tomorrow!`;
-      if (item.toLowerCase().includes('ice')) {
-        msg = `Huge crowd today, but we ran out of ice cubes early! Grab an extra bag of ice tomorrow!`;
-      } else if (item.toLowerCase().includes('cup')) {
-        msg = `We blew through all our cups! Customers kept asking for refills.`;
-      } else if (item.toLowerCase().includes('lemon')) {
-        msg = `Pitcher's empty! We ran out of fresh lemons to mix more lemonade.`;
-      }
-      reviews.push({
-        stars: 3,
-        quote: msg,
-        reviewer: `${stand.workerName} (${stand.name})`,
-        sentiment: 'mixed'
-      });
-    } else {
-      const victoryMsgs = [
-        `Crushed it today! Served every single customer on our street!`,
-        `Great shift, boss! Customers loved the cold lemonade!`,
-        `Sold out all our cups today! That was so much fun!`
-      ];
-      reviews.push({
-        stars: 5,
-        quote: victoryMsgs[Math.floor(rand() * victoryMsgs.length)],
-        reviewer: `${stand.workerName} (${stand.name})`,
-        sentiment: 'positive'
-      });
-    }
-  } else if (soldOutStands.length > 0) {
+  const shortFriends = hiredStands.filter(st => soldOutStands.includes(st.name));
+  if (shortFriends.length > 0) {
+    const stand = shortFriends[Math.floor(rand() * shortFriends.length)];
+    const item = bottleneck || 'supplies';
+    reviews.push({
+      stars: 3,
+      quote: `We ran out of ${item.toLowerCase()} today!`,
+      reviewer: `${stand.workerName} (${stand.name})`,
+      sentiment: 'mixed',
+      topic: 'team'
+    });
+  } else if (soldOutStands.includes('Driveway Stand')) {
     reviews.push({
       stars: 2,
-      quote: `Walked over to the driveway stand, but they were sold out of supplies early!`,
+      quote: `The driveway stand ran out of supplies early!`,
       reviewer: "Thirsty neighbor",
-      sentiment: "negative"
+      sentiment: "negative",
+      topic: 'stock'
+    });
+  } else if (hiredStands.length > 0) {
+    const stand = hiredStands[Math.floor(rand() * hiredStands.length)];
+    reviews.push({
+      stars: params.franchiseCupsSold > 0 ? 5 : 3,
+      quote: params.franchiseCupsSold > 0 ? 'Ready for another day, boss!' : 'No cups sold at our stands today.',
+      reviewer: `${stand.workerName} (${stand.name})`,
+      sentiment: params.franchiseCupsSold > 0 ? 'positive' : 'mixed',
+      topic: 'team'
     });
   }
-  for (const r of reviews.slice(teamStart)) r.topic = hiredStands.length > 0 ? 'team' : 'stock';
 
   return reviews;
 }

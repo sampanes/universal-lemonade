@@ -29,8 +29,8 @@ test('same seed and same actions give the same game', () => {
 
 test('price comments match temperature, price, and whether anyone bought', () => {
   const e = new LemonadeEngine({ seed: 1 });
-  const priceReview = (tempF, pricePerCup, sold = 1) => sim.generateDailyReviews({
-    state: e.state, franchiseStands: {}, tempF, pricePerCup, fairPrice: 2,
+  const priceReview = (tempF, pricePerCup, sold = 1, totalTraffic = 1) => sim.generateDailyReviews({
+    state: e.state, franchiseStands: {}, tempF, pricePerCup, fairPrice: 2, totalTraffic,
     drivewayCupsSold: sold, franchiseCupsSold: 0, soldOutStands: [], rand: () => 0
   }).find(r => r.topic === 'price');
   for (const [temp, description] of [
@@ -62,6 +62,7 @@ test('price comments match temperature, price, and whether anyone bought', () =>
   assert.equal(priceReview(70, 2, 0), undefined, 'no positive review without sales');
   const noSales = priceReview(70, 3, 0);
   assert.ok(noSales && !/bought|try|lower price/i.test(noSales.quote));
+  assert.equal(priceReview(70, 3, 0, 0), undefined, 'no price review when nobody visited');
 });
 
 test('excessive prices lower reputation only when people can see the stand', () => {
@@ -99,6 +100,67 @@ test('excessive prices lower reputation only when people can see the stand', () 
   reasonable.autoRestockForToday();
   reasonable.runDay();
   assert.ok(reasonable.state.reputation > 0.5, 'a price below the excessive threshold can still build reputation');
+});
+
+test('limited sales never exceed demand or the available cups', () => {
+  for (let a = 0; a <= 3; a++) for (let b = 0; b <= 3; b++)
+    for (let c = 0; c <= 3; c++) for (let d = 0; d <= 3; d++) {
+      const demand = [a,b,c,d];
+      const total = demand.reduce((x,y) => x+y, 0);
+      for (let available = 0; available <= total + 1; available++) {
+        const sold = sim.allocateStandSales(demand.map(demand => ({ demand })), available);
+        assert.equal(sold.reduce((x,y) => x+y, 0), Math.min(total, available));
+        sold.forEach((n, i) => assert.ok(n >= 0 && n <= demand[i]));
+      }
+    }
+  const e = new LemonadeEngine({ seed: 1 });
+  e.dadJumpToPhase(2);
+  Object.values(e.franchiseStands).forEach(st => { st.hired = true; });
+  Object.assign(e.state, { buzz: 0.7, reputation: 0.8, weather: 'RAINY', tempF: 45 });
+  e.state.recipe.pricePerCup = 0.5; e.state.recipe.icePerCup = e.computeIdealIce();
+  Object.assign(e.state.inv, { lemons: 1000, sugar: 1000, ice: 1000, cups: 2 });
+  const forecast = e.getDailyDemandEstimate();
+  const day = e.runDay();
+  assert.equal(day.drivewayCupsSold + day.franchiseCupsSold, 2);
+  assert.ok(day.drivewayCupsSold <= forecast.estDrivewayCups);
+  for (const friend of day.friends) {
+    assert.ok(friend.cups <= forecast.franchiseEstimates.find(x => x.id === friend.id).estCups);
+  }
+});
+
+test('stock and team comments match what happened', () => {
+  const e = new LemonadeEngine({ seed: 1 });
+  e.dadJumpToPhase(2);
+  Object.values(e.franchiseStands).forEach(st => { st.hired = true; });
+  const params = { state: e.state, franchiseStands: e.franchiseStands, tempF: 70,
+    pricePerCup: 1, fairPrice: 2, totalTraffic: 10, drivewayCupsSold: 2,
+    franchiseCupsSold: 3, soldOutStands: [], rand: () => 0 };
+  const comments = extra => sim.generateDailyReviews({ ...params, ...extra });
+  const sarah = e.franchiseStands.sarah;
+  const short = comments({ soldOutStands: [sarah.name], bottleneck: 'Cups' }).find(r => r.topic === 'team');
+  assert.ok(short.reviewer.startsWith('Sarah'));
+  assert.equal(short.quote, 'We ran out of cups today!');
+  const driveway = comments({ soldOutStands: ['Driveway Stand'] });
+  assert.ok(driveway.some(r => r.topic === 'stock'));
+  assert.ok(!driveway.some(r => r.topic === 'team' && /ran out/i.test(r.quote)));
+  const quiet = comments({ franchiseCupsSold: 0 }).find(r => r.topic === 'team');
+  assert.equal(quiet.quote, 'No cups sold at our stands today.');
+  assert.ok(!comments({}).some(r => /sold out/i.test(r.quote)));
+
+  const empty = new LemonadeEngine({ seed: 4 });
+  empty.state.weather = 'SUNNY'; empty.state.tempF = 80; empty.state.buzz = 0.8;
+  empty.state.recipe.lemonsPerPitcher = empty.state.goldenRecipe.lemons;
+  empty.state.recipe.sugarPerPitcher = empty.state.goldenRecipe.sugar;
+  empty.state.recipe.pricePerCup = 1; empty.state.inv.cups = 0;
+  const closed = empty.runDay();
+  assert.equal(closed.drivewayCupsSold, 0);
+  assert.ok(closed.reviews.some(r => r.topic === 'stock' && /driveway/i.test(r.quote)), 'the driveway can run out on its own');
+  assert.ok(!closed.notes.some(n => /wages paid.*0\.00/i.test(n)));
+
+  const nobody = new LemonadeEngine({ seed: 4, balance: withOverrides({ 'demand.weatherMult.RAINY': 0 }) });
+  nobody.state.weather = 'RAINY'; nobody.state.recipe.pricePerCup = 100;
+  const quietDay = nobody.runDay();
+  assert.ok(!quietDay.reviews.some(r => r.topic === 'price'), 'no customer can comment when nobody visited');
 });
 
 test('different seeds give different weather', () => {
@@ -425,6 +487,30 @@ test('the ice machine makes the ice a day needs, free', () => {
   assert.ok(want > 0);
   assert.equal(sum.drivewayCupsSold, want, 'ice never runs out');
   assert.ok(sum.iceMadeByMachine > 0 && sum.upgradeSavings > 0);
+});
+
+test('ice machine savings count only ice used in sold drinks', () => {
+  const make = cups => {
+    const e = new LemonadeEngine({ seed: 3 });
+    const s = e.state;
+    s.buzz = 1; s.reputation = 1; s.tempF = 90; s.weather = 'SUNNY';
+    s.flags.hasAutoIce = true; s.flags.autoIceEnabled = true;
+    s.recipe.lemonsPerPitcher = s.goldenRecipe.lemons;
+    s.recipe.sugarPerPitcher = s.goldenRecipe.sugar;
+    s.recipe.pricePerCup = 0.5;
+    Object.assign(s.inv, { ice: 0, lemons: 1000, sugar: 1000, cups });
+    return e;
+  };
+  const empty = make(0), emptyDay = empty.runDay();
+  assert.ok(emptyDay.iceMadeByMachine > 0, 'machine prepared for demand');
+  assert.equal(emptyDay.upgradeSavings, 0, 'unused ice does not count as money saved');
+  assert.ok(!emptyDay.notes.some(n => /free ice cubes/.test(n)));
+
+  const partial = make(5), idealIce = partial.computeIdealIce(), day = partial.runDay();
+  const freeIceUsed = day.drivewayCupsSold * idealIce;
+  const icePrice = partial.supplyPack('ice').cost / partial.supplyPack('ice').qty;
+  assert.equal(day.upgradeSavings, +(freeIceUsed * icePrice).toFixed(2));
+  assert.ok(day.iceMadeByMachine > freeIceUsed, 'forecast exceeded actual sales');
 });
 
 test('a full ice bucket on a big day says the ice machine would help', () => {

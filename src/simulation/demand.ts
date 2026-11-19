@@ -72,6 +72,26 @@ export function computeDayDemand(
   return { weatherMult, tempFactor, quality, fairPrice, buyProb, stands, totalCupDemand, totalTraffic };
 }
 
+// Share limited cups in proportion to each stand's demand. Largest remainders receive
+// any cups left after rounding, without giving a stand more than its customers wanted.
+export function allocateStandSales(stands: readonly StandDemand[], available: number): number[] {
+  const demand = stands.reduce((sum, stand) => sum + stand.demand, 0);
+  if (demand <= 0) return stands.map(() => 0);
+  const total = Math.max(0, Math.min(available, demand));
+  const shares = stands.map((stand, index) => {
+    const exact = stand.demand * total / demand;
+    const sold = Math.floor(exact);
+    return { index, sold, remainder: exact - sold };
+  });
+  let left = total - shares.reduce((sum, share) => sum + share.sold, 0);
+  const order = [...shares].sort((a, b) => b.remainder - a.remainder || a.index - b.index);
+  for (const share of order) {
+    if (left <= 0) break;
+    if (share.sold < stands[share.index].demand) { share.sold++; left--; }
+  }
+  return shares.map(share => share.sold);
+}
+
 // Bottles each signed store wants today (Stage 3+). Same weather pull as the stands, each
 // store by its own amount. runDay sells against this and the forecast shows it.
 export function storeDemand(
