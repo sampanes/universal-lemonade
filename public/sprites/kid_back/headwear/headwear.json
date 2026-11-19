@@ -1,0 +1,282 @@
+[
+  {
+    "id": "hat_baseball_cap_front",
+    "name": "Baseball Cap (Forward Visor)",
+    "bbox": [
+      73,
+      62,
+      326,
+      279
+    ],
+    "sheet": 1,
+    "file": "hat_baseball_cap_front.png",
+    "w": 253,
+    "h": 217
+  },
+  {
+    "id": "hat_pompom_beanie_ribbed",
+    "name": "Ribbed Pom-Pom Beanie",
+    "bbox": [
+      368,
+      28,
+      644,
+      275
+    ],
+    "sheet": 1,
+    "file": "hat_pompom_beanie_ribbed.png",
+    "w": 276,
+    "h": 247
+  },
+  {
+    "id": "hat_ruffled_bonnet",
+    "name": "Ruffled Bonnet with Bow",
+    "bbox": [
+      673,
+      53,
+      955,
+      319
+    ],
+    "sheet": 1,
+    "file": "hat_ruffled_bonnet.png",
+    "w": 282,
+    "h": 266
+  },
+  {
+    "id": "acc_sunglasses",
+    "name": "Retro Sunglasses",
+    "bbox": [
+      30,
+      378,
+      320,
+      493
+    ],
+    "sheet": 1,
+    "file": "acc_sunglasses.png",
+    "w": 290,
+    "h": 115
+  },
+  {
+    "id": "acc_cat_ears_headband",
+    "name": "Cat Ears Headband",
+    "bbox": [
+      343,
+      328,
+      633,
+      503
+    ],
+    "sheet": 1,
+    "file": "acc_cat_ears_headband.png",
+    "w": 290,
+    "h": 175
+  },
+  {
+    "id": "hat_sombrero",
+    "name": "Patterned Sombrero",
+    "bbox": [
+      653,
+      326,
+      990,
+      519
+    ],
+    "sheet": 1,
+    "file": "hat_sombrero.png",
+    "w": 337,
+    "h": 193
+  },
+  {
+    "id": "acc_athletic_sweatband",
+    "name": "Athletic Sweatband",
+    "bbox": [
+      15,
+      588,
+      243,
+      711
+    ],
+    "sheet": 1,
+    "file": "acc_athletic_sweatband.png",
+    "w": 228,
+    "h": 123
+  },
+  {
+    "id": "acc_ribbon_bow_headband",
+    "name": "Large Ribbon Bow Headband",
+    "bbox": [
+      260,
+      547,
+      479,
+      716
+    ],
+    "sheet": 1,
+    "file": "acc_ribbon_bow_headband.png",
+    "w": 219,
+    "h": 169
+  },
+  {
+    "id": "acc_tiara_coronet",
+    "name": "Small Princess Tiara",
+    "bbox": [
+      496,
+      570,
+      728,
+      710
+    ],
+    "sheet": 1,
+    "file": "acc_tiara_coronet.png",
+    "w": 232,
+    "h": 140
+  },
+  {
+    "id": "acc_tiara_ornate",
+    "name": "Ornate Princess Crown",
+    "bbox": [
+      752,
+      538,
+      1001,
+      711
+    ],
+    "sheet": 1,
+    "file": "acc_tiara_ornate.png",
+    "w": 249,
+    "h": 173
+  },
+  {
+    "id": "hat_tophat_flower",
+    "name": "Gentleman Top Hat with Flower",
+    "bbox": [
+      5,
+      6,
+      211,
+      173
+    ],
+    "sheet": 2,
+    "file": "hat_tophat_flower.png",
+    "w": 206,
+    "h": 167
+  },
+  {
+    "id": "hat_aviator_goggles",
+    "name": "Aviator Helmet with Goggles",
+    "bbox": [
+      213,
+      7,
+      418,
+      168
+    ],
+    "sheet": 2,
+    "file": "hat_aviator_goggles.png",
+    "w": 205,
+    "h": 161
+  },
+  {
+    "id": "hat_beanie_slouchy",
+    "name": "Puff Pom-Pom Beanie",
+    "bbox": [
+      425,
+      3,
+      605,
+      165
+    ],
+    "sheet": 2,
+    "file": "hat_beanie_slouchy.png",
+    "w": 180,
+    "h": 162
+  },
+  {
+    "id": "hat_bucket_safari",
+    "name": "Bucket Safari Hat with Strap",
+    "bbox": [
+      612,
+      13,
+      822,
+      178
+    ],
+    "sheet": 2,
+    "file": "hat_bucket_safari.png",
+    "w": 210,
+    "h": 165
+  },
+  {
+    "id": "hat_baseball_snapback",
+    "name": "Snapback Cap (Backward)",
+    "bbox": [
+      830,
+      17,
+      1024,
+      158
+    ],
+    "sheet": 2,
+    "file": "hat_baseball_snapback.png",
+    "w": 194,
+    "h": 141
+  },
+  {
+    "id": "hat_cowboy_star",
+    "name": "Cowboy Hat with Sheriff Star",
+    "bbox": [
+      4,
+      189,
+      220,
+      321
+    ],
+    "sheet": 2,
+    "file": "hat_cowboy_star.png",
+    "w": 216,
+    "h": 132
+  },
+  {
+    "id": "hat_viking_horns",
+    "name": "Horned Viking Helmet",
+    "bbox": [
+      220,
+      184,
+      426,
+      324
+    ],
+    "sheet": 2,
+    "file": "hat_viking_horns.png",
+    "w": 206,
+    "h": 140
+  },
+  {
+    "id": "acc_flower_wreath",
+    "name": "Floral Flower Crown Wreath",
+    "bbox": [
+      420,
+      199,
+      617,
+      313
+    ],
+    "sheet": 2,
+    "file": "acc_flower_wreath.png",
+    "w": 197,
+    "h": 114
+  },
+  {
+    "id": "acc_pirate_bandana",
+    "name": "Pirate Kerchief Bandana",
+    "bbox": [
+      625,
+      188,
+      826,
+      339
+    ],
+    "sheet": 2,
+    "file": "acc_pirate_bandana.png",
+    "w": 201,
+    "h": 151
+  },
+  {
+    "id": "acc_cat_paw_headphones",
+    "name": "Cat Ear Paw Headphones",
+    "bbox": [
+      820,
+      175,
+      1016,
+      334
+    ],
+    "sheet": 2,
+    "file": "acc_cat_paw_headphones.png",
+    "w": 196,
+    "h": 159
+  }
+]
