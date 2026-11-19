@@ -39,7 +39,8 @@ export function computeDayDemand(
   const fairPrice = fairPriceFor(s.tempF, s.reputation, b);
   const buyProb = buyProbability(quality, s.tempF, s.recipe.pricePerCup, s.reputation, b);
 
-  const drivewayTraffic = Math.floor(drivewayPeople(s.buzz ?? 0, s.reputation, b) * weatherMult * tempFactor);
+  const fridgeTraffic = s.flags.hasMiniFridge ? d.fridgeTrafficMult : 1;
+  const drivewayTraffic = Math.floor(drivewayPeople(s.buzz ?? 0, s.reputation, b) * weatherMult * tempFactor * fridgeTraffic);
   let totalTraffic = drivewayTraffic;
   const stands: StandDemand[] = [
     { id: 'driveway', name: 'Driveway Stand', workerName: 'You', demand: Math.floor(drivewayTraffic * buyProb), wage: 0, isDriveway: true }
@@ -53,7 +54,7 @@ export function computeDayDemand(
         stand.baseCapacity *
         Math.pow(weatherMult * tempFactor, stand.weatherSens) *
         (d.franchiseRepBase + s.reputation * d.franchiseRepPerRep) *
-        efficiencyBonus
+        fridgeTraffic * efficiencyBonus
       );
       totalTraffic += standTraffic;
       stands.push({

@@ -52,7 +52,6 @@ export function nextBuzz(buzz: number, happyCustomers: number, b: Balance = BALA
 export function reputationBonus(s: GameState, b: Balance = BALANCE): number {
   const r = b.reputation;
   let bonus = 0;
-  if (s.flags.hasMiniFridge) bonus += r.bonusMiniFridge;
   if (s.flags.hasNintendoSwitch) bonus += r.bonusNintendoSwitch;
   if (s.flags.hasDisneyTrip) bonus += r.bonusDisneyTrip;
   return bonus;

@@ -3611,7 +3611,7 @@
       UNIFORM_PALETTES
     } from './src/character.ts';
     import { loadKidArt, kidImageURL, kidHairCount, kidHairIds, kidFx } from './src/kid.ts';
-    import { loadUnlocks, saveUnlocks, clearUnlocks, newUnlocks, unlockCheckFrom, lookOpen } from './src/unlocks.ts';
+    import { loadUnlocks, saveUnlocks, clearUnlocks, advanceLookUnlocks, unlockCheckFrom, otherUnlockToday, shopReady, lookOpen } from './src/unlocks.ts';
 
     // Track which input is in use so mouse-only hover styles switch off after a finger tap.
     // (The touchscreen all-in-one this is played on has a mouse too, so CSS alone cannot tell.)
@@ -4848,7 +4848,7 @@
     // notYet(s): what to do first, for an "early" item that has the money but is not open.
     const KID_SHOP = [
       { id: 'auto_ice_dispenser', name: 'Ice Machine', desc: 'Makes all the ice you need, free, and picks the right amount.', pic: './sprites/shop/ice_dispenser.png' },
-      { id: 'fridge', name: 'Mini-Fridge', desc: 'No lemon limit, and they never go bad. Neighbors notice!', pic: './sprites/shop/mini_fridge.png' },
+      { id: 'fridge', name: 'Mini-Fridge', desc: 'Unlimited lemons, no spoilage, +10% customers!', pic: './sprites/shop/mini_fridge.png' },
       { id: 'franchise_license', name: 'A Second Stand', desc: 'Friends can run stands around town for you!', pic: './sprites/shop/second_stand.png', early: true },
       { id: 'costco_card', name: 'Supply Club Card', desc: 'Lemons, sugar and cups cost a lot less!', pic: './sprites/shop/club_card.png' },
       { id: 'cargo_wagon', name: 'Big Wagon', desc: "Haul more to your friends' stands: they each sell more!", pic: './sprites/shop/big_wagon.png', friends: 2 },
@@ -4861,6 +4861,8 @@
       { id: 'copacker_deal', name: 'Lemonade Factory', desc: 'Coming soon: a real factory bottles your lemonade for supermarkets!', pic: null, teaser: true },
     ];
     function kidShopNext(s) {
+      // Leave a whole day between buying an upgrade and introducing the next one.
+      if (!shopReady(s)) return null;
       for (const item of KID_SHOP) {
         const p = engine.projects.find(x => x.id === item.id);
         if (!p || p.purchased) continue;
@@ -5253,18 +5255,18 @@
     const MAGIC_LINES = ['Whoa! Magic in the mirror!', 'Something sparkly appeared!', 'Psst... check the mirror!'];
     function checkMagicLooks(summary, show) {
       if (!summary || dadModeActive) return;   // Dad's test days do not spend the kid's surprises
-      const got = newUnlocks(kidUnlocks.have, unlockCheckFrom(engine.state, summary));
-      if (!got.length) return;
-      got.forEach(l => { kidUnlocks.have.add(l); kidUnlocks.unseen.add(l); });
-      saveUnlocks(kidUnlocks);
+      const look = advanceLookUnlocks(kidUnlocks, unlockCheckFrom(engine.state, summary), otherUnlockToday(engine.state, summary));
+      saveUnlocks(kidUnlocks); // also save milestones waiting for a quiet day
+      if (!look) return;
       refreshKidNew();
       const content = document.getElementById('report-modal-content');
       if (!show || !content) return;
-      const pics = got.map(profileWithLook).filter(Boolean).slice(0, 3).map(p => kidPicHTML(p, 'surprised', true)).join('');
+      const profile = profileWithLook(look);
+      const pics = profile ? kidPicHTML(profile, 'surprised', true) : '';
       content.insertAdjacentHTML('afterbegin',
         `<div class="magic-look"><div class="magic-look-pics">${pics}</div>` +
         `<div class="magic-look-text"><b>${MAGIC_LINES[Math.floor(Math.random() * MAGIC_LINES.length)]}</b>` +
-        `<span>${got.length > 1 ? 'New looks showed up' : 'A new look showed up'} in your mirror.</span></div>` +
+        `<span>A new look showed up in your mirror.</span></div>` +
         `<button type="button" class="magic-look-try" id="btn-magic-look-try">Try it on!</button></div>`);
       document.getElementById('btn-magic-look-try').onclick = (e) => {
         e.stopPropagation();

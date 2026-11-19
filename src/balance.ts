@@ -78,6 +78,7 @@ export const BALANCE = {
     // There is no "too cheap looks fake" penalty: the simulator showed ingredient costs
     // already punish it (always charging 50 cents rarely gets past the driveway stage).
     priceExponent: 1.8,
+    fridgeTrafficMult: 1.10,     // more people visit after the fridge upgrade
     // Franchise stand traffic reputation factor = base + perRep * reputation
     franchiseRepBase: 0.6,
     franchiseRepPerRep: 0.4,
@@ -125,7 +126,6 @@ export const BALANCE = {
     servedBase: 0.75,
     servedPerServed: 0.25,
     // Lasting boosts added to every day's score
-    bonusMiniFridge: 0.10,
     bonusNintendoSwitch: 0.05,
     bonusDisneyTrip: 0.15,
   },
@@ -136,11 +136,11 @@ export const BALANCE = {
   storage: {
     iceBucket: 400,             // cubes, before the ice machine (2 bags)
     iceCooler: 1000,            // cubes, with a cooler (5 bags; the cooler is not sold now)
-    lemonBowl: 48,              // lemons, before the mini-fridge (2 bags)
+    lemonBowl: 24,              // lemons, before the mini-fridge (one bag)
   },
 
   spoilage: {
-    lemonRotFraction: 0.20,     // share of leftover lemons lost overnight without a fridge
+    lemonRotFraction: 0.30,     // share of leftover lemons lost overnight without a fridge
   },
 
   wholesale: {
@@ -174,10 +174,6 @@ export const BALANCE = {
     scooterCapacityMult: 1.15,
     arcadeBrandMult: 1.15,
     collegeBrandMult: 1.25,
-  },
-
-  projects: {
-    fridgeReputationBump: 0.1,
   },
 
   chores: {

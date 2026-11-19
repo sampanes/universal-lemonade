@@ -319,12 +319,11 @@ test('a day with no sales does not count toward the golden lock', () => {
 
 // ---- Pacing guard rails: loose on purpose, they catch big regressions, not small tuning. ----
 
-test('a careful kid reaches the neighborhood (phase 2) around day 12', () => {
-  const s = summarize(runBatch(99, 0, 300, 'careful', 15));
+test('a careful player can reach the neighborhood without rushing the opening', () => {
+  const s = summarize(runBatch(99, 0, 300, 'careful', 30));
   assert.ok(s.phase2Day.reached >= 0.95, `reached ${(s.phase2Day.reached * 100).toFixed(1)}%`);
-  assert.ok(s.phase2Day.p50 <= 12, `median day ${s.phase2Day.p50}`);
-  // 13 before the cooler left the shop; saving for the $275 ice machine first adds a day.
-  assert.ok(s.phase2Day.p90 <= 14, `p90 day ${s.phase2Day.p90}`);
+  assert.ok(s.phase2Day.p50 >= 10 && s.phase2Day.p50 <= 16, `median day ${s.phase2Day.p50}`);
+  assert.ok(s.phase2Day.p90 <= 20, `p90 day ${s.phase2Day.p90}`);
 });
 
 // Known problem, not yet fixed: once 3 neighborhood stands are hired their wages are owed
@@ -371,9 +370,34 @@ test('buying sells only what fits, and a part pack costs its share', () => {
   assert.equal(s.inv.ice, 400);
   assert.equal(e.buyOffer('ice').full, true);
   assert.equal(e.buySupplies('ice'), false, 'a full bucket sells nothing');
-  s.inv.lemons = 40;                                 // bowl holds 48
+  s.inv.lemons = 16;                                 // bowl holds 24
   assert.equal(e.buyOffer('lemons').qty, 8);
   assert.equal(e.buyOffer('cups').qty, 50, 'cups have no limit');
+});
+
+test('the fridge stops spoilage and attracts more customers', () => {
+  const make = () => {
+    const e = new LemonadeEngine({ seed: 3 });
+    const s = e.state;
+    s.day = 3; s.tempF = 75; s.weather = 'SUNNY'; s.buzz = 1;
+    s.recipe.lemonsPerPitcher = s.goldenRecipe.lemons;
+    s.recipe.sugarPerPitcher = s.goldenRecipe.sugar;
+    s.recipe.icePerCup = e.computeIdealIce(); s.recipe.pricePerCup = 0.5;
+    s.cash = s.cash.add(2000);
+    return e;
+  };
+  const before = make(), after = make();
+  assert.equal(before.storageCap('lemons'), 24);
+  assert.ok(after.buyProject('fridge'));
+  assert.equal(after.state.reputation, before.state.reputation, 'no hidden reputation bump');
+  assert.ok(after.getDailyDemandEstimate().totalEstCups > before.getDailyDemandEstimate().totalEstCups);
+  assert.equal(after.storageCap('lemons'), Infinity);
+  for (const e of [before, after]) {
+    e.state.inv.lemons = 24; e.state.inv.cups = 0;
+    e.runDay();
+  }
+  assert.equal(before.state.inv.lemons, 16, '30% of leftover lemons spoil');
+  assert.equal(after.state.inv.lemons, 24, 'fridge preserves the lemons');
 });
 
 test('each upgrade lifts its limit', () => {
@@ -456,7 +480,8 @@ test('a new stand starts slow and grows as the word spreads', () => {
   const s = summarize(runBatch(7, 0, 300, 'perfect', 10));
   assert.ok(s.cupsDay1.p50 >= 5 && s.cupsDay1.p50 <= 12, `day 1 median ${s.cupsDay1.p50} cups`);
   assert.ok(s.cupsDay5.p50 > s.cupsDay1.p50 * 2, `day 5 median ${s.cupsDay5.p50}`);
-  assert.ok(s.cupsDay10.p50 >= 50, `day 10 median ${s.cupsDay10.p50}`);
+  assert.ok(s.cupsDay10.p50 > s.cupsDay1.p50 * 1.5, `day 10 median ${s.cupsDay10.p50}`);
+  assert.ok(s.buzzDay10.p50 > BALANCE.buzz.start, `day 10 buzz ${s.buzzDay10.p50}`);
   assert.equal(new LemonadeEngine({ seed: 3 }).getBuzz(), BALANCE.buzz.start);
 });
 
@@ -469,7 +494,8 @@ test('good lemonade spreads the word faster than bad lemonade', () => {
 test('always selling at 50 cents does worse than a fair price', () => {
   const fair = summarize(runBatch(7, 0, 200, 'perfect', 30));
   const cheap = summarize(runBatch(7, 0, 200, 'cheapskate', 30));
-  assert.ok(cheap.cashDay20.p50 < fair.cashDay20.p50 * 0.2);
+  assert.ok(cheap.totalEarned.p50 < fair.totalEarned.p50 * 0.3,
+    `cheap sales ${cheap.totalEarned.p50} vs fair ${fair.totalEarned.p50}`);
 });
 
 test('Dad Mode stage jump sets up a played-looking game for each stage', () => {

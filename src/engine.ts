@@ -390,6 +390,7 @@ export class LemonadeEngine {
     this.state.cash = this.state.cash.sub(p.costCash);
     this.ledger.shop += p.costCash;
     this.ledger.shopIds.push(p.id);
+    this.state.lastShopPurchaseDay = this.state.day;
     p.purchased = true;
     p.effect(this);
     return true;

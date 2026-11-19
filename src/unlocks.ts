@@ -69,6 +69,48 @@ export function newUnlocks(have: ReadonlySet<string>, c: UnlockCheck): string[] 
 export interface Unlocks {
   have: Set<string>;      // earned looks
   unseen: Set<string>;    // earned but not yet looked at in the mirror (they get a sparkle)
+  pending?: string[];    // milestones earned but waiting for a quiet day
+  lastAwardDay?: number;
+  lastBusyDay?: number;
+  lastProcessedDay?: number;
+}
+
+// A shop item appears after one whole day without another purchase.
+export function shopReady(s: Pick<GameState, 'day' | 'lastShopPurchaseDay'>): boolean {
+  return s.lastShopPurchaseDay == null || s.day - s.lastShopPurchaseDay >= 2;
+}
+
+// A purchase, recipe lock, or the introduction of the next shop item is already a big day.
+export function otherUnlockToday(s: GameState, summary: DaySummary): boolean {
+  const ledger = s.lastLedger;
+  const sincePurchase = s.lastShopPurchaseDay == null ? null : summary.day - s.lastShopPurchaseDay;
+  const shopIntro = (s.lastShopPurchaseDay == null && summary.day === 3) || sincePurchase === 1 || sincePurchase === 2;
+  return !!summary.recipeJustLocked || !!shopIntro || !!(ledger &&
+    (ledger.shop > 0 || ledger.hiring > 0 || (ledger.storeUpgrades ?? 0) > 0));
+}
+
+// Remember even one-day milestones, then reveal at most one look on a quiet day.
+export function advanceLookUnlocks(u: Unlocks, c: UnlockCheck, otherEvent: boolean): string | null {
+  // A new game can keep earned looks, but its day counter starts over.
+  if (u.lastProcessedDay != null && c.summary.day < u.lastProcessedDay) {
+    u.lastAwardDay = undefined;
+    u.lastBusyDay = undefined;
+  }
+  u.lastProcessedDay = c.summary.day;
+  const pending = u.pending ?? (u.pending = []);
+  for (const look of newUnlocks(u.have, c)) {
+    if (!pending.includes(look)) pending.push(look);
+  }
+  if (otherEvent) u.lastBusyDay = c.summary.day;
+  if (c.summary.day < 4 || otherEvent ||
+      (u.lastBusyDay != null && c.summary.day - u.lastBusyDay < 2) ||
+      (u.lastAwardDay != null && c.summary.day - u.lastAwardDay < 3)) return null;
+  const look = pending.shift();
+  if (!look) return null;
+  u.have.add(look);
+  u.unseen.add(look);
+  u.lastAwardDay = c.summary.day;
+  return look;
 }
 
 const STORAGE_KEY = 'universal_lemonade_unlocks';
@@ -79,7 +121,12 @@ export function loadUnlocks(): Unlocks {
     if (raw) {
       const p = JSON.parse(raw);
       const ok = (a: unknown) => (Array.isArray(a) ? a.filter(x => typeof x === 'string') : []);
-      return { have: new Set(ok(p.have)), unseen: new Set(ok(p.unseen)) };
+      const have = new Set(ok(p.have));
+      const pending = [...new Set(ok(p.pending))].filter(x => SECRET_LOOKS.has(x) && !have.has(x));
+      return { have, unseen: new Set(ok(p.unseen)), pending,
+        lastAwardDay: Number.isInteger(p.lastAwardDay) && p.lastAwardDay >= 0 ? p.lastAwardDay : undefined,
+        lastBusyDay: Number.isInteger(p.lastBusyDay) && p.lastBusyDay >= 0 ? p.lastBusyDay : undefined,
+        lastProcessedDay: Number.isInteger(p.lastProcessedDay) && p.lastProcessedDay >= 0 ? p.lastProcessedDay : undefined };
     }
   } catch (e) {
     console.warn('[Unlocks] Error reading saved unlocks:', e);
@@ -89,7 +136,10 @@ export function loadUnlocks(): Unlocks {
 
 export function saveUnlocks(u: Unlocks): void {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ have: [...u.have], unseen: [...u.unseen] }));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      have: [...u.have], unseen: [...u.unseen], pending: u.pending ?? [],
+      lastAwardDay: u.lastAwardDay, lastBusyDay: u.lastBusyDay, lastProcessedDay: u.lastProcessedDay
+    }));
   } catch (e) {
     console.warn('[Unlocks] Error saving unlocks:', e);
   }

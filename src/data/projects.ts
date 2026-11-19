@@ -4,13 +4,11 @@ import { BOTTLES_FOR_INVENTION } from './wholesale';
 
 // The two Phase 1 stand upgrades, $275 and $605, each lift a storage limit
 // (src/simulation/storage.ts): a busy summer day needs more ice than the 400-cube bucket
-// holds, and a second stand more lemons than the 48-lemon bowl. There is no cooler step any
+// holds, and a second stand more lemons than the 24-lemon bowl. There is no cooler step any
 // more (the ice machine made it useless a few days later); the kid gets by with the bucket
 // and runs short of ice a couple of times first. (The engine still knows hasCooler, so it
 // can come back.) The kid shop only spends money left over after today's supplies
 // (engine.restockCostForToday), so buying one never leaves the stand without lemons.
-// Sim, 40 days: a careful player buys them around Day 10 and 24, after 2 or 3 days short of
-// ice; a perfect player around Day 7 and 10.
 export function createInitialProjects(): ProjectDef[] {
   return [
     {
@@ -31,14 +29,13 @@ export function createInitialProjects(): ProjectDef[] {
     {
       id: 'fridge',
       name: 'Garage Mini-Fridge',
-      desc: 'No lemon storage limit (was 48), no overnight spoilage, +10% Reputation.',
+      desc: 'Unlimited lemons, no spoilage, and 10% more customers.',
       phase: 1,
       costCash: 605,
       purchased: false,
       unlocked: (s: GameState) => s.phase >= 1 && s.day >= 3,
       effect: (e: any) => {
         e.state.flags.hasMiniFridge = true;
-        e.state.reputation = Math.min(e.balance.reputation.max, e.state.reputation + e.balance.projects.fridgeReputationBump);
         e.log('Upgrade: Mini-fridge online! Lemons stay crisp and fresh.');
       }
     },

@@ -4,4 +4,4 @@ export { generateDailyReviews } from '../src/simulation/reviews';
 export { BOTS } from './bots';
 export { runGame, runBatch, withOverrides, seedForGame, mulberry32, METRICS } from './run';
 export { summarize, concatColumns, formatTable } from './report';
-export { MILESTONES, SECRET_LOOKS, newUnlocks, unlockCheckFrom, lookOpen } from '../src/unlocks';
+export { MILESTONES, SECRET_LOOKS, newUnlocks, unlockCheckFrom, lookOpen, advanceLookUnlocks, otherUnlockToday, shopReady, loadUnlocks, saveUnlocks } from '../src/unlocks';
