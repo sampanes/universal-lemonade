@@ -17,7 +17,8 @@ Day Report of what customers said.
   in a row and the recipe locks in gold.
 - **Stand Shop.** One upgrade at a time: an ice machine (no more running out of ice, and the
   ice buttons go away), then a mini-fridge (no lemon limit, nothing spoils overnight), then
-  a second stand, which opens the friends' stands.
+  a second stand, which opens the friends' stands, then a Supply Club Card (cheaper
+  supplies). The Big Wagon (friends sell more) waits until two friends are hired.
 - **Friends' stands.** Timmy (Elm Street), Leo (Ballpark) and Sarah (Pool) can each be hired
   to run a stand with the kid's recipe, price and supplies. Each is paid a flat wage every
   day they work, even a slow one, so a friend can cost money; tapping a friend gives them
