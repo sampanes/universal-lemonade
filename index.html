@@ -518,19 +518,22 @@
       background: none;
       padding: 0;
       animation: none;
-      justify-content: flex-start;
+      justify-content: center;
+      container-type: normal;
     }
     .ratio-card.price-only #ratio-banner-text {
       position: static;
       height: auto;
-      font-size: 20px;
-      justify-content: flex-start;
+      font-size: 18px;
+      white-space: normal;
+      text-align: center;
+      justify-content: center;
     }
     .ratio-card.price-only .ratio-controls {
       grid-column: 2;
       grid-row: 2;
       padding: 0;
-      justify-content: flex-start;
+      justify-content: center;
     }
     .ratio-card.price-only .ratio-controls > .ratio-row { flex: 0 1 170px; max-width: 170px; }
     .ratio-card.price-only .price-label { display: none; }
@@ -1217,6 +1220,33 @@
       font-size: 12px;
       color: #581c87;
       letter-spacing: 0;
+    }
+    /* An upgrade just lifted this item's storage limit ("38/48" becomes "38"): a tag pops
+       out of the pill for a few seconds so the shorter number reads as a win, not a loss. */
+    .supply-stock-row { position: relative; }
+    .supply-stock-row.cap-lifted::after {
+      content: 'No limit!';
+      position: absolute;
+      left: 50%;
+      top: -15px;
+      transform: translateX(-50%);
+      white-space: nowrap;
+      padding: 1px 7px;
+      border-radius: 10px;
+      background: #22c55e;
+      border: 2px solid #15803d;
+      color: #fff;
+      font-weight: 800;
+      font-size: 11px;
+      pointer-events: none;
+      animation: cap-lifted-pop 3.5s ease-out forwards;
+    }
+    @keyframes cap-lifted-pop {
+      0% { opacity: 0; transform: translateX(-50%) scale(0.4); }
+      10% { opacity: 1; transform: translateX(-50%) scale(1.15); }
+      18% { transform: translateX(-50%) scale(1); }
+      85% { opacity: 1; }
+      100% { opacity: 0; transform: translateX(-50%) translateY(-6px); }
     }
     .supply-alert {
       font-size: 13px;
@@ -4126,7 +4156,7 @@
       if (ratioCard && ratioCard.classList.contains('auto-ice') !== autoIce) ratioCard.classList.toggle('auto-ice', autoIce);
       const priceOnly = locked && autoIce;   // nothing left to choose but the price
       if (ratioCard && ratioCard.classList.contains('price-only') !== priceOnly) ratioCard.classList.toggle('price-only', priceOnly);
-      setText(document.getElementById('ratio-banner-text'), priceOnly ? 'PRICE TAG' : locked ? 'RATIO IS GOLDEN!' : 'RECIPE RATIO');
+      setText(document.getElementById('ratio-banner-text'), priceOnly ? 'All set! Just pick a price' : locked ? 'RATIO IS GOLDEN!' : 'RECIPE RATIO');
       const tasteBubble = document.getElementById('recipe-taste-bubble');
       if (tasteBubble) {
         const last = s.lastDaySummary;
@@ -4257,7 +4287,19 @@
       // pill shows it ("200/400"); the ice machine's ice just says Auto.
       const stockText = (item) => {
         const cap = engine.storageCap(item);
-        return Number.isFinite(cap) ? `${s.inv[item]}/${cap}` : String(s.inv[item]);
+        const capped = Number.isFinite(cap);
+        // The limit just went away (an upgrade): pop a "No limit!" tag on the pill.
+        const pill = document.getElementById(`lbl-inv-${item}`);
+        if (pill && pill._capped === true && !capped) {
+          const row = pill.parentElement;
+          row.classList.remove('cap-lifted');
+          void row.offsetWidth;          // restart the animation
+          row.classList.add('cap-lifted');
+          clearTimeout(row._capTimer);
+          row._capTimer = setTimeout(() => row.classList.remove('cap-lifted'), 3600);
+        }
+        if (pill) pill._capped = capped;
+        return capped ? `${s.inv[item]}/${cap}` : String(s.inv[item]);
       };
       const invLemons = document.getElementById('lbl-inv-lemons');
       const alertLemons = document.getElementById('alert-lemons');
