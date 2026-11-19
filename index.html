@@ -126,6 +126,19 @@
       font-size: 16px;
       line-height: 1.2;
     }
+    select.dad-jump {
+      background: #2b2b2b;
+      color: #fff;
+      border: 1px solid #666;
+      border-radius: 4px;
+      margin: 2px;
+      padding: 0 8px;
+      min-height: 38px;
+      font-family: var(--font-ui);
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+    }
     button {
       background: #2b2b2b;
       color: #fff;
@@ -2947,6 +2960,13 @@
       <button id="btn-speed-10" class="dad-test-only">10x</button>
       <button id="btn-speed-50" class="dad-test-only">50x</button>
       <button id="btn-autoday" class="dad-test-only">Auto-Day: OFF</button>
+      <select id="dad-jump" class="dad-test-only dad-jump" title="Skip ahead to a later stage (this game only; Reset starts over)">
+        <option value="">Jump to...</option>
+        <option value="2">Stage 2: Franchise</option>
+        <option value="3">Stage 3: Bottling</option>
+        <option value="4">Stage 4: Patent</option>
+        <option value="5">Stage 5: Beverage Co.</option>
+      </select>
       <button id="btn-reset" style="border-color:#e11d48; color:#f87171;">Reset</button>
     </div>
   </div>
@@ -3806,6 +3826,21 @@
         }
       };
     }
+
+    // Dad Mode: skip to the start of a later stage (only stages after the current one).
+    const dadJump = document.getElementById('dad-jump');
+    dadJump.onchange = () => {
+      const target = Number(dadJump.value);
+      dadJump.value = '';
+      if (target && engine.dadJumpToPhase(target)) refreshDadJump();
+    };
+    function refreshDadJump() {
+      for (const opt of dadJump.options) if (opt.value) opt.disabled = Number(opt.value) <= engine.state.phase;
+    }
+    refreshDadJump();
+    // Stages also change by playing and by Reset, so check again whenever the list opens.
+    dadJump.addEventListener('pointerdown', refreshDadJump);
+    dadJump.addEventListener('focus', refreshDadJump);
 
     document.getElementById('btn-autoday').onclick = (e) => {
       autoDay = !autoDay;

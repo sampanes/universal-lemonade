@@ -397,3 +397,27 @@ test('always selling at 50 cents does worse than a fair price', () => {
   const cheap = summarize(runBatch(7, 0, 200, 'cheapskate', 30));
   assert.ok(cheap.cashDay20.p50 < fair.cashDay20.p50 * 0.2);
 });
+
+test('Dad Mode stage jump sets up a played-looking game for each stage', () => {
+  const e = new LemonadeEngine({ seed: 99 });
+  const owned = (id) => e.projects.find(p => p.id === id).purchased;
+  assert.equal(e.dadJumpToPhase(2), true);
+  assert.equal(e.state.phase, 2);
+  assert.ok(owned('auto_ice_dispenser') && owned('fridge') && owned('franchise_license'));
+  assert.equal(e.state.recipeLocked, true);
+  assert.equal(e.state.recipe.lemonsPerPitcher, e.state.goldenRecipe.lemons);
+  assert.ok(Object.values(e.franchiseStands).every(st => !st.hired), 'the target stage starts fresh');
+  assert.equal(e.ledger.shop, 0, 'nothing charged');
+  assert.equal(e.dadJumpToPhase(2), false, 'no jumping to the stage you are in');
+
+  const f = new LemonadeEngine({ seed: 99 });
+  assert.equal(f.dadJumpToPhase(5), true);
+  assert.equal(f.state.phase, 5);
+  assert.ok(Object.values(f.franchiseStands).every(st => st.hired));
+  assert.ok(Object.values(f.wholesaleAccounts).every(w => w.active));
+  assert.ok(f.patent.licensed && f.copacker.active);
+  assert.ok(f.projects.filter(p => p.phase === 5).every(p => !p.purchased), 'stage 5 upgrades left to buy');
+  f.autoRestockForToday();
+  const sum = f.runDay();
+  assert.ok(Number.isFinite(sum.netProfit));
+});

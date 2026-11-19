@@ -2,6 +2,7 @@
 import { BigNum } from './bignum';
 import type {
   GameState,
+  GamePhase,
   FranchiseStand,
   WholesaleAccount,
   PatentSystem,
@@ -49,6 +50,24 @@ export interface EngineOptions {
 }
 
 export const DEFAULT_SEED = 1337;
+
+// The project bought in each stage that opens the next one (src/data/projects.ts).
+const PHASE_OPENERS: Record<number, string> = {
+  1: 'franchise_license',
+  2: 'bottling_rig',
+  3: 'patent_filing',
+  4: 'copacker_deal',
+};
+
+// Dad Mode stage jump: at least this much cash and this many cups sold on arrival. Rough
+// amounts for a fresh start in each stage (enough to hire or sign the first thing, not
+// enough to open the stage after it right away).
+const DAD_JUMP_ARRIVAL: Record<number, { cash: number; cups: number }> = {
+  2: { cash: 200, cups: 120 },
+  3: { cash: 600, cups: 1500 },
+  4: { cash: 2500, cups: 6000 },
+  5: { cash: 12000, cups: 20000 },
+};
 
 export class LemonadeEngine {
   public state: GameState;
@@ -257,6 +276,45 @@ export class LemonadeEngine {
     this.ledger.shopIds.push(p.id);
     p.purchased = true;
     p.effect(this);
+    return true;
+  }
+
+  // Dad Mode testing: skip ahead to the start of a later stage without playing to it. The
+  // game ends up as if it had been played there: the stand upgrades bought, the recipe
+  // locked golden, and every stage passed on the way finished (its upgrades bought, its
+  // friends hired, its stores signed). The target stage itself starts fresh. Nothing is
+  // charged and the money diary is untouched; cash and cups sold are raised to what a
+  // player usually has on arriving.
+  public dadJumpToPhase(target: GamePhase): boolean {
+    const s = this.state;
+    if (target <= s.phase || target > 5) return false;
+    const giveFree = (p: ProjectDef) => { if (!p.purchased) { p.purchased = true; p.effect(this); } };
+
+    for (const p of this.projects) if (p.phase === 1 && p.id !== 'franchise_license') giveFree(p);
+    s.recipe.lemonsPerPitcher = s.goldenRecipe.lemons;
+    s.recipe.sugarPerPitcher = s.goldenRecipe.sugar;
+    s.goldenStreak = Math.max(s.goldenStreak ?? 0, this.balance.recipe.lockStreak);
+    s.recipeLocked = true;
+    s.bestRecipeQuality = 1;
+    s.avgRecipeQuality = Math.max(s.avgRecipeQuality || 0, 0.95);
+    s.reputation = Math.max(s.reputation, 0.85);
+
+    while (s.phase < target) {
+      const ph = s.phase;
+      if (ph === 2) Object.values(this.franchiseStands).forEach(st => { st.hired = true; });
+      if (ph === 3) Object.values(this.wholesaleAccounts).forEach(w => { w.active = true; });
+      // This stage's upgrades first, then the one that opens the next stage.
+      const opener = PHASE_OPENERS[ph];
+      this.projects.filter(p => p.phase === ph && p.id !== opener).forEach(giveFree);
+      const open = this.projects.find(p => p.id === opener);
+      if (open) giveFree(open);
+      if (s.phase === ph) s.phase = (ph + 1) as GamePhase;   // opener missing: step anyway
+    }
+
+    const arrive = DAD_JUMP_ARRIVAL[target];
+    if (s.cash.lt(arrive.cash)) s.cash = BigNum.fromNumber(arrive.cash);
+    if (s.totalCupsSold.lt(arrive.cups)) s.totalCupsSold = BigNum.fromNumber(arrive.cups);
+    this.log(`Dad Mode: jumped ahead to Stage ${target}.`);
     return true;
   }
 

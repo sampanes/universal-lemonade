@@ -37,7 +37,8 @@ Kid mode is the driveway stand for now. The later stages are playable in Dad Mod
 ## Dad Mode
 
 Dad Mode shows the full business panels for the later stages, test controls (game speed,
-Auto-Day, the game's seed) and a mirror with every look unlocked. Its look is saved
+Auto-Day, the game's seed, and "Jump to..." to skip ahead to the start of a later stage, as
+if the stages before it had been played) and a mirror with every look unlocked. Its look is saved
 separately, so it never changes the kid's.
 
 - Tap the game title three times to switch it on or off, or
@@ -62,7 +63,7 @@ Every push to `main` builds and deploys to GitHub Pages (`.github/workflows/depl
 | Path | What is there |
 | --- | --- |
 | `index.html` | The whole page: markup, CSS and the UI script |
-| `src/engine.ts` | The game engine (no DOM): state, days, buying, saving |
+| `src/engine.ts` | The game engine (no DOM): state, days, buying, upgrades |
 | `src/balance.ts` | Every economy tuning number |
 | `src/simulation/` | Weather, demand, recipe taste, reviews, reputation, storage limits |
 | `src/data/` | Stand upgrades and business projects, chores, franchise stands, wholesale, trophies |
