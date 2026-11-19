@@ -550,6 +550,120 @@
     }
     .ratio-card.price-only .ratio-controls > .ratio-row { flex: 0 1 170px; max-width: 170px; }
     .ratio-card.price-only .price-label { display: none; }
+    /* Friends' stands (Stage 2): one tile per friend, the stand sticker with the friend
+       behind it. Hired friends work (green) or have the day off (grey, sleepy) when tapped. */
+    .friends-card {
+      margin-top: 10px;
+      padding: 6px 8px 8px;
+      background: #ffffff;
+      border: 3px solid #c4b5fd;
+      border-radius: 18px;
+      box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2);
+      color: #3b0764;
+    }
+    .friends-card[hidden] { display: none; }
+    .friends-title {
+      font-family: var(--font-display);
+      font-size: 15px;
+      letter-spacing: 0.4px;
+      text-align: center;
+      color: #6d28d9;
+      margin-bottom: 4px;
+    }
+    .friends-row {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 6px;
+    }
+    .friend-tile {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 4px 4px 6px;
+      border-radius: 14px;
+      background: #f5f3ff;
+      border: 2px solid #ede9fe;
+      text-align: center;
+      min-width: 0;
+    }
+    .friend-tile.working { background: #f0fdf4; border-color: #86efac; }
+    .friend-tile.dayoff { background: #f3f4f6; border-color: #d1d5db; }
+    .friend-pic {
+      position: relative;
+      width: 100%;
+      height: 62px;
+    }
+    .friend-pic .friend-stand {
+      position: absolute;
+      left: 50%;
+      bottom: 0;
+      height: 52px;
+      transform: translateX(-38%);
+      z-index: 2;
+    }
+    .friend-pic .friend-kid {
+      position: absolute;
+      left: 50%;
+      bottom: 14px;
+      height: 50px;
+      transform: translateX(-112%);
+      z-index: 1;
+    }
+    .friend-tile.dayoff .friend-pic { filter: grayscale(0.7); opacity: 0.75; }
+    .friend-tile.open .friend-kid { opacity: 0.55; }
+    .friend-name {
+      margin-top: 2px;
+      font-family: var(--font-display);
+      font-size: 14px;
+      line-height: 1.05;
+      white-space: nowrap;
+    }
+    .friend-where {
+      font-size: 10.5px;
+      font-weight: 700;
+      color: #6b7280;
+      white-space: nowrap;
+    }
+    .friend-btn {
+      margin: 4px 0 0;
+      min-height: 30px;
+      width: 100%;
+      padding: 3px 4px;
+      border-radius: 999px;
+      border: 2px solid #6ee7b7;
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: #fff;
+      font-family: var(--font-display);
+      font-size: 13px;
+      letter-spacing: 0.3px;
+      line-height: 1.05;
+      -webkit-text-stroke: 1.5px #065f46;
+      paint-order: stroke fill;
+      touch-action: manipulation;
+    }
+    .friend-btn small {
+      display: block;
+      font-family: var(--font-ui);
+      font-size: 10px;
+      font-weight: 800;
+      -webkit-text-stroke: 0;
+      opacity: 0.95;
+    }
+    .friend-btn:disabled {
+      background: #e5e7eb;
+      border-color: #d1d5db;
+      color: #6b7280;
+      -webkit-text-stroke: 0;
+      opacity: 1;
+      cursor: not-allowed;
+    }
+    .friend-tile.dayoff .friend-btn {
+      background: #e5e7eb;
+      border-color: #9ca3af;
+      color: #374151;
+      -webkit-text-stroke: 0;
+    }
     /* Kid Stand Shop: one upgrade at a time under the recipe card. */
     .stand-shop {
       display: flex;
@@ -3199,8 +3313,15 @@
         </div>
       </div>
 
-      <!-- KID STAND SHOP: one upgrade at a time (ice machine, mini-fridge, then a
-           second stand as a "coming soon" goal). Filled by renderStandShop(). -->
+      <!-- FRIENDS' STANDS (Stage 2): hire a friend, then tap a hired friend to give them the
+           day off (no sales, no pay). Filled by renderFriends(). -->
+      <div class="friends-card" id="friends-card" hidden>
+        <div class="friends-title">My friends' stands</div>
+        <div class="friends-row" id="friends-row"></div>
+      </div>
+
+      <!-- KID STAND SHOP: one upgrade at a time (ice machine, mini-fridge, the second stand,
+           then Stage 2 upgrades). Filled by renderStandShop(). -->
       <div class="stand-shop" id="stand-shop" hidden>
         <img class="stand-shop-pic" id="stand-shop-pic" src="./sprites/shop/ice_dispenser.png" alt="" />
         <div class="stand-shop-info">
@@ -3664,7 +3785,15 @@
         // With only the driveway stand, the rows would just repeat the big number above them.
         const showRows = s.phase >= 2 || brandBonus > 0.005;
         let rows = row(`Driveway stand (${count(d.drivewayCupsSold)} cups)`, `+${money(d.drivewayRevenue)}`);
-        if (s.phase >= 2) {
+        if (d.friends && d.friends.length) {
+          // One row per friend: what their stand took in minus their pay, so a slow rainy
+          // day shows up as a friend who cost money.
+          d.friends.forEach(f => {
+            if (f.dayOff) { rows += row(`${f.workerName} had the day off`, money(0)); return; }
+            const net = f.revenue - f.wage;
+            rows += row(`${f.workerName} (${count(f.cups)} cups, paid ${money(f.wage)})`, fmtSigned(net, true), net < 0 ? 'cost' : '');
+          });
+        } else if (s.phase >= 2) {
           rows += row(`Franchise stands (${count(d.franchiseCupsSold)} cups)`, `+${money(d.franchiseGrossRevenue)}`);
           rows += row('Franchise wages', `-${money(d.franchiseWagesPaid)}`, 'cost');
         }
@@ -4534,6 +4663,7 @@
         : dHead ? kidMoodFor(dHead) : (Date.now() < kidFlashUntil ? kidFlashMood : 'happy'), true);
 
       renderStandShop(s);
+      renderFriends(s);
       renderMoneyBag(s);
 
       // Projects
@@ -4616,19 +4746,23 @@
     window._proj = (id) => engine.buyProject(id);
     window._buyTrophy = (id) => engine.buyTrophy(id);
     // Kid Stand Shop: the next upgrade in this order, one at a time. An item shows once the
-    // game unlocks it (from Day 3), so the card can be hidden
-    // for a day between buys. The second stand is only a goal for now ("coming soon"):
-    // buying it would start Phase 2, which has no kid screens yet.
+    // game unlocks it (from Day 3), so the card can be hidden for a day between buys; an
+    // "early" item shows as a savings goal before it unlocks. The second stand starts Stage
+    // 2 (the friends' stands); bottling (Stage 3) is only a goal for now ("coming soon").
+    // pic: null shows no picture (art still to come).
     const KID_SHOP = [
-      { id: 'auto_ice_dispenser', name: 'Ice Machine', desc: 'Makes all the ice you need, free, and picks the right amount.', pic: 'ice_dispenser' },
-      { id: 'fridge', name: 'Mini-Fridge', desc: 'No lemon limit, and they never go bad. Neighbors notice!', pic: 'mini_fridge' },
-      { id: 'franchise_license', name: 'A Second Stand', desc: 'Coming soon: hire a friend to run another stand!', pic: 'second_stand', teaser: true },
+      { id: 'auto_ice_dispenser', name: 'Ice Machine', desc: 'Makes all the ice you need, free, and picks the right amount.', pic: './sprites/shop/ice_dispenser.png' },
+      { id: 'fridge', name: 'Mini-Fridge', desc: 'No lemon limit, and they never go bad. Neighbors notice!', pic: './sprites/shop/mini_fridge.png' },
+      { id: 'franchise_license', name: 'A Second Stand', desc: 'Friends can run stands around town for you!', pic: './sprites/shop/second_stand.png', early: true },
+      { id: 'costco_card', name: 'Supply Club Card', desc: 'Lemons, sugar and cups cost a lot less!', pic: './sprites/supplies.png' },
+      { id: 'cargo_wagon', name: 'Big Wagon', desc: "Haul more to your friends' stands: they each sell more!", pic: null },
+      { id: 'bottling_rig', name: 'Bottle It!', desc: 'Coming soon: bottle your lemonade for stores!', pic: null, teaser: true },
     ];
     function kidShopNext(s) {
       for (const item of KID_SHOP) {
         const p = engine.projects.find(x => x.id === item.id);
         if (!p || p.purchased) continue;
-        if (item.teaser) return { item, p };
+        if (item.teaser || item.early) return { item, p };
         return p.unlocked(s) ? { item, p } : null;
       }
       return null;
@@ -4644,7 +4778,9 @@
         card._item = item.id;
         card.classList.toggle('teaser', !!item.teaser);
         setText(document.getElementById('stand-shop-tag'), item.teaser ? 'SOON' : 'SHOP');
-        document.getElementById('stand-shop-pic').src = `./sprites/shop/${item.pic}.png`;
+        const pic = document.getElementById('stand-shop-pic');
+        pic.hidden = !item.pic;
+        if (item.pic) pic.src = item.pic;
         card.style.animation = 'none';
         void card.offsetWidth;      // replay the pop-in for the new item
         card.style.animation = '';
@@ -4657,16 +4793,20 @@
       const need = item.teaser ? 0 : engine.restockCostForToday();
       const spare = Math.max(0, s.cash.toNumber() - need);
       const short = !item.teaser && spare < cost;
+      // Enough money but not open yet (the second stand also wants a tasty recipe).
+      const notYet = !item.teaser && !short && !p.unlocked(s);
       const save = document.getElementById('stand-shop-save');
-      if (save.hidden === short) save.hidden = !short;
-      if (short) {
-        document.getElementById('stand-shop-fill').style.width = `${Math.min(100, (spare / cost) * 100).toFixed(1)}%`;
-        setText(document.getElementById('stand-shop-save-text'),
-          `Saving up: $${Math.floor(spare)} of $${cost}${need > 0 ? ' after supplies' : ''}`);
+      const showSave = short || notYet;
+      if (save.hidden === showSave) save.hidden = !showSave;
+      if (showSave) {
+        document.getElementById('stand-shop-fill').style.width = `${notYet ? 100 : Math.min(100, (spare / cost) * 100).toFixed(1)}%`;
+        setText(document.getElementById('stand-shop-save-text'), notYet
+          ? 'Make your recipe tastier first!'
+          : `Saving up: $${Math.floor(spare)} of $${cost}${need > 0 ? ' after supplies' : ''}`);
       }
       const btn = document.getElementById('btn-stand-shop-buy');
       btn.dataset.id = item.id;
-      if (btn.disabled !== short) btn.disabled = short;
+      if (btn.disabled !== showSave) btn.disabled = showSave;
       setText(btn, `$${cost}`);
     }
     document.getElementById('btn-stand-shop-buy').onclick = (e) => {
@@ -4679,6 +4819,59 @@
         kidFlash('determined', 2500);      // new gear: let's do this
       }
     };
+
+    // Friends' stands (Stage 2). Each friend is a paper-doll kid with a look of their own,
+    // standing behind their stand sticker (public/sprites/franchise/).
+    const FRIENDS = {
+      timmy: { place: 'Elm Street', pic: 'elm', hair: 'sidepart', skinTone: 1, hairColor: 1, uniformColor: 2 },
+      leo: { place: 'Ballpark', pic: 'ballpark', hair: 'curly', skinTone: 3, hairColor: 0, uniformColor: 4 },
+      sarah: { place: 'Pool', pic: 'pool', hair: 'ponytail', skinTone: 0, hairColor: 3, uniformColor: 1 },
+    };
+    function friendLook(id) {
+      const f = FRIENDS[id];
+      return { name: id, hairStyle: Math.max(0, kidHairIds().indexOf(f.hair)), skinTone: f.skinTone, hairColor: f.hairColor, uniformColor: f.uniformColor };
+    }
+    // Not hired: "Hire $45". Hired: "Working" with today's forecast and pay; tapping gives
+    // the friend the day off (no sales, no pay), and tapping again calls them back in.
+    function renderFriends(s) {
+      const card = document.getElementById('friends-card');
+      const show = s.phase >= 2;
+      if (card.hidden === show) card.hidden = !show;
+      if (!show) return;
+      const est = engine.getDailyDemandEstimate().franchiseEstimates;
+      const html = Object.values(engine.franchiseStands).map(st => {
+        const f = FRIENDS[st.id] || { place: st.location, pic: 'elm' };
+        let cls, mood, btn;
+        if (!st.hired) {
+          cls = 'open'; mood = 'wink';
+          btn = `<button type="button" class="friend-btn" data-act="hire" data-id="${st.id}"${s.cash.lt(st.setupCost) ? ' disabled' : ''}>Hire $${st.setupCost}<small>then $${st.dailyWage} a day</small></button>`;
+        } else if (st.dayOff) {
+          cls = 'dayoff'; mood = 'sleepy';
+          btn = `<button type="button" class="friend-btn" data-act="off" data-id="${st.id}">Day off<small>tap to call in</small></button>`;
+        } else {
+          const cups = (est.find(x => x.id === st.id) || { estCups: 0 }).estCups;
+          cls = 'working'; mood = 'happy';
+          btn = `<button type="button" class="friend-btn" data-act="off" data-id="${st.id}">Working<small>~${cups} cups, $${st.dailyWage} pay</small></button>`;
+        }
+        const kid = FRIENDS[st.id] ? kidImageURL(friendLook(st.id), mood, false) : null;
+        return `<div class="friend-tile ${cls}">
+          <div class="friend-pic">${kid ? `<img class="friend-kid" src="${kid}" alt="" />` : ''}<img class="friend-stand" src="./sprites/franchise/${f.pic}.png" alt="" /></div>
+          <div class="friend-name">${st.workerName}</div>
+          <div class="friend-where">${f.place}</div>
+          ${btn}
+        </div>`;
+      }).join('');
+      setHTMLIfChanged(document.getElementById('friends-row'), html);
+    }
+    document.getElementById('friends-row').addEventListener('click', (e) => {
+      const btn = e.target.closest('.friend-btn');
+      if (!btn || btn.disabled) return;
+      if (btn.dataset.act === 'hire') {
+        if (engine.hireFranchiseStand(btn.dataset.id)) kidFlash('cheer', 2000);
+      } else {
+        engine.toggleFriendDayOff(btn.dataset.id);
+      }
+    });
 
     // Money Bag: tap the cash pill. Shows the last finished day as money in, money out and
     // what the kid really kept (the Day Report's "You made" leaves out the morning shopping),

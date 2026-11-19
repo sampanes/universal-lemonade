@@ -46,7 +46,7 @@ export function computeDayDemand(
   if (s.phase >= 2) {
     const efficiencyBonus = s.flags.hasIpadPro ? d.ipadFranchiseMult : 1.0;
     for (const stand of Object.values(franchiseStands)) {
-      if (!stand.hired) continue;
+      if (!stand.hired || stand.dayOff) continue;
       const standTraffic = Math.floor(
         stand.baseCapacity *
         Math.pow(weatherMult * tempFactor, stand.weatherSens) *

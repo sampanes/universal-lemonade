@@ -16,7 +16,13 @@ Day Report of what customers said.
   a score; the customers' comments point the way ("a little more lemon"). Sell it a few days
   in a row and the recipe locks in gold.
 - **Stand Shop.** One upgrade at a time: an ice machine (no more running out of ice, and the
-  ice buttons go away), then a mini-fridge (no lemon limit, nothing spoils overnight).
+  ice buttons go away), then a mini-fridge (no lemon limit, nothing spoils overnight), then
+  a second stand, which opens the friends' stands.
+- **Friends' stands.** Timmy (Elm Street), Leo (Ballpark) and Sarah (Pool) can each be hired
+  to run a stand with the kid's recipe, price and supplies. Each is paid a flat wage every
+  day they work, even a slow one, so a friend can cost money; tapping a friend gives them
+  the day off (no sales, no pay) for a rainy day. The Day Report shows each friend's cups
+  and pay.
 - **Chores.** A broke kid can always do chores for a few dollars.
 - **The kid.** The stand is run by a paper-doll kid with picked skin, hair, hair color and
   shirt. The mirror changes the look any time. New hair styles and colors unlock as the
@@ -27,7 +33,7 @@ Reset starts a new game.
 
 ## Later stages
 
-Kid mode is the driveway stand for now. The later stages are playable in Dad Mode:
+Kid mode covers the first two stages for now; the rest are playable in Dad Mode:
 
 1. **Driveway stand** - recipe, weather, supplies, chores, Stand Shop.
 2. **Neighborhood franchise** - hire neighborhood kids to run stands at Elm Street, the

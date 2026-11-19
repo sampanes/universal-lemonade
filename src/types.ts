@@ -35,6 +35,18 @@ export interface FranchiseStand {
   baseCapacity: number;
   weatherSens: number;
   desc: string;
+  dayOff?: boolean;      // the kid gave this friend today off: no sales, no pay (resets each day)
+}
+
+// How one hired friend's stand did today (for the Day Report).
+export interface FriendDayResult {
+  id: string;
+  workerName: string;
+  standName: string;
+  cups: number;
+  revenue: number;
+  wage: number;
+  dayOff: boolean;
 }
 
 export interface WholesaleAccount {
@@ -153,6 +165,7 @@ export interface DaySummary {
   franchiseGrossRevenue: number;
   franchiseWagesPaid: number;
   franchiseNet: number;
+  friends?: FriendDayResult[];   // each hired friend, in hiring-list order
 
   // Wholesale Bottling (Phase 3+)
   bottlesSold: number;

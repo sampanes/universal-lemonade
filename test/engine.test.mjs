@@ -443,3 +443,34 @@ test('a broken or unknown save gives no game (a new one starts instead)', () => 
   assert.equal(LemonadeEngine.fromSave({ v: 999, seed: 1, state: {} }), null);
   assert.equal(LemonadeEngine.fromSave({ v: 1, seed: 1 }), null);
 });
+
+test('a friend with the day off sells nothing, is not paid, and is back tomorrow', () => {
+  const e = new LemonadeEngine({ seed: 31 });
+  e.dadJumpToPhase(2);
+  e.state.cash = e.state.cash.add(500);
+  assert.ok(e.hireFranchiseStand('timmy') && e.hireFranchiseStand('leo'));
+  assert.equal(e.toggleFriendDayOff('leo'), true);
+  assert.equal(e.toggleFriendDayOff('sarah'), false, 'not hired');
+  e.autoRestockForToday();
+  const d = e.runDay();
+  const leo = d.friends.find(f => f.id === 'leo');
+  const timmy = d.friends.find(f => f.id === 'timmy');
+  assert.deepEqual([leo.dayOff, leo.cups, leo.wage], [true, 0, 0]);
+  assert.equal(timmy.wage, 12);
+  assert.equal(d.franchiseWagesPaid, 12);
+  assert.equal(d.franchiseCupsSold, timmy.cups);
+  assert.equal(e.franchiseStands.leo.dayOff, false, 'back at work the next day');
+});
+
+test('a friend with the day off says nothing in the report', () => {
+  for (let seed = 1; seed <= 20; seed++) {
+    const e = new LemonadeEngine({ seed });
+    e.dadJumpToPhase(2);
+    e.state.cash = e.state.cash.add(500);
+    e.hireFranchiseStand('timmy'); e.hireFranchiseStand('leo');
+    e.toggleFriendDayOff('leo');
+    e.autoRestockForToday();
+    const d = e.runDay();
+    assert.ok(!d.reviews.some(r => r.reviewer.startsWith('Leo')), `seed ${seed}`);
+  }
+});

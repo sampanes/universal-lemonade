@@ -157,7 +157,8 @@ export function generateDailyReviews(params: ReviewGenerationParams): CustomerRe
 
   // 3. TEAM CHATTER & SIMPLE FRANCHISE MESSAGES (Timmy, Leo, Sarah)
   const teamStart = reviews.length;
-  const hiredStands = Object.values(franchiseStands).filter(st => st.hired);
+  // Only friends who worked today have something to say (a day off is quiet).
+  const hiredStands = Object.values(franchiseStands).filter(st => st.hired && !st.dayOff);
   if (hiredStands.length > 0) {
     const stand = hiredStands[Math.floor(rand() * hiredStands.length)];
     if (soldOutStands.length > 0) {

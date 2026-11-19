@@ -328,6 +328,15 @@ export class LemonadeEngine {
     return true;
   }
 
+  // Give a hired friend today off (or call them back in). A friend with the day off sells
+  // nothing and is not paid: the choice for a rainy day. Everyone works again tomorrow.
+  public toggleFriendDayOff(id: string): boolean {
+    const stand = this.franchiseStands[id];
+    if (!stand || !stand.hired) return false;
+    stand.dayOff = !stand.dayOff;
+    return true;
+  }
+
   public signWholesaleAccount(id: string): boolean {
     const account = this.wholesaleAccounts[id];
     if (!account || account.active || this.state.cash.lt(account.setupCost)) return false;
@@ -663,6 +672,7 @@ export class LemonadeEngine {
     const maxTotalPour = Math.min(totalCupDemand, maxByCups, maxByIce, maxByLemons, maxBySugar);
 
     const soldOutStands: string[] = [];
+    const soldByStand: Record<string, number> = {};   // cups each friend's stand sold
     let drivewayCupsSold = 0;
     let franchiseCupsSold = 0;
     let franchiseGross = 0;
@@ -691,6 +701,7 @@ export class LemonadeEngine {
         if (!st.isDriveway) {
           franchiseCupsSold += sold;
           franchiseGross += sold * s.recipe.pricePerCup;
+          soldByStand[st.id] = sold;
         } else {
           drivewayCupsSold += sold;
         }
@@ -911,6 +922,15 @@ export class LemonadeEngine {
       franchiseGrossRevenue: franchiseGross,
       franchiseWagesPaid: franchiseWages,
       franchiseNet,
+      friends: Object.values(this.franchiseStands).filter(st => st.hired).map(st => {
+        const cups = soldByStand[st.id] ?? 0;
+        return {
+          id: st.id, workerName: st.workerName, standName: st.name, cups,
+          revenue: cups * s.recipe.pricePerCup,
+          wage: st.dayOff ? 0 : st.dailyWage,
+          dayOff: !!st.dayOff,
+        };
+      }),
       bottlesSold,
       wholesaleRevenue: wholesaleGross,
       packagingCosts,
@@ -941,6 +961,8 @@ export class LemonadeEngine {
 
     s.lastDaySummary = summary;
     s.day += 1;
+    // A day off is for one day: everyone is back at work tomorrow.
+    Object.values(this.franchiseStands).forEach(st => { st.dayOff = false; });
     s.elapsedSec += b.secondsPerDay;
 
     if (reviews.length > 0) {
