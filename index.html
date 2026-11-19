@@ -4881,6 +4881,19 @@
     // then what today has cost so far.
     const SUPPLY_PICS = { lemons: 'lemon', sugar: 'sugar_scoop', ice: 'ice_cubes', cups: 'lemonade_cup' };
     const mbMoney = (n) => `$${fmtDollars(Math.abs(n), true)}`;
+    // The two Money Bag tiles stay short so they fit at full size: cents under $1,000, whole
+    // dollars under $100,000, then K, M and B with three digits ($123K, $1.23M, $45.6B).
+    // Rounded down, so a tile never shows more than the kid has. (The cash pill keeps every digit.)
+    function tileMoney(n) {
+      const a = Math.abs(n);
+      if (a < 1000) return `$${fmt2(a)}`;
+      if (a < 1e5) return `$${fmtWhole(a)}`;
+      const [div, unit] = a < 1e6 ? [1e3, 'K'] : a < 1e9 ? [1e6, 'M'] : [1e9, 'B'];
+      const v = a / div;
+      const dec = v < 10 ? 2 : v < 100 ? 1 : 0;
+      const shown = Math.floor(v * 10 ** dec + 1e-6) / 10 ** dec;   // 1,230,000 / 1e6 * 100 is 122.99999...
+      return `$${shown.toLocaleString('en-US', { minimumFractionDigits: dec, maximumFractionDigits: dec })}${unit}`;
+    }
     const mbRow = (kind, pic, what, sub, amount) =>
       `<div class="mb-row ${kind}">${pic ? `<img src="${pic}" alt="" />` : ''}` +
       `<div class="mb-what">${what}${sub ? `<small>${sub}</small>` : ''}</div>` +
@@ -4931,7 +4944,7 @@
         // bottles); upgrades and hiring are things the kid owns, so they are not taken off.
         const total = s.grossProfitTotal ?? 0;
         const tile = (label, n) => {
-          const amt = `${n >= 0 ? '+' : '-'}${mbMoney(n)}`;   // big totals step down so they fit the tile
+          const amt = `${n >= 0 ? '+' : '-'}${tileMoney(n)}`;   // big totals step down so they fit the tile
           const size = amt.length > 13 ? 16 : amt.length > 10 ? 20 : 26;
           return `<div class="mb-tile ${n >= 0 ? 'pos' : 'neg'}"><span class="mb-tile-label">${label}</span>` +
             `<span class="mb-tile-amt" style="font-size:${size}px">${amt}</span></div>`;
