@@ -139,8 +139,9 @@ export function generateDailyReviews(params: ReviewGenerationParams): CustomerRe
   } else if (priceRatio >= 1.18) {
     reviews.push({
       stars: 2,
-      quote: tempF >= 65 && tempF < 85
-        ? `$${pricePerCup.toFixed(2)} is a little pricey.`
+      quote: tempF >= 85
+        ? `$${pricePerCup.toFixed(2)} is a little steep, even for ${weatherDay}.`
+        : tempF >= 65 ? `$${pricePerCup.toFixed(2)} is a little pricey.`
         : `$${pricePerCup.toFixed(2)} is a little steep for ${weatherDay}.`,
       reviewer: "Dog walker",
       sentiment: "mixed"
