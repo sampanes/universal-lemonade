@@ -451,6 +451,114 @@
       ],
       "width": 194,
       "height": 224
+    },
+    {
+      "sheet": 4,
+      "cat": "full_characters",
+      "id": "wheelchair_hoodie_right",
+      "name": "Wheelchair Kid (Hoodie, Right-facing)",
+      "file": "full_characters/wheelchair_hoodie_right.png",
+      "width": 389,
+      "height": 674
+    },
+    {
+      "sheet": 4,
+      "cat": "full_characters",
+      "id": "wheelchair_hoodie_left",
+      "name": "Wheelchair Kid (Hoodie, Left-facing / Flipped)",
+      "file": "full_characters/wheelchair_hoodie_left.png",
+      "width": 389,
+      "height": 674
+    },
+    {
+      "sheet": 4,
+      "cat": "full_characters",
+      "id": "wheelchair_dress_right",
+      "name": "Wheelchair Kid (Dress, Right-facing)",
+      "file": "full_characters/wheelchair_dress_right.png",
+      "width": 433,
+      "height": 650
+    },
+    {
+      "sheet": 4,
+      "cat": "full_characters",
+      "id": "wheelchair_dress_left",
+      "name": "Wheelchair Kid (Dress, Left-facing / Flipped)",
+      "file": "full_characters/wheelchair_dress_left.png",
+      "width": 433,
+      "height": 650
+    },
+    {
+      "sheet": 4,
+      "cat": "outfits",
+      "id": "outfit_wheelchair_hoodie_norm_right",
+      "name": "Wheelchair Hoodie Outfit (Right-facing)",
+      "file": "outfits/outfit_wheelchair_hoodie_norm_right.png",
+      "width": 240,
+      "height": 238
+    },
+    {
+      "sheet": 4,
+      "cat": "outfits",
+      "id": "outfit_wheelchair_hoodie_norm_left",
+      "name": "Wheelchair Hoodie Outfit (Left-facing / Flipped)",
+      "file": "outfits/outfit_wheelchair_hoodie_norm_left.png",
+      "width": 240,
+      "height": 238
+    },
+    {
+      "sheet": 4,
+      "cat": "outfits",
+      "id": "outfit_wheelchair_dress_norm_right",
+      "name": "Wheelchair Dress Outfit (Right-facing)",
+      "file": "outfits/outfit_wheelchair_dress_norm_right.png",
+      "width": 263,
+      "height": 238
+    },
+    {
+      "sheet": 4,
+      "cat": "outfits",
+      "id": "outfit_wheelchair_dress_norm_left",
+      "name": "Wheelchair Dress Outfit (Left-facing / Flipped)",
+      "file": "outfits/outfit_wheelchair_dress_norm_left.png",
+      "width": 263,
+      "height": 238
+    },
+    {
+      "sheet": 4,
+      "cat": "hair",
+      "id": "hair_wheelchair_spiky_norm_right",
+      "name": "3/4 Spiky Hair with Ears (Right-facing)",
+      "file": "hair/hair_wheelchair_spiky_norm_right.png",
+      "width": 230,
+      "height": 179
+    },
+    {
+      "sheet": 4,
+      "cat": "hair",
+      "id": "hair_wheelchair_spiky_norm_left",
+      "name": "3/4 Spiky Hair with Ears (Left-facing / Flipped)",
+      "file": "hair/hair_wheelchair_spiky_norm_left.png",
+      "width": 230,
+      "height": 179
+    },
+    {
+      "sheet": 4,
+      "cat": "hair",
+      "id": "hair_wheelchair_pigtails_norm_right",
+      "name": "3/4 Pigtails with Ribbons (Right-facing)",
+      "file": "hair/hair_wheelchair_pigtails_norm_right.png",
+      "width": 265,
+      "height": 164
+    },
+    {
+      "sheet": 4,
+      "cat": "hair",
+      "id": "hair_wheelchair_pigtails_norm_left",
+      "name": "3/4 Pigtails with Ribbons (Left-facing / Flipped)",
+      "file": "hair/hair_wheelchair_pigtails_norm_left.png",
+      "width": 265,
+      "height": 164
     }
   ]
 }
