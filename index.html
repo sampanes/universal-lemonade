@@ -2859,7 +2859,7 @@
       .mb-row.out .mb-amt { color: #be185d; }
       .mb-chips { display: flex; flex-wrap: wrap; gap: 4px 8px; margin-top: 2px; }
       .mb-chip { display: inline-flex; align-items: center; gap: 2px; font-size: 12px; font-weight: 700; color: #6b7280; }
-      .mb-chip img { width: 16px; height: 16px; }
+      .mb-chip img { width: 16px; height: 16px; object-fit: contain; }
       /* Two chunky tiles: that day, and everything since Day 1. */
       .mb-kept {
         display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
@@ -4894,13 +4894,18 @@
       const supplies = Object.values(l.supplies).reduce((a, b) => a + b, 0);
       if (supplies > 0.004) rows += mbRow('out', './sprites/supplies.png', 'Supplies', `<span class="mb-chips">${mbSupplyChips(l)}</span>`, supplies);
       if (l.shop > 0.004) {
-        const kid = l.shopIds.map(id => KID_SHOP.find(x => x.id === id)).filter(Boolean);
-        const name = kid.length === 1 ? kid[0].name : 'Upgrades';
-        rows += mbRow('out', kid.length ? `./sprites/shop/${kid[0].pic}.png` : '', name, 'for the stand', l.shop);
+        // One upgrade: its picture and name. Several: a chip for each with its price.
+        const kid = l.shopIds.map(id => KID_SHOP.find(x => x.id === id)).filter(x => x && x.pic);
+        const chips = kid.length > 1 ? `<span class="mb-chips">${kid.map(k => {
+          const p = engine.projects.find(x => x.id === k.id);
+          return `<span class="mb-chip"><img src="${k.pic}" alt="" />${mbMoney(p ? p.costCash : 0)}</span>`;
+        }).join('')}</span>` : 'for the stand';
+        const name = kid.length === 1 && l.shopIds.length === 1 ? kid[0].name : 'Upgrades';
+        rows += mbRow('out', kid.length ? kid[0].pic : './sprites/shop/second_stand.png', name, chips, l.shop);
       }
       if (l.treats > 0.004) rows += mbRow('out', '', 'Prizes', '', l.treats);
-      if (l.hiring > 0.004) rows += mbRow('out', '', 'Hiring', 'new stands and deals', l.hiring);
-      if (l.wages > 0.004) rows += mbRow('out', '', "Helpers' pay", 'your stand workers', l.wages);
+      if (l.hiring > 0.004) rows += mbRow('out', './sprites/franchise/ballpark.png', 'Hiring', 'new stands and deals', l.hiring);
+      if (l.wages > 0.004) rows += mbRow('out', './sprites/franchise/elm.png', "Helpers' pay", 'your stand workers', l.wages);
       if (l.packaging > 0.004) rows += mbRow('out', '', 'Bottles and labels', '', l.packaging);
       return rows;
     }
@@ -4931,7 +4936,7 @@
           return `<div class="mb-tile ${n >= 0 ? 'pos' : 'neg'}"><span class="mb-tile-label">${label}</span>` +
             `<span class="mb-tile-amt" style="font-size:${size}px">${amt}</span></div>`;
         };
-        html += `<div class="mb-kept">${tile(`Day ${last.day}`, kept)}${tile('Total', total)}</div>`;
+        html += `<div class="mb-kept">${tile(`Day ${last.day}`, kept)}${tile('Since Day 1', total)}</div>`;
       } else {
         html += `<div class="mb-note">Open the stand! Tomorrow this shows where every dollar went.</div>`;
       }
