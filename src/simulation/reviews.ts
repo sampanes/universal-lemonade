@@ -128,14 +128,14 @@ export function generateDailyReviews(params: ReviewGenerationParams): CustomerRe
   } else if (priceRatio >= 1.40) {
     reviews.push({
       stars: 1,
-      quote: `$${pricePerCup.toFixed(2)} is much too high, even for ${weatherDay}. Try a lower price!`,
+      quote: `$${pricePerCup.toFixed(2)} is much too high for ${weatherDay}.`,
       reviewer: "Thrifty neighbor",
       sentiment: "negative"
     });
   } else if (priceRatio >= 1.18) {
     reviews.push({
       stars: 2,
-      quote: `$${pricePerCup.toFixed(2)} is a little steep for ${weatherDay}. Try a lower price!`,
+      quote: `$${pricePerCup.toFixed(2)} is a little steep for ${weatherDay}.`,
       reviewer: "Dog walker",
       sentiment: "mixed"
     });
