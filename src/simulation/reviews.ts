@@ -121,33 +121,35 @@ export function generateDailyReviews(params: ReviewGenerationParams): CustomerRe
   // 2. PRICE / VALUE REVIEW
   // On a day nobody bought anything, only "too expensive" makes sense (no one "bought two").
   const priceStart = reviews.length;
+  const dayDescription = tempF >= 85 ? 'hot' : tempF >= 70 ? 'warm' : tempF >= 55 ? 'cool' : 'chilly';
+  const weatherDay = `a ${dayDescription} ${tempF}-degree day`;
   if (sold === 0 && priceRatio < 1.18) {
     // no price comment
   } else if (priceRatio >= 1.40) {
     reviews.push({
       stars: 1,
-      quote: `$${pricePerCup.toFixed(2)} for a paper cup?! Highway robbery!`,
+      quote: `$${pricePerCup.toFixed(2)} is much too high, even for ${weatherDay}. Try a lower price!`,
       reviewer: "Thrifty neighbor",
       sentiment: "negative"
     });
   } else if (priceRatio >= 1.18) {
     reviews.push({
       stars: 2,
-      quote: `$${pricePerCup.toFixed(2)} is a bit steep for kid lemonade, but I was thirsty.`,
+      quote: `$${pricePerCup.toFixed(2)} is a little steep for ${weatherDay}. Try a lower price!`,
       reviewer: "Dog walker",
       sentiment: "mixed"
     });
   } else if (priceRatio <= 0.70) {
     reviews.push({
       stars: 5,
-      quote: `Only $${pricePerCup.toFixed(2)}?! Best deal in town, I bought two!`,
+      quote: `Only $${pricePerCup.toFixed(2)}? A great deal for ${weatherDay}!`,
       reviewer: "Teen on a scooter",
       sentiment: "positive"
     });
   } else {
     reviews.push({
       stars: 4,
-      quote: "Fair price for cold fresh lemonade on a day like this.",
+      quote: `A fair price for lemonade on ${weatherDay}!`,
       reviewer: "Neighborhood regular",
       sentiment: "positive"
     });
