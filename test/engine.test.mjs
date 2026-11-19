@@ -278,8 +278,9 @@ test('quality is 100% only at the golden recipe with ideal ice, and only exact g
 test('close-to-golden earns clearly less than exact golden at the same price', () => {
   const golden = summarize(runBatch(5, 0, 400, 'goldenFixedPrice', 20));
   const near = summarize(runBatch(5, 0, 400, 'nearGolden', 20));
-  assert.ok(near.cashDay20.p50 < golden.cashDay20.p50 * 0.7,
-    `near $${near.cashDay20.p50.toFixed(0)} vs golden $${golden.cashDay20.p50.toFixed(0)} on day 20`);
+  // Cash on hand varies with the timing of upgrades; compare sales before spending.
+  assert.ok(near.totalEarned.p50 < golden.totalEarned.p50 * 0.85,
+    `near $${near.totalEarned.p50.toFixed(0)} vs golden $${golden.totalEarned.p50.toFixed(0)} in sales`);
   assert.ok(near.avgReputation.p50 < golden.avgReputation.p50);
 });
 
@@ -411,10 +412,10 @@ test('a day with no sales does not count toward the golden lock', () => {
 // ---- Pacing guard rails: loose on purpose, they catch big regressions, not small tuning. ----
 
 test('a careful player can reach the neighborhood without rushing the opening', () => {
-  const s = summarize(runBatch(99, 0, 300, 'careful', 30));
+  const s = summarize(runBatch(99, 0, 300, 'careful', 50));
   assert.ok(s.phase2Day.reached >= 0.95, `reached ${(s.phase2Day.reached * 100).toFixed(1)}%`);
-  assert.ok(s.phase2Day.p50 >= 10 && s.phase2Day.p50 <= 16, `median day ${s.phase2Day.p50}`);
-  assert.ok(s.phase2Day.p90 <= 20, `p90 day ${s.phase2Day.p90}`);
+  assert.ok(s.phase2Day.p50 >= 20 && s.phase2Day.p50 <= 36, `median day ${s.phase2Day.p50}`);
+  assert.ok(s.phase2Day.p90 <= 40, `p90 day ${s.phase2Day.p90}`);
 });
 
 // This bot keeps every hired friend working, even on slow days. A player can pause them
@@ -720,6 +721,8 @@ test('store shelves cost money, grow orders, and survive save and load', () => {
   const oldDemand = e.getDailyDemandEstimate().neededBottles;
   const cash = e.state.cash.toNumber();
   const cost = store.levels[1].cost;
+  assert.equal(e.upgradeWholesaleAccount(store.id), false, 'sales and time are required');
+  e.state.day += 2; e.state.totalBottlesSold += e.balance.expansion.storeBottles;
   const keptBefore = sim.ledgerKept(e.ledger);
   assert.ok(e.upgradeWholesaleAccount(store.id));
   assert.equal(sim.ledgerKept(e.ledger), keptBefore - cost);
@@ -730,9 +733,12 @@ test('store shelves cost money, grow orders, and survive save and load', () => {
   const loaded = LemonadeEngine.fromSave(JSON.parse(JSON.stringify(e.toSave())));
   assert.equal(loaded.wholesaleAccounts.bodega.level, 2);
   assert.equal(loaded.wholesaleAccounts.bodega.bottlesPerDay, store.bottlesPerDay);
+  assert.equal(loaded.upgradeWholesaleAccount(store.id), false, 'progress survives loading');
+  loaded.state.day += 2; loaded.state.totalBottlesSold += loaded.balance.expansion.storeBottles;
   assert.ok(loaded.upgradeWholesaleAccount(store.id));
   assert.equal(loaded.upgradeWholesaleAccount(store.id), false, 'maximum level cannot be upgraded');
   const other = loaded.wholesaleAccounts.market;
+  loaded.state.day += 2; loaded.state.totalBottlesSold += loaded.balance.expansion.storeBottles;
   assert.ok(loaded.signWholesaleAccount(other.id));
   loaded.state.cash = loaded.state.cash.sub(loaded.state.cash);
   assert.equal(loaded.upgradeWholesaleAccount(other.id), false, 'cannot spend money not owned');
@@ -800,7 +806,7 @@ test('friends keep their work or day-off state across days and reloads', () => {
   e.dadJumpToPhase(2);
   e.state.cash = e.state.cash.add(500);
   assert.equal(e.toggleFriendDayOff('sarah'), false, 'not hired');
-  for (const id of ['timmy', 'leo', 'sarah']) assert.ok(e.hireFranchiseStand(id));
+  Object.values(e.franchiseStands).forEach(st => { st.hired = true; });
   assert.ok(e.toggleFriendDayOff('timmy'));
   assert.ok(e.toggleFriendDayOff('sarah'));
   for (let day = 0; day < 2; day++) {
@@ -835,10 +841,41 @@ test('a friend with the day off says nothing in the report', () => {
     const e = new LemonadeEngine({ seed });
     e.dadJumpToPhase(2);
     e.state.cash = e.state.cash.add(500);
-    e.hireFranchiseStand('timmy'); e.hireFranchiseStand('leo');
+    e.franchiseStands.timmy.hired = true; e.franchiseStands.leo.hired = true;
     e.toggleFriendDayOff('leo');
     e.autoRestockForToday();
     const d = e.runDay();
     assert.ok(!d.reviews.some(r => r.reviewer.startsWith('Leo')), `seed ${seed}`);
   }
+});
+
+
+test('friend and store expansions require sales, time, and cash across saves', () => {
+  let e = new LemonadeEngine({ seed: 301 });
+  e.dadJumpToPhase(2);
+  e.state.cash = e.state.cash.add(10000);
+  assert.ok(e.hireFranchiseStand('sarah'), 'any friend can be first');
+  assert.equal(e.hireFranchiseStand('timmy'), false);
+  const initial = e.friendExpansionGoal();
+  assert.equal(initial.remaining, 150);
+  e.state.totalStandCupsSold += 150;
+  assert.equal(e.hireFranchiseStand('timmy'), false, 'cannot hire on the same day');
+  e.state.day += 2;
+  e = LemonadeEngine.fromSave(JSON.parse(JSON.stringify(e.toSave())));
+  assert.ok(e.hireFranchiseStand('timmy'));
+  assert.equal(e.friendExpansionGoal().remaining, 300);
+  assert.equal(e.hireFranchiseStand('leo'), false);
+  e.state.totalStandCupsSold += 300; e.state.day += 2;
+  assert.ok(e.hireFranchiseStand('leo'));
+  e.state.phase = 3;
+  assert.ok(e.signWholesaleAccount('market'), 'any store can be first');
+  assert.equal(e.signWholesaleAccount('sports'), false);
+  assert.equal(e.upgradeWholesaleAccount('market'), false);
+  e.state.totalBottlesSold += 75;
+  assert.equal(e.upgradeWholesaleAccount('market'), false, 'cannot expand on the same day');
+  e.state.day += 2;
+  assert.ok(e.upgradeWholesaleAccount('market'));
+  assert.equal(e.storeExpansionGoal().remaining, 75);
+  e.state.day += 2; e.state.totalBottlesSold += 75;
+  assert.ok(e.signWholesaleAccount('sports'));
 });

@@ -5011,20 +5011,27 @@
         </div>
       </div>`;
     }
+    function expansionMessage(goal, unit) {
+      if (goal.remaining) return `Sell ${goal.remaining.toLocaleString('en-US')} ${unit}`;
+      if (goal.days) return goal.days === 1 ? 'Ready tomorrow!' : `Ready in ${goal.days} days`;
+      return '';
+    }
     function storesHTML(s) {
+      const goal = engine.storeExpansionGoal();
+      const wait = expansionMessage(goal, 'bottles');
       const est = engine.getDailyDemandEstimate().storeEstimates;
       return Object.values(engine.wholesaleAccounts).map(acc => {
         const info = STORES[acc.id] || { name: acc.name, pic: './sprites/shop/bottles.png' };
         let cls, btn;
         if (!acc.active) {
           cls = 'open';
-          btn = `<button type="button" class="friend-btn" data-act="sign" data-id="${acc.id}"${s.cash.lt(acc.setupCost) ? ' disabled' : ''}>Sign up $${acc.setupCost}<small>~ ${acc.bottlesPerDay} bottles/day</small></button>`;
+          btn = `<button type="button" class="friend-btn" data-act="sign" data-id="${acc.id}"${wait || s.cash.lt(acc.setupCost) ? ' disabled' : ''}>${wait || `Sign up $${acc.setupCost}`}<small>${wait ? `Sign up $${acc.setupCost}` : `~ ${acc.bottlesPerDay} bottles/day`}</small></button>`;
         } else {
           const n = (est.find(x => x.id === acc.id) || { estBottles: 0 }).estBottles;
           cls = 'working';
           const next = acc.levels[acc.level];
           btn = next
-            ? `<button type="button" class="friend-btn" data-act="expand" data-id="${acc.id}"${s.cash.lt(next.cost) ? ' disabled' : ''}>Shelf $${next.cost}<small>${acc.bottlesPerDay} -> ${next.bottlesPerDay}/day</small></button>`
+            ? `<button type="button" class="friend-btn" data-act="expand" data-id="${acc.id}"${wait || s.cash.lt(next.cost) ? ' disabled' : ''}>${wait || `Shelf $${next.cost}`}<small>${wait ? `Shelf $${next.cost}` : `${acc.bottlesPerDay} -> ${next.bottlesPerDay}/day`}</small></button>`
             : `<div class="store-status">Biggest shelf!<small>~${n} bottles today</small></div>`;
         }
         return `<div class="friend-tile ${cls}">
@@ -5069,12 +5076,13 @@
         return;
       }
       const est = engine.getDailyDemandEstimate().franchiseEstimates;
+      const wait = expansionMessage(engine.friendExpansionGoal(), 'cups');
       const html = Object.values(engine.franchiseStands).map(st => {
         const f = FRIENDS[st.id] || { place: st.location, pic: 'elm' };
         let cls, mood, btn;
         if (!st.hired) {
           cls = 'open'; mood = 'wink';
-          btn = `<button type="button" class="friend-btn" data-act="hire" data-id="${st.id}"${s.cash.lt(st.setupCost) ? ' disabled' : ''}>Hire $${st.setupCost}<small>then $${st.dailyWage} a day</small></button>`;
+          btn = `<button type="button" class="friend-btn" data-act="hire" data-id="${st.id}"${wait || s.cash.lt(st.setupCost) ? ' disabled' : ''}>${wait || `Hire $${st.setupCost}`}<small>${wait ? `Hire $${st.setupCost}` : `then $${st.dailyWage} a day`}</small></button>`;
         } else if (st.dayOff) {
           cls = 'dayoff'; mood = 'sleepy';
           btn = `<button type="button" class="friend-btn" data-act="off" data-id="${st.id}">Day off<small>tap to call in</small></button>`;

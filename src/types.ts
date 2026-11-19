@@ -264,6 +264,7 @@ export interface GameState {
   reputationHistory?: number[]; // recent daily ratings, for the report trend
   totalRevenueEarned: BigNum;
   totalBottlesSold: number;
+  totalStandCupsSold: number;
 
   inv: {
     lemons: number;
@@ -317,6 +318,8 @@ export interface GameState {
   currentChore: ChoreState;
   lastDaySummary: DaySummary | null;
   lastShopPurchaseDay?: number; // spaces the next kid shop item
+  friendExpansion?: { day: number; cups: number };
+  storeExpansion?: { day: number; bottles: number };
   ledger?: MoneyLedger;         // today so far
   lastLedger?: MoneyLedger;     // the last finished day
   upgradeSavingsTotal?: number; // everything the stand upgrades have saved, all game

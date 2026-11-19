@@ -25,6 +25,9 @@ export const BALANCE = {
     reputation: 0.5,
   },
 
+  // Sales needed after an expansion. The first friend and store are available immediately.
+  expansion: { friendCups: [150, 300], storeBottles: 75, daysBetween: 2 },
+
   // What one tap of a buy button gets, before upgrades.
   supplies: {
     lemons: { qty: 24, cost: 8.0 },

@@ -214,6 +214,7 @@ export class LemonadeEngine {
       totalCupsSold: new BigNum(0, 0),
       totalRevenueEarned: new BigNum(0, 0),
       totalBottlesSold: 0,
+      totalStandCupsSold: 0,
 
       inv: { ...start.inventory },
       recipe: { ...start.recipe },
@@ -336,14 +337,33 @@ export class LemonadeEngine {
     return true;
   }
 
+  // Sales since the last expansion prevent saved cash from skipping the work.
+  public friendExpansionGoal(): { remaining: number; days: number } {
+    const last = this.state.friendExpansion;
+    if (!last) return { remaining: 0, days: 0 };
+    const hired = Object.values(this.franchiseStands).filter(st => st.hired).length;
+    const target = this.balance.expansion.friendCups[Math.min(Math.max(0, hired - 1), this.balance.expansion.friendCups.length - 1)];
+    return { remaining: Math.max(0, Math.ceil(target - (this.state.totalStandCupsSold - last.cups))),
+      days: Math.max(0, last.day + this.balance.expansion.daysBetween - this.state.day) };
+  }
+
+  public storeExpansionGoal(): { remaining: number; days: number } {
+    const last = this.state.storeExpansion;
+    if (!last) return { remaining: 0, days: 0 };
+    return { remaining: Math.max(0, Math.ceil(this.balance.expansion.storeBottles - (this.state.totalBottlesSold - last.bottles))),
+      days: Math.max(0, last.day + this.balance.expansion.daysBetween - this.state.day) };
+  }
+
   // Franchise & Wholesale Actions
   public hireFranchiseStand(id: string): boolean {
     const stand = this.franchiseStands[id];
-    if (!stand || stand.hired || this.state.cash.lt(stand.setupCost)) return false;
+    const goal = this.friendExpansionGoal();
+    if (this.state.phase < 2 || !stand || stand.hired || goal.remaining || goal.days || this.state.cash.lt(stand.setupCost)) return false;
 
     this.state.cash = this.state.cash.sub(stand.setupCost);
     this.ledger.hiring += stand.setupCost;
     stand.hired = true;
+    this.state.friendExpansion = { day: this.state.day, cups: this.state.totalStandCupsSold };
     this.log(`Hired ${stand.workerName} for ${stand.name}! ($${stand.setupCost} setup, $${stand.dailyWage}/day wage)`);
     return true;
   }
@@ -359,13 +379,15 @@ export class LemonadeEngine {
 
   public signWholesaleAccount(id: string): boolean {
     const account = this.wholesaleAccounts[id];
-    if (!account || account.active || this.state.cash.lt(account.setupCost)) return false;
+    const goal = this.storeExpansionGoal();
+    if (this.state.phase < 3 || !account || account.active || goal.remaining || goal.days || this.state.cash.lt(account.setupCost)) return false;
 
     this.state.cash = this.state.cash.sub(account.setupCost);
     this.ledger.hiring += account.setupCost;
     account.active = true;
     account.level = 1;
     account.bottlesPerDay = account.levels[0].bottlesPerDay;
+    this.state.storeExpansion = { day: this.state.day, bottles: this.state.totalBottlesSold };
     this.log(`Signed wholesale contract with ${account.name}!`);
     return true;
   }
@@ -374,11 +396,13 @@ export class LemonadeEngine {
     const account = this.wholesaleAccounts[id];
     if (this.state.phase < 3 || !account || !account.active) return false;
     const next = account.levels[account.level];
-    if (!next || this.state.cash.lt(next.cost)) return false;
+    const goal = this.storeExpansionGoal();
+    if (!next || goal.remaining || goal.days || this.state.cash.lt(next.cost)) return false;
     this.state.cash = this.state.cash.sub(next.cost);
     this.ledger.storeUpgrades = (this.ledger.storeUpgrades ?? 0) + next.cost;
     account.level += 1;
     account.bottlesPerDay = next.bottlesPerDay;
+    this.state.storeExpansion = { day: this.state.day, bottles: this.state.totalBottlesSold };
     this.log(`Expanded ${account.name} to level ${account.level}.`);
     return true;
   }
@@ -909,6 +933,7 @@ export class LemonadeEngine {
     s.upgradeSavingsTotal = (s.upgradeSavingsTotal ?? 0) + upgradeSavings;
     s.grossProfitTotal = (s.grossProfitTotal ?? 0) + ledgerGrossProfit(led);
     s.totalBottlesSold += bottlesSold;
+    s.totalStandCupsSold += drivewayCupsSold + franchiseCupsSold;
     s.totalCupsSold = s.totalCupsSold.add(totalCupsToday);
     s.totalRevenueEarned = s.totalRevenueEarned.add(totalRevenue);
 

@@ -59,16 +59,16 @@ function nudgeFromCustomers(e: LemonadeEngine): void {
   }
 }
 
-// Saves for the ice machine before anything else, like the kid Stand Shop (with only the
-// 400-cube bucket, ice runs out on busy days).
+// Follow the kid shop's order and its day between purchases.
 function buyUpgrades(e: LemonadeEngine, reserve: number, chance: number, rand: () => number): void {
   const s = e.state;
-  const machine = e.projects.find(p => p.id === 'auto_ice_dispenser');
-  const first = machine && !machine.purchased && machine.unlocked(s) ? [machine] : e.projects;
-  for (const p of first) {
-    if (p.purchased || !p.unlocked(s)) continue;
-    if (s.cash.toNumber() >= p.costCash + reserve && rand() < chance) e.buyProject(p.id);
-  }
+  if (s.lastShopPurchaseDay != null && s.day - s.lastShopPurchaseDay < 2) return;
+  const order = ['auto_ice_dispenser', 'fridge', 'franchise_license', 'costco_card',
+    'cargo_wagon', 'bottling_rig', 'commercial_labeler', 'patent_filing', 'global_licensing'];
+  const p = order.map(id => e.projects.find(project => project.id === id)).find(project => project && !project.purchased);
+  if (!p || !p.unlocked(s)) return;
+  if (p.id === 'cargo_wagon' && Object.values(e.franchiseStands).filter(st => st.hired).length < 2) return;
+  if (s.cash.toNumber() >= p.costCash + Math.max(reserve, e.restockCostForToday()) && rand() < chance) e.buyProject(p.id);
 }
 
 function hireAndSign(e: LemonadeEngine, wageDaysReserve: number, chance: number, rand: () => number): void {
