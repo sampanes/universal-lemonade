@@ -671,7 +671,7 @@
       gap: 6px;
       margin-bottom: 4px;
     }
-    .friends-tabs[hidden], .friends-title[hidden] { display: none; }
+    .friends-tabs[hidden], .friends-title[hidden], .friends-tab[hidden] { display: none; }
     .friends-tab {
       flex: 0 1 150px;
       min-height: 26px;
@@ -700,6 +700,31 @@
     }
     .friend-tile.open .store-pic { opacity: 0.8; }
     div.friend-btn { display: flex; flex-direction: column; justify-content: center; cursor: default; }
+    /* Stage 4: the invention tab is one wide panel the height of the tiles. */
+    .invention-panel {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-height: 140px;
+      padding: 8px 10px;
+      border-radius: 14px;
+      background: #fffbeb;
+      border: 2px solid #fcd34d;
+    }
+    .invention-panel > img { width: 96px; height: 96px; object-fit: contain; flex-shrink: 0; }
+    .invention-name { font-family: var(--font-display); font-size: 18px; color: #3b0764; line-height: 1.1; }
+    .invention-desc { font-size: 12.5px; font-weight: 700; color: #6b7280; margin: 2px 0 6px; line-height: 1.25; }
+    .invention-stats { display: flex; flex-wrap: wrap; gap: 6px; }
+    .invention-stats span {
+      padding: 3px 9px;
+      border-radius: 999px;
+      background: #f0fdf4;
+      border: 2px solid #86efac;
+      font-size: 12px;
+      font-weight: 800;
+      color: #065f46;
+    }
     /* Kid Stand Shop: one upgrade at a time under the recipe card. */
     .stand-shop {
       display: flex;
@@ -3354,8 +3379,9 @@
       <div class="friends-card" id="friends-card" hidden>
         <div class="friends-title" id="friends-title">My friends' stands</div>
         <div class="friends-tabs" id="friends-tabs" hidden>
-          <button type="button" class="friends-tab" data-tab="friends">Friends' stands</button>
+          <button type="button" class="friends-tab" data-tab="friends">Friends</button>
           <button type="button" class="friends-tab" data-tab="stores">Stores</button>
+          <button type="button" class="friends-tab" data-tab="invention" hidden>Invention</button>
         </div>
         <div class="friends-row" id="friends-row"></div>
       </div>
@@ -3857,7 +3883,7 @@
           rows += row(`Wholesale (${count(d.bottlesSold)} bottles)`, `+${money(d.wholesaleRevenue)}`);
         }
         if (d.packagingCosts > 0.004) rows += row('Bottle packaging', `-${money(d.packagingCosts)}`, 'cost');
-        if (s.phase >= 4) rows += row(`Patent royalties (${count(d.patentUnitsSold)} units)`, `+${money(d.patentRoyalties)}`);
+        if (s.phase >= 4) rows += row(`Your Lemon Squeezer (${count(d.patentUnitsSold)} sold)`, `+${money(d.patentRoyalties)}`);
         if (s.phase >= 5) rows += row(`Co-packer (${count(d.copackerCasesSold)} cases)`, `+${money(d.copackerNet)}`);
         if (brandBonus > 0.005) rows += row('Famous brand bonus', `+${money(brandBonus)}`);
         rows += row("Today's profit", fmtSigned(d.netProfit, true), `total ${d.netProfit < 0 ? 'neg' : ''}`);
@@ -4072,6 +4098,7 @@
       prevCashNum = null; // a jump in cash between games is not income: no float, no cheer
       catCheerUntil = 0;
       choreMaxRemain = 0;
+      partnersPhase = null;     // the other game opens on its newest tab
       const vModal = document.getElementById('victory-modal');
       if (vModal) vModal.style.display = 'none';
     }
@@ -4827,6 +4854,9 @@
       { id: 'bottling_rig', name: 'Bottle It!', desc: 'Bottle your lemonade and sell it to stores!', pic: './sprites/shop/bottles.png', early: true,
         notYet: (s) => `Sell ${Math.max(1, 250 - Math.floor(s.totalCupsSold.toNumber()))} more cups first!` },
       { id: 'commercial_labeler', name: 'Bottle Labeler', desc: 'Labels bottles by machine: bottles cost 30% less!', pic: './sprites/shop/labeler.png' },
+      { id: 'patent_filing', name: 'Invent It!', desc: 'Invent a lemon squeezer! Stores sell it, and you get money for every one.', pic: null, early: true },
+      { id: 'global_licensing', name: 'Sell It Worldwide', desc: 'Stores all over the world sell your squeezer: 3 times as many!', pic: null },
+      { id: 'copacker_deal', name: 'Lemonade Factory', desc: 'Coming soon: a real factory bottles your lemonade for supermarkets!', pic: null, teaser: true },
     ];
     function kidShopNext(s) {
       for (const item of KID_SHOP) {
@@ -4907,7 +4937,25 @@
     // Not hired: "Hire $45". Hired: "Working" with today's forecast and pay; tapping gives
     // the friend the day off (no sales, no pay), and tapping again calls them back in.
     // Stage 3 adds a Stores tab: sign a store up once, then it buys bottles every day.
-    let partnersTab = 'stores';
+    // Stage 4 adds an Invention tab: the patented lemon squeezer that stores sell for you.
+    let partnersTab = 'friends';
+    let partnersPhase = null;     // the stage the tabs last saw (a new stage opens its tab)
+    const INVENTION = { name: 'Lemon Squeezer', pic: './sprites/lemon.png' };
+    function inventionHTML(s) {
+      const p = engine.patent;
+      const each = `$${p.royaltyPerUnit.toFixed(2)}`;
+      const d = s.lastDaySummary;
+      const stats = [`About ${Math.round(p.baseUnitsPerDay)} sold a day`];
+      if (d && d.patentUnitsSold > 0) stats.push(`Yesterday: ${d.patentUnitsSold.toLocaleString('en-US')} sold, +$${fmtDollars(d.patentRoyalties, true)}`);
+      return `<div class="invention-panel">
+        <img src="${INVENTION.pic}" alt="" />
+        <div>
+          <div class="invention-name">My ${INVENTION.name}</div>
+          <div class="invention-desc">${p.level >= 2 ? 'Stores all over the world' : 'Stores all over the country'} sell it. You get ${each} for every one, without lifting a finger!</div>
+          <div class="invention-stats">${stats.map(t => `<span>${t}</span>`).join('')}</div>
+        </div>
+      </div>`;
+    }
     function storesHTML(s) {
       const est = engine.getDailyDemandEstimate().storeEstimates;
       return Object.values(engine.wholesaleAccounts).map(acc => {
@@ -4939,13 +4987,27 @@
       if (tabsEl.hidden === tabs) tabsEl.hidden = !tabs;
       const title = document.getElementById('friends-title');
       if (title.hidden !== tabs) title.hidden = tabs;
+      // The newest tab opens by itself when a stage starts (and after a load); a tab the
+      // game has not reached falls back to the newest one.
+      const avail = ['friends'].concat(s.phase >= 3 ? ['stores'] : [], s.phase >= 4 ? ['invention'] : []);
+      if (partnersPhase !== s.phase) {
+        if (partnersPhase === null || s.phase > partnersPhase) partnersTab = avail[avail.length - 1];
+        partnersPhase = s.phase;
+      }
+      if (!avail.includes(partnersTab)) partnersTab = avail[avail.length - 1];
       const tab = tabs ? partnersTab : 'friends';
       tabsEl.querySelectorAll('.friends-tab').forEach(b => {
         const on = b.dataset.tab === tab;
         if (b.classList.contains('on') !== on) b.classList.toggle('on', on);
+        const hide = !avail.includes(b.dataset.tab);
+        if (b.hidden !== hide) b.hidden = hide;
       });
       if (tab === 'stores') {
         setHTMLIfChanged(document.getElementById('friends-row'), storesHTML(s));
+        return;
+      }
+      if (tab === 'invention') {
+        setHTMLIfChanged(document.getElementById('friends-row'), inventionHTML(s));
         return;
       }
       const est = engine.getDailyDemandEstimate().franchiseEstimates;

@@ -31,6 +31,9 @@ Day Report of what customers said.
   every day (more on hot days), filled from the same lemons and sugar. Bottles (glass, cap
   and label in one price) take the ice box's place in Morning Prep, and the morning advice
   counts what the stores need.
+- **Invention.** Invent It! (Stage 4) patents a lemon squeezer that stores sell for the kid;
+  an Invention tab shows how many sell a day and what they pay. Sell It Worldwide triples
+  it. The Lemonade Factory (Stage 5) shows as "coming soon".
 - **Chores.** A broke kid can always do chores for a few dollars.
 - **The kid.** The stand is run by a paper-doll kid with picked skin, hair, hair color and
   shirt. The mirror changes the look any time. New hair styles and colors unlock as the
@@ -41,7 +44,7 @@ Reset starts a new game.
 
 ## Later stages
 
-Kid mode covers the first three stages for now; the rest are playable in Dad Mode:
+Kid mode covers the first four stages for now; Stage 5 is playable in Dad Mode:
 
 1. **Driveway stand** - recipe, weather, supplies, chores, Stand Shop.
 2. **Neighborhood franchise** - hire neighborhood kids to run stands at Elm Street, the
