@@ -132,6 +132,7 @@ export function generateDailyReviews(params: ReviewGenerationParams): CustomerRe
       stars: 1,
       quote: tempF >= 85
         ? `$${pricePerCup.toFixed(2)} is a lot, even on ${weatherDay}.`
+        : tempF < 45 ? `$${pricePerCup.toFixed(2)}? It's too cold out for that price!`
         : tempF < 65 ? `$${pricePerCup.toFixed(2)}? It's not hot enough out for that!`
         : `$${pricePerCup.toFixed(2)} is too high for ${weatherDay}.`,
       reviewer: "Thrifty neighbor",
