@@ -145,6 +145,13 @@ export function generateDailyReviews(params: ReviewGenerationParams): CustomerRe
       reviewer: "Dog walker",
       sentiment: "mixed"
     });
+  } else if (priceRatio <= 0.45) {
+    reviews.push({
+      stars: 5,
+      quote: `$${pricePerCup.toFixed(2)}? I'd pay more!`,
+      reviewer: "Teen on a scooter",
+      sentiment: "positive"
+    });
   } else if (priceRatio <= 0.70) {
     reviews.push({
       stars: 5,
