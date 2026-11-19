@@ -82,6 +82,7 @@ the repo root) turn it into the small files in `public/sprites/`:
 - `art_src/build_kid_art.py` - the paper-doll kid (body, 21 hair styles, faces) and `kid.json`
 - `art_src/build_shop_art.py` - Stand Shop pictures
 - `art_src/build_frame_art.py` - the stand's ribbon, awning and tablecloth
+- `art_src/build_franchise_art.py` - the three friend stands (Elm Street, Ballpark, Pool)
 - `art_src/clean_edges.py` - edge cleanup for small UI sprites
 - `tools/prep_kawaii_cat.py` - the cat, counter digits, stars and sparkles
 - `tools/make_pitcher_glass.py` - the see-through pitcher glass
