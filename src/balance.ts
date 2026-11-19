@@ -31,7 +31,9 @@ export const BALANCE = {
     sugar: { qty: 20, cost: 6.0 },
     ice: { qty: 200, cost: 4.0 },
     cups: { qty: 50, cost: 4.0 },
-    bottles: { qty: 25, cost: 10.0 },
+    // A ready-to-fill bottle: glass, cap and label in one price (about what the empty
+    // bottle plus the old separate packing charge came to).
+    bottles: { qty: 25, cost: 32.5 },
   } as Record<'lemons' | 'sugar' | 'ice' | 'cups' | 'bottles', SupplyPack>,
   costcoPriceMult: 0.65,        // Costco upgrade: packs cost this much
   bikePackMult: 1.25,           // Mountain bike trophy: packs hold this much more
@@ -142,7 +144,8 @@ export const BALANCE = {
   wholesale: {
     lemonsPerBottle: 0.5,
     sugarPerBottle: 0.4,
-    civicPackagingMult: 0.70,
+    labelerBottleMult: 0.70,    // the labeler: bottles cost this much of the price
+    civicPackagingMult: 0.70,   // the car trophy: the same again
   },
 
   patent: {

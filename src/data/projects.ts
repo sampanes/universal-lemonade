@@ -99,17 +99,14 @@ export function createInitialProjects(): ProjectDef[] {
     {
       id: 'commercial_labeler',
       name: 'Semi-Automatic Bottle Labeler',
-      desc: 'Reduces bottle packaging cost from ~$0.60 down to $0.35 per bottle.',
+      desc: 'Labels bottles by machine: bottles cost 30% less.',
       phase: 3,
       costCash: 250,
       purchased: false,
       unlocked: (s: GameState) => s.phase >= 3,
       effect: (e: any) => {
-        e.state.flags.hasCommercialLabeler = true;
-        Object.values(e.wholesaleAccounts as Record<string, any>).forEach((w: any) => {
-          w.packagingCost = 0.35;
-        });
-        e.log('Project: Semi-Auto Labeler running! Packaging margins improved.');
+        e.state.flags.hasCommercialLabeler = true;   // supplyPack('bottles') reads it
+        e.log('Project: Semi-Auto Labeler running! Bottles cost less.');
       }
     },
     {

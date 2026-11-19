@@ -664,6 +664,42 @@
       color: #374151;
       -webkit-text-stroke: 0;
     }
+    /* Stage 3: the card gets two tabs, the friends' stands and the stores that buy bottles. */
+    .friends-tabs {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+    .friends-tabs[hidden], .friends-title[hidden] { display: none; }
+    .friends-tab {
+      flex: 0 1 150px;
+      min-height: 26px;
+      padding: 2px 10px;
+      border-radius: 999px;
+      border: 2px solid #ddd6fe;
+      background: #f5f3ff;
+      color: #6d28d9;
+      font-family: var(--font-display);
+      font-size: 14px;
+      letter-spacing: 0.3px;
+      touch-action: manipulation;
+      cursor: pointer;
+    }
+    .friends-tab.on {
+      background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+      border-color: #7c3aed;
+      color: #fff;
+    }
+    .friend-pic .store-pic {
+      position: absolute;
+      left: 50%;
+      bottom: 0;
+      height: 60px;
+      transform: translateX(-50%);
+    }
+    .friend-tile.open .store-pic { opacity: 0.8; }
+    div.friend-btn { display: flex; flex-direction: column; justify-content: center; cursor: default; }
     /* Kid Stand Shop: one upgrade at a time under the recipe card. */
     .stand-shop {
       display: flex;
@@ -3316,7 +3352,11 @@
       <!-- FRIENDS' STANDS (Stage 2): hire a friend, then tap a hired friend to give them the
            day off (no sales, no pay). Filled by renderFriends(). -->
       <div class="friends-card" id="friends-card" hidden>
-        <div class="friends-title">My friends' stands</div>
+        <div class="friends-title" id="friends-title">My friends' stands</div>
+        <div class="friends-tabs" id="friends-tabs" hidden>
+          <button type="button" class="friends-tab" data-tab="friends">Friends' stands</button>
+          <button type="button" class="friends-tab" data-tab="stores">Stores</button>
+        </div>
         <div class="friends-row" id="friends-row"></div>
       </div>
 
@@ -3421,13 +3461,15 @@
 
             <!-- BOTTLES (Phase 3+) -->
             <!-- 1 / -1 spans every column; "span 2" forced a second column into the 1-column phone grid -->
+            <!-- Once the ice machine is in, the ice box hides and bottles take its place. -->
             <div class="supply-item-box" id="box-bottles" style="grid-column: 1 / -1; display:none;">
               <div class="supply-item-header">
-                <span style="font-size:26px; line-height:1;">&#x1F37E;</span>
+                <img src="./sprites/shop/bottles.png" class="supply-item-icon" alt="Bottles" />
                 <div class="supply-item-meta">
-                  <span class="supply-item-title">Glass Bottles</span>
+                  <span class="supply-item-title">Bottles</span>
                   <div class="supply-stock-row">
                     <div class="inv-number-pill" id="lbl-inv-bottles">0</div>
+                    <span class="supply-alert" id="alert-bottles" style="display:none;" title="Stock is low!">&#x26A0;&#xFE0F;</span>
                   </div>
                 </div>
               </div>
@@ -3772,6 +3814,13 @@
       return starMeter(rep, `Neighbors like the stand ${Math.round(rep * 100)} out of 100`);
     };
 
+      // The stores that buy bottles (Stage 3): kid names and pictures for the engine's accounts.
+      const STORES = {
+        bodega: { name: 'Corner Store', pic: './sprites/stores/bodega.png' },
+        market: { name: 'Farmers Market', pic: './sprites/stores/market.png' },
+        sports: { name: 'Ballfield', pic: './sprites/stores/sports.png' },
+      };
+
       function renderFullDayReportHTML(d, s, isModal = false) {
         if (!d) return '';
         const money = (n) => `$${fmtDollars(n, true)}`;
@@ -3797,10 +3846,17 @@
           rows += row(`Franchise stands (${count(d.franchiseCupsSold)} cups)`, `+${money(d.franchiseGrossRevenue)}`);
           rows += row('Franchise wages', `-${money(d.franchiseWagesPaid)}`, 'cost');
         }
-        if (s.phase >= 3) {
+        if (d.stores && d.stores.length) {
+          // One row per store; "12 of 25" when the bottles, lemons or sugar ran out first.
+          d.stores.forEach(st => {
+            const name = (STORES[st.id] || { name: st.name }).name;
+            const n = st.bottles < st.wanted ? `${count(st.bottles)} of ${count(st.wanted)}` : count(st.bottles);
+            rows += row(`${name} (${n} bottles)`, `+${money(st.revenue)}`);
+          });
+        } else if (s.phase >= 3) {
           rows += row(`Wholesale (${count(d.bottlesSold)} bottles)`, `+${money(d.wholesaleRevenue)}`);
-          rows += row('Bottle packaging', `-${money(d.packagingCosts)}`, 'cost');
         }
+        if (d.packagingCosts > 0.004) rows += row('Bottle packaging', `-${money(d.packagingCosts)}`, 'cost');
         if (s.phase >= 4) rows += row(`Patent royalties (${count(d.patentUnitsSold)} units)`, `+${money(d.patentRoyalties)}`);
         if (s.phase >= 5) rows += row(`Co-packer (${count(d.copackerCasesSold)} cases)`, `+${money(d.copackerNet)}`);
         if (brandBonus > 0.005) rows += row('Famous brand bonus', `+${money(brandBonus)}`);
@@ -4539,8 +4595,19 @@
 
       const boxBottles = document.getElementById('box-bottles');
       const invBottles = document.getElementById('lbl-inv-bottles');
-      if (boxBottles) boxBottles.style.display = s.phase >= 3 ? 'flex' : 'none';
-      if (invBottles) invBottles.textContent = String(s.inv.bottles);
+      // Bottles take the ice box's place once the machine makes the ice (the grid stays 2x2);
+      // without the machine they get a full-width row of their own.
+      const bottlesInIceSpot = s.phase >= 3 && s.flags.hasAutoIce;
+      const boxIce = document.getElementById('box-ice');
+      if (boxIce) boxIce.style.display = bottlesInIceSpot ? 'none' : '';
+      if (boxBottles) {
+        boxBottles.style.display = s.phase >= 3 ? 'flex' : 'none';
+        boxBottles.style.gridColumn = bottlesInIceSpot ? 'auto' : '1 / -1';
+        if (bottlesInIceSpot && boxBottles.previousElementSibling !== boxIce) boxIce.after(boxBottles);
+      }
+      if (invBottles) setText(invBottles, String(s.inv.bottles));
+      const alertBottles = document.getElementById('alert-bottles');
+      if (alertBottles) alertBottles.style.display = advice.lowItems.includes('bottles') ? 'inline-block' : 'none';
 
       // Buy buttons sell what fits: a whole pack, the part that still fits (it costs its
       // share), or "Full!" when the bucket or bowl is full. The ice machine makes its own ice.
@@ -4614,7 +4681,7 @@
             </div>
             <div style="font-size: 11px; color: #aaa;">${acc.desc}</div>
             <div class="stat" style="margin-top: 4px;">
-              <span>Orders: ${acc.bottlesPerDay} bottles/day @ $${acc.wholesalePrice.toFixed(2)} (Pkg: $${acc.packagingCost.toFixed(2)})</span>
+              <span>Orders: ${acc.bottlesPerDay} bottles/day @ $${acc.wholesalePrice.toFixed(2)}</span>
               ${!acc.active ? `<button onclick="window._signWholesale('${acc.id}')" ${s.cash.lt(acc.setupCost) ? 'disabled' : ''}>Sign Contract ($${acc.setupCost})</button>` : '<span style="color:#4ade80;">Active Supplier</span>'}
             </div>
           </div>`;
@@ -4748,15 +4815,18 @@
     // Kid Stand Shop: the next upgrade in this order, one at a time. An item shows once the
     // game unlocks it (from Day 3), so the card can be hidden for a day between buys; an
     // "early" item shows as a savings goal before it unlocks. The second stand starts Stage
-    // 2 (the friends' stands); bottling (Stage 3) is only a goal for now ("coming soon").
+    // 2 (the friends' stands); bottling starts Stage 3 (the stores).
     // pic: null shows no picture. friends: N hides the item until N friends are hired.
+    // notYet(s): what to do first, for an "early" item that has the money but is not open.
     const KID_SHOP = [
       { id: 'auto_ice_dispenser', name: 'Ice Machine', desc: 'Makes all the ice you need, free, and picks the right amount.', pic: './sprites/shop/ice_dispenser.png' },
       { id: 'fridge', name: 'Mini-Fridge', desc: 'No lemon limit, and they never go bad. Neighbors notice!', pic: './sprites/shop/mini_fridge.png' },
       { id: 'franchise_license', name: 'A Second Stand', desc: 'Friends can run stands around town for you!', pic: './sprites/shop/second_stand.png', early: true },
       { id: 'costco_card', name: 'Supply Club Card', desc: 'Lemons, sugar and cups cost a lot less!', pic: './sprites/shop/club_card.png' },
       { id: 'cargo_wagon', name: 'Big Wagon', desc: "Haul more to your friends' stands: they each sell more!", pic: './sprites/shop/big_wagon.png', friends: 2 },
-      { id: 'bottling_rig', name: 'Bottle It!', desc: 'Coming soon: bottle your lemonade for stores!', pic: './sprites/shop/bottles.png', teaser: true },
+      { id: 'bottling_rig', name: 'Bottle It!', desc: 'Bottle your lemonade and sell it to stores!', pic: './sprites/shop/bottles.png', early: true,
+        notYet: (s) => `Sell ${Math.max(1, 250 - Math.floor(s.totalCupsSold.toNumber()))} more cups first!` },
+      { id: 'commercial_labeler', name: 'Bottle Labeler', desc: 'Labels bottles by machine: bottles cost 30% less!', pic: './sprites/shop/labeler.png' },
     ];
     function kidShopNext(s) {
       for (const item of KID_SHOP) {
@@ -4804,7 +4874,7 @@
       if (showSave) {
         document.getElementById('stand-shop-fill').style.width = `${notYet ? 100 : Math.min(100, (spare / cost) * 100).toFixed(1)}%`;
         setText(document.getElementById('stand-shop-save-text'), notYet
-          ? 'Make your recipe tastier first!'
+          ? (item.notYet ? item.notYet(s) : 'Make your recipe tastier first!')
           : `Saving up: $${Math.floor(spare)} of $${cost}${need > 0 ? ' after supplies' : ''}`);
       }
       const btn = document.getElementById('btn-stand-shop-buy');
@@ -4836,11 +4906,48 @@
     }
     // Not hired: "Hire $45". Hired: "Working" with today's forecast and pay; tapping gives
     // the friend the day off (no sales, no pay), and tapping again calls them back in.
+    // Stage 3 adds a Stores tab: sign a store up once, then it buys bottles every day.
+    let partnersTab = 'stores';
+    function storesHTML(s) {
+      const est = engine.getDailyDemandEstimate().storeEstimates;
+      return Object.values(engine.wholesaleAccounts).map(acc => {
+        const info = STORES[acc.id] || { name: acc.name, pic: './sprites/shop/bottles.png' };
+        let cls, btn;
+        if (!acc.active) {
+          cls = 'open';
+          btn = `<button type="button" class="friend-btn" data-act="sign" data-id="${acc.id}"${s.cash.lt(acc.setupCost) ? ' disabled' : ''}>Sign up $${acc.setupCost}<small>about ${acc.bottlesPerDay} bottles a day</small></button>`;
+        } else {
+          const n = (est.find(x => x.id === acc.id) || { estBottles: 0 }).estBottles;
+          cls = 'working';
+          btn = `<div class="friend-btn">Selling<small>~${n} bottles today</small></div>`;
+        }
+        return `<div class="friend-tile ${cls}">
+          <div class="friend-pic"><img class="store-pic" src="${info.pic}" alt="" /></div>
+          <div class="friend-name">${info.name}</div>
+          <div class="friend-where">pays $${acc.wholesalePrice.toFixed(2)} a bottle</div>
+          ${btn}
+        </div>`;
+      }).join('');
+    }
     function renderFriends(s) {
       const card = document.getElementById('friends-card');
       const show = s.phase >= 2;
       if (card.hidden === show) card.hidden = !show;
       if (!show) return;
+      const tabs = s.phase >= 3;
+      const tabsEl = document.getElementById('friends-tabs');
+      if (tabsEl.hidden === tabs) tabsEl.hidden = !tabs;
+      const title = document.getElementById('friends-title');
+      if (title.hidden !== tabs) title.hidden = tabs;
+      const tab = tabs ? partnersTab : 'friends';
+      tabsEl.querySelectorAll('.friends-tab').forEach(b => {
+        const on = b.dataset.tab === tab;
+        if (b.classList.contains('on') !== on) b.classList.toggle('on', on);
+      });
+      if (tab === 'stores') {
+        setHTMLIfChanged(document.getElementById('friends-row'), storesHTML(s));
+        return;
+      }
       const est = engine.getDailyDemandEstimate().franchiseEstimates;
       const html = Object.values(engine.franchiseStands).map(st => {
         const f = FRIENDS[st.id] || { place: st.location, pic: 'elm' };
@@ -4866,12 +4973,20 @@
       }).join('');
       setHTMLIfChanged(document.getElementById('friends-row'), html);
     }
+    document.getElementById('friends-tabs').addEventListener('click', (e) => {
+      const b = e.target.closest('.friends-tab');
+      if (!b) return;
+      partnersTab = b.dataset.tab;
+      renderFriends(engine.state);
+    });
     document.getElementById('friends-row').addEventListener('click', (e) => {
       const btn = e.target.closest('.friend-btn');
       if (!btn || btn.disabled) return;
       if (btn.dataset.act === 'hire') {
         if (engine.hireFranchiseStand(btn.dataset.id)) kidFlash('cheer', 2000);
-      } else {
+      } else if (btn.dataset.act === 'sign') {
+        if (engine.signWholesaleAccount(btn.dataset.id)) kidFlash('cheer', 2000);
+      } else if (btn.dataset.act === 'off') {
         engine.toggleFriendDayOff(btn.dataset.id);
       }
     });
@@ -4879,7 +4994,7 @@
     // Money Bag: tap the cash pill. Shows the last finished day as money in, money out and
     // what the kid really kept (the Day Report's "You made" leaves out the morning shopping),
     // then what today has cost so far.
-    const SUPPLY_PICS = { lemons: 'lemon', sugar: 'sugar_scoop', ice: 'ice_cubes', cups: 'lemonade_cup' };
+    const SUPPLY_PICS = { lemons: 'lemon', sugar: 'sugar_scoop', ice: 'ice_cubes', cups: 'lemonade_cup', bottles: 'shop/bottles' };
     const mbMoney = (n) => `$${fmtDollars(Math.abs(n), true)}`;
     // The two Money Bag tiles stay short so they fit at full size: cents under $1,000, whole
     // dollars under $100,000, then K, M and B with three digits ($123K, $1.23M, $45.6B).

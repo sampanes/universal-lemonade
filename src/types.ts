@@ -49,6 +49,15 @@ export interface FriendDayResult {
   dayOff: boolean;
 }
 
+// How one signed store did today (for the Day Report).
+export interface StoreDayResult {
+  id: string;
+  name: string;
+  bottles: number;   // bottles sold
+  wanted: number;    // bottles the store asked for
+  revenue: number;
+}
+
 export interface WholesaleAccount {
   id: string;
   name: string;
@@ -56,7 +65,6 @@ export interface WholesaleAccount {
   setupCost: number;
   bottlesPerDay: number;
   wholesalePrice: number;
-  packagingCost: number;
   weatherSens: number;
   desc: string;
 }
@@ -118,11 +126,13 @@ export interface CustomerReview {
 export interface DailyDemandEstimate {
   estDrivewayCups: number;
   franchiseEstimates: { id: string; name: string; workerName: string; estCups: number }[];
+  storeEstimates: { id: string; name: string; estBottles: number }[];
   totalEstCups: number;
   neededLemons: number;
   neededSugar: number;
   neededIce: number;
   neededCups: number;
+  neededBottles: number;
 }
 
 export interface PourableCapacity {
@@ -137,7 +147,7 @@ export interface PourableCapacity {
 export interface KidDemandAdvice {
   phrase: string;
   emoji: string;
-  lowItems: ('lemons' | 'sugar' | 'ice' | 'cups')[];
+  lowItems: ('lemons' | 'sugar' | 'ice' | 'cups' | 'bottles')[];
   fullItems: ('lemons' | 'ice')[];   // low, but storage is full (only an upgrade helps)
   isFullyStocked: boolean;
   estTotalCups: number;
@@ -168,9 +178,10 @@ export interface DaySummary {
   friends?: FriendDayResult[];   // each hired friend, in hiring-list order
 
   // Wholesale Bottling (Phase 3+)
+  stores?: StoreDayResult[];     // each signed store, in list order
   bottlesSold: number;
   wholesaleRevenue: number;
-  packagingCosts: number;
+  packagingCosts: number;         // always 0 now (caps and labels are in the bottle price)
   wholesaleNet: number;
 
   // Patent Royalties (Phase 4+)

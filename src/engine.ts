@@ -17,7 +17,8 @@ import type {
   DaySummary,
   MoneyLedger,
   SupplyItem,
-  SeasonInfo
+  SeasonInfo,
+  StoreDayResult
 } from './types';
 
 import { rollChore } from './data/chores';
@@ -31,7 +32,7 @@ import { computeRecipeQuality, getRecipeProfile } from './simulation/recipe';
 import { getDailyDemandEstimate, getKidDemandAdvice, getMaxPourableCups } from './simulation/demand';
 import { generateDailyReviews } from './simulation/reviews';
 import { ewma, dailyCustomerScore, nextReputation, nextBuzz } from './simulation/reputation';
-import { computeDayDemand } from './simulation/demand';
+import { computeDayDemand, storeDemand } from './simulation/demand';
 import { cupsPerPitcher as pitcherCups, rollGoldenRecipe } from './simulation/recipe';
 import { BALANCE, type Balance } from './balance';
 import { storageCap, storageName, storageUpgradeHint } from './simulation/storage';
@@ -296,7 +297,12 @@ export class LemonadeEngine {
     const discount = this.state.flags.hasCostcoDiscount ? b.costcoPriceMult : 1.0;
     const bikeBonus = this.state.flags.hasMountainBike ? b.bikePackMult : 1.0;
     const base = b.supplies[item];
-    return { qty: Math.round(base.qty * bikeBonus), cost: +(base.cost * discount).toFixed(2) };
+    let mult = discount;
+    if (item === 'bottles') {
+      if (this.state.flags.hasCommercialLabeler) mult *= b.wholesale.labelerBottleMult;
+      if (this.state.flags.hasHondaCivic) mult *= b.wholesale.civicPackagingMult;
+    }
+    return { qty: Math.round(base.qty * bikeBonus), cost: +(base.cost * mult).toFixed(2) };
   }
 
   // How much the stand can hold of an item (Infinity = no limit). See src/simulation/storage.ts.
@@ -539,11 +545,11 @@ export class LemonadeEngine {
   }
 
   public getDailyDemandEstimate(): DailyDemandEstimate {
-    return getDailyDemandEstimate(this.state, this.franchiseStands, this.balance);
+    return getDailyDemandEstimate(this.state, this.franchiseStands, this.balance, this.wholesaleAccounts);
   }
 
   public getKidDemandAdvice(): KidDemandAdvice {
-    return getKidDemandAdvice(this.state, this.franchiseStands, this.balance);
+    return getKidDemandAdvice(this.state, this.franchiseStands, this.balance, this.wholesaleAccounts);
   }
 
   public getMaxPourableCups(): PourableCapacity {
@@ -552,7 +558,7 @@ export class LemonadeEngine {
 
   // The packs still needed to cover today's forecast (as much as storage holds; the ice
   // machine makes ice itself), and what they cost.
-  private restockPlan(): { packsL: number; packsS: number; packsI: number; packsC: number; totalCost: number } {
+  private restockPlan(): { packsL: number; packsS: number; packsI: number; packsC: number; packsB: number; totalCost: number } {
     const est = this.getDailyDemandEstimate();
     const s = this.state;
     let totalCost = 0;
@@ -566,7 +572,8 @@ export class LemonadeEngine {
     const packsS = plan('sugar', est.neededSugar);
     const packsI = s.flags.hasAutoIce ? 0 : plan('ice', est.neededIce);
     const packsC = plan('cups', est.neededCups);
-    return { packsL, packsS, packsI, packsC, totalCost: +totalCost.toFixed(2) };
+    const packsB = est.neededBottles > 0 ? plan('bottles', est.neededBottles) : 0;
+    return { packsL, packsS, packsI, packsC, packsB, totalCost: +totalCost.toFixed(2) };
   }
 
   // Money today's supplies will still cost (0 once the stand is stocked for the forecast).
@@ -577,7 +584,7 @@ export class LemonadeEngine {
 
   public autoRestockForToday(): { success: boolean; message: string } {
     const s = this.state;
-    const { packsL, packsS, packsI, packsC, totalCost } = this.restockPlan();
+    const { packsL, packsS, packsI, packsC, packsB, totalCost } = this.restockPlan();
 
     if (totalCost === 0) {
       return { success: true, message: "Inventory is already fully stocked for today's forecast!" };
@@ -591,6 +598,7 @@ export class LemonadeEngine {
     if (packsS > 0) this.buySupplies('sugar', packsS);
     if (packsI > 0) this.buySupplies('ice', packsI);
     if (packsC > 0) this.buySupplies('cups', packsC);
+    if (packsB > 0) this.buySupplies('bottles', packsB);
 
     this.log(`Auto-Restocked for today: bought supplies for $${totalCost.toFixed(2)}.`);
     return { success: true, message: `Restocked all supplies for $${totalCost.toFixed(2)}!` };
@@ -755,19 +763,19 @@ export class LemonadeEngine {
 
     let bottlesSold = 0;
     let wholesaleGross = 0;
-    let packagingCosts = 0;
+    // Caps and labels are in the bottle price now (bought in the morning), so filling a
+    // bottle costs nothing more. Kept at 0 for the Day Report fields and older saves.
+    const packagingCosts = 0;
+    const storeResults: StoreDayResult[] = [];
 
     if (s.phase >= 3) {
       const w = b.wholesale;
-      const civicCostDiscount = s.flags.hasHondaCivic ? w.civicPackagingMult : 1.0;
-
-      for (const acc of Object.values(this.wholesaleAccounts)) {
-        if (!acc.active) continue;
-
-        const bottleDemand = Math.round(acc.bottlesPerDay * Math.pow(weatherMult, acc.weatherSens));
+      for (const { id, bottles: bottleDemand } of storeDemand(s, this.wholesaleAccounts, weatherMult)) {
+        const acc = this.wholesaleAccounts[id];
         const maxByL = Math.floor(s.inv.lemons / w.lemonsPerBottle);
         const maxByS = Math.floor(s.inv.sugar / w.sugarPerBottle);
-        const maxBottles = Math.min(bottleDemand, s.inv.bottles, maxByL, maxByS);
+        const maxBottles = Math.max(0, Math.min(bottleDemand, s.inv.bottles, maxByL, maxByS));
+        storeResults.push({ id, name: acc.name, bottles: maxBottles, wanted: bottleDemand, revenue: maxBottles * acc.wholesalePrice });
 
         if (maxBottles > 0) {
           s.inv.bottles -= maxBottles;
@@ -776,8 +784,8 @@ export class LemonadeEngine {
 
           bottlesSold += maxBottles;
           wholesaleGross += maxBottles * acc.wholesalePrice;
-          packagingCosts += maxBottles * (acc.packagingCost * civicCostDiscount);
-        } else if (bottleDemand > 0) {
+        }
+        if (maxBottles === 0 && bottleDemand > 0) {
           const missing: string[] = [];
           if (s.inv.bottles <= 0) missing.push('Glass Bottles');
           if (s.inv.lemons < 1) missing.push('Lemons');
@@ -941,6 +949,7 @@ export class LemonadeEngine {
           dayOff: !!st.dayOff,
         };
       }),
+      stores: storeResults,
       bottlesSold,
       wholesaleRevenue: wholesaleGross,
       packagingCosts,

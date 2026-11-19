@@ -1,5 +1,5 @@
 // src/simulation/demand.ts -- How many cups people want, for the forecast and the real day.
-import type { GameState, FranchiseStand, DailyDemandEstimate, KidDemandAdvice, PourableCapacity } from '../types';
+import type { GameState, FranchiseStand, WholesaleAccount, DailyDemandEstimate, KidDemandAdvice, PourableCapacity } from '../types';
 import { computeRecipeQuality, cupsPerPitcher as pitcherCups } from './recipe';
 import { buyProbability, drivewayPeople, fairPriceFor } from './reputation';
 import { BALANCE, type Balance } from '../balance';
@@ -68,10 +68,24 @@ export function computeDayDemand(
   return { weatherMult, tempFactor, quality, fairPrice, buyProb, stands, totalCupDemand };
 }
 
+// Bottles each signed store wants today (Stage 3+). Same weather pull as the stands, each
+// store by its own amount. runDay sells against this and the forecast shows it.
+export function storeDemand(
+  s: GameState,
+  accounts: Record<string, WholesaleAccount>,
+  weatherMult: number
+): { id: string; name: string; bottles: number }[] {
+  if (s.phase < 3) return [];
+  return Object.values(accounts).filter(a => a.active).map(a => ({
+    id: a.id, name: a.name, bottles: Math.round(a.bottlesPerDay * Math.pow(weatherMult, a.weatherSens)),
+  }));
+}
+
 export function getDailyDemandEstimate(
   state: GameState,
   franchiseStands: Record<string, FranchiseStand>,
-  b: Balance = BALANCE
+  b: Balance = BALANCE,
+  accounts: Record<string, WholesaleAccount> = {}
 ): DailyDemandEstimate {
   const s = state;
   const day = computeDayDemand(s, franchiseStands, b);
@@ -83,35 +97,48 @@ export function getDailyDemandEstimate(
 
   const cupsPerPitcher = pitcherCups(s.recipe.icePerCup, b);
   const pitchers = Math.ceil(totalCups / cupsPerPitcher);
-  const neededLemons = pitchers * s.recipe.lemonsPerPitcher;
-  const neededSugar = pitchers * s.recipe.sugarPerPitcher;
+  let neededLemons = pitchers * s.recipe.lemonsPerPitcher;
+  let neededSugar = pitchers * s.recipe.sugarPerPitcher;
   const neededIce = totalCups * s.recipe.icePerCup;
   const neededCups = totalCups;
+
+  // Bottles use lemons and sugar from the same pantry (filled after the stands sell).
+  const stores = storeDemand(s, accounts, day.weatherMult);
+  const storeEstimates = stores.map(st => ({ id: st.id, name: st.name, estBottles: st.bottles }));
+  const neededBottles = stores.reduce((n, st) => n + st.bottles, 0);
+  for (const st of stores) {
+    neededLemons += Math.ceil(st.bottles * b.wholesale.lemonsPerBottle);
+    neededSugar += Math.ceil(st.bottles * b.wholesale.sugarPerBottle);
+  }
 
   return {
     estDrivewayCups: estDriveway,
     franchiseEstimates,
+    storeEstimates,
     totalEstCups: totalCups,
     neededLemons,
     neededSugar,
     neededIce,
-    neededCups
+    neededCups,
+    neededBottles
   };
 }
 
 export function getKidDemandAdvice(
   state: GameState,
   franchiseStands: Record<string, FranchiseStand>,
-  b: Balance = BALANCE
+  b: Balance = BALANCE,
+  accounts: Record<string, WholesaleAccount> = {}
 ): KidDemandAdvice {
-  const est = getDailyDemandEstimate(state, franchiseStands, b);
+  const est = getDailyDemandEstimate(state, franchiseStands, b, accounts);
   const s = state;
 
-  const lowItems: ('lemons' | 'sugar' | 'ice' | 'cups')[] = [];
+  const lowItems: KidDemandAdvice['lowItems'] = [];
   if (s.inv.lemons < est.neededLemons) lowItems.push('lemons');
   if (s.inv.sugar < est.neededSugar) lowItems.push('sugar');
   if (s.inv.ice < est.neededIce && !s.flags.hasAutoIce) lowItems.push('ice');   // the machine makes it
   if (s.inv.cups < est.neededCups) lowItems.push('cups');
+  if (s.inv.bottles < est.neededBottles) lowItems.push('bottles');
   // Low, but the stand cannot hold any more: only an upgrade fixes it.
   const fullItems = lowItems.filter(i => s.inv[i] >= storageCap(s, i, b)) as ('lemons' | 'ice')[];
 
@@ -143,7 +170,7 @@ export function getKidDemandAdvice(
 
   const buyable = lowItems.filter(i => !(fullItems as string[]).includes(i));
 
-  if (buyable.length === 4) {
+  if (buyable.length >= 4) {
     return {
       phrase: "You need more of everything today!",
       emoji: "\u{1F4E6}",
@@ -186,6 +213,16 @@ export function getKidDemandAdvice(
         estTotalCups: est.totalEstCups
       };
     }
+    if (single === 'bottles') {
+      return {
+        phrase: "The stores need more bottles today!",
+        emoji: "",
+        lowItems,
+        fullItems,
+        isFullyStocked: false,
+        estTotalCups: est.totalEstCups
+      };
+    }
     if (single === 'cups') {
       return {
         phrase: "Running low on paper cups! Grab another pack!",
@@ -203,6 +240,7 @@ export function getKidDemandAdvice(
     if (i === 'lemons') return 'lemons';
     if (i === 'sugar') return 'sugar';
     if (i === 'ice') return 'ice';
+    if (i === 'bottles') return 'bottles';
     return 'cups';
   });
 

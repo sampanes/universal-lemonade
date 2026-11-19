@@ -466,6 +466,33 @@ test('profit since Day 1 is sales minus supplies and pay; upgrades and hiring do
   assert.ok(LemonadeEngine.fromSave(save).state.grossProfitTotal > 0);
 });
 
+test('stores buy the forecast bottles, the forecast counts their lemons and sugar, and the labeler makes bottles cheaper', () => {
+  const e = new LemonadeEngine({ seed: 52 });
+  e.dadJumpToPhase(3);
+  assert.equal(e.getDailyDemandEstimate().neededBottles, 0, 'no store signed, no bottles needed');
+  const lemonsBefore = e.getDailyDemandEstimate().neededLemons;
+  assert.ok(e.signWholesaleAccount('bodega'));
+  const est = e.getDailyDemandEstimate();
+  const want = est.storeEstimates.find(x => x.id === 'bodega').estBottles;
+  assert.ok(want > 0);
+  assert.equal(est.neededBottles, want);
+  assert.ok(est.neededLemons > lemonsBefore, 'bottles use lemons too');
+  e.state.inv.bottles = 0;
+  assert.ok(e.getKidDemandAdvice().lowItems.includes('bottles'));
+  assert.ok(e.autoRestockForToday().success);
+  assert.ok(e.state.inv.bottles >= want);
+  assert.equal(e.getKidDemandAdvice().lowItems.length, 0, 'restock covers stands and stores');
+  const d = e.runDay();
+  const st = d.stores.find(x => x.id === 'bodega');
+  assert.equal(st.bottles, want);
+  assert.equal(st.wanted, want);
+  assert.equal(d.packagingCosts, 0, 'caps and labels are in the bottle price');
+  const before = e.supplyPack('bottles').cost;
+  e.state.cash = e.state.cash.add(1000);
+  assert.ok(e.buyProject('commercial_labeler'));
+  assert.ok(e.supplyPack('bottles').cost < before);
+});
+
 test('a broken or unknown save gives no game (a new one starts instead)', () => {
   assert.equal(LemonadeEngine.fromSave(null), null);
   assert.equal(LemonadeEngine.fromSave({ v: 999, seed: 1, state: {} }), null);

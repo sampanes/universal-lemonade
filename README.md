@@ -18,12 +18,19 @@ Day Report of what customers said.
 - **Stand Shop.** One upgrade at a time: an ice machine (no more running out of ice, and the
   ice buttons go away), then a mini-fridge (no lemon limit, nothing spoils overnight), then
   a second stand, which opens the friends' stands, then a Supply Club Card (cheaper
-  supplies). The Big Wagon (friends sell more) waits until two friends are hired.
+  supplies). The Big Wagon (friends sell more) waits until two friends are hired. Then
+  Bottle It! (after 250 cups sold) opens the stores, and a Bottle Labeler makes bottles
+  cheaper.
 - **Friends' stands.** Timmy (Elm Street), Leo (Ballpark) and Sarah (Pool) can each be hired
   to run a stand with the kid's recipe, price and supplies. Each is paid a flat wage every
   day they work, even a slow one, so a friend can cost money; tapping a friend gives them
   the day off (no sales, no pay) for a rainy day. The Day Report shows each friend's cups
   and pay.
+- **Stores.** After Bottle It!, the friends card gets a Stores tab: a Corner Store, a
+  Farmers Market and a Ballfield snack bar. Each is signed up once and then buys bottles
+  every day (more on hot days), filled from the same lemons and sugar. Bottles (glass, cap
+  and label in one price) take the ice box's place in Morning Prep, and the morning advice
+  counts what the stores need.
 - **Chores.** A broke kid can always do chores for a few dollars.
 - **The kid.** The stand is run by a paper-doll kid with picked skin, hair, hair color and
   shirt. The mirror changes the look any time. New hair styles and colors unlock as the
@@ -34,7 +41,7 @@ Reset starts a new game.
 
 ## Later stages
 
-Kid mode covers the first two stages for now; the rest are playable in Dad Mode:
+Kid mode covers the first three stages for now; the rest are playable in Dad Mode:
 
 1. **Driveway stand** - recipe, weather, supplies, chores, Stand Shop.
 2. **Neighborhood franchise** - hire neighborhood kids to run stands at Elm Street, the
@@ -96,6 +103,7 @@ the repo root) turn it into the small files in `public/sprites/`:
 - `art_src/cut_shop_sheet.py` - cuts the wagon, club card and bottles sheet into shop sources
 - `art_src/build_frame_art.py` - the stand's ribbon, awning and tablecloth
 - `art_src/build_franchise_art.py` - the three friend stands (Elm Street, Ballpark, Pool)
+- `art_src/build_store_art.py` - the three bottle stores and the labeler
 - `art_src/clean_edges.py` - edge cleanup for small UI sprites
 - `tools/prep_kawaii_cat.py` - the cat, counter digits, stars and sparkles
 - `tools/make_pitcher_glass.py` - the see-through pitcher glass
