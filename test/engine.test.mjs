@@ -52,6 +52,9 @@ test('price comments match temperature, price, and whether anyone bought', () =>
   assert.equal(priceReview(84, 2.4).quote, '$2.40 is a little pricey.');
   assert.equal(priceReview(85, 2.4).quote, '$2.40 is a little steep, even for a hot day.');
   assert.equal(priceReview(95, 2.4).quote, '$2.40 is a little steep, even for a very hot day.');
+  assert.equal(priceReview(44, 3).quote, "$3.00? It's not hot enough out for that!");
+  assert.equal(priceReview(64, 3).quote, "$3.00? It's not hot enough out for that!");
+  assert.equal(priceReview(65, 3).quote, '$3.00 is too high for a warm day.');
   assert.equal(priceReview(70, 3).quote, '$3.00 is too high for a warm day.');
   assert.equal(priceReview(90, 3).quote, '$3.00 is a lot, even on a hot day.');
   assert.equal(priceReview(100, 3).quote, '$3.00 is a lot, even on a very hot day.');
