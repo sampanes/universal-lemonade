@@ -64,6 +64,43 @@ test('price comments match temperature, price, and whether anyone bought', () =>
   assert.ok(noSales && !/bought|try|lower price/i.test(noSales.quote));
 });
 
+test('excessive prices lower reputation only when people can see the stand', () => {
+  const setup = (balance) => {
+    const e = new LemonadeEngine({ seed: 33, balance });
+    const s = e.state;
+    s.tempF = 70; s.weather = 'SUNNY'; s.reputation = 0.5; s.buzz = 1;
+    s.recipe.lemonsPerPitcher = s.goldenRecipe.lemons;
+    s.recipe.sugarPerPitcher = s.goldenRecipe.sugar;
+    s.recipe.icePerCup = e.computeIdealIce();
+    s.cash = s.cash.add(10000);
+    return e;
+  };
+  const priced = setup();
+  priced.state.recipe.pricePerCup = 2.8; // exactly 1.4 times the fair price
+  priced.autoRestockForToday();
+  const before = priced.state.reputation;
+  priced.runDay();
+  assert.ok(priced.state.reputation <= before - 0.02 + 1e-9);
+
+  const turnedAway = setup();
+  turnedAway.state.recipe.pricePerCup = 100000;
+  const noBuyers = turnedAway.runDay();
+  assert.equal(noBuyers.drivewayCupsSold, 0);
+  assert.ok(Math.abs(turnedAway.state.reputation - 0.48) < 1e-9);
+
+  const noTraffic = setup(withOverrides({ 'demand.weatherMult.RAINY': 0 }));
+  noTraffic.state.weather = 'RAINY';
+  noTraffic.state.recipe.pricePerCup = 100000;
+  noTraffic.runDay();
+  assert.equal(noTraffic.state.reputation, 0.5);
+
+  const reasonable = setup();
+  reasonable.state.recipe.pricePerCup = 2.6;
+  reasonable.autoRestockForToday();
+  reasonable.runDay();
+  assert.ok(reasonable.state.reputation > 0.5, 'a price below the excessive threshold can still build reputation');
+});
+
 test('different seeds give different weather', () => {
   const weather = (seed) => {
     const e = new LemonadeEngine({ seed });

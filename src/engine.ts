@@ -680,7 +680,7 @@ export class LemonadeEngine {
     const b = this.balance;
     // Same function as the morning forecast (src/simulation/demand.ts).
     const demand = computeDayDemand(s, this.franchiseStands, b);
-    const { weatherMult, quality, fairPrice, totalCupDemand } = demand;
+    const { weatherMult, quality, fairPrice, totalCupDemand, totalTraffic } = demand;
     const activeStands = demand.stands;
     const franchiseWages = activeStands.reduce((sum, st) => sum + st.wage, 0);
 
@@ -929,7 +929,8 @@ export class LemonadeEngine {
       cupsSold: drivewayCupsSold + franchiseCupsSold
     }, b);
     if (!s.flags.hasPaidMortgage) {
-      s.reputation = nextReputation(s, customerScore, b);
+      const excessivePriceSeen = totalTraffic > 0 && s.recipe.pricePerCup >= fairPrice * b.reputation.excessivePriceRatio;
+      s.reputation = nextReputation(s, customerScore, b, excessivePriceSeen);
     }
     // Happy driveway customers tell their neighbors (franchise stands are in other neighborhoods).
     const buzzBefore = s.buzz ?? 0;

@@ -81,10 +81,13 @@ export function dailyCustomerScore(o: DayCustomerOutcome, b: Balance = BALANCE):
 }
 
 // Applies one day's customer score to the reputation. Returns the new reputation.
-export function nextReputation(s: GameState, todayScore: number | null, b: Balance = BALANCE): number {
-  if (todayScore === null) return s.reputation;
+export function nextReputation(
+  s: GameState, todayScore: number | null, b: Balance = BALANCE, excessivePriceSeen = false
+): number {
   const r = b.reputation;
-  const target = Math.min(r.max, todayScore + reputationBonus(s, b));
-  const next = ewma(s.reputation, target, r.alpha);
+  const target = todayScore === null ? s.reputation : Math.min(r.max, todayScore + reputationBonus(s, b));
+  let next = ewma(s.reputation, target, r.alpha);
+  // A very high price can turn people away even when nobody buys a cup.
+  if (excessivePriceSeen) next = Math.min(next, s.reputation - r.excessivePriceDrop);
   return Math.max(r.min, Math.min(r.max, next));
 }

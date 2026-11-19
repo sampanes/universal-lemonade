@@ -22,6 +22,7 @@ export interface DayDemand {
   buyProb: number;
   stands: StandDemand[];       // driveway first, then hired franchise stands
   totalCupDemand: number;
+  totalTraffic: number;        // people who saw a stand, including those who did not buy
 }
 
 // The one place cup demand is computed. Engine.runDay sells against it and the morning
@@ -39,6 +40,7 @@ export function computeDayDemand(
   const buyProb = buyProbability(quality, s.tempF, s.recipe.pricePerCup, s.reputation, b);
 
   const drivewayTraffic = Math.floor(drivewayPeople(s.buzz ?? 0, s.reputation, b) * weatherMult * tempFactor);
+  let totalTraffic = drivewayTraffic;
   const stands: StandDemand[] = [
     { id: 'driveway', name: 'Driveway Stand', workerName: 'You', demand: Math.floor(drivewayTraffic * buyProb), wage: 0, isDriveway: true }
   ];
@@ -53,6 +55,7 @@ export function computeDayDemand(
         (d.franchiseRepBase + s.reputation * d.franchiseRepPerRep) *
         efficiencyBonus
       );
+      totalTraffic += standTraffic;
       stands.push({
         id: stand.id,
         name: stand.name,
@@ -65,7 +68,7 @@ export function computeDayDemand(
   }
 
   const totalCupDemand = stands.reduce((sum, st) => sum + st.demand, 0);
-  return { weatherMult, tempFactor, quality, fairPrice, buyProb, stands, totalCupDemand };
+  return { weatherMult, tempFactor, quality, fairPrice, buyProb, stands, totalCupDemand, totalTraffic };
 }
 
 // Bottles each signed store wants today (Stage 3+). Same weather pull as the stands, each

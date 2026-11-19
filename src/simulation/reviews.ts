@@ -127,7 +127,7 @@ export function generateDailyReviews(params: ReviewGenerationParams): CustomerRe
   const weatherDay = `a ${dayDescription} day`;
   if (sold === 0 && priceRatio < 1.18) {
     // no price comment
-  } else if (priceRatio >= 1.40) {
+  } else if (priceRatio >= (params.balance ?? BALANCE).reputation.excessivePriceRatio) {
     reviews.push({
       stars: 1,
       quote: tempF >= 85
