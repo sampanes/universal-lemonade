@@ -302,5 +302,6 @@ export interface GameState {
   ledger?: MoneyLedger;         // today so far
   lastLedger?: MoneyLedger;     // the last finished day
   upgradeSavingsTotal?: number; // everything the stand upgrades have saved, all game
+  grossProfitTotal?: number;    // sales minus supplies, wages and bottles, all game
   logs: string[];
 }

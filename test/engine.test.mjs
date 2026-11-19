@@ -438,6 +438,34 @@ test('a saved game loads back and plays on exactly the same', () => {
   assert.deepEqual(playFingerprint(b, 15), playFingerprint(a, 15));
 });
 
+test('profit since Day 1 is sales minus supplies and pay; upgrades and hiring do not lower it', () => {
+  const e = new LemonadeEngine({ seed: 41 });
+  let expect = 0;
+  for (let i = 0; i < 25; i++) {
+    if (i === 12) {
+      e.dadJumpToPhase(2);
+      e.hireFranchiseStand('timmy');
+    }
+    if (i === 15) e.buyProject('costco_card');
+    e.autoRestockForToday();
+    e.runDay();
+    const l = e.state.lastLedger;
+    expect += l.sales - Object.values(l.supplies).reduce((a, b) => a + b, 0) - l.wages - l.packaging;
+  }
+  assert.ok(Math.abs(e.state.grossProfitTotal - expect) < 1e-6);
+  assert.ok(e.state.grossProfitTotal > 0);
+  const before = e.state.grossProfitTotal;
+  e.state.cash = e.state.cash.add(1000);
+  e.buyProject('cargo_wagon');
+  e.hireFranchiseStand('leo');
+  assert.equal(e.state.grossProfitTotal, before);
+  // It is saved, and an old save without it gets an estimate instead of nothing.
+  const save = JSON.parse(JSON.stringify(e.toSave()));
+  assert.equal(LemonadeEngine.fromSave(save).state.grossProfitTotal, before);
+  delete save.state.grossProfitTotal;
+  assert.ok(LemonadeEngine.fromSave(save).state.grossProfitTotal > 0);
+});
+
 test('a broken or unknown save gives no game (a new one starts instead)', () => {
   assert.equal(LemonadeEngine.fromSave(null), null);
   assert.equal(LemonadeEngine.fromSave({ v: 999, seed: 1, state: {} }), null);

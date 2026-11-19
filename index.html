@@ -3531,7 +3531,7 @@
   </div>
 
   <script type="module">
-    import { LemonadeEngine, BigNum, ledgerKept } from './src/engine.ts';
+    import { LemonadeEngine, BigNum } from './src/engine.ts';
     import {
       loadCharacterProfile,
       saveCharacterProfile,
@@ -4927,16 +4927,16 @@
         const out = mbOutRows(last);
         html += `<div class="mb-label out">Money out</div>`;
         html += out || `<div class="mb-note">Nothing! You had everything already.</div>`;
-        // Total since Day 1: cash at the end of that day minus the starting cash. Taken from real
-        // cash (not a running sum) so old saves and the $0 floor stay exact.
-        const total = s.cash.toNumber() - ledgerKept(engine.ledger) - engine.balance.start.cash;
+        // Profit since Day 1: every sale minus what making it cost (supplies, workers' pay,
+        // bottles); upgrades and hiring are things the kid owns, so they are not taken off.
+        const total = s.grossProfitTotal ?? 0;
         const tile = (label, n) => {
           const amt = `${n >= 0 ? '+' : '-'}${mbMoney(n)}`;   // big totals step down so they fit the tile
           const size = amt.length > 13 ? 16 : amt.length > 10 ? 20 : 26;
           return `<div class="mb-tile ${n >= 0 ? 'pos' : 'neg'}"><span class="mb-tile-label">${label}</span>` +
             `<span class="mb-tile-amt" style="font-size:${size}px">${amt}</span></div>`;
         };
-        html += `<div class="mb-kept">${tile(`Day ${last.day}`, kept)}${tile('Since Day 1', total)}</div>`;
+        html += `<div class="mb-kept">${tile(`Day ${last.day}`, kept)}${tile('Profit since Day 1', total)}</div>`;
       } else {
         html += `<div class="mb-note">Open the stand! Tomorrow this shows where every dollar went.</div>`;
       }

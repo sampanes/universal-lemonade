@@ -167,6 +167,15 @@ export class LemonadeEngine {
     }
     Object.assign(e.patent, d.patent || {});
     Object.assign(e.copacker, d.copacker || {});
+    // Saves from before the profit total: estimate it as the cash gained plus everything spent
+    // on upgrades, hiring and prizes (chore money is counted in too; there is no record of it).
+    if (typeof e.state.grossProfitTotal !== 'number') {
+      const spent = e.projects.filter(p => p.purchased).reduce((a, p) => a + p.costCash, 0)
+        + e.trophies.filter(t => t.purchased).reduce((a, t) => a + t.costCash, 0)
+        + Object.values(e.franchiseStands).filter(st => st.hired).reduce((a, st) => a + st.setupCost, 0)
+        + Object.values(e.wholesaleAccounts).filter(w => w.active).reduce((a, w) => a + w.setupCost, 0);
+      e.state.grossProfitTotal = e.state.cash.toNumber() - e.balance.start.cash + spent;
+    }
     return e;
   }
 
@@ -866,6 +875,7 @@ export class LemonadeEngine {
     led.packaging += packagingCosts;
     s.lastLedger = led;
     s.upgradeSavingsTotal = (s.upgradeSavingsTotal ?? 0) + upgradeSavings;
+    s.grossProfitTotal = (s.grossProfitTotal ?? 0) + ledgerGrossProfit(led);
     s.totalCupsSold = s.totalCupsSold.add(totalCupsToday);
     s.totalRevenueEarned = s.totalRevenueEarned.add(totalRevenue);
 
@@ -1008,4 +1018,11 @@ function emptyLedger(day: number): MoneyLedger {
 export function ledgerKept(l: MoneyLedger): number {
   const out = Object.values(l.supplies).reduce((a, b) => a + b, 0) + l.shop + l.treats + l.hiring + l.wages + l.packaging;
   return l.sales + l.chores - out;
+}
+
+// Gross profit for one ledger: sales minus what making them cost (supplies, workers' pay,
+// bottles). Upgrades, hiring, prizes and chores are left out.
+export function ledgerGrossProfit(l: MoneyLedger): number {
+  const supplies = Object.values(l.supplies).reduce((a, b) => a + b, 0);
+  return l.sales - supplies - l.wages - l.packaging;
 }
