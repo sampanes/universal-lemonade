@@ -227,6 +227,7 @@ By synthesizing sound effects procedurally via the browser's built-in **Web Audi
 
 - Give passing kids something specific to say about what just happened. A kid who tasted the lemonade might say “A little too sweet!” Someone who walked on because of the price might say “Too pricey for a cool day.” Keep each bubble short and tie it to that stand’s actual results.
 - Show how early the stand sold out through the crowd. If the last cup sold just before closing, one disappointed kid might say “Aw, all gone!” If the stand ran dry early and lots of kids missed out, show several arriving afterward and leaving sad. Use unmet demand at that location to decide how many to show.
+- When a hired friend has the day off, show their stand with a “Closed today” sign for a second or two before moving on.
 - Use the customer assets AGY already put together for the mix-and-match kids. Check that set first for back-view hair, outfits, novelty items, and which layers can take color.
 - Upcoming art task: generate location art for Elm Street, the ballpark, and the pool, plus sunny, cloudy, and rainy variants or overlays for the stand scenes.
 
