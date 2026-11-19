@@ -438,6 +438,38 @@ test('a saved game loads back and plays on exactly the same', () => {
   assert.deepEqual(playFingerprint(b, 15), playFingerprint(a, 15));
 });
 
+test('lifetime sales add business revenue across stages and survive saving', () => {
+  const e = new LemonadeEngine({ seed: 41 });
+  let expected = 0;
+  const play = () => {
+    e.autoRestockForToday();
+    const s = e.runDay();
+    const components = s.drivewayRevenue + s.franchiseGrossRevenue + s.wholesaleRevenue
+      + s.patentRoyalties + s.copackerNet;
+    expected += components * e.state.brandMultiplier;
+    assert.ok(Math.abs(e.state.totalRevenueEarned.toNumber() - expected) < 1e-6);
+    return s;
+  };
+  play();
+  e.dadJumpToPhase(5);
+  e.patent.licensed = true;
+  e.copacker.active = true;
+  Object.assign(e.state.inv, { lemons: 100000, sugar: 100000, ice: 100000, cups: 100000, bottles: 100000 });
+  const day = play();
+  assert.ok(day.drivewayRevenue > 0 && day.franchiseGrossRevenue > 0 && day.wholesaleRevenue > 0);
+  assert.ok(day.patentRoyalties > 0 && day.copackerNet > 0);
+  const before = e.state.totalRevenueEarned.toNumber();
+  e.tick(3600);
+  e.doChore();
+  e.buyProject('cargo_wagon');
+  assert.equal(e.state.totalRevenueEarned.toNumber(), before, 'chores and purchases are not sales');
+  const loaded = LemonadeEngine.fromSave(JSON.parse(JSON.stringify(e.toSave())));
+  assert.equal(loaded.state.totalRevenueEarned.toNumber(), before);
+  loaded.autoRestockForToday();
+  const next = loaded.runDay();
+  assert.ok(Math.abs(loaded.state.totalRevenueEarned.toNumber() - (before + next.totalRevenue)) < 1e-6);
+});
+
 test('profit since Day 1 is sales minus supplies and pay; upgrades and hiring do not lower it', () => {
   const e = new LemonadeEngine({ seed: 41 });
   let expect = 0;

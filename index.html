@@ -4963,7 +4963,7 @@
         let cls, btn;
         if (!acc.active) {
           cls = 'open';
-          btn = `<button type="button" class="friend-btn" data-act="sign" data-id="${acc.id}"${s.cash.lt(acc.setupCost) ? ' disabled' : ''}>Sign up $${acc.setupCost}<small>about ${acc.bottlesPerDay} bottles a day</small></button>`;
+          btn = `<button type="button" class="friend-btn" data-act="sign" data-id="${acc.id}"${s.cash.lt(acc.setupCost) ? ' disabled' : ''}>Sign up $${acc.setupCost}<small>~ ${acc.bottlesPerDay} bottles/day</small></button>`;
         } else {
           const n = (est.find(x => x.id === acc.id) || { estBottles: 0 }).estBottles;
           cls = 'working';
@@ -5117,16 +5117,15 @@
         const out = mbOutRows(last);
         html += `<div class="mb-label out">Money out</div>`;
         html += out || `<div class="mb-note">Nothing! You had everything already.</div>`;
-        // Profit since Day 1: every sale minus what making it cost (supplies, workers' pay,
-        // bottles); upgrades and hiring are things the kid owns, so they are not taken off.
-        const total = s.grossProfitTotal ?? 0;
+        // Lifetime business revenue is tracked in the save, separately from chores and costs.
+        const total = s.totalRevenueEarned.toNumber();
         const tile = (label, n) => {
           const amt = `${n >= 0 ? '+' : '-'}${tileMoney(n)}`;   // big totals step down so they fit the tile
           const size = amt.length > 13 ? 16 : amt.length > 10 ? 20 : 26;
           return `<div class="mb-tile ${n >= 0 ? 'pos' : 'neg'}"><span class="mb-tile-label">${label}</span>` +
             `<span class="mb-tile-amt" style="font-size:${size}px">${amt}</span></div>`;
         };
-        html += `<div class="mb-kept">${tile(`Day ${last.day}`, kept)}${tile('Profit since Day 1', total)}</div>`;
+        html += `<div class="mb-kept">${tile(`Day ${last.day}`, kept)}${tile('Sales since Day 1', total)}</div>`;
       } else {
         html += `<div class="mb-note">Open the stand! Tomorrow this shows where every dollar went.</div>`;
       }
