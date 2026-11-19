@@ -51,6 +51,22 @@ export interface EngineOptions {
 
 export const DEFAULT_SEED = 1337;
 
+// Bump when a save from an older version can no longer be loaded as-is.
+export const SAVE_VERSION = 1;
+
+export interface EngineSave {
+  v: number;
+  seed: number;
+  rngSeed: number;
+  state: GameState;
+  projects: string[];
+  trophies: string[];
+  franchiseStands: Record<string, FranchiseStand>;
+  wholesaleAccounts: Record<string, WholesaleAccount>;
+  patent: PatentSystem;
+  copacker: CoPackerSystem;
+}
+
 // The project bought in each stage that opens the next one (src/data/projects.ts).
 const PHASE_OPENERS: Record<number, string> = {
   1: 'franchise_license',
@@ -96,6 +112,62 @@ export class LemonadeEngine {
     this.state = this.createInitialState();
     this.rollNextForecast();
     this.rollNextChore();
+  }
+
+  // ---- Saving ----
+  // A save is plain JSON: the game state, which upgrades and treats were bought, and the
+  // franchise, wholesale, patent and co-packer details (upgrades change those in place, so
+  // they are saved as they are rather than replayed). Loading starts from a fresh engine and
+  // lays the save on top, so anything a newer version of the game adds gets its default.
+  public toSave(): EngineSave {
+    return {
+      v: SAVE_VERSION,
+      seed: this.seed,
+      rngSeed: this.rngSeed,
+      state: this.state,
+      projects: this.projects.filter(p => p.purchased).map(p => p.id),
+      trophies: this.trophies.filter(t => t.purchased).map(t => t.id),
+      franchiseStands: this.franchiseStands,
+      wholesaleAccounts: this.wholesaleAccounts,
+      patent: this.patent,
+      copacker: this.copacker,
+    };
+  }
+
+  // null when the save is missing pieces or from an unknown version (start a new game then).
+  public static fromSave(raw: unknown, options: Omit<EngineOptions, 'seed'> = {}): LemonadeEngine | null {
+    const d = raw as EngineSave;
+    if (!d || d.v !== SAVE_VERSION || typeof d.seed !== 'number' || !d.state || typeof d.state !== 'object') return null;
+    const e = new LemonadeEngine({ ...options, seed: d.seed });
+    const fresh = e.state;
+    const big = (x: unknown, fallback: BigNum) => {
+      const o = x as { m?: unknown; e?: unknown } | null;
+      return o && typeof o.m === 'number' && typeof o.e === 'number' ? new BigNum(o.m, o.e) : fallback;
+    };
+    e.state = {
+      ...fresh,
+      ...d.state,
+      flags: { ...fresh.flags, ...d.state.flags },
+      inv: { ...fresh.inv, ...d.state.inv },
+      recipe: { ...fresh.recipe, ...d.state.recipe },
+      cash: big(d.state.cash, fresh.cash),
+      totalCupsSold: big(d.state.totalCupsSold, fresh.totalCupsSold),
+      totalRevenueEarned: big(d.state.totalRevenueEarned, fresh.totalRevenueEarned),
+    };
+    e.rngSeed = (d.rngSeed | 0) || e.seed;
+    const bought = new Set(d.projects || []);
+    e.projects.forEach(p => { p.purchased = bought.has(p.id); });
+    const treats = new Set(d.trophies || []);
+    e.trophies.forEach(t => { t.purchased = treats.has(t.id); });
+    for (const [id, st] of Object.entries(d.franchiseStands || {})) {
+      if (e.franchiseStands[id]) Object.assign(e.franchiseStands[id], st);
+    }
+    for (const [id, w] of Object.entries(d.wholesaleAccounts || {})) {
+      if (e.wholesaleAccounts[id]) Object.assign(e.wholesaleAccounts[id], w);
+    }
+    Object.assign(e.patent, d.patent || {});
+    Object.assign(e.copacker, d.copacker || {});
+    return e;
   }
 
   public rand(): number {

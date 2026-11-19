@@ -421,3 +421,25 @@ test('Dad Mode stage jump sets up a played-looking game for each stage', () => {
   const sum = f.runDay();
   assert.ok(Number.isFinite(sum.netProfit));
 });
+
+test('a saved game loads back and plays on exactly the same', () => {
+  const a = new LemonadeEngine({ seed: 777 });
+  playFingerprint(a, 12);
+  a.dadJumpToPhase(3);
+  a.hireFranchiseStand('timmy');
+  const json = JSON.stringify(a.toSave());
+  const b = LemonadeEngine.fromSave(JSON.parse(json));
+  assert.ok(b, 'loads');
+  assert.equal(b.state.phase, 3);
+  assert.equal(b.state.cash.toNumber(), a.state.cash.toNumber());
+  assert.equal(b.state.totalCupsSold.toNumber(), a.state.totalCupsSold.toNumber());
+  assert.deepEqual(b.projects.filter(p => p.purchased).map(p => p.id), a.projects.filter(p => p.purchased).map(p => p.id));
+  assert.deepEqual(b.franchiseStands, a.franchiseStands);
+  assert.deepEqual(playFingerprint(b, 15), playFingerprint(a, 15));
+});
+
+test('a broken or unknown save gives no game (a new one starts instead)', () => {
+  assert.equal(LemonadeEngine.fromSave(null), null);
+  assert.equal(LemonadeEngine.fromSave({ v: 999, seed: 1, state: {} }), null);
+  assert.equal(LemonadeEngine.fromSave({ v: 1, seed: 1 }), null);
+});

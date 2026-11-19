@@ -3451,8 +3451,6 @@
       el.textContent = `Seed ${engine.seed} / Golden ${g.lemons}:${g.sugar}`;
     }
 
-    let engine = new LemonadeEngine({ seed: newGameSeed() });
-    updateDadSeedInfo();
     let timeScale = 1;
     let autoDay = false;
     let autoDayTimer = 0;
@@ -3486,6 +3484,36 @@
     setDadMode(dadModeActive);
     window.setDadMode = setDadMode;
     window.isDadMode = () => dadModeActive;
+
+    // ---- Saving ----
+    // The game saves itself about once a second and whenever the page is hidden or closed,
+    // and picks up where it left off on the next visit. Dad Mode plays its own game with its
+    // own save, so stage jumps and 50x test days never touch the kid's game. A ?seed=NUMBER
+    // address always starts a fresh game with that seed (and saves over that mode's game).
+    const SAVE_KEY_KID = 'universal_lemonade_game';
+    const SAVE_KEY_DAD = 'universal_lemonade_game_dad';
+    let engineIsDads = dadModeActive;          // which save the running game belongs to
+    function loadGame(dad) {
+      try {
+        const raw = localStorage.getItem(dad ? SAVE_KEY_DAD : SAVE_KEY_KID);
+        return raw ? LemonadeEngine.fromSave(JSON.parse(raw)) : null;
+      } catch (e) {
+        console.warn('[Save] could not load, starting a new game:', e.message);
+        return null;
+      }
+    }
+    function saveGame() {
+      try {
+        localStorage.setItem(engineIsDads ? SAVE_KEY_DAD : SAVE_KEY_KID, JSON.stringify(engine.toSave()));
+      } catch (e) {
+        console.warn('[Save] could not save:', e.message);
+      }
+    }
+    const seedInUrl = urlParams.has('seed');
+    let engine = (!seedInUrl && loadGame(dadModeActive)) || new LemonadeEngine({ seed: newGameSeed() });
+    updateDadSeedInfo();
+    window.addEventListener('pagehide', saveGame);
+    document.addEventListener('visibilitychange', () => { if (document.hidden) saveGame(); });
 
     // ---- Money Box (cat cash counter) helpers ----
     const SPRITE_DIR = './sprites/kawaii_cat/';
@@ -3849,19 +3877,41 @@
       e.target.style.color = autoDay ? '#4ade80' : '#fff';
     };
 
-    // Reset (see the hold-to-confirm card near the mirror code): a brand-new game, and the
-    // saved look and secret looks are forgotten, so the mirror greets a new player.
-    function startOver() {
-      engine = new LemonadeEngine({ seed: newGameSeed() });
+    // Swap in another game (Reset, or switching Dad Mode) and forget what the screen
+    // remembered about the old one.
+    function setEngine(next) {
+      engine = next;
       updateDadSeedInfo();
+      refreshDadJump();
       victoryDismissed = false;
-      prevCashNum = null; // the jump back to $60 is not income: no float, no cheer
+      prevCashNum = null; // a jump in cash between games is not income: no float, no cheer
       catCheerUntil = 0;
       choreMaxRemain = 0;
       const vModal = document.getElementById('victory-modal');
       if (vModal) vModal.style.display = 'none';
-      resetKid();
     }
+
+    // Reset (see the hold-to-confirm card near the mirror code): a brand-new game. In kid
+    // mode the saved look and secret looks are forgotten too, so the mirror greets a new
+    // player; in Dad Mode only Dad's test game starts over.
+    function startOver() {
+      setEngine(new LemonadeEngine({ seed: newGameSeed() }));
+      saveGame();
+      if (!dadModeActive) resetKid();
+    }
+
+    // Switching Dad Mode puts the other game on: the old one is saved first. Leaving Dad
+    // Mode also puts the test speed and Auto-Day back to normal.
+    document.addEventListener('dadmodechange', () => {
+      if (engineIsDads === dadModeActive) return;
+      saveGame();
+      engineIsDads = dadModeActive;
+      setEngine(loadGame(dadModeActive) || new LemonadeEngine({ seed: newGameSeed() }));
+      if (!dadModeActive) {
+        setSpeed(1);
+        if (autoDay) document.getElementById('btn-autoday').click();
+      }
+    });
 
     document.getElementById('btn-victory-dismiss').onclick = () => {
       victoryDismissed = true;
@@ -4022,11 +4072,13 @@
 
     // Render loop
     let last = performance.now();
+    let lastSaveAt = last;
     function loop(now) {
       const dt = ((now - last) / 1000) * timeScale;
       last = now;
 
       engine.tick(dt);
+      if (now - lastSaveAt >= 1000) { lastSaveAt = now; saveGame(); }
 
       // Auto-Day ticker if enabled
       if (autoDay) {

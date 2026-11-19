@@ -22,6 +22,9 @@ Day Report of what customers said.
   shirt. The mirror changes the look any time. New hair styles and colors unlock as the
   business grows; the fanciest ones take a long time.
 
+The game saves itself in the browser (about once a second) and picks up where it left off.
+Reset starts a new game.
+
 ## Later stages
 
 Kid mode is the driveway stand for now. The later stages are playable in Dad Mode:
@@ -38,12 +41,13 @@ Kid mode is the driveway stand for now. The later stages are playable in Dad Mod
 
 Dad Mode shows the full business panels for the later stages, test controls (game speed,
 Auto-Day, the game's seed, and "Jump to..." to skip ahead to the start of a later stage, as
-if the stages before it had been played) and a mirror with every look unlocked. Its look is saved
-separately, so it never changes the kid's.
+if the stages before it had been played) and a mirror with every look unlocked. Dad Mode
+plays its own game and keeps its own look, both saved separately, so testing never changes
+the kid's game or look (Reset in Dad Mode only starts Dad's game over).
 
 - Tap the game title three times to switch it on or off, or
 - open the page with `?dad=1` (on) or `?dad=0` (off). The choice is remembered.
-- `?seed=NUMBER` replays an exact game.
+- `?seed=NUMBER` replays an exact game (it starts that game fresh, over the saved one).
 
 ## Running it
 
@@ -63,7 +67,7 @@ Every push to `main` builds and deploys to GitHub Pages (`.github/workflows/depl
 | Path | What is there |
 | --- | --- |
 | `index.html` | The whole page: markup, CSS and the UI script |
-| `src/engine.ts` | The game engine (no DOM): state, days, buying, upgrades |
+| `src/engine.ts` | The game engine (no DOM): state, days, buying, upgrades, save and load |
 | `src/balance.ts` | Every economy tuning number |
 | `src/simulation/` | Weather, demand, recipe taste, reviews, reputation, storage limits |
 | `src/data/` | Stand upgrades and business projects, chores, franchise stands, wholesale, trophies |
