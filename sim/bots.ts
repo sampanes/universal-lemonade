@@ -59,9 +59,13 @@ function nudgeFromCustomers(e: LemonadeEngine): void {
   }
 }
 
+// Saves for the ice machine before anything else, like the kid Stand Shop (with only the
+// 400-cube bucket, ice runs out on busy days).
 function buyUpgrades(e: LemonadeEngine, reserve: number, chance: number, rand: () => number): void {
   const s = e.state;
-  for (const p of e.projects) {
+  const machine = e.projects.find(p => p.id === 'auto_ice_dispenser');
+  const first = machine && !machine.purchased && machine.unlocked(s) ? [machine] : e.projects;
+  for (const p of first) {
     if (p.purchased || !p.unlocked(s)) continue;
     if (s.cash.toNumber() >= p.costCash + reserve && rand() < chance) e.buyProject(p.id);
   }

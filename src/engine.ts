@@ -675,8 +675,8 @@ export class LemonadeEngine {
       notes.push(`Your upgrades saved $${upgradeSavings.toFixed(2)} today: ${parts.join(', ')}.`);
     }
 
-    // Overnight spoilage. Each tip says what to do (the cooler and fridge are in the kid
-    // shop). The full tip shows the first TIP_FULL_TIMES days it happens; after that both
+    // Overnight spoilage. Each tip says what to do (the ice machine and fridge are in the
+    // kid shop). Ice from the machine melts too, but it was free, so nothing is said. The full tip shows the first TIP_FULL_TIMES days it happens; after that both
     // go on one short line.
     const TIP_FULL_TIMES = 2;
     s.tipCounts = s.tipCounts ?? {};
@@ -689,7 +689,9 @@ export class LemonadeEngine {
     };
     if (!s.flags.hasCooler && s.inv.ice > 0) {
       const cubes = `${s.inv.ice} ice ${s.inv.ice === 1 ? 'cube' : 'cubes'}`;
-      spoilNote('melt', `${cubes} melted overnight. Ice only lasts one day, so buy just what today needs (a cooler keeps it frozen).`, `${cubes} melted`);
+      if (!s.flags.hasAutoIce) {
+        spoilNote('melt', `${cubes} melted overnight. Ice only lasts one day, so buy just what today needs (an ice machine makes fresh ice every day).`, `${cubes} melted`);
+      }
       s.inv.ice = 0;
     }
     if (!s.flags.hasMiniFridge && s.inv.lemons > 0 && !s.flags.hasLemonGrove) {

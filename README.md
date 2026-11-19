@@ -9,7 +9,7 @@ Live playable demo: **https://sampanes.github.io/universal-lemonade/**
 1. **Stage 1: Driveway Hustle (Solo Operator)**
    - Solo operations: buy supplies (lemons, sugar, ice, cups), monitor weather forecasts, and tune the signature recipe.
    - Emergency seed capital: do neighborhood chores ($5–$25) when low on working capital.
-   - Invest in an insulated cooler and garage mini-fridge to eliminate overnight spoilage.
+   - Invest in an ice machine and a garage mini-fridge to stop running out of ice and to keep lemons fresh.
 
 2. **Stage 2: Neighborhood Franchise (Labor & Delegation)**
    - Expand beyond your street by hiring neighborhood kids:

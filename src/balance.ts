@@ -130,8 +130,8 @@ export const BALANCE = {
   // mini-fridge remove the limit for ice and lemons. A buy button only sells what fits
   // (a part pack costs its share), so leftovers never waste room.
   storage: {
-    iceBucket: 400,             // cubes, before the cooler (2 bags)
-    iceCooler: 1000,            // cubes, with the cooler (5 bags)
+    iceBucket: 400,             // cubes, before the ice machine (2 bags)
+    iceCooler: 1000,            // cubes, with a cooler (5 bags; the cooler is not sold now)
     lemonBowl: 48,              // lemons, before the mini-fridge (2 bags)
   },
 

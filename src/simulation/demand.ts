@@ -131,7 +131,7 @@ export function getKidDemandAdvice(
     return {
       // Short enough for one line in the tip row (the Day Report spells it out).
       phrase: item === 'ice'
-        ? (s.flags.hasCooler ? "Cooler full! An ice machine makes all you need!" : "Ice bucket full! A cooler holds 1,000!")
+        ? (s.flags.hasCooler ? "Cooler full! An ice machine makes all you need!" : "Ice bucket full! An ice machine makes all you need!")
         : "Fruit bowl full! A mini-fridge holds all you want!",
       emoji: "",
       lowItems,

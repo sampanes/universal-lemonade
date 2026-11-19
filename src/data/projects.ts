@@ -1,28 +1,17 @@
 // src/data/projects.ts -- Business Investments & Technology Upgrades (Phases 1-5)
 import type { ProjectDef, GameState } from '../types';
 
-// The three Phase 1 stand upgrades get 2.2x pricier each: $125, $275, $605. Each one lifts
-// a storage limit (src/simulation/storage.ts): a busy summer day needs more ice than the
-// 400-cube bucket holds, the second summer more than the 1,000-cube cooler, and a second
-// stand more lemons than the 48-lemon bowl. The kid shop only spends money left over after
-// today's supplies (engine.restockCostForToday), so buying one never leaves the stand
-// without lemons. Sim, 40 days: a careful player buys them around Day 7, 11 and 24; a
-// perfect player around Day 5, 8 and 10 and ends with about 40% more cash than without them.
+// The two Phase 1 stand upgrades, $275 and $605, each lift a storage limit
+// (src/simulation/storage.ts): a busy summer day needs more ice than the 400-cube bucket
+// holds, and a second stand more lemons than the 48-lemon bowl. There is no cooler step any
+// more (the ice machine made it useless a few days later); the kid gets by with the bucket
+// and runs short of ice a couple of times first. (The engine still knows hasCooler, so it
+// can come back.) The kid shop only spends money left over after today's supplies
+// (engine.restockCostForToday), so buying one never leaves the stand without lemons.
+// Sim, 40 days: a careful player buys them around Day 10 and 24, after 2 or 3 days short of
+// ice; a perfect player around Day 7 and 10.
 export function createInitialProjects(): ProjectDef[] {
   return [
-    {
-      id: 'cooler',
-      name: 'Insulated 50-Qt Cooler',
-      desc: 'Holds 1,000 ice cubes instead of 400 and stops leftover ice from melting overnight.',
-      phase: 1,
-      costCash: 125,
-      purchased: false,
-      unlocked: (s: GameState) => s.phase >= 1 && s.day >= 2,
-      effect: (e: any) => {
-        e.state.flags.hasCooler = true;
-        e.log('Upgrade: Insulated cooler bought. Ice no longer melts overnight!');
-      }
-    },
     {
       id: 'auto_ice_dispenser',
       name: 'Digital Weather-Synced Ice Dispenser',

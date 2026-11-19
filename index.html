@@ -494,6 +494,10 @@
     .ratio-card.golden-locked .golden-badge-row span { display: none; }
     .ratio-card.golden-locked .golden-badge-row .golden-seal { width: 52px; height: 52px; }
     .ratio-card.golden-locked #autoice-container { flex-basis: 100%; margin-top: 0 !important; }
+    /* The ice machine picks the ice every day, so the ice buttons and its on/off switch go
+       away; with a golden recipe too, price is the only thing left to set. */
+    .ratio-card.auto-ice .ratio-row-ice,
+    .ratio-card.auto-ice #autoice-container { display: none; }
     /* Kid Stand Shop: one upgrade at a time under the recipe card. */
     .stand-shop {
       display: flex;
@@ -3038,8 +3042,8 @@
               </button>
             </div>
 
-            <!-- ICE ROW -->
-            <div class="ratio-row">
+            <!-- ICE ROW (folds away once the ice machine picks the ice) -->
+            <div class="ratio-row ratio-row-ice">
               <img src="./sprites/ice_cubes.png" class="ratio-icon" alt="Ice" title="Ice per Cup" />
               <button id="btn-ice-down" class="ratio-btn" title="Decrease Ice">
                 <img src="./sprites/btn_minus.png" alt="-" />
@@ -3109,12 +3113,12 @@
         </div>
       </div>
 
-      <!-- KID STAND SHOP: one upgrade at a time (cooler, ice machine, mini-fridge, then a
+      <!-- KID STAND SHOP: one upgrade at a time (ice machine, mini-fridge, then a
            second stand as a "coming soon" goal). Filled by renderStandShop(). -->
       <div class="stand-shop" id="stand-shop" hidden>
-        <img class="stand-shop-pic" id="stand-shop-pic" src="./sprites/shop/cooler.png" alt="" />
+        <img class="stand-shop-pic" id="stand-shop-pic" src="./sprites/shop/ice_dispenser.png" alt="" />
         <div class="stand-shop-info">
-          <div class="stand-shop-title"><span class="stand-shop-tag" id="stand-shop-tag">SHOP</span><span id="stand-shop-name">Ice Cooler</span></div>
+          <div class="stand-shop-title"><span class="stand-shop-tag" id="stand-shop-tag">SHOP</span><span id="stand-shop-name">Ice Machine</span></div>
           <div class="stand-shop-desc" id="stand-shop-desc"></div>
           <div class="stand-shop-save" id="stand-shop-save">
             <div class="stand-shop-bar"><span id="stand-shop-fill"></span></div>
@@ -4083,6 +4087,8 @@
         ratioCard.classList.toggle('golden-locked', locked);
       }
       setText(document.getElementById('ratio-banner-text'), locked ? 'RATIO IS GOLDEN!' : 'RECIPE RATIO');
+      const autoIce = !!s.flags.hasAutoIce;
+      if (ratioCard && ratioCard.classList.contains('auto-ice') !== autoIce) ratioCard.classList.toggle('auto-ice', autoIce);
       const tasteBubble = document.getElementById('recipe-taste-bubble');
       if (tasteBubble) {
         const last = s.lastDaySummary;
@@ -4443,11 +4449,10 @@
     window._proj = (id) => engine.buyProject(id);
     window._buyTrophy = (id) => engine.buyTrophy(id);
     // Kid Stand Shop: the next upgrade in this order, one at a time. An item shows once the
-    // game unlocks it (the cooler on Day 2, the others on Day 3), so the card can be hidden
+    // game unlocks it (from Day 3), so the card can be hidden
     // for a day between buys. The second stand is only a goal for now ("coming soon"):
     // buying it would start Phase 2, which has no kid screens yet.
     const KID_SHOP = [
-      { id: 'cooler', name: 'Ice Cooler', desc: 'Holds 1,000 ice cubes (your bucket holds 400) and keeps them frozen overnight.', pic: 'cooler' },
       { id: 'auto_ice_dispenser', name: 'Ice Machine', desc: 'Makes all the ice you need, free, and picks the right amount.', pic: 'ice_dispenser' },
       { id: 'fridge', name: 'Mini-Fridge', desc: 'No lemon limit, and they never go bad. Neighbors notice!', pic: 'mini_fridge' },
       { id: 'franchise_license', name: 'A Second Stand', desc: 'Coming soon: hire a friend to run another stand!', pic: 'second_stand', teaser: true },

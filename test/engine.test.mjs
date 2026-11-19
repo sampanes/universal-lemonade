@@ -249,7 +249,8 @@ test('a careful kid reaches the neighborhood (phase 2) around day 12', () => {
   const s = summarize(runBatch(99, 0, 300, 'careful', 15));
   assert.ok(s.phase2Day.reached >= 0.95, `reached ${(s.phase2Day.reached * 100).toFixed(1)}%`);
   assert.ok(s.phase2Day.p50 <= 12, `median day ${s.phase2Day.p50}`);
-  assert.ok(s.phase2Day.p90 <= 13, `p90 day ${s.phase2Day.p90}`);
+  // 13 before the cooler left the shop; saving for the $275 ice machine first adds a day.
+  assert.ok(s.phase2Day.p90 <= 14, `p90 day ${s.phase2Day.p90}`);
 });
 
 // Known problem, not yet fixed: once 3 neighborhood stands are hired their wages are owed
@@ -328,7 +329,7 @@ test('the ice machine makes the ice a day needs, free', () => {
   assert.ok(sum.iceMadeByMachine > 0 && sum.upgradeSavings > 0);
 });
 
-test('a full ice bucket on a big day says the cooler would help', () => {
+test('a full ice bucket on a big day says the ice machine would help', () => {
   const e = new LemonadeEngine({ seed: 11 });
   playDay(e);
   const s = e.state, g = e.getGoldenRecipe();
@@ -340,14 +341,14 @@ test('a full ice bucket on a big day says the cooler would help', () => {
   const sum = e.runDay();
   assert.equal(sum.storageShort, 'ice');
   assert.equal(sum.soldOut, true, 'a sold-out day is flagged (the kid makes the sold-out face)');
-  assert.ok(sum.notes.some(n => n.includes('A cooler holds')));
+  assert.ok(sum.notes.some(n => n.includes('An ice machine makes all the ice')));
 });
 
 // The kid Stand Shop only spends money left over after today's supplies. Played that way,
-// the upgrades never leave the stand broke, and nobody gets the cooler right away.
+// the upgrades never leave the stand broke, and nobody gets the ice machine right away.
 test('the kid shop never leaves a careful kid broke in Phase 1', () => {
-  const SHOP = ['cooler', 'auto_ice_dispenser', 'fridge'];
-  let zeroDays = 0, shortMornings = 0, firstCooler = Infinity, games = 0, gotAll = 0;
+  const SHOP = ['auto_ice_dispenser', 'fridge'];
+  let zeroDays = 0, shortMornings = 0, firstMachine = Infinity, games = 0, gotAll = 0;
   for (let g = 0; g < 100; g++) {
     const e = new LemonadeEngine({ seed: 5000 + g });
     const buy = e.buyProject.bind(e);
@@ -360,7 +361,7 @@ test('the kid shop never leaves a careful kid broke in Phase 1', () => {
       const p = SHOP.map(id => e.projects.find(x => x.id === id)).find(x => !x.purchased);
       if (p && p.unlocked(e.state) && e.state.cash.toNumber() - e.restockCostForToday() >= p.costCash) {
         buy(p.id);
-        if (p.id === 'cooler') firstCooler = Math.min(firstCooler, d);
+        if (p.id === 'auto_ice_dispenser') firstMachine = Math.min(firstMachine, d);
       }
       const sum = e.runDay();
       e.tick(e.balance.secondsPerDay);
@@ -371,8 +372,8 @@ test('the kid shop never leaves a careful kid broke in Phase 1', () => {
   }
   assert.equal(zeroDays, 0, `${zeroDays} days hit $0`);
   assert.ok(shortMornings / games <= 0.5, `${(shortMornings / games).toFixed(2)} short mornings per game`);
-  assert.ok(firstCooler >= 4, `earliest cooler on day ${firstCooler}`);
-  assert.ok(gotAll / games >= 0.8, `${gotAll}/${games} games bought all three by day 40`);
+  assert.ok(firstMachine >= 6, `earliest ice machine on day ${firstMachine}`);
+  assert.ok(gotAll / games >= 0.8, `${gotAll}/${games} games bought both by day 40`);
 });
 
 // ---- Slow start: buzz ----
