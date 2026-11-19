@@ -528,7 +528,7 @@ test('store shelves cost money, grow orders, and survive save and load', () => {
   assert.equal(other.level, 1);
 });
 
-test('invention counts actual bottle sales and old saves retain their progress', () => {
+test('invention counts actual bottle sales and saves progress', () => {
   const e = new LemonadeEngine({ seed: 23 });
   e.dadJumpToPhase(3);
   e.state.cash = e.state.cash.add(10000);
@@ -547,21 +547,8 @@ test('invention counts actual bottle sales and old saves retain their progress',
   e.state.totalBottlesSold = 1500;
   assert.equal(patent.unlocked(e.state), true);
   assert.ok(e.buyProject(patent.id));
-  delete save.state.totalBottlesSold;
-  delete save.state.legacyStoreProgress;
-  delete save.wholesaleAccounts.bodega.level;
-  delete save.wholesaleAccounts.bodega.levels;
-  save.wholesaleAccounts.bodega.bottlesPerDay = 25;
-  const old = LemonadeEngine.fromSave(save);
-  assert.equal(old.wholesaleAccounts.bodega.bottlesPerDay, 25);
-  assert.equal(old.wholesaleAccounts.bodega.level, 1);
-  assert.equal(old.state.totalBottlesSold, 0);
-  assert.ok(old.projects.find(p => p.id === 'patent_filing').unlocked(old.state));
-  assert.ok(old.upgradeWholesaleAccount('bodega'));
-  assert.ok(old.wholesaleAccounts.bodega.bottlesPerDay > 25);
-  const reloaded = LemonadeEngine.fromSave(JSON.parse(JSON.stringify(old.toSave())));
-  assert.ok(reloaded.state.legacyStoreProgress);
-  assert.equal(reloaded.wholesaleAccounts.bodega.level, 2);
+  save.v = 1;
+  assert.equal(LemonadeEngine.fromSave(save), null, 'old saves restart cleanly');
 });
 
 test('stores buy the forecast bottles, the forecast counts their lemons and sugar, and the labeler makes bottles cheaper', () => {

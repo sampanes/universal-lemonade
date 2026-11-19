@@ -53,7 +53,7 @@ export interface EngineOptions {
 export const DEFAULT_SEED = 1337;
 
 // Bump when a save from an older version can no longer be loaded as-is.
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
 
 export interface EngineSave {
   v: number;
@@ -155,12 +155,6 @@ export class LemonadeEngine {
       totalCupsSold: big(d.state.totalCupsSold, fresh.totalCupsSold),
       totalRevenueEarned: big(d.state.totalRevenueEarned, fresh.totalRevenueEarned),
     };
-    // Older games have no bottle history. Preserve their established progress without
-    // claiming an invented sales total or taking away the invention they could work toward.
-    if (typeof d.state.totalBottlesSold !== 'number') {
-      e.state.totalBottlesSold = 0;
-      e.state.legacyStoreProgress = d.state.phase >= 3;
-    }
     e.rngSeed = (d.rngSeed | 0) || e.seed;
     const bought = new Set(d.projects || []);
     e.projects.forEach(p => { p.purchased = bought.has(p.id); });
@@ -173,10 +167,8 @@ export class LemonadeEngine {
       const account = e.wholesaleAccounts[id];
       if (!account) continue;
       account.active = !!w.active;
-      // Old active stores keep their existing capacity until the next upgrade.
-      account.level = account.active ? Math.max(1, Math.min(3, w.level ?? 1)) : 0;
-      account.bottlesPerDay = account.active && typeof w.bottlesPerDay === 'number'
-        ? w.bottlesPerDay : account.levels[0].bottlesPerDay;
+      account.level = account.active ? Math.max(1, Math.min(account.levels.length, w.level)) : 0;
+      account.bottlesPerDay = account.levels[Math.max(0, account.level - 1)].bottlesPerDay;
     }
     Object.assign(e.patent, d.patent || {});
     Object.assign(e.copacker, d.copacker || {});

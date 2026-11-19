@@ -4856,7 +4856,7 @@
         notYet: (s) => `Sell ${Math.max(1, 250 - Math.floor(s.totalCupsSold.toNumber()))} more cups first!` },
       { id: 'commercial_labeler', name: 'Bottle Labeler', desc: 'Labels bottles by machine: bottles cost 30% less!', pic: './sprites/shop/labeler.png' },
       { id: 'patent_filing', name: 'Invent It!', desc: 'Invent a lemon squeezer! Stores sell it, and you get money for every one.', pic: null, early: true,
-        notYet: (s) => `Sell ${Math.max(0, BOTTLES_FOR_INVENTION - s.totalBottlesSold).toLocaleString('en-US')} more bottles first!` },
+        notYet: (s) => `${Math.max(0, BOTTLES_FOR_INVENTION - s.totalBottlesSold).toLocaleString('en-US')} bottles to go` },
       { id: 'global_licensing', name: 'Sell It Worldwide', desc: 'Stores all over the world sell your squeezer: 3 times as many!', pic: null },
       { id: 'copacker_deal', name: 'Lemonade Factory', desc: 'Coming soon: a real factory bottles your lemonade for supermarkets!', pic: null, teaser: true },
     ];
@@ -4907,7 +4907,7 @@
         document.getElementById('stand-shop-fill').style.width = `${notYet ? 100 : Math.min(100, (spare / cost) * 100).toFixed(1)}%`;
         const bottlesPending = item.id === 'patent_filing' && !p.unlocked(s);
         setText(document.getElementById('stand-shop-save-text'), bottlesPending && short
-          ? `${item.notYet(s)} $${Math.floor(spare)}/$${cost} saved`
+          ? `${item.notYet(s)} | $${Math.floor(spare).toLocaleString('en-US')}/$${cost.toLocaleString('en-US')}`
           : notYet ? (item.notYet ? item.notYet(s) : 'Make your recipe tastier first!')
           : `Saving up: $${Math.floor(spare)} of $${cost}${need > 0 ? ' after supplies' : ''}`);
       }
@@ -4973,7 +4973,7 @@
           cls = 'working';
           const next = acc.levels[acc.level];
           btn = next
-            ? `<button type="button" class="friend-btn" data-act="expand" data-id="${acc.id}"${s.cash.lt(next.cost) ? ' disabled' : ''}>Shelf $${next.cost}<small>~${n} today | ${next.bottlesPerDay}/day next</small></button>`
+            ? `<button type="button" class="friend-btn" data-act="expand" data-id="${acc.id}"${s.cash.lt(next.cost) ? ' disabled' : ''}>Shelf $${next.cost}<small>${acc.bottlesPerDay} -> ${next.bottlesPerDay}/day</small></button>`
             : `<div class="friend-btn">Biggest shelf!<small>~${n} bottles today</small></div>`;
         }
         return `<div class="friend-tile ${cls}">

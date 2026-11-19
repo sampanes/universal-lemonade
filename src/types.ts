@@ -262,7 +262,6 @@ export interface GameState {
   totalCupsSold: BigNum;
   totalRevenueEarned: BigNum;
   totalBottlesSold: number;
-  legacyStoreProgress?: boolean; // older saves did not record lifetime bottle sales
 
   inv: {
     lemons: number;

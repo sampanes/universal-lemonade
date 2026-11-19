@@ -117,7 +117,7 @@ export function createInitialProjects(): ProjectDef[] {
       phase: 3,
       costCash: 4000,
       purchased: false,
-      unlocked: (s: GameState) => s.phase === 3 && (s.legacyStoreProgress || s.totalBottlesSold >= BOTTLES_FOR_INVENTION),
+      unlocked: (s: GameState) => s.phase === 3 && s.totalBottlesSold >= BOTTLES_FOR_INVENTION,
       effect: (e: any) => {
         e.state.phase = 4;
         e.patent.licensed = true;
