@@ -7,7 +7,6 @@ export interface ReviewGenerationParams {
   state: GameState;
   franchiseStands: Record<string, FranchiseStand>;
   tempF: number;
-  quality: number;
   pricePerCup: number;
   fairPrice: number;
   drivewayCupsSold: number;
@@ -78,7 +77,7 @@ export function tasteReview(dL: number, dS: number, streak: number, justLocked: 
 }
 
 export function generateDailyReviews(params: ReviewGenerationParams): CustomerReview[] {
-  const { state: s, franchiseStands, tempF, quality, pricePerCup, fairPrice, soldOutStands, bottleneck, rand } = params;
+  const { state: s, franchiseStands, tempF, pricePerCup, fairPrice, soldOutStands, bottleneck, rand } = params;
   const reviews: CustomerReview[] = [];
   const { lemonsPerPitcher: L, sugarPerPitcher: S, icePerCup: I } = s.recipe;
   const idealI = computeIdealIce(tempF, params.balance ?? BALANCE);

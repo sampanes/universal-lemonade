@@ -118,7 +118,7 @@ export function getKidDemandAdvice(
   if (lowItems.length === 0) {
     return {
       phrase: "Pantry is fully stocked and ready to pour!",
-      emoji: "✨",
+      emoji: "\u{2728}",
       lowItems: [],
       fullItems: [],
       isFullyStocked: true,
@@ -146,7 +146,7 @@ export function getKidDemandAdvice(
   if (buyable.length === 4) {
     return {
       phrase: "You need more of everything today!",
-      emoji: "📦",
+      emoji: "\u{1F4E6}",
       lowItems,
       fullItems,
       isFullyStocked: false,
@@ -159,7 +159,7 @@ export function getKidDemandAdvice(
     if (single === 'ice') {
       return {
         phrase: s.tempF >= 80 ? "You'll need a lot more ice for today's heat!" : "Running low on ice cubes!",
-        emoji: "🧊",
+        emoji: "\u{1F9CA}",
         lowItems,
         fullItems,
         isFullyStocked: false,
@@ -169,7 +169,7 @@ export function getKidDemandAdvice(
     if (single === 'lemons') {
       return {
         phrase: "Almost out of lemons! Grab another bag!",
-        emoji: "🍋",
+        emoji: "\u{1F34B}",
         lowItems,
         fullItems,
         isFullyStocked: false,
@@ -179,7 +179,7 @@ export function getKidDemandAdvice(
     if (single === 'sugar') {
       return {
         phrase: "Need more sugar to keep it sweet!",
-        emoji: "🍬",
+        emoji: "\u{1F36C}",
         lowItems,
         fullItems,
         isFullyStocked: false,
@@ -189,7 +189,7 @@ export function getKidDemandAdvice(
     if (single === 'cups') {
       return {
         phrase: "Running low on paper cups! Grab another pack!",
-        emoji: "🥤",
+        emoji: "\u{1F964}",
         lowItems,
         fullItems,
         isFullyStocked: false,
@@ -212,7 +212,7 @@ export function getKidDemandAdvice(
 
   return {
     phrase: itemNames.length === 2 ? `Stock up on ${readable} before opening!` : `Stock up on ${readable}!`,
-    emoji: "🛒",
+    emoji: "\u{1F6D2}",
     lowItems,
     fullItems,
     isFullyStocked: false,

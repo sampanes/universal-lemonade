@@ -70,10 +70,6 @@ export function loadKidArt(): Promise<void> {
   return loading;
 }
 
-export function kidArtReady(): boolean {
-  return manifest !== null;
-}
-
 export function kidHairCount(): number {
   return manifest ? manifest.hairs.length : 0;
 }

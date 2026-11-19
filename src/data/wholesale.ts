@@ -1,4 +1,4 @@
-// src/data/wholesale.ts — Wholesale Bottling Retail Accounts (Phase 3+)
+// src/data/wholesale.ts -- Wholesale Bottling Retail Accounts (Phase 3+)
 import type { WholesaleAccount } from '../types';
 
 export function createInitialWholesaleAccounts(): Record<string, WholesaleAccount> {

@@ -1,7 +1,8 @@
 incoming_kawaii_cat -- unsorted drop from the Garmin "Little Counter" kid-watch app
 =====================================================================================
 
-Nothing here is wired into the site yet. Keep, rename, move or delete whatever you like.
+The site uses web-ready copies of these in public/sprites/kawaii_cat/, made by
+tools/prep_kawaii_cat.py.
 
 All PNGs are transparent (RGBA), cut at full sheet size from
 sources/2026-11-16_cat-sprite-sheet.png, which was drawn on a flat dark purple (#301046).

@@ -1,4 +1,4 @@
-// src/simulation/weather.ts — Daily Weather Generation, 5-Day Seasons & Ice Calibration
+// src/simulation/weather.ts -- Daily Weather Generation, 5-Day Seasons & Ice Calibration
 import type { WeatherCondition, SeasonName, SeasonInfo } from '../types';
 import { BALANCE, type Balance } from '../balance';
 
@@ -12,10 +12,10 @@ export function getSeasonInfo(day: number, b: Balance = BALANCE): SeasonInfo {
   const year = Math.floor((safeDay - 1) / daysInYear) + 1;
 
   const seasons: { name: SeasonName; displayName: string; icon: string }[] = [
-    { name: 'SPRING', displayName: 'Spring', icon: '🌸' },
-    { name: 'SUMMER', displayName: 'Summer', icon: '☀️' },
-    { name: 'FALL', displayName: 'Fall', icon: '🍂' },
-    { name: 'WINTER', displayName: 'Winter', icon: '❄️' }
+    { name: 'SPRING', displayName: 'Spring', icon: '\u{1F338}' },
+    { name: 'SUMMER', displayName: 'Summer', icon: '\u{2600}\u{FE0F}' },
+    { name: 'FALL', displayName: 'Fall', icon: '\u{1F342}' },
+    { name: 'WINTER', displayName: 'Winter', icon: '\u{2744}\u{FE0F}' }
   ];
 
   const current = seasons[seasonIdx];
@@ -26,7 +26,7 @@ export function getSeasonInfo(day: number, b: Balance = BALANCE): SeasonInfo {
     dayInSeason,
     seasonLength,
     year,
-    badge: `${current.icon} ${current.displayName} · Day ${dayInSeason} of ${seasonLength}`
+    badge: `${current.icon} ${current.displayName} \u{B7} Day ${dayInSeason} of ${seasonLength}`
   };
 }
 

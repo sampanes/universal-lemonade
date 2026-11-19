@@ -28,10 +28,8 @@ export function storageName(s: GameState, item: SupplyItem): string {
 }
 
 // The upgrade that holds more, for the "is full" hint.
-export function storageUpgradeHint(s: GameState, item: SupplyItem, b: Balance = BALANCE): string {
-  if (item === 'ice') {
-    return 'An ice machine makes all the ice you need!';
-  }
+export function storageUpgradeHint(item: SupplyItem): string {
+  if (item === 'ice') return 'An ice machine makes all the ice you need!';
   if (item === 'lemons') return 'A mini-fridge holds all you want!';
   return '';
 }

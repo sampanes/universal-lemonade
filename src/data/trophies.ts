@@ -1,4 +1,4 @@
-// src/data/trophies.ts — 15 Lifestyle Trophies across 4 Career Tiers
+// src/data/trophies.ts -- 15 Lifestyle Trophies across 4 Career Tiers
 import type { LifestyleTrophy } from '../types';
 
 export function createInitialTrophies(): LifestyleTrophy[] {
@@ -6,7 +6,7 @@ export function createInitialTrophies(): LifestyleTrophy[] {
     {
       id: 'skateboard',
       name: 'Custom Pro Skateboard & Helmet',
-      emoji: '🛹',
+      emoji: '\u{1F6F9}',
       category: 'kid',
       costCash: 85,
       purchased: false,
@@ -17,7 +17,7 @@ export function createInitialTrophies(): LifestyleTrophy[] {
     {
       id: 'mountain_bike',
       name: 'Trek Mountain Bike with Front Basket',
-      emoji: '🚲',
+      emoji: '\u{1F6B2}',
       category: 'kid',
       costCash: 280,
       purchased: false,
@@ -28,7 +28,7 @@ export function createInitialTrophies(): LifestyleTrophy[] {
     {
       id: 'nintendo_switch',
       name: 'Nintendo Switch OLED & Mario Kart',
-      emoji: '🎮',
+      emoji: '\u{1F3AE}',
       category: 'kid',
       costCash: 350,
       purchased: false,
@@ -39,7 +39,7 @@ export function createInitialTrophies(): LifestyleTrophy[] {
     {
       id: 'electric_scooter',
       name: 'Segway Ninebot Electric Scooter',
-      emoji: '🛴',
+      emoji: '\u{1F6F4}',
       category: 'kid',
       costCash: 650,
       purchased: false,
@@ -50,7 +50,7 @@ export function createInitialTrophies(): LifestyleTrophy[] {
     {
       id: 'ipad_pro',
       name: 'iPad Pro & Apple Pencil',
-      emoji: '📱',
+      emoji: '\u{1F4F1}',
       category: 'teen',
       costCash: 900,
       purchased: false,
@@ -61,7 +61,7 @@ export function createInitialTrophies(): LifestyleTrophy[] {
     {
       id: 'disney_vip',
       name: 'VIP Disney World Family Vacation',
-      emoji: '🏰',
+      emoji: '\u{1F3F0}',
       category: 'teen',
       costCash: 3500,
       purchased: false,
@@ -72,7 +72,7 @@ export function createInitialTrophies(): LifestyleTrophy[] {
     {
       id: 'first_car',
       name: '2012 Honda Civic Hatchback',
-      emoji: '🚗',
+      emoji: '\u{1F697}',
       category: 'teen',
       costCash: 8500,
       purchased: false,
@@ -83,7 +83,7 @@ export function createInitialTrophies(): LifestyleTrophy[] {
     {
       id: 'garage_arcade',
       name: 'Garage HQ Renovation & Arcade Cabinet',
-      emoji: '🕹️',
+      emoji: '\u{1F579}\u{FE0F}',
       category: 'teen',
       costCash: 15000,
       purchased: false,
@@ -94,7 +94,7 @@ export function createInitialTrophies(): LifestyleTrophy[] {
     {
       id: 'college_fund',
       name: 'College Tuition Prepaid in Full',
-      emoji: '🎓',
+      emoji: '\u{1F393}',
       category: 'teen',
       costCash: 50000,
       purchased: false,
@@ -105,7 +105,7 @@ export function createInitialTrophies(): LifestyleTrophy[] {
     {
       id: 'tesla_model_x',
       name: 'Tesla Model X (LEM0N8 Plates)',
-      emoji: '⚡',
+      emoji: '\u{26A1}',
       category: 'mogul',
       costCash: 95000,
       purchased: false,
@@ -116,7 +116,7 @@ export function createInitialTrophies(): LifestyleTrophy[] {
     {
       id: 'pay_mortgage',
       name: 'Paid Off Mom & Dads 30-Year Mortgage',
-      emoji: '🏡',
+      emoji: '\u{1F3E1}',
       category: 'mogul',
       costCash: 450000,
       purchased: false,
@@ -127,7 +127,7 @@ export function createInitialTrophies(): LifestyleTrophy[] {
     {
       id: 'lemon_grove',
       name: '100-Acre California Lemon Grove',
-      emoji: '🍋',
+      emoji: '\u{1F34B}',
       category: 'mogul',
       costCash: 1200000,
       purchased: false,
@@ -138,7 +138,7 @@ export function createInitialTrophies(): LifestyleTrophy[] {
     {
       id: 'private_jet',
       name: 'Gulfstream G650 Private Jet',
-      emoji: '✈️',
+      emoji: '\u{2708}\u{FE0F}',
       category: 'billionaire',
       costCash: 65000000,
       purchased: false,
@@ -149,7 +149,7 @@ export function createInitialTrophies(): LifestyleTrophy[] {
     {
       id: 'arena_naming',
       name: 'Naming Rights: The Lemonade Center Arena',
-      emoji: '🏟️',
+      emoji: '\u{1F3DF}\u{FE0F}',
       category: 'billionaire',
       costCash: 80000000,
       purchased: false,
@@ -160,7 +160,7 @@ export function createInitialTrophies(): LifestyleTrophy[] {
     {
       id: 'private_island',
       name: 'Buy Citrus Cay Private Caribbean Island',
-      emoji: '🏝️',
+      emoji: '\u{1F3DD}\u{FE0F}',
       category: 'billionaire',
       costCash: 150000000,
       purchased: false,

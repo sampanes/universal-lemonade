@@ -1,4 +1,4 @@
-// src/data/franchise.ts — Neighborhood Franchise Stands (Phase 2+)
+// src/data/franchise.ts -- Neighborhood Franchise Stands (Phase 2+)
 import type { FranchiseStand } from '../types';
 
 export function createInitialFranchiseStands(): Record<string, FranchiseStand> {
@@ -37,7 +37,7 @@ export function createInitialFranchiseStands(): Record<string, FranchiseStand> {
       dailyWage: 20.00,
       baseCapacity: 100,
       weatherSens: 1.8,
-      desc: 'Insane volume on scorchers above 80°F! Slow when cloudy.'
+      desc: 'Insane volume on scorchers above 80\u{B0}F! Slow when cloudy.'
     }
   };
 }

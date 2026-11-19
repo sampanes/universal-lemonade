@@ -1,4 +1,7 @@
-# 🍋 Universal Lemonade: Kid-Centric GUI Masterplan & Asset Manifest
+# Universal Lemonade: Kid-Centric GUI Masterplan & Asset Manifest
+
+> Early design plan, kept for ideas. Parts of it are built and parts were changed or dropped;
+> the code is the reference for how the game works now.
 
 ## 1. Executive Summary & Design Vision
 
@@ -19,38 +22,38 @@ The goal of this visual overhaul is to transform the game into a **delightful, t
 On mobile portrait mode (primary target), the screen is divided into three distinct zones:
 
 ```
-┌──────────────────────────────────────────────┐
-│  HEADER: Brand Name, Cash Bar, Day Ticker    │
-├──────────────────────────────────────────────┤
-│                                              │
-│  ZONE 1: THE LIVING DIORAMA (Top ~35%)       │
-│  • Illustrated backdrop evolving by stage    │
-│  • Animated weather & sky                    │
-│  • The Stand & customized house              │
-│  • Walking customer avatars / emoji moods    │
-│                                              │
-├──────────────────────────────────────────────┤
-│                                              │
-│  ZONE 2: THE WORKBENCH / TOY (Middle ~40%)   │
-│  • Interactive Lemons, Sugar, Ice dials      │
-│  • The Glass Pitcher (liquid level & color)  │
-│  • Price Tag dial with elasticity smiley     │
-│  • Big Green "OPEN FOR BUSINESS" Lever       │
-│                                              │
-├──────────────────────────────────────────────┤
-│                                              │
-│  ZONE 3: DRAWER & TABS (Bottom ~25%)         │
-│  [🧹 Chores] [🏘️ Franchise] [📦 Wholesale]  │
-│  [🏆 Trophy Shelf] [📜 Executive P&L Log]    │
-│                                              │
-└──────────────────────────────────────────────┘
++----------------------------------------------+
+|  HEADER: Brand Name, Cash Bar, Day Ticker    |
++----------------------------------------------+
+|                                              |
+|  ZONE 1: THE LIVING DIORAMA (Top ~35%)       |
+|  - Illustrated backdrop evolving by stage    |
+|  - Animated weather & sky                    |
+|  - The Stand & customized house              |
+|  - Walking customer avatars / emoji moods    |
+|                                              |
++----------------------------------------------+
+|                                              |
+|  ZONE 2: THE WORKBENCH / TOY (Middle ~40%)   |
+|  - Interactive Lemons, Sugar, Ice dials      |
+|  - The Glass Pitcher (liquid level & color)  |
+|  - Price Tag dial with elasticity smiley     |
+|  - Big Green "OPEN FOR BUSINESS" Lever       |
+|                                              |
++----------------------------------------------+
+|                                              |
+|  ZONE 3: DRAWER & TABS (Bottom ~25%)         |
+|  [Chores] [Franchise] [Wholesale]            |
+|  [Trophy Shelf] [Executive P&L Log]          |
+|                                              |
++----------------------------------------------+
 ```
 
 ---
 
 ## 3. Paced Milestone Personalization Roadmap
 
-Rather than front-loading a tedious 5-step form before Day 1, personalizations unlock as celebratory milestone rewards across the journey. A **🎨 Customize Closet** palette button remains permanently accessible on the stand so kids can experiment and switch styles anytime:
+Rather than front-loading a tedious 5-step form before Day 1, personalizations unlock as celebratory milestone rewards across the journey. A **Customize Closet** palette button remains permanently accessible on the stand so kids can experiment and switch styles anytime:
 
 ```mermaid
 flowchart LR
@@ -62,7 +65,7 @@ flowchart LR
 
 ### Stage-by-Stage Unlocks:
 1. **Stage 1 (Driveway):**
-   - **Day 1:** Raw cardboard box & crayon sign (`LEMONAD 50¢`).
+   - **Day 1:** Raw cardboard box & crayon sign (`LEMONAD 50c`).
    - **First $30 (Wooden Stand):** Name the Brand + Choose Striped Awning Fabric (Sunny Yellow/White, Watermelon Pink/Green, Cosmic Star Blue, Rainbow).
    - **Day 5 (Visitor Event):** Adopt companion mascot (**Buster** the golden pup, **Mittens** the calico cat, or **Peppy** the cockatiel) + pick their custom bandana color.
 2. **Stage 2 (Franchise):**
@@ -91,12 +94,12 @@ Every stage visually replaces the unit of production with an order-of-magnitude 
 
 | Business Tier | Visual Physical Unit | What 1 Unit Represents | On-Screen Graphic & Animation |
 | :--- | :--- | :--- | :--- |
-| **Tier 1 (Driveway)** | 🥛 **Paper Cup** | 1 Single Cup | Hand-poured glass, individual ice cubes bobbing |
-| **Tier 2 (Kitchen/Franchise)** | 🏺 **Glass Pitcher** | 10 Cups | Full glass pitcher bubbling with floating lemon wheels |
-| **Tier 3 (Wholesale Garage)** | 📦 **Wooden Crate** | 24 Glass Bottles | Stacks of wooden crates piled up in the garage |
-| **Tier 4 (Club Store / Factory)**| 🪵 **Industrial Pallet** | 50 Crates (1,200 bottles) | Giant wooden forklift pallet wrapped in clear plastic |
-| **Tier 5 (Regional Supply)** | 🚛 **18-Wheeler Semi-Truck** | 24 Pallets (28,800 bottles) | Heavy diesel semi-truck backing up with air-brake hiss |
-| **Tier 6 (Global Conglomerate)**| 🚢 **Ocean Cargo Freighter** | 500 Containers (14M bottles)| Massive ocean freighter ship sailing past tropical islands |
+| **Tier 1 (Driveway)** | **Paper Cup** | 1 Single Cup | Hand-poured glass, individual ice cubes bobbing |
+| **Tier 2 (Kitchen/Franchise)** | **Glass Pitcher** | 10 Cups | Full glass pitcher bubbling with floating lemon wheels |
+| **Tier 3 (Wholesale Garage)** | **Wooden Crate** | 24 Glass Bottles | Stacks of wooden crates piled up in the garage |
+| **Tier 4 (Club Store / Factory)**| **Industrial Pallet** | 50 Crates (1,200 bottles) | Giant wooden forklift pallet wrapped in clear plastic |
+| **Tier 5 (Regional Supply)** | **18-Wheeler Semi-Truck** | 24 Pallets (28,800 bottles) | Heavy diesel semi-truck backing up with air-brake hiss |
+| **Tier 6 (Global Conglomerate)**| **Ocean Cargo Freighter** | 500 Containers (14M bottles)| Massive ocean freighter ship sailing past tropical islands |
 
 *The "Drop" Micro-Animation:* When a kid orders supplies in Stage 5, instead of a number incrementing, a **cartoon forklift drops an entire shrink-wrapped wooden pallet onto the screen with a heavy screen-shake and comic dust puff (`THUD!`)**.
 
@@ -129,26 +132,26 @@ Instead of sterile HTML input boxes, gameplay interactions feel like physical wo
   - Too Sour (8L, 1S): Neon acidic greenish-yellow `#CCFF00`.
   - Too Sweet (1L, 8S): Deep syrupy amber `#FFA500`.
   - Watery (low lemons): Pale translucent yellow `#FFFACD`.
-* **Floating Physics:** 2–3 lemon slices and ice cube cubes bob with gentle CSS float animations.
+* **Floating Physics:** 2-3 lemon slices and ice cube cubes bob with gentle CSS float animations.
 
 ### 2. The Weather Window
 * A miniature round ship's porthole or curved window showing the sky.
-* **Sunny (85°F+):** Pulsing golden lens flare, gentle heat shimmer.
-* **Cloudy (72°F):** Drifting fluffy cartoon clouds.
-* **Rainy (60°F):** Animated CSS raindrop streaks on the glass and miniature puddles.
+* **Sunny (85F+):** Pulsing golden lens flare, gentle heat shimmer.
+* **Cloudy (72F):** Drifting fluffy cartoon clouds.
+* **Rainy (60F):** Animated CSS raindrop streaks on the glass and miniature puddles.
 
 ### 3. Customer Mood Bubbles
 When the simulation runs, animated 2D customer silhouettes walk past the stand:
-* Satisfied customer: Pops a thought bubble with `😍 🍋 💯` and drops floating green coins (`+$2.50`).
-* Too expensive: Thought bubble with `💸 😠` and walks past.
-* Too lukewarm: Thought bubble with `🥵 🧊❓` (needs ice!).
+* Satisfied customer: Pops a thought bubble with `heart-eyes, lemon, 100` and drops floating green coins (`+$2.50`).
+* Too expensive: Thought bubble with `flying money, angry face` and walks past.
+* Too lukewarm: Thought bubble with `hot face, ice, ?` (needs ice!).
 
 ---
 
 ## 5. Frontier AI Image Asset Pipeline & Manifest
 
 To keep the game feather-light while delivering an eye-popping modern visual identity, we use a **Pop Comic Vector & Layered 2.5D approach**:
-1. **Pre-rendered AI Backgrounds:** Ultra-compressed WebP hero plates (80–120KB each) styled with bold ink outlines and cel-shaded cartoon palettes.
+1. **Pre-rendered AI Backgrounds:** Ultra-compressed WebP hero plates (80-120KB each) styled with bold ink outlines and cel-shaded cartoon palettes.
 2. **Pop-Comic Vector SVG Foreground Elements:** Chunky black borders (`3px solid #1e293b`), solid drop shadows (`box-shadow: 4px 4px 0 #0f172a`), candy-saturated palette, and bouncy squash-and-stretch button micro-animations.
 
 ### Pop-Comic Color Palette

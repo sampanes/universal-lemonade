@@ -464,7 +464,6 @@ export class LemonadeEngine {
       state: this.state,
       franchiseStands: this.franchiseStands,
       tempF: info.tempF,
-      quality: info.quality,
       pricePerCup: info.pricePerCup,
       fairPrice: info.fairPrice,
       drivewayCupsSold: info.drivewayCupsSold,
@@ -594,7 +593,7 @@ export class LemonadeEngine {
           (it === 'ice' ? maxByIce : maxByLemons) === maxTotalPour && had[it] >= this.storageCap(it));
         if (full) {
           storageShort = full;
-          notes.push(`Sold ${totalSold} of ${totalCupDemand} cups, then ran out of ${full}: your ${storageName(s, full)} only holds ${this.storageCap(full).toLocaleString('en-US')}. ${storageUpgradeHint(s, full, b)}`);
+          notes.push(`Sold ${totalSold} of ${totalCupDemand} cups, then ran out of ${full}: your ${storageName(s, full)} only holds ${this.storageCap(full).toLocaleString('en-US')}. ${storageUpgradeHint(full)}`);
         } else {
           notes.push(`Stands sold out early: out of ${bottlenecks.join(' & ') || 'supplies'}! Sold ${totalSold}/${totalCupDemand} cups. Leftover supplies could not be poured without matching ingredients.`);
         }
@@ -857,50 +856,4 @@ function emptyLedger(day: number): MoneyLedger {
 export function ledgerKept(l: MoneyLedger): number {
   const out = Object.values(l.supplies).reduce((a, b) => a + b, 0) + l.shop + l.treats + l.hiring + l.wages + l.packaging;
   return l.sales + l.chores - out;
-}
-
-export function runHeadlessPacingTest(simDays: number = 35): {
-  phase: number;
-  totalCups: string;
-  cash: string;
-  log: string[];
-} {
-  const engine = new LemonadeEngine();
-  const logs: string[] = [];
-
-  for (let d = 1; d <= simDays; d++) {
-    const s = engine.state;
-    s.recipe.pricePerCup = +(2.00 * (1 + 0.015 * (s.tempF - 70))).toFixed(2);
-    s.recipe.icePerCup = engine.computeIdealIce(s.tempF);
-
-    if (s.inv.cups < 60) engine.buySupplies('cups', 2);
-    if (s.inv.lemons < 30) engine.buySupplies('lemons', 2);
-    if (s.inv.sugar < 25) engine.buySupplies('sugar', 2);
-    if (s.inv.ice < 80) engine.buySupplies('ice', 2);
-    if (s.phase >= 3 && s.inv.bottles < 40) engine.buySupplies('bottles', 2);
-
-    engine.projects.forEach(p => engine.buyProject(p.id));
-    if (s.phase >= 2) {
-      Object.keys(engine.franchiseStands).forEach(id => engine.hireFranchiseStand(id));
-    }
-    if (s.phase >= 3) {
-      Object.keys(engine.wholesaleAccounts).forEach(id => engine.signWholesaleAccount(id));
-    }
-
-    engine.trophies.filter(t => !t.purchased && t.phaseRequired <= s.phase).forEach(t => {
-      if (s.cash.gte(t.costCash * 1.5)) {
-        engine.buyTrophy(t.id);
-      }
-    });
-
-    const res = engine.runDay();
-    logs.push(`Day ${res.day}: Net Profit +$${res.netProfit.toFixed(2)} | Cash: $${s.cash.format()} | Cups: ${s.totalCupsSold.format()}`);
-  }
-
-  return {
-    phase: engine.state.phase,
-    totalCups: engine.state.totalCupsSold.format(),
-    cash: engine.state.cash.format(),
-    log: logs
-  };
 }

@@ -1,7 +1,7 @@
 # tools/make_pitcher_glass.py -- rebuild public/sprites/pitcher_glass_translucent.png
 #
 # Usage (from the repo root, needs Pillow):
-#   py -3 tools\make_pitcher_glass.py public\sprites\pitcher_cutout.png public\sprites\pitcher_liquid_mask.png public\sprites\pitcher_glass_translucent.png 512
+#   py -3 tools\make_pitcher_glass.py art_src\pitcher\pitcher_cutout.png art_src\pitcher\pitcher_liquid_mask.png public\sprites\pitcher_glass_translucent.png 512
 #
 # The overlay is drawn on top of the SVG liquid in index.html, so the glass has to be
 # see-through. Alpha is derived per pixel from the art itself, over the true glass interior

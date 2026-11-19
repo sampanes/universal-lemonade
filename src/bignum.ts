@@ -1,4 +1,4 @@
-// src/bignum.ts — Pure Self-Contained BigNum Math (Supports numbers up to 10^9,000,000,000)
+// src/bignum.ts -- Pure Self-Contained BigNum Math (Supports numbers up to 10^9,000,000,000)
 
 export class BigNum {
   public m: number; // Mantissa in [1, 10) or 0
