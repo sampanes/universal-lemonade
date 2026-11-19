@@ -219,3 +219,18 @@ By synthesizing sound effects procedurally via the browser's built-in **Web Audi
    - Test and drop in the 5 generated 9:16 WebP stage backdrops as you generate them.
 4. **Step 4: Wire the Web Audio Synthesizer Engine**
    - Drop in the 40-line procedural audio helper for coin chimes, bubble pops, and register dings.
+
+
+## Playtest notes, November 19, 2026
+
+### Open for Business
+
+- Give passing kids something specific to say about what just happened. A kid who tasted the lemonade might say “A little too sweet!” Someone who walked on because of the price might say “Too pricey for a cool day.” Keep each bubble short and tie it to that stand’s actual results.
+- Show how early the stand sold out through the crowd. If the last cup sold just before closing, one disappointed kid might say “Aw, all gone!” If the stand ran dry early and lots of kids missed out, show several arriving afterward and leaving sad. Use unmet demand at that location to decide how many to show.
+- Use the customer assets AGY already put together for the mix-and-match kids. Check that set first for back-view hair, outfits, novelty items, and which layers can take color.
+- Upcoming art task: generate location art for Elm Street, the ballpark, and the pool, plus sunny, cloudy, and rainy variants or overlays for the stand scenes.
+
+### Lemon Squeezer
+
+- Let the kid buy each upgrade directly on the Lemon Squeezer card, beside the green pills showing estimated sales and how many sold. Keep those numbers visible so the kid can see what the purchase did.
+- Give the invention several steps to grow. The proposed order is local sales, then a marketing purchase, then “Sell in other states,” and finally international sales. The exact middle steps, prices, and sales increases are open for tuning.
