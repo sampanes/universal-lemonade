@@ -162,6 +162,7 @@ export interface RecipeProfile {
 }
 
 export interface DaySummary {
+  standVisits?: import('./scene/dayScene').StandVisits[]; // absent on older reports
   day: number;
   tempF: number;
   weather: WeatherCondition;

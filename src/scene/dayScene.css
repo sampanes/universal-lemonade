@@ -1,0 +1,24 @@
+.day-scene { width:min(540px,94vw); box-sizing:border-box; padding:0; border:4px solid #6733ae; border-radius:21px; color:#402253; background:#fff8e2; overflow:hidden; font-family:var(--font-display); box-shadow:0 8px 0 #42235e; }
+.day-scene::backdrop { background:#211132bc; }
+.day-scene header, .day-scene footer { display:flex; align-items:center; justify-content:space-between; padding:8px 14px; gap:10px; }
+.day-scene header { font-size:clamp(15px,4vw,21px); }
+.day-scene header span { color:#7747a1; }
+.day-scene footer { justify-content:flex-end; }
+.day-scene button { border:2px solid #674298; background:white; color:#553086; padding:7px 14px; border-radius:14px; font:inherit; cursor:pointer; }
+.day-scene button[aria-pressed=true] { background:#65349a; color:white; }
+.scene-stage { position:relative; isolation:isolate; height:min(260px,42dvh); overflow:hidden; background:linear-gradient(#94dafa,#e1f6ff 64%,#95cf72 64%,#a0d77e 83%,#e0c39c 83%,#efd7ae); }
+.day-scene:not([data-weather=SUNNY]) .scene-stage { background:linear-gradient(#aebfd6,#dce7e9 64%,#95bc80 64%,#a4c88b 83%,#cbb69c 83%,#e0cdae); }
+.scene-cloud { position:absolute; top:19%; left:13%; width:17%; height:6%; border-radius:50px; background:#fff; box-shadow:13px -10px 0 1px #fff,30px -2px #fff; }
+.scene-hill { position:absolute; width:90%; height:35%; right:-13%; top:33%; background:#81ba81; border-radius:100% 100% 0 0; }
+.scene-host,.scene-table { position:absolute; object-fit:contain; left:37%; transform:translateX(-50%); }
+.scene-host { height:64%; bottom:26%; }
+.scene-table { height:37%; bottom:17%; }
+.scene-walker { position:absolute; left:-22%; bottom:1%; height:48%; aspect-ratio:64/80; filter:drop-shadow(0 2px 1px #49314166); }
+.scene-person,.scene-person i { position:absolute; inset:0; }
+.scene-person i { mask-size:contain; mask-repeat:no-repeat; }
+.scene-bubble,.scene-sign { position:absolute; border-radius:12px; background:white; color:#462556; padding:4px 9px; font-size:clamp(13px,3vw,18px); white-space:nowrap; }
+.scene-bubble { bottom:100%; left:50%; transform:translateX(-50%); border:2px solid #76529e; }
+.scene-bubble.sad { color:#734167; background:#fff0f3; }
+.scene-sign { left:8px; bottom:12px; background:#ffedb4; }
+.scene-sign:empty { display:none; }
+.scene-person.disappointed { rotate:7deg; transform-origin:center bottom; }

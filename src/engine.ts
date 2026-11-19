@@ -988,6 +988,10 @@ export class LemonadeEngine {
     const seasonInfo = this.getSeasonInfo(s.day);
 
     const summary: DaySummary = {
+      standVisits: activeStands.map(st => ({
+        id: st.id, traffic: st.traffic, wanted: st.demand,
+        sold: st.isDriveway ? drivewayCupsSold : (soldByStand[st.id] ?? 0)
+      })),
       day: s.day,
       tempF: s.tempF,
       weather: s.weather,

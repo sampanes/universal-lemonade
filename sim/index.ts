@@ -3,6 +3,7 @@ export { LemonadeEngine, BALANCE, DEFAULT_SEED, ledgerKept } from '../src/engine
 export { generateDailyReviews } from '../src/simulation/reviews';
 export { reputationTrend, nextReputation } from '../src/simulation/reputation';
 export { allocateStandSales } from '../src/simulation/demand';
+export { dayBeats } from '../src/scene/dayScene';
 export { BOTS } from './bots';
 export { runGame, runBatch, withOverrides, seedForGame, mulberry32, METRICS } from './run';
 export { summarize, concatColumns, formatTable } from './report';

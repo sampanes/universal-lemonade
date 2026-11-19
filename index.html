@@ -3654,6 +3654,7 @@
       HAIR_PALETTES,
       UNIFORM_PALETTES
     } from './src/character.ts';
+    import { playDayScene } from './src/scene/playDayScene.ts';
     import { loadKidArt, kidImageURL, kidHairCount, kidHairIds, kidFx } from './src/kid.ts';
     import { loadUnlocks, saveUnlocks, clearUnlocks, advanceLookUnlocks, unlockCheckFrom, otherUnlockToday, shopReady, lookOpen } from './src/unlocks.ts';
 
@@ -4269,7 +4270,7 @@
 
     // Escape key closes modal or collapses open card
     window.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
+      if (e.key === 'Escape' && !playingDay) {
         const modalBackdrop = document.getElementById('report-modal-backdrop');
         if (modalBackdrop && modalBackdrop.classList.contains('active')) {
           closeReportModal();
@@ -4285,11 +4286,27 @@
       }
     });
 
-    // Run Day Click (Triggers Day Clear Celebration Modal)
-    document.getElementById('btn-run-day').onclick = () => {
-      const summary = engine.runDay();
-      openReportModal(summary);
-      checkMagicLooks(summary, !dadModeActive);
+    let playingDay = false;
+    document.getElementById('btn-run-day').onclick = async () => {
+      if (playingDay) return;
+      playingDay = true;
+      try {
+        const summary = engine.runDay();
+        openReportModal(summary);
+        checkMagicLooks(summary, !dadModeActive);
+        saveGame();
+        await playDayScene(summary, id => {
+          const friend = FRIENDS[id];
+          return {
+            name: friend ? friend.place : 'My driveway',
+            host: kidImageURL(friend ? friendLook(id) : kidProfile, 'happy', false),
+            table: './sprites/franchise/' + (friend?.pic || 'elm') + '.png'
+          };
+        });
+      } finally {
+        playingDay = false;
+        document.getElementById('btn-report-modal-continue').focus();
+      }
     };
 
     // Buy Supplies Static Click Bindings (Guarantees zero dropped clicks on desktop)
@@ -4338,7 +4355,7 @@
       if (now - lastSaveAt >= 1000) { lastSaveAt = now; saveGame(); }
 
       // Auto-Day ticker if enabled
-      if (autoDay) {
+      if (autoDay && !playingDay) {
         autoDayTimer += dt;
         if (autoDayTimer >= 2.5) { // Run day every 2.5 real seconds (scaled by timeScale)
           autoDayTimer = 0;

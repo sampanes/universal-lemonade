@@ -10,6 +10,7 @@ export interface StandDemand {
   name: string;
   workerName: string;
   demand: number;
+  traffic: number;
   wage: number;
   isDriveway: boolean;
 }
@@ -43,7 +44,7 @@ export function computeDayDemand(
   const drivewayTraffic = Math.floor(drivewayPeople(s.buzz ?? 0, s.reputation, b) * weatherMult * tempFactor * fridgeTraffic);
   let totalTraffic = drivewayTraffic;
   const stands: StandDemand[] = [
-    { id: 'driveway', name: 'Driveway Stand', workerName: 'You', demand: Math.floor(drivewayTraffic * buyProb), wage: 0, isDriveway: true }
+    { id: 'driveway', name: 'Driveway Stand', workerName: 'You', traffic: drivewayTraffic, demand: Math.floor(drivewayTraffic * buyProb), wage: 0, isDriveway: true }
   ];
 
   if (s.phase >= 2) {
@@ -61,6 +62,7 @@ export function computeDayDemand(
         id: stand.id,
         name: stand.name,
         workerName: stand.workerName,
+        traffic: standTraffic,
         demand: Math.floor(standTraffic * buyProb),
         wage: stand.dailyWage,
         isDriveway: false
