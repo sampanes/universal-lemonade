@@ -121,35 +121,41 @@ export function generateDailyReviews(params: ReviewGenerationParams): CustomerRe
   // 2. PRICE / VALUE REVIEW
   // On a day nobody bought anything, only "too expensive" makes sense (no one "bought two").
   const priceStart = reviews.length;
-  const dayDescription = tempF >= 85 ? 'hot' : tempF >= 70 ? 'warm' : tempF >= 55 ? 'cool' : 'chilly';
-  const weatherDay = `a ${dayDescription} ${tempF}-degree day`;
+  const dayDescription = tempF < 45 ? 'cold' : tempF < 55 ? 'very cool'
+    : tempF < 65 ? 'cool' : tempF < 75 ? 'warm' : tempF < 85 ? 'very warm'
+    : tempF < 95 ? 'hot' : 'very hot';
+  const weatherDay = `a ${dayDescription} day`;
   if (sold === 0 && priceRatio < 1.18) {
     // no price comment
   } else if (priceRatio >= 1.40) {
     reviews.push({
       stars: 1,
-      quote: `$${pricePerCup.toFixed(2)} is much too high for ${weatherDay}.`,
+      quote: tempF >= 85
+        ? `$${pricePerCup.toFixed(2)} is a lot, even on ${weatherDay}.`
+        : `$${pricePerCup.toFixed(2)} is too high for ${weatherDay}.`,
       reviewer: "Thrifty neighbor",
       sentiment: "negative"
     });
   } else if (priceRatio >= 1.18) {
     reviews.push({
       stars: 2,
-      quote: `$${pricePerCup.toFixed(2)} is a little steep for ${weatherDay}.`,
+      quote: tempF >= 65 && tempF < 85
+        ? `$${pricePerCup.toFixed(2)} is a little pricey.`
+        : `$${pricePerCup.toFixed(2)} is a little steep for ${weatherDay}.`,
       reviewer: "Dog walker",
       sentiment: "mixed"
     });
   } else if (priceRatio <= 0.70) {
     reviews.push({
       stars: 5,
-      quote: `Only $${pricePerCup.toFixed(2)}? A great deal for ${weatherDay}!`,
+      quote: `$${pricePerCup.toFixed(2)}? Great deal on ${weatherDay}!`,
       reviewer: "Teen on a scooter",
       sentiment: "positive"
     });
   } else {
     reviews.push({
       stars: 4,
-      quote: `A fair price for lemonade on ${weatherDay}!`,
+      quote: `Fair price for ${weatherDay}!`,
       reviewer: "Neighborhood regular",
       sentiment: "positive"
     });

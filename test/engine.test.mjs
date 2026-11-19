@@ -27,6 +27,30 @@ test('same seed and same actions give the same game', () => {
   assert.deepEqual(a, b);
 });
 
+test('price comments match temperature, price, and whether anyone bought', () => {
+  const e = new LemonadeEngine({ seed: 1 });
+  const priceReview = (tempF, pricePerCup, sold = 1) => sim.generateDailyReviews({
+    state: e.state, franchiseStands: {}, tempF, pricePerCup, fairPrice: 2,
+    drivewayCupsSold: sold, franchiseCupsSold: 0, soldOutStands: [], rand: () => 0
+  }).find(r => r.topic === 'price');
+  for (const [temp, description] of [
+    [44, 'cold'], [45, 'very cool'], [54, 'very cool'], [55, 'cool'],
+    [64, 'cool'], [65, 'warm'], [74, 'warm'], [75, 'very warm'],
+    [84, 'very warm'], [85, 'hot'], [94, 'hot'], [95, 'very hot']
+  ]) {
+    assert.equal(priceReview(temp, 2).quote, `Fair price for a ${description} day!`);
+    assert.equal(priceReview(temp, 1).quote, `$1.00? Great deal on a ${description} day!`);
+  }
+  assert.equal(priceReview(60, 2.4).quote, '$2.40 is a little steep for a cool day.');
+  assert.equal(priceReview(70, 2.4).quote, '$2.40 is a little pricey.');
+  assert.equal(priceReview(70, 3).quote, '$3.00 is too high for a warm day.');
+  assert.equal(priceReview(90, 3).quote, '$3.00 is a lot, even on a hot day.');
+  assert.equal(priceReview(100, 3).quote, '$3.00 is a lot, even on a very hot day.');
+  assert.equal(priceReview(70, 2, 0), undefined, 'no positive review without sales');
+  const noSales = priceReview(70, 3, 0);
+  assert.ok(noSales && !/bought|try|lower price/i.test(noSales.quote));
+});
+
 test('different seeds give different weather', () => {
   const weather = (seed) => {
     const e = new LemonadeEngine({ seed });
