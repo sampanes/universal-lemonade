@@ -81,8 +81,12 @@ function hireAndSign(e: LemonadeEngine, wageDaysReserve: number, chance: number,
   }
   if (s.phase >= 3) {
     for (const acc of Object.values(e.wholesaleAccounts)) {
-      if (acc.active) continue;
-      if (s.cash.toNumber() >= acc.setupCost * 1.5 && rand() < chance) e.signWholesaleAccount(acc.id);
+      if (!acc.active) {
+        if (s.cash.toNumber() >= acc.setupCost * 1.5 && rand() < chance) e.signWholesaleAccount(acc.id);
+      } else {
+        const next = acc.levels[acc.level];
+        if (next && s.cash.toNumber() >= next.cost * 1.5 && rand() < chance) e.upgradeWholesaleAccount(acc.id);
+      }
     }
     const wanted = Object.values(e.wholesaleAccounts).filter(a => a.active).reduce((n, a) => n + a.bottlesPerDay, 0);
     while (s.inv.bottles < wanted && e.buySupplies('bottles', 1)) { /* keep buying */ }

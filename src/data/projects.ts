@@ -1,5 +1,6 @@
 // src/data/projects.ts -- Business Investments & Technology Upgrades (Phases 1-5)
 import type { ProjectDef, GameState } from '../types';
+import { BOTTLES_FOR_INVENTION } from './wholesale';
 
 // The two Phase 1 stand upgrades, $275 and $605, each lift a storage limit
 // (src/simulation/storage.ts): a busy summer day needs more ice than the 400-cube bucket
@@ -114,9 +115,9 @@ export function createInitialProjects(): ProjectDef[] {
       name: 'USPTO Patent for "Vortex Press" (Phase 4)',
       desc: 'Invent an ergonomic high-yield citrus press. License it to an appliance company for passive royalties!',
       phase: 3,
-      costCash: 1200,
+      costCash: 4000,
       purchased: false,
-      unlocked: (s: GameState) => s.phase === 3 && s.cash.gte(800),
+      unlocked: (s: GameState) => s.phase === 3 && (s.legacyStoreProgress || s.totalBottlesSold >= BOTTLES_FOR_INVENTION),
       effect: (e: any) => {
         e.state.phase = 4;
         e.patent.licensed = true;

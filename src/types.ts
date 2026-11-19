@@ -64,6 +64,8 @@ export interface WholesaleAccount {
   active: boolean;
   setupCost: number;
   bottlesPerDay: number;
+  level: number;
+  levels: { cost: number; bottlesPerDay: number }[];
   wholesalePrice: number;
   weatherSens: number;
   desc: string;
@@ -228,6 +230,7 @@ export interface MoneyLedger {
   shopIds: string[];    // which ones, for the picture
   treats: number;       // trophies
   hiring: number;       // franchise stand setup and wholesale sign-up
+  storeUpgrades?: number; // expanded store shelves
   wages: number;        // franchise workers
   packaging: number;    // wholesale bottles
 }
@@ -258,6 +261,8 @@ export interface GameState {
   cash: BigNum;
   totalCupsSold: BigNum;
   totalRevenueEarned: BigNum;
+  totalBottlesSold: number;
+  legacyStoreProgress?: boolean; // older saves did not record lifetime bottle sales
 
   inv: {
     lemons: number;

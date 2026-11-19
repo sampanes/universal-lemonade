@@ -28,10 +28,10 @@ Day Report of what customers said.
   and pay.
 - **Stores.** After Bottle It!, the friends card gets a Stores tab: a Corner Store, a
   Farmers Market and a Ballfield snack bar. Each is signed up once and then buys bottles
-  every day (more on hot days), filled from the same lemons and sugar. Bottles (glass, cap
-  and label in one price) take the ice box's place in Morning Prep, and the morning advice
-  counts what the stores need.
-- **Invention.** Invent It! (Stage 4) patents a lemon squeezer that stores sell for the kid;
+  every day (more on hot days), filled from the same lemons and sugar. Save up to expand
+  each store's shelf twice and grow its orders. Bottles (glass, cap and label in one price)
+  take the ice box's place in Morning Prep, and the morning advice counts what stores need.
+- **Invention.** After selling 1,500 bottles, save up for Invent It! (Stage 4), which patents a lemon squeezer that stores sell for the kid;
   an Invention tab shows how many sell a day and what they pay. Sell It Worldwide triples
   it. The Lemonade Factory (Stage 5) shows as "coming soon".
 - **Chores.** A broke kid can always do chores for a few dollars.

@@ -3600,6 +3600,7 @@
 
   <script type="module">
     import { LemonadeEngine, BigNum } from './src/engine.ts';
+    import { BOTTLES_FOR_INVENTION } from './src/data/wholesale.ts';
     import {
       loadCharacterProfile,
       saveCharacterProfile,
@@ -4854,7 +4855,8 @@
       { id: 'bottling_rig', name: 'Bottle It!', desc: 'Bottle your lemonade and sell it to stores!', pic: './sprites/shop/bottles.png', early: true,
         notYet: (s) => `Sell ${Math.max(1, 250 - Math.floor(s.totalCupsSold.toNumber()))} more cups first!` },
       { id: 'commercial_labeler', name: 'Bottle Labeler', desc: 'Labels bottles by machine: bottles cost 30% less!', pic: './sprites/shop/labeler.png' },
-      { id: 'patent_filing', name: 'Invent It!', desc: 'Invent a lemon squeezer! Stores sell it, and you get money for every one.', pic: null, early: true },
+      { id: 'patent_filing', name: 'Invent It!', desc: 'Invent a lemon squeezer! Stores sell it, and you get money for every one.', pic: null, early: true,
+        notYet: (s) => `Sell ${Math.max(0, BOTTLES_FOR_INVENTION - s.totalBottlesSold).toLocaleString('en-US')} more bottles first!` },
       { id: 'global_licensing', name: 'Sell It Worldwide', desc: 'Stores all over the world sell your squeezer: 3 times as many!', pic: null },
       { id: 'copacker_deal', name: 'Lemonade Factory', desc: 'Coming soon: a real factory bottles your lemonade for supermarkets!', pic: null, teaser: true },
     ];
@@ -4903,8 +4905,10 @@
       if (save.hidden === showSave) save.hidden = !showSave;
       if (showSave) {
         document.getElementById('stand-shop-fill').style.width = `${notYet ? 100 : Math.min(100, (spare / cost) * 100).toFixed(1)}%`;
-        setText(document.getElementById('stand-shop-save-text'), notYet
-          ? (item.notYet ? item.notYet(s) : 'Make your recipe tastier first!')
+        const bottlesPending = item.id === 'patent_filing' && !p.unlocked(s);
+        setText(document.getElementById('stand-shop-save-text'), bottlesPending && short
+          ? `${item.notYet(s)} $${Math.floor(spare)}/$${cost} saved`
+          : notYet ? (item.notYet ? item.notYet(s) : 'Make your recipe tastier first!')
           : `Saving up: $${Math.floor(spare)} of $${cost}${need > 0 ? ' after supplies' : ''}`);
       }
       const btn = document.getElementById('btn-stand-shop-buy');
@@ -4967,12 +4971,15 @@
         } else {
           const n = (est.find(x => x.id === acc.id) || { estBottles: 0 }).estBottles;
           cls = 'working';
-          btn = `<div class="friend-btn">Selling<small>~${n} bottles today</small></div>`;
+          const next = acc.levels[acc.level];
+          btn = next
+            ? `<button type="button" class="friend-btn" data-act="expand" data-id="${acc.id}"${s.cash.lt(next.cost) ? ' disabled' : ''}>Shelf $${next.cost}<small>~${n} today | ${next.bottlesPerDay}/day next</small></button>`
+            : `<div class="friend-btn">Biggest shelf!<small>~${n} bottles today</small></div>`;
         }
         return `<div class="friend-tile ${cls}">
           <div class="friend-pic"><img class="store-pic" src="${info.pic}" alt="" /></div>
           <div class="friend-name">${info.name}</div>
-          <div class="friend-where">pays $${acc.wholesalePrice.toFixed(2)} a bottle</div>
+          <div class="friend-where">${acc.active ? `Lv ${acc.level}/3 | $${acc.wholesalePrice.toFixed(2)} each` : `pays $${acc.wholesalePrice.toFixed(2)} a bottle`}</div>
           ${btn}
         </div>`;
       }).join('');
@@ -5048,6 +5055,8 @@
         if (engine.hireFranchiseStand(btn.dataset.id)) kidFlash('cheer', 2000);
       } else if (btn.dataset.act === 'sign') {
         if (engine.signWholesaleAccount(btn.dataset.id)) kidFlash('cheer', 2000);
+      } else if (btn.dataset.act === 'expand') {
+        if (engine.upgradeWholesaleAccount(btn.dataset.id)) kidFlash('cheer', 2000);
       } else if (btn.dataset.act === 'off') {
         engine.toggleFriendDayOff(btn.dataset.id);
       }
@@ -5095,6 +5104,7 @@
       }
       if (l.treats > 0.004) rows += mbRow('out', '', 'Prizes', '', l.treats);
       if (l.hiring > 0.004) rows += mbRow('out', './sprites/franchise/ballpark.png', 'Hiring', 'new stands and deals', l.hiring);
+      if ((l.storeUpgrades || 0) > 0.004) rows += mbRow('out', './sprites/shop/bottles.png', 'Store shelves', 'bigger store orders', l.storeUpgrades);
       if (l.wages > 0.004) rows += mbRow('out', './sprites/franchise/elm.png', "Helpers' pay", 'your stand workers', l.wages);
       if (l.packaging > 0.004) rows += mbRow('out', '', 'Bottles and labels', '', l.packaging);
       return rows;
@@ -5104,7 +5114,7 @@
       let html = '';
       if (last) {
         const kept = last.sales + last.chores - (Object.values(last.supplies).reduce((a, b) => a + b, 0)
-          + last.shop + last.treats + last.hiring + last.wages + last.packaging);
+          + last.shop + last.treats + last.hiring + (last.storeUpgrades || 0) + last.wages + last.packaging);
         // Yesterday's whole Day Report is one tap away (this took over the old bottom ticket).
         // The stars are how much the neighbors like the stand (same meter as the report).
         const dLast = s.lastDaySummary;
@@ -5131,7 +5141,7 @@
       }
       // Today so far (the morning's shopping and chores, before the stand opens).
       const today = engine.ledger;
-      const spent = Object.values(today.supplies).reduce((a, b) => a + b, 0) + today.shop + today.treats + today.hiring;
+      const spent = Object.values(today.supplies).reduce((a, b) => a + b, 0) + today.shop + today.treats + today.hiring + (today.storeUpgrades || 0);
       const bits = [];
       if (spent > 0.004) bits.push(`spent <b>${mbMoney(spent)}</b>`);
       if (today.chores > 0.004) bits.push(`earned <b>${mbMoney(today.chores)}</b> from chores`);

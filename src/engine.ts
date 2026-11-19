@@ -155,6 +155,12 @@ export class LemonadeEngine {
       totalCupsSold: big(d.state.totalCupsSold, fresh.totalCupsSold),
       totalRevenueEarned: big(d.state.totalRevenueEarned, fresh.totalRevenueEarned),
     };
+    // Older games have no bottle history. Preserve their established progress without
+    // claiming an invented sales total or taking away the invention they could work toward.
+    if (typeof d.state.totalBottlesSold !== 'number') {
+      e.state.totalBottlesSold = 0;
+      e.state.legacyStoreProgress = d.state.phase >= 3;
+    }
     e.rngSeed = (d.rngSeed | 0) || e.seed;
     const bought = new Set(d.projects || []);
     e.projects.forEach(p => { p.purchased = bought.has(p.id); });
@@ -164,7 +170,13 @@ export class LemonadeEngine {
       if (e.franchiseStands[id]) Object.assign(e.franchiseStands[id], st);
     }
     for (const [id, w] of Object.entries(d.wholesaleAccounts || {})) {
-      if (e.wholesaleAccounts[id]) Object.assign(e.wholesaleAccounts[id], w);
+      const account = e.wholesaleAccounts[id];
+      if (!account) continue;
+      account.active = !!w.active;
+      // Old active stores keep their existing capacity until the next upgrade.
+      account.level = account.active ? Math.max(1, Math.min(3, w.level ?? 1)) : 0;
+      account.bottlesPerDay = account.active && typeof w.bottlesPerDay === 'number'
+        ? w.bottlesPerDay : account.levels[0].bottlesPerDay;
     }
     Object.assign(e.patent, d.patent || {});
     Object.assign(e.copacker, d.copacker || {});
@@ -209,6 +221,7 @@ export class LemonadeEngine {
       cash: BigNum.fromNumber(start.cash),
       totalCupsSold: new BigNum(0, 0),
       totalRevenueEarned: new BigNum(0, 0),
+      totalBottlesSold: 0,
 
       inv: { ...start.inventory },
       recipe: { ...start.recipe },
@@ -359,7 +372,22 @@ export class LemonadeEngine {
     this.state.cash = this.state.cash.sub(account.setupCost);
     this.ledger.hiring += account.setupCost;
     account.active = true;
+    account.level = 1;
+    account.bottlesPerDay = account.levels[0].bottlesPerDay;
     this.log(`Signed wholesale contract with ${account.name}!`);
+    return true;
+  }
+
+  public upgradeWholesaleAccount(id: string): boolean {
+    const account = this.wholesaleAccounts[id];
+    if (this.state.phase < 3 || !account || !account.active) return false;
+    const next = account.levels[account.level];
+    if (!next || this.state.cash.lt(next.cost)) return false;
+    this.state.cash = this.state.cash.sub(next.cost);
+    this.ledger.storeUpgrades = (this.ledger.storeUpgrades ?? 0) + next.cost;
+    account.level += 1;
+    account.bottlesPerDay = next.bottlesPerDay;
+    this.log(`Expanded ${account.name} to level ${account.level}.`);
     return true;
   }
 
@@ -398,7 +426,7 @@ export class LemonadeEngine {
     while (s.phase < target) {
       const ph = s.phase;
       if (ph === 2) Object.values(this.franchiseStands).forEach(st => { st.hired = true; });
-      if (ph === 3) Object.values(this.wholesaleAccounts).forEach(w => { w.active = true; });
+      if (ph === 3) Object.values(this.wholesaleAccounts).forEach(w => { w.active = true; w.level = 1; w.bottlesPerDay = w.levels[0].bottlesPerDay; });
       // This stage's upgrades first, then the one that opens the next stage.
       const opener = PHASE_OPENERS[ph];
       this.projects.filter(p => p.phase === ph && p.id !== opener).forEach(giveFree);
@@ -884,6 +912,7 @@ export class LemonadeEngine {
     s.lastLedger = led;
     s.upgradeSavingsTotal = (s.upgradeSavingsTotal ?? 0) + upgradeSavings;
     s.grossProfitTotal = (s.grossProfitTotal ?? 0) + ledgerGrossProfit(led);
+    s.totalBottlesSold += bottlesSold;
     s.totalCupsSold = s.totalCupsSold.add(totalCupsToday);
     s.totalRevenueEarned = s.totalRevenueEarned.add(totalRevenue);
 
@@ -1025,7 +1054,7 @@ function emptyLedger(day: number): MoneyLedger {
 
 // Money in minus money out for one ledger (what the kid really kept that day).
 export function ledgerKept(l: MoneyLedger): number {
-  const out = Object.values(l.supplies).reduce((a, b) => a + b, 0) + l.shop + l.treats + l.hiring + l.wages + l.packaging;
+  const out = Object.values(l.supplies).reduce((a, b) => a + b, 0) + l.shop + l.treats + l.hiring + (l.storeUpgrades ?? 0) + l.wages + l.packaging;
   return l.sales + l.chores - out;
 }
 
