@@ -203,6 +203,7 @@ export interface DaySummary {
   // Reputation at the start and end of the day (0..1). Optional so older saves still load.
   reputationBefore?: number;
   reputationAfter?: number;
+  reputationTrend?: 'up' | 'down' | 'steady';
   buzzBefore?: number;
   buzzAfter?: number;
   goldenStreak?: number;        // golden open days in a row, counting today
@@ -260,6 +261,7 @@ export interface GameState {
   // Working Capital & Inventory
   cash: BigNum;
   totalCupsSold: BigNum;
+  reputationHistory?: number[]; // recent daily ratings, for the report trend
   totalRevenueEarned: BigNum;
   totalBottlesSold: number;
 

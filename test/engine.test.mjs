@@ -65,6 +65,35 @@ test('price comments match temperature, price, and whether anyone bought', () =>
   assert.equal(priceReview(70, 3, 0, 0), undefined, 'no price review when nobody visited');
 });
 
+test('rating trends ignore small dips but show a real decline', () => {
+  assert.equal(sim.reputationTrend([0.99, 0.975]), 'steady');
+  assert.equal(sim.reputationTrend([0.99, 0.97, 0.95, 0.94]), 'steady', '4.7 stars is still strong');
+  assert.equal(sim.reputationTrend([0.89, 0.865, 0.84]), 'down', 'sustained decline');
+  assert.equal(sim.reputationTrend([0.99, 0.89]), 'down', 'a sharp drop still warns');
+  assert.equal(sim.reputationTrend([0.89, 0.86, 0.86]), 'steady', 'no warning once the drop stops');
+  assert.equal(sim.reputationTrend([0.89, 0.86, 0.87]), 'up');
+});
+
+test('rating remembers a little more history and persists its trend', () => {
+  const e = new LemonadeEngine({ seed: 8 });
+  e.state.reputation = 0.99;
+  assert.ok(Math.abs(sim.nextReputation(e.state, 0.94) - 0.9775) < 1e-9);
+  assert.equal(sim.nextReputation(e.state, null), 0.99, 'no customers leaves the rating alone');
+  assert.ok(sim.nextReputation(e.state, 1, e.balance, true) <= 0.97 + 1e-9,
+    'excessive pricing still lowers reputation');
+  e.state.avgRecipeQuality = 0.5;
+  e.state.totalQualityDays = 1;
+  const day = e.runDay();
+  assert.ok(Math.abs(e.state.avgRecipeQuality - (0.5 * 0.7 + day.recipeQuality * 0.3)) < 1e-9,
+    'recipe quality keeps its previous smoothing');
+  const saved = JSON.parse(JSON.stringify(e.toSave()));
+  const loaded = LemonadeEngine.fromSave(saved);
+  assert.deepEqual(loaded.state.reputationHistory, e.state.reputationHistory);
+  assert.equal(loaded.state.lastDaySummary.reputationTrend, day.reputationTrend);
+  const nextA = e.runDay(), nextB = loaded.runDay();
+  assert.equal(nextA.reputationTrend, nextB.reputationTrend);
+});
+
 test('excessive prices lower reputation only when people can see the stand', () => {
   const setup = (balance) => {
     const e = new LemonadeEngine({ seed: 33, balance });

@@ -104,7 +104,8 @@ export const BALANCE = {
   },
 
   reputation: {
-    alpha: 0.3,                // EWMA weight of today's customer score
+    alpha: 0.25,               // EWMA weight of today's customer score
+    qualityAlpha: 0.3,         // recipe quality keeps its existing responsiveness
     excessivePriceRatio: 1.4,   // same threshold as the strongest price complaint
     excessivePriceDrop: 0.02,   // minimum reputation loss when people see that price
     min: 0.1,

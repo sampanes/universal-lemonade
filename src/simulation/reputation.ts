@@ -79,6 +79,20 @@ export function dailyCustomerScore(o: DayCustomerOutcome, b: Balance = BALANCE):
   return taste * value * (b.reputation.servedBase + b.reputation.servedPerServed * served);
 }
 
+// Describe a real trend rather than a tiny daily wobble. Keep high ratings encouraging;
+// below 4.5 stars, warn for a sharp drop or a sustained decline over several days.
+export function reputationTrend(history: readonly number[]): 'up' | 'down' | 'steady' {
+  const recent = history.slice(-4);
+  if (recent.length < 2) return 'steady';
+  const last = recent[recent.length - 1], before = recent[recent.length - 2];
+  const change = last - before;
+  if (change > 0.005) return 'up';
+  if (change >= -0.005 || last >= 0.9) return 'steady';
+  if (change <= -0.08) return 'down';
+  const downDays = recent.slice(1).filter((value, i) => value - recent[i] < -0.005).length;
+  return downDays >= 2 && last - recent[0] <= -0.04 + 1e-9 ? 'down' : 'steady';
+}
+
 // Applies one day's customer score to the reputation. Returns the new reputation.
 export function nextReputation(
   s: GameState, todayScore: number | null, b: Balance = BALANCE, excessivePriceSeen = false

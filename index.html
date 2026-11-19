@@ -3613,6 +3613,7 @@
 
   <script type="module">
     import { LemonadeEngine, BigNum } from './src/engine.ts';
+    import { reputationTrend } from './src/simulation/reputation.ts';
     import { BOTTLES_FOR_INVENTION } from './src/data/wholesale.ts';
     import {
       loadCharacterProfile,
@@ -3936,13 +3937,13 @@
 
         const sInfo = engine.getSeasonInfo(d.day);
 
-        // Reputation is a running average that favors recent days, so show the direction it moved.
+        // Small changes are normal; warn only for a meaningful drop.
         let rep = '';
         if (typeof d.reputationBefore === 'number' && typeof d.reputationAfter === 'number') {
-          const diff = d.reputationAfter - d.reputationBefore;
-          const [cls, msg] = diff > 0.005 ? ['up', 'Going up!']
-            : diff < -0.005 ? ['down', 'Going down']
-            : ['same', 'Same as yesterday'];
+          const trend = d.reputationTrend ?? reputationTrend([d.reputationBefore, d.reputationAfter]);
+          const [cls, msg] = trend === 'up' ? ['up', 'Going up!']
+            : trend === 'down' ? ['down', 'Going down']
+            : ['same', d.reputationAfter >= 0.9 ? 'Looking good!' : 'Holding steady'];
           rep = `<div class="report-rep"><span>What neighbors say</span>` +
             starMeter(d.reputationAfter, `Reputation ${Math.round(d.reputationAfter * 100)} out of 100`) +
             `<span class="report-rep-trend ${cls}">${msg}</span></div>`;

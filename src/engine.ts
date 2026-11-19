@@ -31,7 +31,7 @@ import { iceHint, crowdLevel, type IceHint } from './simulation/hints';
 import { computeRecipeQuality, getRecipeProfile } from './simulation/recipe';
 import { getDailyDemandEstimate, getKidDemandAdvice, getMaxPourableCups } from './simulation/demand';
 import { generateDailyReviews } from './simulation/reviews';
-import { ewma, dailyCustomerScore, nextReputation, nextBuzz } from './simulation/reputation';
+import { ewma, dailyCustomerScore, nextReputation, nextBuzz, reputationTrend } from './simulation/reputation';
 import { allocateStandSales, computeDayDemand, storeDemand } from './simulation/demand';
 import { cupsPerPitcher as pitcherCups, rollGoldenRecipe } from './simulation/recipe';
 import { BALANCE, type Balance } from './balance';
@@ -693,7 +693,7 @@ export class LemonadeEngine {
     // Recent recipes count most: an EWMA, seeded with the first day's quality.
     s.avgRecipeQuality = s.totalQualityDays === 1 || !s.avgRecipeQuality
       ? quality
-      : ewma(s.avgRecipeQuality, quality, b.reputation.alpha);
+      : ewma(s.avgRecipeQuality, quality, b.reputation.qualityAlpha);
 
     const reputationBefore = s.reputation;
 
@@ -936,6 +936,13 @@ export class LemonadeEngine {
       const excessivePriceSeen = totalTraffic > 0 && s.recipe.pricePerCup >= fairPrice * b.reputation.excessivePriceRatio;
       s.reputation = nextReputation(s, customerScore, b, excessivePriceSeen);
     }
+    const recentRatings = (s.reputationHistory ?? []).filter(Number.isFinite).slice(-4);
+    if (!recentRatings.length || Math.abs(recentRatings[recentRatings.length - 1] - reputationBefore) > 1e-9) {
+      recentRatings.push(reputationBefore);
+    }
+    recentRatings.push(s.reputation);
+    s.reputationHistory = recentRatings.slice(-4);
+    const ratingTrend = reputationTrend(s.reputationHistory);
     // Happy driveway customers tell their neighbors (franchise stands are in other neighborhoods).
     const buzzBefore = s.buzz ?? 0;
     s.buzz = nextBuzz(buzzBefore, drivewayCupsSold * (customerScore ?? 0), b);
@@ -991,6 +998,7 @@ export class LemonadeEngine {
       recipeQuality: quality,
       reputationBefore,
       reputationAfter: s.reputation,
+      reputationTrend: ratingTrend,
       buzzBefore,
       buzzAfter: s.buzz,
       goldenStreak: s.goldenStreak,
