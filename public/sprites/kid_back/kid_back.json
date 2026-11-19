@@ -1,0 +1,456 @@
+{
+  "version": "1.0.0",
+  "description": "Back-facing modular paper doll sprites (hair, outfits, props)",
+  "items": [
+    {
+      "sheet": 1,
+      "cat": "hair",
+      "id": "hair_sidepart",
+      "name": "Side Part Short Hair",
+      "file": "hair/hair_sidepart.png",
+      "bbox": [
+        146,
+        20,
+        376,
+        230
+      ],
+      "width": 230,
+      "height": 210
+    },
+    {
+      "sheet": 1,
+      "cat": "hair",
+      "id": "hair_spiky",
+      "name": "Spiky Short Hair",
+      "file": "hair/hair_spiky.png",
+      "bbox": [
+        388,
+        11,
+        622,
+        232
+      ],
+      "width": 234,
+      "height": 221
+    },
+    {
+      "sheet": 1,
+      "cat": "hair",
+      "id": "hair_flared_wings",
+      "name": "Flared Wing Waves",
+      "file": "hair/hair_flared_wings.png",
+      "bbox": [
+        636,
+        18,
+        886,
+        241
+      ],
+      "width": 250,
+      "height": 223
+    },
+    {
+      "sheet": 1,
+      "cat": "outfits",
+      "id": "outfit_varsity",
+      "name": "Varsity Jacket and Pants",
+      "file": "outfits/outfit_varsity.png",
+      "bbox": [
+        35,
+        250,
+        271,
+        546
+      ],
+      "width": 236,
+      "height": 296
+    },
+    {
+      "sheet": 1,
+      "cat": "outfits",
+      "id": "outfit_polo_shorts",
+      "name": "Polo Shirt and Cargo Shorts",
+      "file": "outfits/outfit_polo_shorts.png",
+      "bbox": [
+        273,
+        251,
+        506,
+        543
+      ],
+      "width": 233,
+      "height": 292
+    },
+    {
+      "sheet": 1,
+      "cat": "outfits",
+      "id": "outfit_denim_jacket",
+      "name": "Denim Trucker Jacket and Jeans",
+      "file": "outfits/outfit_denim_jacket.png",
+      "bbox": [
+        507,
+        252,
+        746,
+        549
+      ],
+      "width": 239,
+      "height": 297
+    },
+    {
+      "sheet": 1,
+      "cat": "outfits",
+      "id": "outfit_coveralls",
+      "name": "Mechanic Boiler Suit / Coveralls",
+      "file": "outfits/outfit_coveralls.png",
+      "bbox": [
+        752,
+        253,
+        986,
+        549
+      ],
+      "width": 234,
+      "height": 296
+    },
+    {
+      "sheet": 1,
+      "cat": "props",
+      "id": "prop_skateboard",
+      "name": "Skateboard",
+      "file": "props/prop_skateboard.png",
+      "bbox": [
+        105,
+        559,
+        376,
+        760
+      ],
+      "width": 271,
+      "height": 201
+    },
+    {
+      "sheet": 1,
+      "cat": "props",
+      "id": "prop_soccerball",
+      "name": "Soccer Ball",
+      "file": "props/prop_soccerball.png",
+      "bbox": [
+        399,
+        569,
+        593,
+        758
+      ],
+      "width": 194,
+      "height": 189
+    },
+    {
+      "sheet": 1,
+      "cat": "props",
+      "id": "prop_handheld_console",
+      "name": "Handheld Gaming Console",
+      "file": "props/prop_handheld_console.png",
+      "bbox": [
+        618,
+        578,
+        910,
+        745
+      ],
+      "width": 292,
+      "height": 167
+    },
+    {
+      "sheet": 2,
+      "cat": "hair",
+      "id": "hair_curly_mop",
+      "name": "Curly Mop Afro",
+      "file": "hair/hair_curly_mop.png",
+      "bbox": [
+        83,
+        7,
+        344,
+        230
+      ],
+      "width": 261,
+      "height": 223
+    },
+    {
+      "sheet": 2,
+      "cat": "hair",
+      "id": "hair_classic_bob",
+      "name": "Classic Pageboy Bob",
+      "file": "hair/hair_classic_bob.png",
+      "bbox": [
+        355,
+        20,
+        619,
+        231
+      ],
+      "width": 264,
+      "height": 211
+    },
+    {
+      "sheet": 2,
+      "cat": "hair",
+      "id": "hair_pigtails",
+      "name": "Twin Ribbon Pigtails",
+      "file": "hair/hair_pigtails.png",
+      "bbox": [
+        628,
+        22,
+        948,
+        229
+      ],
+      "width": 320,
+      "height": 207
+    },
+    {
+      "sheet": 2,
+      "cat": "outfits",
+      "id": "outfit_tshirt_shorts",
+      "name": "Raglan T-Shirt and Shorts",
+      "file": "outfits/outfit_tshirt_shorts.png",
+      "bbox": [
+        22,
+        262,
+        262,
+        510
+      ],
+      "width": 240,
+      "height": 248
+    },
+    {
+      "sheet": 2,
+      "cat": "outfits",
+      "id": "outfit_frilly_dress",
+      "name": "Frilly Party Dress with Big Bow",
+      "file": "outfits/outfit_frilly_dress.png",
+      "bbox": [
+        270,
+        262,
+        506,
+        516
+      ],
+      "width": 236,
+      "height": 254
+    },
+    {
+      "sheet": 2,
+      "cat": "outfits",
+      "id": "outfit_hoodie",
+      "name": "Pullover Hoodie with Hanging Hood",
+      "file": "outfits/outfit_hoodie.png",
+      "bbox": [
+        514,
+        249,
+        762,
+        513
+      ],
+      "width": 248,
+      "height": 264
+    },
+    {
+      "sheet": 2,
+      "cat": "outfits",
+      "id": "outfit_pinafore_overalls",
+      "name": "Pinafore Jumper Dress Over T-Shirt",
+      "file": "outfits/outfit_pinafore_overalls.png",
+      "bbox": [
+        762,
+        264,
+        1001,
+        516
+      ],
+      "width": 239,
+      "height": 252
+    },
+    {
+      "sheet": 2,
+      "cat": "props",
+      "id": "prop_baseball_bat",
+      "name": "Baseball Bat",
+      "file": "props/prop_baseball_bat.png",
+      "bbox": [
+        223,
+        532,
+        376,
+        758
+      ],
+      "width": 153,
+      "height": 226
+    },
+    {
+      "sheet": 2,
+      "cat": "props",
+      "id": "prop_balloon",
+      "name": "Helium Balloon on String",
+      "file": "props/prop_balloon.png",
+      "bbox": [
+        440,
+        521,
+        586,
+        760
+      ],
+      "width": 146,
+      "height": 239
+    },
+    {
+      "sheet": 2,
+      "cat": "props",
+      "id": "prop_cellphone",
+      "name": "Retro Candybar Cellphone",
+      "file": "props/prop_cellphone.png",
+      "bbox": [
+        629,
+        533,
+        774,
+        758
+      ],
+      "width": 145,
+      "height": 225
+    },
+    {
+      "sheet": 3,
+      "cat": "hair",
+      "id": "hair_side_ponytail",
+      "name": "Voluminous Side Ponytail",
+      "file": "hair/hair_side_ponytail.png",
+      "bbox": [
+        115,
+        4,
+        376,
+        258
+      ],
+      "width": 261,
+      "height": 254
+    },
+    {
+      "sheet": 3,
+      "cat": "hair",
+      "id": "hair_double_buns",
+      "name": "Double Odango Buns with Tendrils",
+      "file": "hair/hair_double_buns.png",
+      "bbox": [
+        385,
+        24,
+        649,
+        240
+      ],
+      "width": 264,
+      "height": 216
+    },
+    {
+      "sheet": 3,
+      "cat": "hair",
+      "id": "hair_long_braid",
+      "name": "Long Back Braid with Bow",
+      "file": "hair/hair_long_braid.png",
+      "bbox": [
+        672,
+        5,
+        863,
+        285
+      ],
+      "width": 191,
+      "height": 280
+    },
+    {
+      "sheet": 3,
+      "cat": "outfits",
+      "id": "outfit_blazer_skirt",
+      "name": "School Blazer and Pleated Skirt",
+      "file": "outfits/outfit_blazer_skirt.png",
+      "bbox": [
+        47,
+        269,
+        273,
+        527
+      ],
+      "width": 226,
+      "height": 258
+    },
+    {
+      "sheet": 3,
+      "cat": "outfits",
+      "id": "outfit_raincoat",
+      "name": "Raincoat with Hood and Boots",
+      "file": "outfits/outfit_raincoat.png",
+      "bbox": [
+        278,
+        263,
+        502,
+        526
+      ],
+      "width": 224,
+      "height": 263
+    },
+    {
+      "sheet": 3,
+      "cat": "outfits",
+      "id": "outfit_jersey_shorts",
+      "name": "Athletic Jersey and Gym Shorts",
+      "file": "outfits/outfit_jersey_shorts.png",
+      "bbox": [
+        501,
+        268,
+        734,
+        524
+      ],
+      "width": 233,
+      "height": 256
+    },
+    {
+      "sheet": 3,
+      "cat": "outfits",
+      "id": "outfit_argyle_vest",
+      "name": "Collared Shirt and Argyle Sweater Vest",
+      "file": "outfits/outfit_argyle_vest.png",
+      "bbox": [
+        745,
+        267,
+        977,
+        528
+      ],
+      "width": 232,
+      "height": 261
+    },
+    {
+      "sheet": 3,
+      "cat": "props",
+      "id": "prop_bouquet",
+      "name": "Flower Bouquet with Ribbon",
+      "file": "props/prop_bouquet.png",
+      "bbox": [
+        175,
+        530,
+        372,
+        764
+      ],
+      "width": 197,
+      "height": 234
+    },
+    {
+      "sheet": 3,
+      "cat": "props",
+      "id": "prop_umbrella",
+      "name": "Folded Umbrella with Crook Handle",
+      "file": "props/prop_umbrella.png",
+      "bbox": [
+        430,
+        521,
+        562,
+        768
+      ],
+      "width": 132,
+      "height": 247
+    },
+    {
+      "sheet": 3,
+      "cat": "props",
+      "id": "prop_teddy_bear",
+      "name": "Plush Teddy Bear with Bow",
+      "file": "props/prop_teddy_bear.png",
+      "bbox": [
+        624,
+        541,
+        818,
+        765
+      ],
+      "width": 194,
+      "height": 224
+    }
+  ]
+}
