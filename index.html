@@ -1497,6 +1497,18 @@
       cursor: not-allowed;
       transform: none;
     }
+    #btn-buy-ice.is-automatic:disabled {
+      opacity: 1;
+      filter: none;
+      cursor: default;
+      padding: 0 6px;
+      border: 2px solid #7dd3fc;
+      background: #e8f8ff;
+      color: #075985;
+      -webkit-text-stroke: 0;
+      text-shadow: none;
+      box-shadow: none;
+    }
     /* Juicy Run Day Simulation Button */
     .kawaii-run-day-btn {
       width: 100%;
@@ -2993,11 +3005,28 @@
         margin-bottom: 2px;
       }
       .weather-bold-cond {
+        --temp-color: #b45309;
+        --temp-border: #fbbf24;
+        --temp-bg: #fff8df;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 1px 7px;
+        border: 2px solid var(--temp-border);
+        border-radius: 999px;
+        background: linear-gradient(180deg, #fff 0%, var(--temp-bg) 100%);
+        box-shadow: 0 2px 0 rgba(106, 56, 160, 0.15);
         font-family: var(--font-display);
-        font-size: 16px;
-        color: #1e1b4b;
-        letter-spacing: 0.3px;
+        font-size: 15px;
+        line-height: 1.1;
+        color: #3b2563;
+        white-space: nowrap;
       }
+      .weather-bold-cond[data-heat="cold"] { --temp-color: #1d4ed8; --temp-border: #60a5fa; --temp-bg: #e8f4ff; }
+      .weather-bold-cond[data-heat="cool"] { --temp-color: #0f766e; --temp-border: #5eead4; --temp-bg: #e9fffa; }
+      .weather-bold-cond[data-heat="warm"] { --temp-color: #b45309; --temp-border: #fbbf24; --temp-bg: #fff8df; }
+      .weather-bold-cond[data-heat="hot"] { --temp-color: #be123c; --temp-border: #fb7185; --temp-bg: #fff0ed; }
+      .weather-temp { color: var(--temp-color); }
       .weather-mid-row {
         display: flex;
         align-items: center;
@@ -3176,7 +3205,7 @@
           </div>
           <div class="weather-details">
             <div class="weather-top-row">
-              <span id="weather-condition-label" class="weather-bold-cond">89&#xB0;F SUNNY</span>
+              <span id="weather-condition-label" class="weather-bold-cond" data-heat="warm"><span id="weather-temperature" class="weather-temp">89&#xB0;F</span> <span id="weather-condition">SUNNY</span></span>
               <span id="weather-season-badge" class="weather-season-pill">&#x1F338; Spring &#xB7; Day 1 of 5</span>
             </div>
             <div class="weather-mid-row">
@@ -4548,7 +4577,10 @@
       }
 
       if (weatherConditionLabel) {
-        weatherConditionLabel.textContent = `${s.tempF}\u{B0}F ${s.weather}`;
+        const heat = s.tempF < 55 ? 'cold' : s.tempF < 70 ? 'cool' : s.tempF < 85 ? 'warm' : 'hot';
+        if (weatherConditionLabel.dataset.heat !== heat) weatherConditionLabel.dataset.heat = heat;
+        setText(document.getElementById('weather-temperature'), `${s.tempF}\u{B0}F`);
+        setText(document.getElementById('weather-condition'), s.weather);
       }
       // Busy-day meter: lit cups = how busy the weather makes today; of those, the share that
       // glow gold = how much of the neighborhood knows the stand (buzz). A brand-new stand
@@ -4657,8 +4689,10 @@
       const setBuyBtn = (id, item) => {
         const btn = document.getElementById(id);
         if (!btn) return;
-        if (item === 'ice' && s.flags.hasAutoIce) {
-          setText(btn, 'Machine makes it');
+        const automatic = item === 'ice' && s.flags.hasAutoIce;
+        btn.classList.toggle('is-automatic', automatic);
+        if (automatic) {
+          setText(btn, 'Automatic!');
           if (!btn.disabled) btn.disabled = true;
           return;
         }
