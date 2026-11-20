@@ -4309,7 +4309,8 @@
           return {
             name: friend ? `${engine.franchiseStands[id].workerName} · ${friend.place}` : id === 'driveway' ? 'My driveway' : 'Neighborhood stand',
             host: id === 'driveway' ? kidImageURL(kidProfile, 'happy', 'stand') : friendPortrait(id, 'happy', 'stand'),
-            backdrop: './sprites/backdrops/' + (friend?.pic || 'elm') + (summary.weather === 'SUNNY' ? '-clear.webp' : '.webp'),
+            sellerX: friend?.sellerX ?? 32,
+            backdrop: './sprites/backdrops/' + (friend?.pic || 'elm') + '-clear.webp',
             table: './sprites/franchise/' + (friend?.pic || 'elm') + '.png'
           };
         });
@@ -5009,9 +5010,9 @@
     // Friends' stands (Stage 2). Each friend is a paper-doll kid with a look of their own,
     // standing behind their stand sticker (public/sprites/franchise/).
     const FRIENDS = {
-      timmy: { place: 'Elm Street', pic: 'elm', hair: 'sidepart', skinTone: 1, hairColor: 1, uniformColor: 2 },
-      leo: { place: 'Ballpark', pic: 'ballpark', hair: 'curly', skinTone: 3, hairColor: 0, uniformColor: 4 },
-      sarah: { place: 'Pool', pic: 'pool', hair: 'ponytail', skinTone: 0, hairColor: 3, uniformColor: 1 },
+      timmy: { place: 'Elm Street', pic: 'elm', sellerX: 38, hair: 'sidepart', skinTone: 1, hairColor: 1, uniformColor: 2 },
+      leo: { place: 'Ballpark', pic: 'ballpark', sellerX: 44, hair: 'curly', skinTone: 3, hairColor: 0, uniformColor: 4 },
+      sarah: { place: 'Pool', pic: 'pool', sellerX: 26, hair: 'ponytail', skinTone: 0, hairColor: 3, uniformColor: 1 },
     };
     function friendPortrait(id, mood, view = false) {
       const f = FRIENDS[id];

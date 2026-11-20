@@ -9,6 +9,9 @@
 .scene-stage { position:relative; isolation:isolate; height:min(260px,42dvh); overflow:hidden; background:linear-gradient(#94dafa,#e1f6ff 64%,#95cf72 64%,#a0d77e 83%,#e0c39c 83%,#efd7ae); }
 .day-scene:not([data-weather=SUNNY]) .scene-stage { background:linear-gradient(#aebfd6,#dce7e9 64%,#95bc80 64%,#a4c88b 83%,#cbb69c 83%,#e0cdae); }
 .scene-backdrop { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:center bottom; }
+.scene-clouds { position:absolute; inset:0 0 auto; height:25%; pointer-events:none; }
+.scene-clouds img { position:absolute; left:24%; top:8%; width:19%; height:74%; object-fit:contain; }
+.scene-clouds img + img { left:53%; top:31%; width:13%; height:52%; transform:scaleX(-1); }
 .day-scene[data-heat=cold] { --temp-wash:#86abf539; }
 .day-scene[data-heat=cool] { --temp-wash:#96cced1c; }
 .day-scene[data-heat=warm] { --temp-wash:#ffe1a512; }
@@ -16,7 +19,7 @@
 .day-scene[data-weather=CLOUDY] { --sky-grade: saturate(.86) brightness(.94); }
 .day-scene[data-weather=RAINY] { --sky-grade: saturate(.72) brightness(.84); }
 .day-scene[data-weather=SNOWY] { --sky-grade: saturate(.74) brightness(1.04); }
-.scene-backdrop,.scene-host,.scene-table,.scene-person { filter:var(--sky-grade,none); }
+.scene-backdrop,.scene-clouds,.scene-host,.scene-table,.scene-person { filter:var(--sky-grade,none); }
 .scene-precipitation { position:absolute; inset:0; overflow:hidden; pointer-events:none; background:var(--temp-wash,transparent); }
 .scene-precipitation i { position:absolute; top:-18px; height:calc(100% + 20px); animation:scene-rain linear infinite; }
 .scene-precipitation i::before { content:""; display:block; width:2px; height:13px; border-radius:2px; background:#d1f4ffbf; transform:rotate(12deg); }
@@ -26,7 +29,7 @@
 @keyframes scene-rain { from { transform:translate(18px,0); } to { transform:translate(-38px,100%); } }
 @keyframes scene-snow { 0% { transform:translate(-6px,0); } 45% { transform:translate(9px,45%); } 100% { transform:translate(-4px,100%); } }
 @media (prefers-reduced-motion:reduce) { .scene-precipitation i { animation-play-state:paused; } }
-.scene-host,.scene-table { position:absolute; object-fit:contain; left:32%; transform:translateX(-50%); }
+.scene-host,.scene-table { position:absolute; object-fit:contain; left:var(--seller-x); transform:translateX(-50%); }
 .scene-host { height:54%; bottom:18%; }
 .scene-table { height:31%; bottom:11%; }
 .scene-walker { position:absolute; left:-22%; bottom:1%; height:48%; aspect-ratio:64/80; filter:drop-shadow(0 2px 1px #49314166); }

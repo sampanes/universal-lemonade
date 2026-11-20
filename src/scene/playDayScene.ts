@@ -4,7 +4,7 @@ import { skyCondition, temperatureBand } from './forecastArt';
 import type { DaySummary } from '../types';
 import './dayScene.css';
 
-interface LocationArt { name: string; host: string | null; table: string; backdrop: string }
+interface LocationArt { name: string; host: string | null; sellerX: number; table: string; backdrop: string }
 
 export function playDayScene(summary: DaySummary, location: (id: string) => LocationArt): Promise<void> {
   const beats = dayBeats(summary.standVisits ?? [], summary.friends);
@@ -14,6 +14,7 @@ export function playDayScene(summary: DaySummary, location: (id: string) => Loca
   dialog.setAttribute('aria-labelledby', 'scene-title');
   dialog.innerHTML = `<header><span>Day ${summary.day}</span><strong id="scene-title"></strong></header>
     <div class="scene-stage"><img class="scene-backdrop" alt="">
+    <div class="scene-clouds" aria-hidden="true"></div>
     <img class="scene-host" alt=""><img class="scene-table" alt="">
     <div class="scene-precipitation" aria-hidden="true"></div>
     <div class="scene-walker"><div class="scene-person"></div><span class="scene-bubble"></span></div>
@@ -32,6 +33,15 @@ export function playDayScene(summary: DaySummary, location: (id: string) => Loca
   const sky = skyCondition(summary.weather, summary.tempF);
   dialog.dataset.weather = sky;
   dialog.dataset.heat = temperatureBand(summary.tempF);
+  if (sky !== 'SUNNY') {
+    const clouds = find<HTMLElement>('.scene-clouds');
+    for (let i = 0; i < 2; i++) {
+      const puff = new Image();
+      puff.alt = '';
+      puff.src = './sprites/morning_prep/cloud_puff.png';
+      clouds.append(puff);
+    }
+  }
   if (sky === 'RAINY' || sky === 'SNOWY') {
     const layer = find<HTMLElement>('.scene-precipitation');
     const count = sky === 'SNOWY' ? 24 : 32;
@@ -48,6 +58,7 @@ export function playDayScene(summary: DaySummary, location: (id: string) => Loca
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
   let rate = 1;
   let index = 0;
+  let stopX = 0;
   const price = summary.reviews.find(r => r.topic === 'price');
   const buyerLines = summary.reviews
     .filter(r => r.topic === 'taste' || r.topic === 'ice' || (r.topic === 'price' && r.sentiment === 'positive'))
@@ -58,6 +69,8 @@ export function playDayScene(summary: DaySummary, location: (id: string) => Loca
   function showBeat() {
     const { stand, visit } = beats[index];
     const art = location(stand);
+    dialog.style.setProperty('--seller-x', art.sellerX + '%');
+    stopX = art.sellerX + 14;
     title.textContent = art.name;
     host.hidden = visit === 'closed' || !art.host;
     if (art.host) host.src = art.host;
@@ -66,6 +79,7 @@ export function playDayScene(summary: DaySummary, location: (id: string) => Loca
     walker.hidden = visit === 'quiet' || visit === 'closed';
     sign.textContent = { closed: 'Closed today', quiet: 'Quiet today', short: 'Sold out!', walk: '', sale: '' }[visit];
     if (walker.hidden) return;
+    walker.style.height = (41 + Math.random() * 12) + '%';
     void dressCustomer(person).catch(error => console.warn('Customer art could not load', error));
     person.classList.toggle('disappointed', visit === 'short');
     if (visit === 'sale') bubble.textContent = buyerLines.length ? buyerLines[buyer++ % buyerLines.length] : 'One cup, please!';
@@ -100,11 +114,16 @@ export function playDayScene(summary: DaySummary, location: (id: string) => Loca
         showBeat();
       }
       const t = elapsed / 1900;
-      const walking = t < 0.26 || t > 0.76;
-      const x = t < 0.26 ? -22 + 68 * t / 0.26 : 46 + 70 * Math.max(0, t - 0.76) / 0.24;
-      walker.style.left = (reduced ? 46 : x) + '%';
+      const atCounter = t >= 0.26 && t <= 0.76;
+      const passing = beats[index].visit === 'walk';
+      const walking = passing || !atCounter;
+      let x = stopX;
+      if (passing) x = -32 + 148 * t;
+      else if (t < 0.26) x = -32 + (stopX + 32) * t / 0.26;
+      else if (t > 0.76) x = stopX + (116 - stopX) * (t - 0.76) / 0.24;
+      walker.style.left = (reduced ? stopX : x) + '%';
       person.style.transform = !reduced && walking && !person.classList.contains('rolling') ? `translateY(${-Math.abs(Math.sin(t * 24)) * 4}px)` : '';
-      bubble.style.visibility = reduced || !walking ? 'visible' : 'hidden';
+      bubble.style.visibility = reduced || atCounter ? 'visible' : 'hidden';
       frame = requestAnimationFrame(tick);
     }
     frame = requestAnimationFrame(tick);
