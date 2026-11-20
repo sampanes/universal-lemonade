@@ -19,3 +19,22 @@ test('each open stand shows only encounters supported by its actual sales', () =
   }
   assert.deepEqual(dayBeats([{id:'driveway',traffic:0,wanted:0,sold:0}]), [{stand:'driveway',visit:'quiet'}]);
 });
+
+test('a day off gets one closed stop in route order', () => {
+  const e = new LemonadeEngine({seed: 41});
+  e.dadJumpToPhase(3);
+  e.toggleFriendDayOff('leo');
+  const d = e.runDay();
+  const beats = dayBeats(d.standVisits, d.friends);
+  assert.deepEqual([...new Set(beats.map(b => b.stand))], ['driveway','timmy','leo','sarah']);
+  assert.deepEqual(beats.filter(b => b.stand === 'leo'), [{stand:'leo', visit:'closed'}]);
+});
+
+test('a severe shortage shows more missed sales, bounded by real customers', () => {
+  const misses = (wanted, sold) => dayBeats([{id:'driveway',traffic:wanted,wanted,sold}])
+    .filter(b => b.visit === 'short').length;
+  assert.equal(misses(20, 19), 1);
+  assert.equal(misses(20, 0), 4);
+  assert.equal(misses(2, 0), 2);
+  assert.equal(misses(20, 20), 0);
+});

@@ -6,7 +6,7 @@ import './dayScene.css';
 interface LocationArt { name: string; host: string | null; table: string }
 
 export function playDayScene(summary: DaySummary, location: (id: string) => LocationArt): Promise<void> {
-  const beats = dayBeats(summary.standVisits ?? []);
+  const beats = dayBeats(summary.standVisits ?? [], summary.friends);
   if (!beats.length) return Promise.resolve();
   const dialog = document.createElement('dialog');
   dialog.className = 'day-scene';
@@ -30,20 +30,28 @@ export function playDayScene(summary: DaySummary, location: (id: string) => Loca
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
   let rate = 1;
   let index = 0;
+  const price = summary.reviews.find(r => r.topic === 'price');
+  const buyerLines = summary.reviews
+    .filter(r => r.topic === 'taste' || r.topic === 'ice' || (r.topic === 'price' && r.sentiment === 'positive'))
+    .map(r => r.bubble).filter((line): line is string => !!line);
+  let buyer = 0, disappointed = 0;
+  const item = summary.soldOutItem;
+  const missedLines = [item ? `Out of ${item}!` : 'All gone!', 'Aw, I missed it!', 'None left?', 'Maybe tomorrow!'];
   function showBeat() {
     const { stand, visit } = beats[index];
     const art = location(stand);
     title.textContent = art.name;
-    host.hidden = !art.host;
+    host.hidden = visit === 'closed' || !art.host;
     if (art.host) host.src = art.host;
     table.src = art.table;
-    walker.hidden = visit === 'quiet';
-    sign.textContent = visit === 'quiet' ? 'Quiet today' : visit === 'short' ? 'Sold out!' : '';
+    walker.hidden = visit === 'quiet' || visit === 'closed';
+    sign.textContent = { closed: 'Closed today', quiet: 'Quiet today', short: 'Sold out!', walk: '', sale: '' }[visit];
+    if (walker.hidden) return;
     dressCustomer(person);
     person.classList.toggle('disappointed', visit === 'short');
-    const sales = summary.recipeQuality >= 0.8 ? ['Yum!', 'So good!', 'Love it!'] : ['One cup, please!', 'Thank you!'];
-    const lines = visit === 'sale' ? sales : visit === 'short' ? ['Aw, sold out!', 'Aw, I missed it!'] : ['Maybe later!', 'Just looking!'];
-    bubble.textContent = lines[Math.floor(Math.random() * lines.length)];
+    if (visit === 'sale') bubble.textContent = buyerLines.length ? buyerLines[buyer++ % buyerLines.length] : 'One cup, please!';
+    if (visit === 'short') bubble.textContent = missedLines[disappointed++ % missedLines.length];
+    if (visit === 'walk') bubble.textContent = price && price.sentiment !== 'positive' ? price.bubble || 'Too pricey!' : '';
     bubble.classList.toggle('sad', visit === 'short');
   }
   document.body.append(dialog);
@@ -60,7 +68,7 @@ export function playDayScene(summary: DaySummary, location: (id: string) => Loca
     speed.onclick = () => {
       rate = rate === 1 ? 3 : 1;
       speed.setAttribute('aria-pressed', String(rate === 3));
-      speed.textContent = rate === 3 ? '3Ã— speed' : 'Fast forward';
+      speed.textContent = rate === 3 ? '3x speed' : 'Fast forward';
     };
     find<HTMLButtonElement>('[data-skip]').onclick = finish;
     dialog.oncancel = e => { e.preventDefault(); finish(); };

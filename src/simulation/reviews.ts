@@ -29,8 +29,15 @@ export function tasteReview(dL: number, dS: number, streak: number, justLocked: 
     : dL < 0 && dS < 0 ? 'watery'
     : dL > 0 || dS < 0 ? 'sour'
     : 'sweet';
+  let bubble = 'Just right!';
+  if (dL < 0 && dS < 0) bubble = 'Tastes watery!';
+  else if (dL > 0 && dS > 0) bubble = 'Super strong!';
+  else if (dS > 0) bubble = 'Too sweet!';
+  else if (dL > 0) bubble = 'Too lemony!';
+  else if (dS < 0) bubble = 'Needs more sugar!';
+  else if (dL < 0) bubble = 'Needs more lemon!';
   const taste = (stars: number, quote: string, reviewer: string): CustomerReview => ({
-    stars, quote, reviewer, topic: 'taste', face: justLocked ? 'happy' : face,
+    stars, quote, reviewer, bubble, topic: 'taste', face: justLocked ? 'happy' : face,
     sentiment: stars >= 4 ? 'positive' : stars === 3 ? 'mixed' : 'negative'
   });
 
@@ -101,6 +108,7 @@ export function generateDailyReviews(params: ReviewGenerationParams): CustomerRe
     if (idealI - I >= 2) {
       reviews.push({
         stars: 2,
+        bubble: "Needs more ice!",
         quote: tempF >= 80
           ? `It's ${tempF} degrees outside and this was lukewarm... needed more ice!`
           : "Barely cool, could definitely use more ice cubes.",
@@ -111,6 +119,7 @@ export function generateDailyReviews(params: ReviewGenerationParams): CustomerRe
     } else if (I - idealI >= 3) {
       reviews.push({
         stars: 2,
+        bubble: "Too much ice!",
         quote: "Cup was mostly ice cubes! More ice than actual lemonade.",
         reviewer: "Little League coach",
         sentiment: "negative",
@@ -131,6 +140,7 @@ export function generateDailyReviews(params: ReviewGenerationParams): CustomerRe
   } else if (priceRatio >= (params.balance ?? BALANCE).reputation.excessivePriceRatio) {
     reviews.push({
       stars: 1,
+      bubble: tempF >= 85 ? "Too much, even today!" : tempF < 65 ? "Too much for a cool day!" : "Too pricey for me!",
       quote: tempF >= 85
         ? `$${pricePerCup.toFixed(2)} is a lot, even on ${weatherDay}.`
         : tempF < 45 ? `$${pricePerCup.toFixed(2)}? It's too cold out for that price!`
@@ -142,6 +152,7 @@ export function generateDailyReviews(params: ReviewGenerationParams): CustomerRe
   } else if (priceRatio >= 1.18) {
     reviews.push({
       stars: 2,
+      bubble: tempF >= 85 ? "Pricey, even in this heat!" : "A little pricey!",
       quote: tempF >= 85
         ? `$${pricePerCup.toFixed(2)} is a little steep, even for ${weatherDay}.`
         : tempF >= 65 ? `$${pricePerCup.toFixed(2)} is a little pricey.`
@@ -152,6 +163,7 @@ export function generateDailyReviews(params: ReviewGenerationParams): CustomerRe
   } else if (priceRatio <= 0.45) {
     reviews.push({
       stars: 5,
+      bubble: "I'd pay more!",
       quote: `$${pricePerCup.toFixed(2)}? I'd pay more!`,
       reviewer: "Teen on a scooter",
       sentiment: "positive"
@@ -159,6 +171,7 @@ export function generateDailyReviews(params: ReviewGenerationParams): CustomerRe
   } else if (priceRatio <= 0.70) {
     reviews.push({
       stars: 5,
+      bubble: "What a deal!",
       quote: `$${pricePerCup.toFixed(2)}? Great deal on ${weatherDay}!`,
       reviewer: "Teen on a scooter",
       sentiment: "positive"
@@ -166,6 +179,7 @@ export function generateDailyReviews(params: ReviewGenerationParams): CustomerRe
   } else {
     reviews.push({
       stars: 4,
+      bubble: "Fair price!",
       quote: `Fair price for ${weatherDay}!`,
       reviewer: "Neighborhood regular",
       sentiment: "positive"

@@ -117,6 +117,7 @@ export interface LifestyleTrophy {
 export interface CustomerReview {
   stars: number;
   quote: string;
+  bubble?: string; // Short spoken version for the open-for-business scene.
   reviewer: string;
   sentiment: 'positive' | 'mixed' | 'negative';
   // What the review is about. The recipe card shows yesterday's 'taste' review.
@@ -162,6 +163,7 @@ export interface RecipeProfile {
 }
 
 export interface DaySummary {
+  soldOutItem?: string;
   standVisits?: import('./scene/dayScene').StandVisits[]; // absent on older reports
   day: number;
   tempF: number;
