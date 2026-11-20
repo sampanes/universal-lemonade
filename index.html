@@ -4305,6 +4305,7 @@
           return {
             name: friend ? friend.place : 'My driveway',
             host: kidImageURL(friend ? friendLook(id) : kidProfile, 'happy', false),
+            backdrop: './sprites/backdrops/' + (friend?.pic || 'elm') + '.webp',
             table: './sprites/franchise/' + (friend?.pic || 'elm') + '.png'
           };
         });

@@ -3,7 +3,7 @@ import { dressCustomer } from './customerArt';
 import type { DaySummary } from '../types';
 import './dayScene.css';
 
-interface LocationArt { name: string; host: string | null; table: string }
+interface LocationArt { name: string; host: string | null; table: string; backdrop: string }
 
 export function playDayScene(summary: DaySummary, location: (id: string) => LocationArt): Promise<void> {
   const beats = dayBeats(summary.standVisits ?? [], summary.friends);
@@ -12,13 +12,14 @@ export function playDayScene(summary: DaySummary, location: (id: string) => Loca
   dialog.className = 'day-scene';
   dialog.setAttribute('aria-labelledby', 'scene-title');
   dialog.innerHTML = `<header><span>Day ${summary.day}</span><strong id="scene-title"></strong></header>
-    <div class="scene-stage"><div class="scene-cloud"></div><div class="scene-hill"></div>
+    <div class="scene-stage"><img class="scene-backdrop" alt="">
     <img class="scene-host" alt=""><img class="scene-table" alt="">
     <div class="scene-walker"><div class="scene-person"></div><span class="scene-bubble"></span></div>
     <strong class="scene-sign"></strong></div>
     <footer><button type="button" data-speed aria-pressed="false">Fast forward</button><button type="button" data-skip>Skip</button></footer>`;
   const find = <T extends Element>(selector: string) => dialog.querySelector<T>(selector)!;
   const title = find<HTMLElement>('strong');
+  const backdrop = find<HTMLImageElement>('.scene-backdrop');
   const host = find<HTMLImageElement>('.scene-host');
   const table = find<HTMLImageElement>('.scene-table');
   const walker = find<HTMLElement>('.scene-walker');
@@ -43,6 +44,7 @@ export function playDayScene(summary: DaySummary, location: (id: string) => Loca
     title.textContent = art.name;
     host.hidden = visit === 'closed' || !art.host;
     if (art.host) host.src = art.host;
+    backdrop.src = art.backdrop;
     table.src = art.table;
     walker.hidden = visit === 'quiet' || visit === 'closed';
     sign.textContent = { closed: 'Closed today', quiet: 'Quiet today', short: 'Sold out!', walk: '', sale: '' }[visit];

@@ -8,8 +8,8 @@
 .day-scene button[aria-pressed=true] { background:#65349a; color:white; }
 .scene-stage { position:relative; isolation:isolate; height:min(260px,42dvh); overflow:hidden; background:linear-gradient(#94dafa,#e1f6ff 64%,#95cf72 64%,#a0d77e 83%,#e0c39c 83%,#efd7ae); }
 .day-scene:not([data-weather=SUNNY]) .scene-stage { background:linear-gradient(#aebfd6,#dce7e9 64%,#95bc80 64%,#a4c88b 83%,#cbb69c 83%,#e0cdae); }
-.scene-cloud { position:absolute; top:19%; left:13%; width:17%; height:6%; border-radius:50px; background:#fff; box-shadow:13px -10px 0 1px #fff,30px -2px #fff; }
-.scene-hill { position:absolute; width:90%; height:35%; right:-13%; top:33%; background:#81ba81; border-radius:100% 100% 0 0; }
+.scene-backdrop { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:center bottom; }
+.day-scene:not([data-weather=SUNNY]) .scene-backdrop { filter:saturate(.8) brightness(.91); }
 .scene-host,.scene-table { position:absolute; object-fit:contain; left:37%; transform:translateX(-50%); }
 .scene-host { height:64%; bottom:26%; }
 .scene-table { height:37%; bottom:17%; }
