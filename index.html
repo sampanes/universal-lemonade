@@ -1015,6 +1015,9 @@
       height: 52px;
       object-fit: contain;
     }
+    .weather-cloud-rain[data-sky="SNOWY"]::after {
+      content: '\2744\00a0\2744'; color: #497ca5; font-size: 19px; line-height: 1;
+    }
     .weather-rain {
       width: 44px;
       height: 46px;
@@ -3659,6 +3662,7 @@
       UNIFORM_PALETTES
     } from './src/character.ts';
     import { playDayScene } from './src/scene/playDayScene.ts';
+    import { skyCondition, temperatureBand } from './src/scene/forecastArt.ts';
     import { HATS, SHADES, accessoryURL } from './src/headwear.ts';
     import { loadKidArt, kidImageURL, kidHairCount, kidHairIds, kidFx } from './src/kid.ts';
     import { loadUnlocks, saveUnlocks, clearUnlocks, advanceLookUnlocks, unlockCheckFrom, otherUnlockToday, shopReady, lookOpen } from './src/unlocks.ts';
@@ -3989,7 +3993,7 @@
           <div class="ratio-banner report-banner">
             <span>DAY ${d.day} REPORT</span>
             <div style="display:flex; align-items:center; gap:6px;">
-              <span class="report-weather">${sInfo.icon} ${d.tempF}&deg;F ${d.weather}</span>
+              <span class="report-weather">${sInfo.icon} ${d.tempF}&deg;F ${skyCondition(d.weather, d.tempF)}</span>
               ${!isModal ? `<button type="button" class="fold-pill-btn" onclick="window._toggleReportInline(event)"><span>Close</span> <span class="fold-arrow" style="transform:rotate(180deg)">\u{25BE}</span></button>` : ''}
             </div>
           </div>
@@ -4303,9 +4307,9 @@
         await playDayScene(summary, id => {
           const friend = FRIENDS[id];
           return {
-            name: friend ? friend.place : 'My driveway',
-            host: kidImageURL(friend ? friendLook(id) : kidProfile, 'happy', false),
-            backdrop: './sprites/backdrops/' + (friend?.pic || 'elm') + '.webp',
+            name: friend ? `${engine.franchiseStands[id].workerName} · ${friend.place}` : id === 'driveway' ? 'My driveway' : 'Neighborhood stand',
+            host: id === 'driveway' ? kidImageURL(kidProfile, 'happy', 'stand') : friendPortrait(id, 'happy', 'stand'),
+            backdrop: './sprites/backdrops/' + (friend?.pic || 'elm') + (summary.weather === 'SUNNY' ? '-clear.webp' : '.webp'),
             table: './sprites/franchise/' + (friend?.pic || 'elm') + '.png'
           };
         });
@@ -4601,10 +4605,10 @@
       }
 
       if (weatherConditionLabel) {
-        const heat = s.tempF < 55 ? 'cold' : s.tempF < 70 ? 'cool' : s.tempF < 85 ? 'warm' : 'hot';
+        const heat = temperatureBand(s.tempF);
         if (weatherConditionLabel.dataset.heat !== heat) weatherConditionLabel.dataset.heat = heat;
         setText(document.getElementById('weather-temperature'), `${s.tempF}\u{B0}F`);
-        setText(document.getElementById('weather-condition'), s.weather);
+        setText(document.getElementById('weather-condition'), skyCondition(s.weather, s.tempF));
       }
       // Busy-day meter: lit cups = how busy the weather makes today; of those, the share that
       // glow gold = how much of the neighborhood knows the stand (buzz). A brand-new stand
@@ -4627,6 +4631,7 @@
         if (weatherIceHint.dataset.mood !== hint.mood) weatherIceHint.dataset.mood = hint.mood;
       }
       if (weatherSun && weatherCloudRain && weatherRain) {
+        weatherCloudRain.dataset.sky = skyCondition(s.weather, s.tempF);
         if (s.weather === 'SUNNY') {
           weatherSun.style.display = 'block';
           weatherCloudRain.style.display = 'none';
@@ -4637,7 +4642,7 @@
         } else { // RAINY
           weatherSun.style.display = 'none';
           weatherCloudRain.style.display = 'flex';
-          weatherRain.style.display = 'block';
+          weatherRain.style.display = weatherCloudRain.dataset.sky === 'SNOWY' ? 'none' : 'block';
         }
       }
 
@@ -5008,9 +5013,11 @@
       leo: { place: 'Ballpark', pic: 'ballpark', hair: 'curly', skinTone: 3, hairColor: 0, uniformColor: 4 },
       sarah: { place: 'Pool', pic: 'pool', hair: 'ponytail', skinTone: 0, hairColor: 3, uniformColor: 1 },
     };
-    function friendLook(id) {
+    function friendPortrait(id, mood, view = false) {
       const f = FRIENDS[id];
-      return { name: id, hairStyle: Math.max(0, kidHairIds().indexOf(f.hair)), skinTone: f.skinTone, hairColor: f.hairColor, uniformColor: f.uniformColor };
+      if (!f) return null;
+      const profile = { name: id, hairStyle: kidHairIds().indexOf(f.hair), skinTone: f.skinTone, hairColor: f.hairColor, uniformColor: f.uniformColor };
+      return profile.hairStyle >= 0 ? kidImageURL(profile, mood, view) : null;
     }
     // Not hired: "Hire $45". Hired: "Working" with today's forecast and pay; tapping gives
     // the friend the day off (no sales, no pay), and tapping again calls them back in.
@@ -5114,7 +5121,7 @@
           cls = 'working'; mood = 'happy';
           btn = `<button type="button" class="friend-btn" data-act="off" data-id="${st.id}">Working<small>~${cups} cups, $${st.dailyWage} pay</small></button>`;
         }
-        const kid = FRIENDS[st.id] ? kidImageURL(friendLook(st.id), mood, false) : null;
+        const kid = friendPortrait(st.id, mood);
         return `<div class="friend-tile ${cls}">
           <div class="friend-pic">${kid ? `<img class="friend-kid" src="${kid}" alt="" />` : ''}<img class="friend-stand" src="./sprites/franchise/${f.pic}.png" alt="" /></div>
           <div class="friend-name">${st.workerName}</div>

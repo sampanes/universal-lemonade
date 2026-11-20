@@ -1,37 +1,104 @@
-// Back-view art shares a 64 x 80 canvas. Replace mask URLs with transparent
-// PNGs on the same canvas to keep the randomized tints and registration.
-function mask(path: string): string {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 80"><path d="${path}"/></svg>`;
-  return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+import catalog from '../../public/sprites/kid_back/kid_back.json';
+import { HAIR_PALETTES, SKIN_PALETTES, UNIFORM_PALETTES } from '../character';
+
+const standing = catalog.items.filter(item => item.sheet <= 3);
+// The sheet mixes camera angles. Only these bodies have a clear rear landmark.
+const rearOutfits = ['outfit_coveralls', 'outfit_denim_jacket', 'outfit_blazer_skirt', 'outfit_hoodie'];
+const outfits = standing.filter(item => rearOutfits.includes(item.id));
+const hair = standing.filter(item => item.cat === 'hair');
+const handProps = standing.filter(item => ['prop_cellphone', 'prop_handheld_console', 'prop_teddy_bear'].includes(item.id));
+const wheelchairs = catalog.items.filter(item => item.cat === 'full_characters' && item.id.endsWith('_right'));
+const caps = ['hat_baseball_snapback', 'hat_beanie_slouchy', 'acc_pirate_bandana'];
+const shortHair = ['hair_spiky', 'hair_sidepart', 'hair_curly_mop', 'hair_flared_wings'];
+// Distance from the top of the PNG to the collar, excluding dangling braids and ties.
+const collarOffsets: Record<string, number> = {
+  hair_long_braid: 146, hair_side_ponytail: 179, hair_double_buns: 150, hair_pigtails: 152,
+};
+
+type RGB = number[];
+function rgb(hex: string): RGB {
+  return [1, 3, 5].map(start => parseInt(hex.slice(start, start + 2), 16));
 }
 
-const hair = [
-  mask('M14 32 Q7 7 26 6 Q51 -2 52 24 L48 35 Q31 43 14 32Z'),
-  mask('M10 34 Q4 3 33 3 Q55 2 54 35 L57 48 Q49 53 43 43 L44 33 Q23 47 10 34Z'),
-  mask('M13 33 Q4 25 12 19 Q6 9 21 10 Q22 0 33 6 Q46 0 48 11 Q60 11 53 23 Q60 37 44 36 Q27 44 13 33Z')
-];
-const outfits = [
-  mask('M24 38 Q32 42 40 38 L52 44 L58 55 L49 60 L46 54 L47 69 Q33 75 17 69 L18 54 L14 60 L5 54 L12 43Z'),
-  mask('M22 38 L42 38 L51 44 L56 60 L48 63 L43 55 L50 72 Q32 76 14 72 L20 54 L16 63 L7 59 L12 44Z')
-];
-const extras = [null, null, mask('M23 52 Q23 46 32 46 Q42 46 42 53 L43 63 Q32 70 22 63Z'),
-  mask('M12 15 Q15 0 34 1 Q49 1 53 16 L58 19 Q32 24 9 20Z')];
-const skin = mask('M17 23 Q17 7 34 8 Q52 10 48 29 Q46 39 36 40 L39 46 L25 46 L28 39 Q17 35 17 23Z M10 52 L18 56 L13 64 Q6 68 5 62Z M48 55 L55 51 L59 62 Q56 67 52 63Z');
-const shoes = mask('M20 65 L30 66 L29 78 L16 78Z M34 66 L44 64 L49 78 L35 78Z');
-const clothes = ['#e85c7a', '#288daa', '#9854bd', '#e89029', '#46a777'];
-export function dressCustomer(node: HTMLElement, random = Math.random): void {
-  const pick = <T>(items: T[]) => items[Math.floor(random() * items.length)];
-  node.replaceChildren();
-  function layer(shape: string | null, color: string) {
-    if (!shape) return;
-    const el = document.createElement('i');
-    el.style.maskImage = shape;
-    el.style.backgroundColor = color;
-    node.append(el);
+const spriteCache = new Map<string, Promise<HTMLImageElement>>();
+function loadSprite(file: string) {
+  let pending = spriteCache.get(file);
+  if (!pending) {
+    const image = new Image();
+    image.src = './sprites/kid_back/' + file;
+    pending = image.decode().then(() => image).catch(error => {
+      spriteCache.delete(file);
+      throw error;
+    });
+    spriteCache.set(file, pending);
   }
-  layer(shoes, '#4a4359');
-  layer(skin, pick(['#ffd5ae', '#db9972', '#a97050', '#784935']));
-  layer(pick(outfits), pick(clothes));
-  layer(pick(hair), pick(['#51352e', '#252338', '#a95734', '#e9b85b']));
-  layer(pick(extras), pick(clothes));
+  return pending;
+}
+
+interface Layer { file: string; x: number; y: number; width: number; color: RGB }
+function paint(ctx: CanvasRenderingContext2D, image: HTMLImageElement, layer: Layer, skin: RGB) {
+  const tile = document.createElement('canvas');
+  tile.width = layer.width;
+  tile.height = Math.round(layer.width * image.height / image.width);
+  const ink = tile.getContext('2d')!;
+  ink.drawImage(image, 0, 0, tile.width, tile.height);
+  const pixels = ink.getImageData(0, 0, tile.width, tile.height);
+  const data = pixels.data;
+  const peach = [255, 218, 195];
+  for (let i = 0; i < data.length; i += 4) {
+    if (!data[i + 3]) continue;
+    const r = data[i], g = data[i + 1], b = data[i + 2];
+    // The originals use peach for exposed skin and plum-gray for tintable material.
+    if (r > b + 24 && g > b && r > g) {
+      for (let c = 0; c < 3; c++) data[i + c] *= skin[c] / peach[c];
+    } else {
+      const light = g / 255;
+      const weight = 0.82 * Math.sin(Math.PI * light) ** 2;
+      for (let c = 0; c < 3; c++) data[i + c] += (layer.color[c] - 144) * weight;
+    }
+  }
+  ink.putImageData(pixels, 0, 0);
+  ctx.drawImage(tile, layer.x, layer.y);
+}
+
+export async function dressCustomer(node: HTMLElement, random = Math.random): Promise<void> {
+  const pick = <T>(items: T[]) => items[Math.floor(random() * items.length)];
+  const seated = random() < 0.125;
+  const clothes = rgb(pick(UNIFORM_PALETTES).base);
+  const skin = rgb(pick(SKIN_PALETTES).base);
+  const layers: Layer[] = [];
+  const canvas = document.createElement('canvas');
+  canvas.width = 374;
+  canvas.height = 520;
+  node.classList.toggle('rolling', seated);
+  node.replaceChildren(canvas);
+  // Each visit owns its canvas, so a late image decode can't dress the next visitor.
+  if (seated) {
+    const chair = pick(wheelchairs);
+    const width = Math.round(chair.width * 0.617);
+    layers.push({ file: chair.file, x: (canvas.width - width) / 2,
+      y: canvas.height - Math.round(chair.height * width / chair.width), width, color: clothes });
+  } else {
+    const outfit = pick(outfits);
+    const style = pick(outfit.id === 'outfit_hoodie' ? hair.filter(h => shortHair.includes(h.id)) : hair);
+    const collarX = 184;
+    const collarY = canvas.height - outfit.height;
+    const outfitX = collarX - outfit.width * 0.46;
+    layers.push({ file: outfit.file, x: outfitX, y: collarY, width: outfit.width, color: clothes });
+    // Register the skull to the collar. A braid or ponytail can extend below the neck.
+    const neck = collarOffsets[style.id] ?? style.height - 28;
+    const hairY = collarY - neck;
+    const hairX = collarX - style.width * (style.id === 'hair_side_ponytail' ? 0.39 : 0.5);
+    layers.push({ file: style.file, x: hairX, y: hairY, width: style.width, color: rgb(pick(HAIR_PALETTES.slice(0, 6)).base) });
+    if (shortHair.includes(style.id) && random() < 0.3) {
+      layers.push({ file: 'headwear/' + pick(caps) + '.png', x: collarX - 102, y: hairY - 4, width: 204, color: clothes });
+    }
+    if (random() < 0.28) {
+      const prop = pick(handProps);
+      layers.push({ file: prop.file, x: outfitX - 6, y: collarY + outfit.height * 0.44, width: 52, color: rgb(pick(UNIFORM_PALETTES).base) });
+    }
+  }
+  const images = await Promise.all(layers.map(layer => loadSprite(layer.file)));
+  const ctx = canvas.getContext('2d')!;
+  layers.forEach((layer, i) => paint(ctx, images[i], layer, skin));
 }

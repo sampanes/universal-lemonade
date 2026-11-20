@@ -1,5 +1,6 @@
 import { dayBeats } from './dayScene';
 import { dressCustomer } from './customerArt';
+import { skyCondition, temperatureBand } from './forecastArt';
 import type { DaySummary } from '../types';
 import './dayScene.css';
 
@@ -14,6 +15,7 @@ export function playDayScene(summary: DaySummary, location: (id: string) => Loca
   dialog.innerHTML = `<header><span>Day ${summary.day}</span><strong id="scene-title"></strong></header>
     <div class="scene-stage"><img class="scene-backdrop" alt="">
     <img class="scene-host" alt=""><img class="scene-table" alt="">
+    <div class="scene-precipitation" aria-hidden="true"></div>
     <div class="scene-walker"><div class="scene-person"></div><span class="scene-bubble"></span></div>
     <strong class="scene-sign"></strong></div>
     <footer><button type="button" data-speed aria-pressed="false">Fast forward</button><button type="button" data-skip>Skip</button></footer>`;
@@ -27,7 +29,22 @@ export function playDayScene(summary: DaySummary, location: (id: string) => Loca
   const bubble = find<HTMLElement>('.scene-bubble');
   const sign = find<HTMLElement>('.scene-sign');
   const speed = find<HTMLButtonElement>('[data-speed]');
-  dialog.dataset.weather = summary.weather;
+  const sky = skyCondition(summary.weather, summary.tempF);
+  dialog.dataset.weather = sky;
+  dialog.dataset.heat = temperatureBand(summary.tempF);
+  if (sky === 'RAINY' || sky === 'SNOWY') {
+    const layer = find<HTMLElement>('.scene-precipitation');
+    const count = sky === 'SNOWY' ? 24 : 32;
+    for (let i = 0; i < count; i++) {
+      const particle = document.createElement('i');
+      // Stagger position, speed and phase so the first frame is already mid-storm.
+      const duration = (sky === 'SNOWY' ? 4 : 0.7) * (1 + (i * 7 % 11) / 20);
+      particle.style.left = `${(i + 0.5) * 100 / count}%`;
+      particle.style.animationDuration = `${duration}s`;
+      particle.style.animationDelay = `${-duration * ((i * 19 + 5) % count) / count}s`;
+      layer.append(particle);
+    }
+  }
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
   let rate = 1;
   let index = 0;
@@ -49,7 +66,7 @@ export function playDayScene(summary: DaySummary, location: (id: string) => Loca
     walker.hidden = visit === 'quiet' || visit === 'closed';
     sign.textContent = { closed: 'Closed today', quiet: 'Quiet today', short: 'Sold out!', walk: '', sale: '' }[visit];
     if (walker.hidden) return;
-    dressCustomer(person);
+    void dressCustomer(person).catch(error => console.warn('Customer art could not load', error));
     person.classList.toggle('disappointed', visit === 'short');
     if (visit === 'sale') bubble.textContent = buyerLines.length ? buyerLines[buyer++ % buyerLines.length] : 'One cup, please!';
     if (visit === 'short') bubble.textContent = missedLines[disappointed++ % missedLines.length];
@@ -86,7 +103,7 @@ export function playDayScene(summary: DaySummary, location: (id: string) => Loca
       const walking = t < 0.26 || t > 0.76;
       const x = t < 0.26 ? -22 + 68 * t / 0.26 : 46 + 70 * Math.max(0, t - 0.76) / 0.24;
       walker.style.left = (reduced ? 46 : x) + '%';
-      person.style.transform = !reduced && walking ? `translateY(${-Math.abs(Math.sin(t * 24)) * 4}px)` : '';
+      person.style.transform = !reduced && walking && !person.classList.contains('rolling') ? `translateY(${-Math.abs(Math.sin(t * 24)) * 4}px)` : '';
       bubble.style.visibility = reduced || !walking ? 'visible' : 'hidden';
       frame = requestAnimationFrame(tick);
     }

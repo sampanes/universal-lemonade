@@ -249,33 +249,53 @@ function toURL(ctx: CanvasRenderingContext2D, p: CharacterProfile, head: boolean
   return out.canvas.toDataURL('image/png');
 }
 
-/**
- * The kid as a PNG data URL (cached), or null until loadKidArt() finishes.
- * head = true gives the square head-and-hair crop used for small pictures.
- */
-export function kidImageURL(p: CharacterProfile, mood: KidMood = 'happy', head = false): string | null {
+// The body sprite includes the bare head. Follow the gap between the raised
+// hand and the ear, then cut just above the neck in the 480 x 402 source art.
+const bareHead = new Path2D('M0 0 H480 V257 H163 V240 L150 226 L144 219 L137 216 H0 Z');
+function standBody(body: HTMLCanvasElement) {
+  const out = canvas(body.width, body.height);
+  out.drawImage(body, 0, 0);
+  out.save();
+  out.clip(bareHead);
+  out.clearRect(0, 0, body.width, body.height);
+  out.restore();
+  // Anchor at the chin. Hair, face and accessories use this same transform.
+  out.translate(239, 255);
+  out.scale(0.78, 0.78);
+  out.translate(-239, -255);
+  out.save();
+  out.clip(bareHead);
+  out.drawImage(body, 0, 0);
+  out.restore();
+  return out;
+}
+
+/** A cached full portrait, square head crop (true), or smaller-headed stand host. */
+export function kidImageURL(p: CharacterProfile, mood: KidMood = 'happy', head: boolean | 'stand' = false): string | null {
   const m = manifest;
   if (!m) return null;
   const hair = pick(m.hairs, p.hairStyle);
   const face = m.faces.includes(mood) ? mood : 'happy';
-  const key = [p.hat, !!p.sunglasses, hair.id, p.skinTone, p.hairColor, p.uniformColor, face, head ? 1 : 0].join('/');
+  const key = [p.hat, !!p.sunglasses, hair.id, p.skinTone, p.hairColor, p.uniformColor, face, head].join('/');
   const hit = cache.get(key);
   if (hit) return hit;
 
   const skin = pick(SKIN_PALETTES, p.skinTone);
   const apron = pick(UNIFORM_PALETTES, p.uniformColor);
-  const ctx = canvas(m.w, m.h);
-  drawTinted(ctx, tint(shades.get('body_shade')!,
+  const body = canvas(m.w, m.h);
+  drawTinted(body, tint(shades.get('body_shade')!,
     { [REGION.skin]: rgb(skin.base), [REGION.shirt]: rgb(SHIRT), [REGION.apron]: rgb(apron.base) },
     { [REGION.skin]: m.L0.skin, [REGION.shirt]: m.L0.shirt, [REGION.apron]: m.L0.apron }));
-  ctx.drawImage(images.get('body_fixed')!, 0, 0);
+  body.drawImage(images.get('body_fixed')!, 0, 0);
+  const ctx = head === 'stand' ? standBody(body.canvas) : body;
   if (p.skinTone % SKIN_PALETTES.length >= DARK_SKIN_FROM) ctx.drawImage(rimLayer(face, skin.base), 0, 0);
   drawTinted(ctx, hairFill(hair.id, hair.L0, pick(HAIR_PALETTES, p.hairColor)));
   ctx.drawImage(images.get(`hair_${hair.id}_fixed`)!, 0, 0);
   // The face goes over the hair, like anime: eyes and brows show through the bangs.
   ctx.drawImage(images.get(`face_${face}`)!, 0, 0);
 
-  const url = toURL(ctx, p, head);
+  if (head === 'stand') drawAccessories(ctx, p);
+  const url = head === 'stand' ? ctx.canvas.toDataURL('image/png') : toURL(ctx, p, head);
   cache.set(key, url);
   return url;
 }

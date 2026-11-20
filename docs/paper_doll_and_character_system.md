@@ -106,6 +106,19 @@ Twenty headwear items (`public/sprites/kid_back/headwear/`) were cut and categor
 
 ## 5. Hair & Outfit Modular Compatibility Critique
 
+### Sidewalk customer outfit triage
+
+The sidewalk camera sees customers from behind. The outfit sheets contain mixed views. Check the torso, fastenings, pockets and shoes together on the assembled character at game size.
+
+| Sidewalk use | Standing outfits | Visual evidence |
+| --- | --- | --- |
+| In rotation | Coveralls, denim jacket, blazer and skirt, hoodie | The coveralls have paired seat pockets. The denim jacket has a rear shoulder yoke. The blazer has a back belt and vent. The hood rests across the shoulder blades above a plain back. |
+| Front-facing | Polo and cargo shorts, pinafore overalls | The polo has a button placket below a pointed collar. The pinafore has a chest bib with buttons and a patch pocket. |
+| Held for review | Raincoat | The hood hangs down the back, but the two center buttons read as front closures even at thumbnail size. |
+| Held for review | Varsity jacket, T-shirt and shorts, jersey and shorts, argyle vest, frilly dress | These have weaker or mixed cues at game size. For example, the varsity shoes show bright toe panels, and the dress pairs a back bow with a split Peter Pan collar. |
+
+The wheelchair hoodie and dress use the complete three-quarter rear illustrations. Each keeps its original head, body and chair together.
+
 When mixing and matching hairstyles and outfits in the paper doll system, keep these collision and anatomical constraints in mind:
 
 | Asset | Issue / Clash | Mitigation |
