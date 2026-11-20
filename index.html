@@ -2642,6 +2642,10 @@
         padding: 7px 8px; border-radius: 14px; box-shadow: 0 3px 0 #5b21b6;
       }
       .kid-mirror-opts { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+      .kid-gear { display:flex; align-items:center; gap:5px; flex-wrap:wrap; }
+      .kid-gear .kid-hair-opt { width:42px; height:42px; padding:3px; font:13px var(--font-display); color:#582883; }
+      .kid-gear [data-key="sunglasses"] { margin-left:5px; }
+      .kid-gear img { object-fit:contain; }
       #kid-opt-hair { gap: 6px; }
       .kid-hair-opt {
         width: 56px; height: 56px; box-sizing: border-box; margin: 0; padding: 0; cursor: pointer;
@@ -3655,6 +3659,7 @@
       UNIFORM_PALETTES
     } from './src/character.ts';
     import { playDayScene } from './src/scene/playDayScene.ts';
+    import { HATS, SHADES, accessoryURL } from './src/headwear.ts';
     import { loadKidArt, kidImageURL, kidHairCount, kidHairIds, kidFx } from './src/kid.ts';
     import { loadUnlocks, saveUnlocks, clearUnlocks, advanceLookUnlocks, unlockCheckFrom, otherUnlockToday, shopReady, lookOpen } from './src/unlocks.ts';
 
@@ -5373,12 +5378,17 @@
       if (!mirrorOpen()) return;
       setKidImg(document.getElementById('kid-mirror-preview'), mirrorMood, false);
       const n = kidHairCount();
+      const gearButton = (id, label, on, key) => `<button type="button" class="kid-hair-opt${on ? ' on' : ''}" data-key="${key}" data-id="${id}" title="${label}" aria-label="${label}" aria-pressed="${on}">${id ? `<img src="${accessoryURL(id)}" alt="">` : 'None'}</button>`;
+      setHTMLIfChanged(document.getElementById('kid-opt-hats'),
+        gearButton('', 'No hat', !kidProfile.hat, 'hat') +
+        HATS.map(h => gearButton(h.id, h.name, kidProfile.hat === h.id, 'hat')).join('') +
+        gearButton(SHADES.id, 'Toggle sunglasses', !!kidProfile.sunglasses, 'sunglasses'));
       const hairOn = n ? kidProfile.hairStyle % n : -1;
       setHTMLIfChanged(document.getElementById('kid-opt-hair'), Array.from({ length: n }, (_, i) => {
         const look = lookOfHair(i);
         if (i !== hairOn && !lookShown(look)) return '';
         const isNew = lookIsNew(look);
-        const url = kidImageURL({ ...kidProfile, hairStyle: i }, 'happy', true);
+        const url = kidImageURL({ ...kidProfile, hat: undefined, sunglasses: false, hairStyle: i }, 'happy', true);
         return `<button type="button" class="kid-hair-opt${i === hairOn ? ' on' : ''}${isNew ? ' is-new' : ''}" data-key="hairStyle" data-i="${i}" ` +
           `aria-label="Hair style ${i + 1}" aria-pressed="${i === hairOn}"><img src="${url}" alt="" /></button>`;
       }).join(''));
@@ -5389,7 +5399,9 @@
     mirror.addEventListener('click', (e) => {
       const b = e.target.closest('[data-key]');
       if (!b) return;
-      kidProfile = { ...kidProfile, [b.dataset.key]: Number(b.dataset.i) };
+      const key = b.dataset.key;
+      const value = key === 'hat' ? b.dataset.id : key === 'sunglasses' ? !kidProfile.sunglasses : Number(b.dataset.i);
+      kidProfile = { ...kidProfile, [key]: value };
       saveCharacterProfile(kidProfile, dadModeActive);
       kidVersion++;
       mirrorMood = MIRROR_POSES[Math.floor(Math.random() * MIRROR_POSES.length)];
@@ -5513,6 +5525,7 @@
           <div class="kid-mirror-row"><span class="kid-mirror-label">Hair Style</span><div class="kid-mirror-opts" id="kid-opt-hair"></div></div>
           <div class="kid-mirror-row"><span class="kid-mirror-label">Skin Tone</span><div class="kid-mirror-opts" id="kid-opt-skin"></div></div>
           <div class="kid-mirror-row"><span class="kid-mirror-label">Hair Color</span><div class="kid-mirror-opts" id="kid-opt-haircolor"></div></div>
+          <div class="kid-mirror-row"><span class="kid-mirror-label">Hats &amp; Shades</span><div class="kid-mirror-opts kid-gear" id="kid-opt-hats"></div></div>
           <div class="kid-mirror-row"><span class="kid-mirror-label">Apron Color</span><div class="kid-mirror-opts" id="kid-opt-apron"></div></div>
         </div>
       </div>

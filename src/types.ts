@@ -17,6 +17,8 @@ export type GamePhase = 1 | 2 | 3 | 4 | 5;
 export type SupplyItem = 'lemons' | 'sugar' | 'ice' | 'cups' | 'bottles';
 
 export interface CharacterProfile {
+  hat?: string;
+  sunglasses?: boolean;
   name: string;
   hairStyle: number; // index into the hair art (wraps around)
   skinTone: number;  // 0..4

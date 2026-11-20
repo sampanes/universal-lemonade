@@ -9,6 +9,8 @@ import { SKIN_PALETTES, HAIR_PALETTES, UNIFORM_PALETTES } from './character';
 import type { HairFx, HairPalette } from './character';
 import type { CharacterProfile } from './types';
 
+import { HATS, SHADES, accessoryURL } from './headwear';
+
 export type KidMood = 'happy' | 'cheer' | 'soldout' | 'calm' | 'sleepy' | 'wink'
   | 'grumpy' | 'smug' | 'surprised' | 'ennui' | 'sly' | 'determined';
 
@@ -33,12 +35,12 @@ const shades = new Map<string, ImageData>();
 const cache = new Map<string, string>();
 let loading: Promise<void> | null = null;
 
-function loadImage(name: string): Promise<HTMLImageElement> {
+function loadImage(name: string, url = `${DIR}${name}.png`): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const im = new Image();
     im.onload = () => resolve(im);
     im.onerror = () => reject(new Error(`kid art missing: ${name}`));
-    im.src = `${DIR}${name}.png`;
+    im.src = url;
   });
 }
 
@@ -57,13 +59,17 @@ export function loadKidArt(): Promise<void> {
       const names = ['body_fixed', 'body_shade',
         ...m.hairs.flatMap(h => [`hair_${h.id}_fixed`, `hair_${h.id}_shade`]),
         ...m.faces.flatMap(f => [`face_${f}`, `face_${f}_rim`])];
-      const loaded = await Promise.all(names.map(loadImage));
+      const loaded = await Promise.all(names.map(name => loadImage(name)));
       names.forEach((n, i) => images.set(n, loaded[i]));
       for (const n of names.filter(x => x.endsWith('_shade'))) {
         const ctx = canvas(m.w, m.h);
         ctx.drawImage(images.get(n)!, 0, 0);
         shades.set(n, ctx.getImageData(0, 0, m.w, m.h));
       }
+      await Promise.all([...HATS, SHADES].map(async item => {
+        try { images.set(item.id, await loadImage(item.id, accessoryURL(item.id))); }
+        catch (err) { console.warn(err); }
+      }));
       manifest = m;
     })();
   }
@@ -192,13 +198,59 @@ function pick<T>(list: T[], i: number): T {
   return list[((i % list.length) + list.length) % list.length];
 }
 
-/** Crop to the head box when head is true, and return a PNG data URL. */
-function toURL(ctx: CanvasRenderingContext2D, head: boolean): string {
-  if (!head) return ctx.canvas.toDataURL('image/png');
-  const [x, y, w, h] = manifest!.head;
-  const crop = canvas(w, h);
-  crop.drawImage(ctx.canvas, x, y, w, h, 0, 0, w, h);
-  return crop.canvas.toDataURL('image/png');
+function worn(p: CharacterProfile) {
+  const hat = HATS.find(h => h.id === p.hat);
+  return [hat, p.sunglasses ? SHADES : undefined].filter(
+    (item): item is typeof SHADES => !!item && images.has(item.id));
+}
+
+function frame(p: CharacterProfile, head: boolean): [number, number, number, number] {
+  const m = manifest!;
+  const base: [number, number, number, number] = head ? m.head : [0, 0, m.w, m.h];
+  const hat = HATS.find(h => h.id === p.hat);
+  if (!hat) return base;
+  const [x, y, w, h] = base;
+  const top = Math.min(y, hat.y - 4);
+  const height = h + y - top;
+  const width = Math.ceil(height * w / h);
+  return [x - (width - w) / 2, top, width, height];
+}
+
+// AGY's neutral fabric picks up the apron color. Soft light keeps ink and highlights.
+const coloredGear = new Map<string, HTMLCanvasElement>();
+function coloredHat(id: string, apronIndex: number) {
+  const color = pick(UNIFORM_PALETTES, apronIndex).base;
+  const key = id + color;
+  const hit = coloredGear.get(key);
+  if (hit) return hit;
+  const im = images.get(id)!;
+  const ctx = canvas(im.width, im.height);
+  ctx.drawImage(im, 0, 0);
+  ctx.globalCompositeOperation = 'soft-light';
+  ctx.fillStyle = color;
+  ctx.fillRect(0, 0, im.width, im.height);
+  ctx.globalCompositeOperation = 'destination-in';
+  ctx.drawImage(im, 0, 0);
+  coloredGear.set(key, ctx.canvas);
+  return ctx.canvas;
+}
+
+function drawAccessories(ctx: CanvasRenderingContext2D, p: CharacterProfile) {
+  for (const item of worn(p)) {
+    const im = item.id === SHADES.id ? images.get(item.id)! : coloredHat(item.id, p.uniformColor);
+    ctx.drawImage(im, item.x, item.y, item.width, item.width * im.height / im.width);
+  }
+}
+
+function toURL(ctx: CanvasRenderingContext2D, p: CharacterProfile, head: boolean, paint: 'wear' | 'mask' = 'wear'): string {
+  if (!head && !p.hat && !p.sunglasses) return ctx.canvas.toDataURL('image/png');
+  const [x, y, w, h] = frame(p, head);
+  const out = canvas(w, h);
+  out.translate(-x, -y);
+  out.drawImage(ctx.canvas, 0, 0);
+  if (paint === 'mask') out.globalCompositeOperation = 'destination-out';
+  drawAccessories(out, p);
+  return out.canvas.toDataURL('image/png');
 }
 
 /**
@@ -210,7 +262,7 @@ export function kidImageURL(p: CharacterProfile, mood: KidMood = 'happy', head =
   if (!m) return null;
   const hair = pick(m.hairs, p.hairStyle);
   const face = m.faces.includes(mood) ? mood : 'happy';
-  const key = [hair.id, p.skinTone, p.hairColor, p.uniformColor, face, head ? 1 : 0].join('/');
+  const key = [p.hat, !!p.sunglasses, hair.id, p.skinTone, p.hairColor, p.uniformColor, face, head ? 1 : 0].join('/');
   const hit = cache.get(key);
   if (hit) return hit;
 
@@ -227,7 +279,7 @@ export function kidImageURL(p: CharacterProfile, mood: KidMood = 'happy', head =
   // The face goes over the hair, like anime: eyes and brows show through the bangs.
   ctx.drawImage(images.get(`face_${face}`)!, 0, 0);
 
-  const url = toURL(ctx, head);
+  const url = toURL(ctx, p, head);
   cache.set(key, url);
   return url;
 }
@@ -281,7 +333,7 @@ export function kidFx(p: CharacterProfile, mood: KidMood = 'happy', head = false
   if (!color.fx || color.fx === 'candy') return none;
   const hair = pick(m.hairs, p.hairStyle);
   const face = m.faces.includes(mood) ? mood : 'happy';
-  const key = [hair.id, p.hairColor, color.fx === 'rainbow' ? face : '', head ? 1 : 0].join('/');
+  const key = [p.hat, !!p.sunglasses, hair.id, p.hairColor, color.fx === 'rainbow' ? face : '', head ? 1 : 0].join('/');
   const hit = fxCache.get(key);
   if (hit) return hit;
 
@@ -289,14 +341,17 @@ export function kidFx(p: CharacterProfile, mood: KidMood = 'happy', head = false
   if (color.fx === 'rainbow') {
     const fill = canvas(m.w, m.h);
     drawTinted(fill, hairFill(hair.id, hair.L0, color));
-    fx.hairFill = toURL(fill, head);
+    fx.hairFill = toURL(fill, p, head, 'mask');
     const lines = canvas(m.w, m.h);
     lines.drawImage(images.get(`hair_${hair.id}_fixed`)!, 0, 0);
     lines.drawImage(images.get(`face_${face}`)!, 0, 0);
-    fx.hairLines = toURL(lines, head);
+    fx.hairLines = toURL(lines, p, head, 'mask');
   } else {
     // Spots well inside the hair, spread apart.
-    const [vx, vy, vw, vh] = head ? m.head : [0, 0, m.w, m.h];
+    const [vx, vy, vw, vh] = frame(p, head);
+    const overlay = canvas(m.w, m.h);
+    drawAccessories(overlay, p);
+    const cover = overlay.getImageData(0, 0, m.w, m.h).data;
     const d = shades.get(`hair_${hair.id}_shade`)!;
     const galaxy = color.fx === 'galaxy';
     const want = galaxy ? (head ? 6 : 10) : (head ? 4 : 7);
@@ -306,7 +361,7 @@ export function kidFx(p: CharacterProfile, mood: KidMood = 'happy', head = false
     const fa = anyFace();
     const solid = (x: number, y: number) =>
       x >= 0 && y >= 0 && x < d.width && y < d.height && d.data[(y * d.width + x) * 4 + 3] > 230 &&
-      fa.data[(y * fa.width + x) * 4 + 3] < 20;
+      fa.data[(y * fa.width + x) * 4 + 3] < 20 && cover[(y * m.w + x) * 4 + 3] < 20;
     const placed: [number, number][] = [];
     for (let tries = 0; tries < 4000 && placed.length < want; tries++) {
       const x = Math.floor(vx + rand() * vw), y = Math.floor(vy + rand() * vh);

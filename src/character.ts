@@ -1,5 +1,6 @@
 // src/character.ts -- the player's lemonade hero: the color choices and the saved look.
 // The picture itself is stacked from paper-doll art in src/kid.ts.
+import { HATS } from './headwear';
 import type { CharacterProfile } from './types';
 
 export const SKIN_PALETTES = [
@@ -79,6 +80,8 @@ export function loadCharacterProfile(dad = false): CharacterProfile {
     if (raw) {
       const parsed = JSON.parse(raw);
       return {
+        hat: HATS.find(h => h.id === parsed.hat)?.id,
+        sunglasses: parsed.sunglasses === true,
         name: parsed.name || DEFAULT_CHARACTER.name,
         hairStyle: Math.min(Math.max(parsed.hairStyle ?? 0, 0), MAX_HAIR_STYLE),
         skinTone: Math.min(Math.max(parsed.skinTone ?? 1, 0), SKIN_PALETTES.length - 1),
