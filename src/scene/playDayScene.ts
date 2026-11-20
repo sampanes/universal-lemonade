@@ -70,7 +70,8 @@ export function playDayScene(summary: DaySummary, location: (id: string) => Loca
     const { stand, visit } = beats[index];
     const art = location(stand);
     dialog.style.setProperty('--seller-x', art.sellerX + '%');
-    stopX = art.sellerX + 14;
+    // The walker is positioned by its left edge. Queue on the open side of the counter.
+    stopX = art.sellerX > 50 ? art.sellerX - 30 : art.sellerX + 14;
     title.textContent = art.name;
     host.hidden = visit === 'closed' || !art.host;
     if (art.host) host.src = art.host;
