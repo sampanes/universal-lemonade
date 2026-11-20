@@ -113,6 +113,8 @@ the repo root) turn it into the small files in `public/sprites/`:
 
 Recolorable layers (skin, hair, shirt) are drawn in gray, so the game can tint them.
 
+For the back-facing paper doll system (driveway diorama, wheelchair characters, 3/4 flipshot dynamic, and headwear triage), see [`docs/paper_doll_and_character_system.md`](docs/paper_doll_and_character_system.md).
+
 ## Balance simulator
 
 The simulator plays thousands of headless games with bot players across all CPU cores and
