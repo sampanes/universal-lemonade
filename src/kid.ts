@@ -204,9 +204,12 @@ function worn(p: CharacterProfile) {
     (item): item is typeof SHADES => !!item && images.has(item.id));
 }
 
-function frame(head: boolean): [number, number, number, number] {
+function frame(p: CharacterProfile, head: boolean): [number, number, number, number] {
   const m = manifest!;
-  return head ? m.head : [0, 0, m.w, m.h];
+  if (!head) return [0, 0, m.w, m.h];
+  const [x, y, w, h] = m.head;
+  const hat = HATS.find(item => item.id === p.hat);
+  return [x, Math.min(y, hat?.y ?? y), w, h];
 }
 
 // AGY's neutral fabric picks up the apron color. Soft light keeps ink and highlights.
@@ -237,7 +240,7 @@ function drawAccessories(ctx: CanvasRenderingContext2D, p: CharacterProfile) {
 
 function toURL(ctx: CanvasRenderingContext2D, p: CharacterProfile, head: boolean, paint: 'wear' | 'mask' = 'wear'): string {
   if (!head && !p.hat && !p.sunglasses) return ctx.canvas.toDataURL('image/png');
-  const [x, y, w, h] = frame(head);
+  const [x, y, w, h] = frame(p, head);
   const out = canvas(w, h);
   out.translate(-x, -y);
   out.drawImage(ctx.canvas, 0, 0);
@@ -341,7 +344,7 @@ export function kidFx(p: CharacterProfile, mood: KidMood = 'happy', head = false
     fx.hairLines = toURL(lines, p, head, 'mask');
   } else {
     // Spots well inside the hair, spread apart.
-    const [vx, vy, vw, vh] = frame(head);
+    const [vx, vy, vw, vh] = frame(p, head);
     const overlay = canvas(m.w, m.h);
     drawAccessories(overlay, p);
     const cover = overlay.getImageData(0, 0, m.w, m.h).data;
