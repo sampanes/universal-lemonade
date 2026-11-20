@@ -638,6 +638,14 @@
       font-size: 10px;
       font-weight: 800;
     }
+    .store-unlock-hint {
+      grid-column: 1 / -1;
+      margin: 0;
+      text-align: center;
+      font: 700 13px/1.25 var(--font-ui);
+      color: #51377a;
+    }
+    .store-lock { font-size: 0.85em; }
     .friend-btn {
       margin: 4px 0 0;
       min-height: 30px;
@@ -4779,6 +4787,10 @@
 
       if (s.phase >= 3) {
         expansionHTML += `<div style="font-weight: bold; margin-top: 12px; color: #ffd700;">Wholesale Retail Accounts:</div>`;
+        const wait = storeUnlockMessage();
+        if (wait && Object.values(engine.wholesaleAccounts).some(acc => !acc.active)) {
+          expansionHTML += `<div id="contract-unlock-hint">${wait}</div>`;
+        }
         Object.values(engine.wholesaleAccounts).forEach(acc => {
           expansionHTML += `<div class="card">
             <div class="stat">
@@ -4788,7 +4800,7 @@
             <div style="font-size: 11px; color: #aaa;">${acc.desc}</div>
             <div class="stat" style="margin-top: 4px;">
               <span>Orders: ${acc.bottlesPerDay} bottles/day @ $${acc.wholesalePrice.toFixed(2)}</span>
-              ${!acc.active ? `<button onclick="window._signWholesale('${acc.id}')" ${s.cash.lt(acc.setupCost) ? 'disabled' : ''}>Sign Contract ($${acc.setupCost})</button>` : '<span style="color:#4ade80;">Active Supplier</span>'}
+              ${!acc.active ? `<button onclick="window._signWholesale('${acc.id}')" ${wait ? 'disabled aria-describedby="contract-unlock-hint"' : s.cash.lt(acc.setupCost) ? 'disabled' : ''}>${wait ? STORE_LOCK : ''}Sign Contract ($${acc.setupCost})</button>` : '<span style="color:#4ade80;">Active Supplier</span>'}
             </div>
           </div>`;
         });
@@ -5047,23 +5059,33 @@
       if (goal.days) return goal.days === 1 ? 'Ready tomorrow!' : `Ready in ${goal.days} days`;
       return '';
     }
+    const STORE_LOCK = '<span class="store-lock" aria-hidden="true">&#x1F512;</span> ';
+    function storeUnlockMessage() {
+      const { remaining, days } = engine.storeExpansionGoal();
+      const steps = [];
+      if (remaining) steps.push(`sell ${remaining} more bottle${remaining === 1 ? '' : 's'}`);
+      if (days) steps.push(`finish ${days} more day${days === 1 ? '' : 's'}`);
+      return steps.length ? `To unlock your next store purchase, ${steps.join(' and ')}.` : '';
+    }
     function storesHTML(s) {
-      const goal = engine.storeExpansionGoal();
-      const wait = expansionMessage(goal, 'bottles');
+      const accounts = Object.values(engine.wholesaleAccounts);
+      const wait = storeUnlockMessage();
+      const hint = wait && accounts.some(acc => !acc.active || acc.level < acc.levels.length)
+        ? `<p class="store-unlock-hint" id="store-unlock-hint">${wait}</p>` : '';
       const est = engine.getDailyDemandEstimate().storeEstimates;
-      return Object.values(engine.wholesaleAccounts).map(acc => {
+      return hint + accounts.map(acc => {
         const info = STORES[acc.id] || { name: acc.name, pic: './sprites/shop/bottles.png' };
-        let cls, btn;
-        if (!acc.active) {
-          cls = 'open';
-          btn = `<button type="button" class="friend-btn" data-act="sign" data-id="${acc.id}"${wait || s.cash.lt(acc.setupCost) ? ' disabled' : ''}>${wait || `Sign up $${acc.setupCost}`}<small>${wait ? `Sign up $${acc.setupCost}` : `~ ${acc.bottlesPerDay} bottles/day`}</small></button>`;
-        } else {
+        const cls = acc.active ? 'working' : 'open';
+        const next = acc.levels[acc.level];
+        let btn;
+        if (acc.active && !next) {
           const n = (est.find(x => x.id === acc.id) || { estBottles: 0 }).estBottles;
-          cls = 'working';
-          const next = acc.levels[acc.level];
-          btn = next
-            ? `<button type="button" class="friend-btn" data-act="expand" data-id="${acc.id}"${wait || s.cash.lt(next.cost) ? ' disabled' : ''}>${wait || `Shelf $${next.cost}`}<small>${wait ? `Shelf $${next.cost}` : `${acc.bottlesPerDay} -> ${next.bottlesPerDay}/day`}</small></button>`
-            : `<div class="store-status">Biggest shelf!<small>~${n} bottles today</small></div>`;
+          btn = `<div class="store-status">Biggest shelf!<small>~${n} bottles today</small></div>`;
+        } else {
+          const cost = acc.active ? next.cost : acc.setupCost;
+          const state = wait ? ' disabled aria-describedby="store-unlock-hint"' : s.cash.lt(cost) ? ' disabled' : '';
+          const orders = acc.active ? `${acc.bottlesPerDay} &rarr; ${next.bottlesPerDay}/day` : `~ ${acc.bottlesPerDay} bottles/day`;
+          btn = `<button type="button" class="friend-btn" data-act="${acc.active ? 'expand' : 'sign'}" data-id="${acc.id}"${state}>${wait ? STORE_LOCK : ''}${acc.active ? 'Shelf' : 'Sign up'} $${cost}<small>${orders}</small></button>`;
         }
         return `<div class="friend-tile ${cls}">
           <div class="friend-pic"><img class="store-pic" src="${info.pic}" alt="" /></div>
