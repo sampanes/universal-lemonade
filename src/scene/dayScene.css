@@ -11,7 +11,10 @@
 .scene-backdrop { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:center bottom; }
 .scene-clouds { position:absolute; inset:0 0 auto; height:25%; pointer-events:none; }
 .scene-clouds img { position:absolute; left:24%; top:8%; width:19%; height:74%; object-fit:contain; }
-.scene-clouds img + img { left:53%; top:31%; width:13%; height:52%; transform:scaleX(-1); }
+.scene-clouds img:nth-child(2) { left:53%; top:31%; width:13%; height:52%; transform:scaleX(-1); }
+.scene-clouds img:nth-child(3) { left:3%; top:27%; width:17%; height:66%; }
+.scene-clouds img:nth-child(4) { left:42%; top:3%; width:10%; height:40%; }
+.scene-clouds img:nth-child(5) { left:69%; top:0; width:17%; height:56%; transform:scaleX(-1); }
 .day-scene[data-heat=cold] { --temp-wash:#86abf539; }
 .day-scene[data-heat=cool] { --temp-wash:#96cced1c; }
 .day-scene[data-heat=warm] { --temp-wash:#ffe1a512; }
@@ -29,9 +32,14 @@
 @keyframes scene-rain { from { transform:translate(18px,0); } to { transform:translate(-38px,100%); } }
 @keyframes scene-snow { 0% { transform:translate(-6px,0); } 45% { transform:translate(9px,45%); } 100% { transform:translate(-4px,100%); } }
 @media (prefers-reduced-motion:reduce) { .scene-precipitation i { animation-play-state:paused; } }
-.scene-host,.scene-table { position:absolute; object-fit:contain; left:var(--seller-x); transform:translateX(-50%); }
+.scene-host,.scene-booth { position:absolute; left:var(--seller-x); transform:translateX(-50%); }
 .scene-host { height:54%; bottom:18%; }
-.scene-table { height:31%; bottom:11%; }
+.scene-booth { height:31%; bottom:11%; }
+.scene-table { display:block; height:100%; width:auto; }
+.scene-sold-out { position:absolute; left:35%; top:63%; transform:translate(-50%,-50%) rotate(-3deg); white-space:nowrap; padding:1px 4px; border:2px solid #672e39; border-radius:4px; background:#ffedb4; color:#782441; box-shadow:0 2px 0 #602b3680; font-size:clamp(9px,1.9dvh,12px); line-height:1.05; }
+.scene-booth[data-stand=leo] .scene-sold-out { left:42%; top:70%; }
+.scene-booth[data-stand=sarah] .scene-sold-out { left:58%; top:72%; }
+.scene-sold-out:empty { display:none; }
 .scene-walker { position:absolute; left:-22%; bottom:1%; height:48%; aspect-ratio:64/80; filter:drop-shadow(0 2px 1px #49314166); }
 .scene-person { position:absolute; inset:0; }
 .scene-person canvas { width:100%; height:100%; object-fit:contain; object-position:center bottom; }

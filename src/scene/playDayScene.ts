@@ -15,7 +15,8 @@ export function playDayScene(summary: DaySummary, location: (id: string) => Loca
   dialog.innerHTML = `<header><span>Day ${summary.day}</span><strong id="scene-title"></strong></header>
     <div class="scene-stage"><img class="scene-backdrop" alt="">
     <div class="scene-clouds" aria-hidden="true"></div>
-    <img class="scene-host" alt=""><img class="scene-table" alt="">
+    <img class="scene-host" alt="">
+    <div class="scene-booth"><img class="scene-table" alt=""><strong class="scene-sold-out"></strong></div>
     <div class="scene-precipitation" aria-hidden="true"></div>
     <div class="scene-walker"><div class="scene-person"></div><span class="scene-bubble"></span></div>
     <strong class="scene-sign"></strong></div>
@@ -24,6 +25,8 @@ export function playDayScene(summary: DaySummary, location: (id: string) => Loca
   const title = find<HTMLElement>('strong');
   const backdrop = find<HTMLImageElement>('.scene-backdrop');
   const host = find<HTMLImageElement>('.scene-host');
+  const booth = find<HTMLElement>('.scene-booth');
+  const soldOut = find<HTMLElement>('.scene-sold-out');
   const table = find<HTMLImageElement>('.scene-table');
   const walker = find<HTMLElement>('.scene-walker');
   const person = find<HTMLElement>('.scene-person');
@@ -35,7 +38,8 @@ export function playDayScene(summary: DaySummary, location: (id: string) => Loca
   dialog.dataset.heat = temperatureBand(summary.tempF);
   if (sky !== 'SUNNY') {
     const clouds = find<HTMLElement>('.scene-clouds');
-    for (let i = 0; i < 2; i++) {
+    const count = sky === 'CLOUDY' ? 5 : 2;
+    for (let i = 0; i < count; i++) {
       const puff = new Image();
       puff.alt = '';
       puff.src = './sprites/morning_prep/cloud_puff.png';
@@ -71,14 +75,17 @@ export function playDayScene(summary: DaySummary, location: (id: string) => Loca
     const art = location(stand);
     dialog.style.setProperty('--seller-x', art.sellerX + '%');
     // The walker is positioned by its left edge. Queue on the open side of the counter.
-    stopX = art.sellerX > 50 ? art.sellerX - 30 : art.sellerX + 14;
+    const leftQueueOffset = visit === 'short' ? 37 : 30; // Leave the table sign visible.
+    stopX = art.sellerX > 50 ? art.sellerX - leftQueueOffset : art.sellerX + 14;
     title.textContent = art.name;
     host.hidden = visit === 'closed' || !art.host;
     if (art.host) host.src = art.host;
     backdrop.src = art.backdrop;
+    booth.dataset.stand = stand;
     table.src = art.table;
+    soldOut.textContent = visit === 'short' ? 'Sold out!' : '';
     walker.hidden = visit === 'quiet' || visit === 'closed';
-    sign.textContent = { closed: 'Closed today', quiet: 'Quiet today', short: 'Sold out!', walk: '', sale: '' }[visit];
+    sign.textContent = visit === 'closed' ? 'Closed today' : visit === 'quiet' ? 'Quiet today' : '';
     if (walker.hidden) return;
     walker.style.height = (41 + Math.random() * 12) + '%';
     void dressCustomer(person).catch(error => console.warn('Customer art could not load', error));
