@@ -735,6 +735,8 @@
     }
     .invention-panel > img { width: 96px; height: 96px; object-fit: contain; flex-shrink: 0; }
     .invention-name { font-family: var(--font-display); font-size: 18px; color: #3b0764; line-height: 1.1; }
+    .invention-panel small { display: block; margin-top: 3px; font-size: 12px; line-height: 1.25; color: #514965; }
+    #license-needs { font-weight: 700; color: #663a15; }
     .invention-desc { font-size: 12.5px; font-weight: 700; color: #6b7280; margin: 2px 0 6px; line-height: 1.25; }
     .invention-stats { display: flex; flex-wrap: wrap; gap: 6px; }
     .invention-stats span {
@@ -3660,6 +3662,7 @@
     import { LemonadeEngine, BigNum } from './src/engine.ts';
     import { reputationTrend } from './src/simulation/reputation.ts';
     import { BOTTLES_FOR_INVENTION } from './src/data/wholesale.ts';
+    import { WORLDWIDE_LICENSE } from './src/data/projects.ts';
     import {
       loadCharacterProfile,
       saveCharacterProfile,
@@ -3673,7 +3676,7 @@
     import { skyCondition, temperatureBand } from './src/scene/forecastArt.ts';
     import { HATS, SHADES, accessoryURL } from './src/headwear.ts';
     import { loadKidArt, kidImageURL, kidHairCount, kidHairIds, kidFx } from './src/kid.ts';
-    import { loadUnlocks, saveUnlocks, clearUnlocks, advanceLookUnlocks, unlockCheckFrom, otherUnlockToday, shopReady, lookOpen } from './src/unlocks.ts';
+    import { loadUnlocks, saveUnlocks, clearUnlocks, advanceLookUnlocks, unlockCheckFrom, otherUnlockToday, shopReady, shopDaysRemaining, lookOpen } from './src/unlocks.ts';
 
     // Track which input is in use so mouse-only hover styles switch off after a finger tap.
     // (The touchscreen all-in-one this is played on has a mouse too, so CSS alone cannot tell.)
@@ -4947,7 +4950,6 @@
       { id: 'commercial_labeler', name: 'Bottle Labeler', desc: 'Labels bottles by machine: bottles cost 30% less!', pic: './sprites/shop/labeler.png' },
       { id: 'patent_filing', name: 'Invent It!', desc: 'Invent a lemon squeezer! Stores sell it, and you get money for every one.', pic: null, early: true,
         notYet: (s) => `${Math.max(0, BOTTLES_FOR_INVENTION - s.totalBottlesSold).toLocaleString('en-US')} bottles to go` },
-      { id: 'global_licensing', name: 'Sell It Worldwide', desc: 'Stores all over the world sell your squeezer: 3 times as many!', pic: null },
       { id: 'copacker_deal', name: 'Lemonade Factory', desc: 'Coming soon: a real factory bottles your lemonade for supermarkets!', pic: null, teaser: true },
     ];
     function kidShopNext(s) {
@@ -4956,6 +4958,7 @@
       for (const item of KID_SHOP) {
         const p = engine.projects.find(x => x.id === item.id);
         if (!p || p.purchased) continue;
+        if (item.id === 'copacker_deal' && !engine.projects.find(project => project.id === 'global_licensing').purchased) return null;
         if (item.teaser || item.early) return { item, p };
         // friends: N waits until that many friends are hired (the wagon only helps them).
         const hired = Object.values(engine.franchiseStands).filter(st => st.hired).length;
@@ -5039,18 +5042,36 @@
     let partnersTab = 'friends';
     let partnersPhase = null;     // the stage the tabs last saw (a new stage opens its tab)
     const INVENTION = { name: 'Lemon Squeezer', pic: './sprites/lemon.png' };
+    function worldwideOffer(s) {
+      const project = engine.projects.find(p => p.id === 'global_licensing');
+      if (!engine.patent.licensed || project.purchased || !project.unlocked(s)) return null;
+      const days = shopDaysRemaining(s);
+      const short = Math.max(0, project.costCash - Math.max(0, s.cash.toNumber() - engine.restockCostForToday()));
+      return { project, days, short };
+    }
     function inventionHTML(s) {
       const p = engine.patent;
       const each = `$${p.royaltyPerUnit.toFixed(2)}`;
       const d = s.lastDaySummary;
       const stats = [`About ${Math.round(p.baseUnitsPerDay)} sold a day`];
       if (d && d.patentUnitsSold > 0) stats.push(`Yesterday: ${d.patentUnitsSold.toLocaleString('en-US')} sold, +$${fmtDollars(d.patentRoyalties, true)}`);
+      const offer = worldwideOffer(s);
+      let upgrade = '';
+      if (offer) {
+        const needs = [];
+        if (offer.days) needs.push(`Finish ${offer.days} more day${offer.days === 1 ? '' : 's'}`);
+        if (offer.short) needs.push(`Save $${fmtDollars(offer.short, true)} more after supplies`);
+        upgrade = `<button type="button" class="friend-btn" data-act="license"${needs.length ? ' disabled aria-describedby="license-needs"' : ''}>${needs.length ? STORE_LOCK : ''}Sell It Worldwide &middot; $${fmtWhole(offer.project.costCash)}</button>
+          <small>About ${Math.round(p.baseUnitsPerDay * WORLDWIDE_LICENSE.volumeMultiplier)} sales/day at $${WORLDWIDE_LICENSE.royaltyPerUnit.toFixed(2)} each</small>
+          ${needs.length ? `<small id="license-needs">${needs.join(' &middot; ')}</small>` : ''}`;
+      }
       return `<div class="invention-panel">
         <img src="${INVENTION.pic}" alt="" />
         <div>
           <div class="invention-name">My ${INVENTION.name}</div>
-          <div class="invention-desc">${p.level >= 2 ? 'Stores all over the world' : 'Stores all over the country'} sell it. You get ${each} for every one, without lifting a finger!</div>
+          <div class="invention-desc">Level ${p.level} &middot; ${p.level >= 2 ? 'Worldwide' : 'Nationwide'} &middot; ${each} per sale</div>
           <div class="invention-stats">${stats.map(t => `<span>${t}</span>`).join('')}</div>
+          ${upgrade}
         </div>
       </div>`;
     }
@@ -5169,6 +5190,9 @@
         if (engine.signWholesaleAccount(btn.dataset.id)) kidFlash('cheer', 2000);
       } else if (btn.dataset.act === 'expand') {
         if (engine.upgradeWholesaleAccount(btn.dataset.id)) kidFlash('cheer', 2000);
+      } else if (btn.dataset.act === 'license') {
+        const offer = worldwideOffer(engine.state);
+        if (offer && !offer.days && !offer.short && engine.buyProject(offer.project.id)) kidFlash('cheer', 2000);
       } else if (btn.dataset.act === 'off') {
         engine.toggleFriendDayOff(btn.dataset.id);
       }

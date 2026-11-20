@@ -2,6 +2,8 @@
 import type { ProjectDef, GameState } from '../types';
 import { BOTTLES_FOR_INVENTION } from './wholesale';
 
+export const WORLDWIDE_LICENSE = { volumeMultiplier: 3, royaltyPerUnit: 3.25 } as const;
+
 // The two Phase 1 stand upgrades, $275 and $605, each lift a storage limit
 // (src/simulation/storage.ts): a busy summer day needs more ice than the 400-cube bucket
 // holds, and a second stand more lemons than the 24-lemon bowl. There is no cooler step any
@@ -124,16 +126,16 @@ export function createInitialProjects(): ProjectDef[] {
     {
       id: 'global_licensing',
       name: 'International Appliance Licensing',
-      desc: 'Expands juicer distribution across Europe and Asia. Triples passive patent royalties!',
+      desc: 'Sell three times as many squeezers and earn $3.25 per sale.',
       phase: 4,
       costCash: 3000,
       purchased: false,
       unlocked: (s: GameState) => s.phase >= 4,
       effect: (e: any) => {
         e.patent.level = 2;
-        e.patent.baseUnitsPerDay *= 3;
-        e.patent.royaltyPerUnit = 3.25;
-        e.log('Project: Global patent licensing active! Royalties tripled.');
+        e.patent.baseUnitsPerDay *= WORLDWIDE_LICENSE.volumeMultiplier;
+        e.patent.royaltyPerUnit = WORLDWIDE_LICENSE.royaltyPerUnit;
+        e.log('Worldwide licensing active! Stores around the world now sell your squeezer.');
       }
     },
     {

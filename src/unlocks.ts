@@ -76,8 +76,12 @@ export interface Unlocks {
 }
 
 // A shop item appears after one whole day without another purchase.
+export function shopDaysRemaining(s: Pick<GameState, 'day' | 'lastShopPurchaseDay'>): number {
+  return s.lastShopPurchaseDay == null ? 0 : Math.max(0, s.lastShopPurchaseDay + 2 - s.day);
+}
+
 export function shopReady(s: Pick<GameState, 'day' | 'lastShopPurchaseDay'>): boolean {
-  return s.lastShopPurchaseDay == null || s.day - s.lastShopPurchaseDay >= 2;
+  return shopDaysRemaining(s) === 0;
 }
 
 // A purchase, recipe lock, or the introduction of the next shop item is already a big day.

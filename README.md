@@ -31,9 +31,10 @@ Day Report of what customers said.
   every day (more on hot days), filled from the same lemons and sugar. Save up to expand
   each store's shelf twice and grow its orders. Bottles (glass, cap and label in one price)
   take the ice box's place in Morning Prep, and the morning advice counts what stores need.
-- **Invention.** After selling 1,500 bottles, save up for Invent It! (Stage 4), which patents a lemon squeezer that stores sell for the kid;
-  an Invention tab shows how many sell a day and what they pay. Sell It Worldwide triples
-  it. The Lemonade Factory (Stage 5) shows as "coming soon".
+- **Invention.** After selling 1,500 bottles, pay $4,000 to patent a lemon squeezer.
+  The Invention card shows nationwide sales and offers the $3,000 worldwide license.
+  Worldwide stores sell about 48 squeezers a day, up from 16, and pay $3.25 per sale,
+  up from $2.50. The Lemonade Factory (Stage 5) shows as "coming soon".
 - **Chores.** A broke kid can always do chores for a few dollars.
 - **The kid.** The stand is run by a paper-doll kid with picked skin, hair, hair color and
   shirt. The mirror changes the look any time. New hair styles and colors unlock as the
