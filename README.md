@@ -36,9 +36,11 @@ Day Report of what customers said.
   Hometown (about 50 a day), On TV ($3,000 after 300 sold; about 200 a day), Every State
   ($12,000 after 2,000 sold; about 800 a day) and Worldwide ($40,000 after 8,000 sold; about
   3,200 a day at $3.25 each). The Lemonade Factory (Stage 5) shows as "coming soon".
-- **My House.** From Stage 2 a third column shows the family house. Save up to upgrade it in
-  six steps, from fresh paint ($250) to paying off the house ($500,000); each plays a short
-  build scene. The upgrades only change the house; the later ones wait for later stages.
+- **My House.** From Stage 2 a third column shows the family house. Save up to upgrade it:
+  Fresh Paint ($250; then pick the wall color any time), a Treehouse ($1,500), Lemon HQ in
+  the garage ($10,000, Stage 3) and Pay Off the House ($500,000, Stage 4: bunting and
+  balloons). Each plays a short build scene. The house also stands behind the kid's stand in
+  the day scene, under the day's sky, clouds, rain or snow.
 - **Chores.** A broke kid can always do chores for a few dollars.
 - **The kid.** The stand is run by a paper-doll kid with picked skin, hair, hair color and
   shirt. The mirror changes the look any time. New hair styles and colors unlock as the
@@ -112,6 +114,7 @@ the repo root) turn it into the small files in `public/sprites/`:
 - `art_src/build_frame_art.py` - the stand's ribbon, awning and tablecloth
 - `art_src/build_franchise_art.py` - the three friend stands (Elm Street, Ballpark, Pool)
 - `art_src/build_store_art.py` - the three bottle stores and the labeler
+- `art_src/build_house_art.py` - the family house pictures and their wall masks (for the paint color)
 - `art_src/clean_edges.py` - edge cleanup for small UI sprites
 - `tools/prep_kawaii_cat.py` - the cat, counter digits, stars and sparkles
 - `tools/make_pitcher_glass.py` - the see-through pitcher glass

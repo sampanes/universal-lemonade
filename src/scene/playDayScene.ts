@@ -4,7 +4,9 @@ import { skyCondition, temperatureBand } from './forecastArt';
 import type { DaySummary } from '../types';
 import './dayScene.css';
 
-interface LocationArt { name: string; host: string | null; sellerX: number; table: string; backdrop: string }
+// house: the kid's own stand stands in front of the family house (its HTML), with the house's
+// driveway stand at standX (0 to 1 across the picture) under the booth.
+interface LocationArt { name: string; host: string | null; sellerX: number; table: string; backdrop: string; house?: string | null; standX?: number }
 
 export function playDayScene(summary: DaySummary, location: (id: string) => LocationArt): Promise<void> {
   const beats = dayBeats(summary.standVisits ?? [], summary.friends);
@@ -15,6 +17,7 @@ export function playDayScene(summary: DaySummary, location: (id: string) => Loca
   dialog.innerHTML = `<header><span>Day ${summary.day}</span><strong id="scene-title"></strong></header>
     <div class="scene-stage"><img class="scene-backdrop" alt="">
     <div class="scene-clouds" aria-hidden="true"></div>
+    <div class="scene-house" hidden></div>
     <img class="scene-host" alt="">
     <div class="scene-booth"><img class="scene-table" alt=""><strong class="scene-sold-out"></strong></div>
     <div class="scene-precipitation" aria-hidden="true"></div>
@@ -24,6 +27,7 @@ export function playDayScene(summary: DaySummary, location: (id: string) => Loca
   const find = <T extends Element>(selector: string) => dialog.querySelector<T>(selector)!;
   const title = find<HTMLElement>('strong');
   const backdrop = find<HTMLImageElement>('.scene-backdrop');
+  const house = find<HTMLElement>('.scene-house');
   const host = find<HTMLImageElement>('.scene-host');
   const booth = find<HTMLElement>('.scene-booth');
   const soldOut = find<HTMLElement>('.scene-sold-out');
@@ -80,7 +84,14 @@ export function playDayScene(summary: DaySummary, location: (id: string) => Loca
     title.textContent = art.name;
     host.hidden = visit === 'closed' || !art.host;
     if (art.host) host.src = art.host;
-    backdrop.src = art.backdrop;
+    house.hidden = !art.house;
+    backdrop.hidden = !!art.house;
+    if (art.house) {
+      if (house.dataset.html !== art.house) { house.innerHTML = art.house; house.dataset.html = art.house; }
+      dialog.style.setProperty('--stand-x', String(art.standX ?? 0.5));
+    } else {
+      backdrop.src = art.backdrop;
+    }
     booth.dataset.stand = stand;
     table.src = art.table;
     soldOut.textContent = visit === 'short' ? 'Sold out!' : '';

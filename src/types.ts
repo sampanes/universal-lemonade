@@ -328,6 +328,7 @@ export interface GameState {
   friendExpansion?: { day: number; cups: number };
   storeExpansion?: { day: number; bottles: number };
   houseLevel?: number;   // house steps bought (src/data/house.ts); 0 or missing: none
+  houseColor?: string;   // wall color id (HOUSE_COLORS), once Fresh Paint is bought
   ledger?: MoneyLedger;         // today so far
   lastLedger?: MoneyLedger;     // the last finished day
   upgradeSavingsTotal?: number; // everything the stand upgrades have saved, all game

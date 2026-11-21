@@ -864,24 +864,37 @@
       text-align: center;
     }
     .house-title { font-family: var(--font-display); font-size: 20px; letter-spacing: 0.5px; }
-    .house-pic { width: 100%; aspect-ratio: 4 / 3; display: flex; align-items: center; justify-content: center; }
-    .house-pic img { width: 100%; height: 100%; object-fit: contain; }
-    /* Until the house pictures arrive: a frame with the step's name. */
-    .house-ph {
-      width: 100%;
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 8px;
-      box-sizing: border-box;
-      border: 3px dashed #c4b5fd;
-      border-radius: 14px;
-      background: linear-gradient(180deg, #e0f2fe 0 62%, #bbf7d0 62% 100%);
-      font-family: var(--font-display);
-      font-size: 17px;
-      color: #5b21b6;
+    .house-pic { width: 100%; }
+    /* The house picture: the art, the kid's wall color over the walls mask (the color
+       blend keeps the drawing's shading), and the party decorations once it is paid off. */
+    .house-art { position: relative; width: 100%; aspect-ratio: 4 / 3; isolation: isolate; }
+    .house-art > img, .house-art > svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+    .house-paint {
+      position: absolute;
+      inset: 0;
+      background: var(--paint);
+      mix-blend-mode: color;
+      -webkit-mask-size: 100% 100%;
+      mask-size: 100% 100%;
     }
+    .house-swatches { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+    .house-swatch {
+      flex: 0 0 auto;
+      box-sizing: border-box;
+      width: 24px;
+      height: 24px;
+      min-width: 0;
+      min-height: 0;
+      margin: 0;
+      padding: 0;
+      border-radius: 50%;
+      border: 3px solid #ffffff;
+      box-shadow: 0 0 0 2px #c4b5fd;
+      background: var(--swatch);
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+    .house-swatch[aria-pressed="true"] { box-shadow: 0 0 0 3px #6d28d9; }
     .house-dots { display: flex; gap: 5px; }
     .house-dots span { width: 11px; height: 11px; border-radius: 50%; background: #ede9fe; border: 2px solid #c4b5fd; }
     .house-dots span.on { background: #facc15; border-color: #ca8a04; }
@@ -918,7 +931,6 @@
     .house-scene-stage { position: relative; width: 100%; aspect-ratio: 4 / 3; }
     .house-scene-stage > .house-scene-old,
     .house-scene-stage > .house-scene-new { position: absolute; inset: 0; display: flex; }
-    .house-scene-stage img { width: 100%; height: 100%; object-fit: contain; }
     .house-scene-old { animation: house-shake 1.1s ease-in-out, house-out 0.2s ease-in 1.1s forwards; }
     .house-scene-new { opacity: 0; transform: scale(0.6); animation: house-pop 0.45s cubic-bezier(0.3, 1.6, 0.6, 1) 1.2s forwards; }
     .house-dust {
@@ -3814,7 +3826,7 @@
     import { reputationTrend } from './src/simulation/reputation.ts';
     import { BOTTLES_FOR_INVENTION } from './src/data/wholesale.ts';
     import { SQUEEZER_LEVELS } from './src/data/projects.ts';
-    import { HOUSE_STEPS } from './src/data/house.ts';
+    import { HOUSE_STEPS, HOUSE_COLORS } from './src/data/house.ts';
     import {
       loadCharacterProfile,
       saveCharacterProfile,
@@ -4472,8 +4484,11 @@
           return {
             name: friend ? `${engine.franchiseStands[id].workerName} · ${friend.place}` : id === 'driveway' ? 'My driveway' : 'Neighborhood stand',
             host: id === 'driveway' ? kidImageURL(kidProfile, 'happy', 'stand') : friendPortrait(id, 'happy', 'stand'),
-            sellerX: friend?.sellerX ?? 32,
+            sellerX: friend?.sellerX ?? 64,
             backdrop: './sprites/backdrops/' + (friend?.backdrop ?? friend?.pic ?? 'elm') + '-clear.webp',
+            // The kid's own stand: the family house behind it, the booth over the house's stand.
+            house: friend ? null : housePicHTML(engine.state.houseLevel || 0, engine.state.houseColor),
+            standX: houseArtFor(engine.state.houseLevel || 0).standX,
             table: './sprites/franchise/' + (friend?.pic || 'elm') + '.png'
           };
         });
@@ -5175,13 +5190,49 @@
       }
     };
 
-    // My House (src/data/house.ts): one picture per house level (0: Day 1). Empty until the
-    // art arrives; a framed name stands in for a missing picture.
-    const HOUSE_PICS = [];
-    const HOUSE_PIC = '';           // the Money Bag row's picture
-    function housePicHTML(level) {
-      const pic = HOUSE_PICS[level];
-      return pic ? `<img src="${pic}" alt="" />` : `<div class="house-ph">${level ? HOUSE_STEPS[level - 1].name : 'Our House'}</div>`;
+    // My House (src/data/house.ts). Three pictures (art_src/build_house_art.py), each with a
+    // walls mask for the paint color; standX is where the stand on the driveway is (0 to 1 across
+    // the picture), so the day scene can put the kid's booth right over it.
+    const HOUSE_ART = {
+      base: { pic: './sprites/house/house_base.webp', walls: './sprites/house/walls_base.png', standX: 0.76 },
+      treehouse: { pic: './sprites/house/house_treehouse.webp', walls: './sprites/house/walls_treehouse.png', standX: 0.77 },
+      hq: { pic: './sprites/house/house_hq.webp', walls: './sprites/house/walls_hq.png', standX: 0.82 },
+    };
+    const HOUSE_PIC = HOUSE_ART.base.pic;     // the Money Bag row's picture
+    function houseArtFor(level) {
+      return level >= 3 ? HOUSE_ART.hq : level >= 2 ? HOUSE_ART.treehouse : HOUSE_ART.base;
+    }
+    // Bunting along the roof and balloons by the fence, in the pictures' own coordinates
+    // (1448 x 1086 source canvas).
+    function housePartySVG() {
+      const ink = '#4a2040';
+      const colors = ['#f472b6', '#facc15', '#a78bfa', '#34d399', '#60a5fa'];
+      const strings = [[[95, 470], [300, 330], [455, 110]], [[490, 110], [690, 290], [880, 405]]];
+      let svg = '';
+      strings.forEach(([a, c, b], si) => {
+        svg += `<path d="M${a} Q${c} ${b}" fill="none" stroke="${ink}" stroke-width="6"/>`;
+        for (let k = 1; k < 8; k++) {
+          const u = k / 8, v = 1 - u;
+          const x = v * v * a[0] + 2 * u * v * c[0] + u * u * b[0];
+          const y = v * v * a[1] + 2 * u * v * c[1] + u * u * b[1];
+          svg += `<path d="M${(x - 22).toFixed(0)} ${y.toFixed(0)} L${(x + 22).toFixed(0)} ${y.toFixed(0)} L${x.toFixed(0)} ${(y + 46).toFixed(0)} Z" fill="${colors[(k + si * 3) % colors.length]}" stroke="${ink}" stroke-width="6" stroke-linejoin="round"/>`;
+        }
+      });
+      const tie = [92, 700];
+      [[70, 515, '#f472b6'], [160, 455, '#facc15'], [150, 575, '#a78bfa']].forEach(([x, y, fill]) => {
+        svg += `<path d="M${x} ${y + 56} Q${x + 14} ${(y + tie[1]) / 2} ${tie[0]} ${tie[1]}" fill="none" stroke="${ink}" stroke-width="4"/>`;
+        svg += `<ellipse cx="${x}" cy="${y}" rx="46" ry="56" fill="${fill}" stroke="${ink}" stroke-width="7"/>`;
+        svg += `<ellipse cx="${x - 15}" cy="${y - 20}" rx="10" ry="15" fill="#ffffff" opacity="0.65"/>`;
+      });
+      return `<svg viewBox="0 0 1448 1086" aria-hidden="true">${svg}</svg>`;
+    }
+    // The house at a level, painted with a wall color id (HOUSE_COLORS; cream: unpainted).
+    function housePicHTML(level, colorId) {
+      const art = houseArtFor(level);
+      const color = level >= 1 ? HOUSE_COLORS.find(c => c.id === colorId) : null;
+      const paint = color && color.id !== 'cream'
+        ? `<div class="house-paint" style="--paint:${color.hex};-webkit-mask-image:url(${art.walls});mask-image:url(${art.walls})"></div>` : '';
+      return `<div class="house-art"><img src="${art.pic}" alt="" />${paint}${level >= HOUSE_STEPS.length ? housePartySVG() : ''}</div>`;
     }
     function renderHouse(s) {
       const col = document.getElementById('house-col');
@@ -5206,8 +5257,10 @@
           ${short ? `<div class="house-save"><span class="stand-shop-bar"><span style="width:${Math.min(100, (spare / next.cost) * 100).toFixed(1)}%"></span></span>Save $${fmtWhole(Math.ceil(short))} more</div>` : ''}`;
       }
       setHTMLIfChanged(document.getElementById('house-card'), `<div class="house-title">My House</div>
-        <div class="house-pic">${housePicHTML(level)}</div>
+        <div class="house-pic">${housePicHTML(level, s.houseColor)}</div>
         <div class="house-dots" aria-label="${level} of ${HOUSE_STEPS.length} house upgrades">${dots}</div>
+        ${level >= 1 ? `<div class="house-swatches" role="group" aria-label="House color">${HOUSE_COLORS.map(c =>
+          `<button type="button" class="house-swatch" data-act="house-color" data-id="${c.id}" style="--swatch:${c.hex}" aria-label="${c.name}" aria-pressed="${c.id === s.houseColor}"></button>`).join('')}</div>` : ''}
         <div class="house-next">${nextHTML}</div>`);
     }
     // The build scene: the old house shakes in a cloud of dust, the new one pops in, confetti.
@@ -5220,8 +5273,8 @@
         `<span class="house-dust" style="left:${x}%;top:${y}%;animation-delay:${(0.2 + i * 0.2).toFixed(1)}s"></span>`).join('');
       scene.innerHTML = `<div class="house-scene-card">
         <div class="house-scene-stage">
-          <div class="house-scene-old">${housePicHTML(level - 1)}</div>
-          <div class="house-scene-new">${housePicHTML(level)}</div>
+          <div class="house-scene-old">${housePicHTML(level - 1, engine.state.houseColor)}</div>
+          <div class="house-scene-new">${housePicHTML(level, engine.state.houseColor)}</div>
           ${dust}
         </div>
         ${confetti}
@@ -5237,6 +5290,8 @@
       e.currentTarget.innerHTML = '';
     });
     document.getElementById('house-col').addEventListener('click', (e) => {
+      const swatch = e.target.closest('[data-act="house-color"]');
+      if (swatch) { engine.setHouseColor(swatch.dataset.id); return; }
       const btn = e.target.closest('[data-act="house-buy"]');
       if (!btn || btn.disabled) return;
       const next = engine.nextHouseStep();

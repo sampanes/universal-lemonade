@@ -833,16 +833,27 @@ test('house upgrades go in order, wait for their stage, and save', () => {
   assert.equal(e.state.houseLevel, 1);
   assert.equal(e.ledger.house, 250);
   assert.equal(e.state.cash.toNumber(), 1750);
+  assert.equal(e.state.houseColor, 'mint', 'fresh paint starts mint');
+  assert.ok(e.setHouseColor('sky'));
+  assert.equal(e.setHouseColor('plaid'), false);
+  assert.equal(e.state.houseColor, 'sky');
   assert.ok(e.buyHouseStep(), 'treehouse');
-  assert.equal(e.nextHouseStep().id, 'pool');
+  assert.equal(e.nextHouseStep().id, 'hq');
   e.state.cash = e.state.cash.constructor.fromNumber(100000);
-  assert.equal(e.buyHouseStep(), false, 'the pool waits for Stage 3');
+  assert.equal(e.buyHouseStep(), false, 'Lemon HQ waits for Stage 3');
   const loaded = LemonadeEngine.fromSave(JSON.parse(JSON.stringify(e.toSave())));
   assert.equal(loaded.state.houseLevel, 2);
+  assert.equal(loaded.state.houseColor, 'sky');
 
   const old = JSON.parse(JSON.stringify(new LemonadeEngine({ seed: 74 }).toSave()));
   delete old.state.houseLevel;
   assert.equal(LemonadeEngine.fromSave(old).nextHouseStep().id, 'paint', 'older saves start at the first step');
+  old.state.houseLevel = 6;   // from when the house had six steps
+  const six = LemonadeEngine.fromSave(old);
+  assert.equal(six.state.houseLevel, 4);
+  assert.equal(six.nextHouseStep(), null);
+  assert.equal(six.state.houseColor, 'mint');
+  assert.equal(new LemonadeEngine({ seed: 75 }).setHouseColor('sky'), false, 'no repainting before Fresh Paint');
 });
 
 test('stores buy the forecast bottles, the forecast counts their lemons and sugar, and the labeler makes bottles cheaper', () => {

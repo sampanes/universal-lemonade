@@ -22,7 +22,10 @@
 .day-scene[data-weather=CLOUDY] { --sky-grade: saturate(.86) brightness(.94); }
 .day-scene[data-weather=RAINY] { --sky-grade: saturate(.72) brightness(.84); }
 .day-scene[data-weather=SNOWY] { --sky-grade: saturate(.74) brightness(1.04); }
-.scene-backdrop,.scene-clouds,.scene-host,.scene-table,.scene-person { filter:var(--sky-grade,none); }
+/* The family house behind the kid's own stand: its driveway stand lines up under the booth. */
+.scene-house { position:absolute; left:var(--seller-x); bottom:12%; height:80%; aspect-ratio:4/3; transform:translateX(calc(var(--stand-x) * -100%)); }
+.scene-house[hidden],.scene-backdrop[hidden] { display:none; }
+.scene-backdrop,.scene-clouds,.scene-house,.scene-host,.scene-table,.scene-person { filter:var(--sky-grade,none); }
 .scene-precipitation { position:absolute; inset:0; overflow:hidden; pointer-events:none; background:var(--temp-wash,transparent); }
 .scene-precipitation i { position:absolute; top:-18px; height:calc(100% + 20px); animation:scene-rain linear infinite; }
 .scene-precipitation i::before { content:""; display:block; width:2px; height:13px; border-radius:2px; background:#d1f4ffbf; transform:rotate(12deg); }

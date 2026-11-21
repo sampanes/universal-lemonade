@@ -26,7 +26,7 @@ import { createInitialFranchiseStands } from './data/franchise';
 import { createInitialWholesaleAccounts } from './data/wholesale';
 import { createInitialProjects, SQUEEZER_LEVELS, applySqueezerLevel } from './data/projects';
 import { createInitialTrophies } from './data/trophies';
-import { HOUSE_STEPS, type HouseStep } from './data/house';
+import { HOUSE_STEPS, HOUSE_COLORS, FIRST_HOUSE_COLOR, type HouseStep } from './data/house';
 import { rollWeatherForecast, computeIdealIce, getSeasonInfo } from './simulation/weather';
 import { iceHint, crowdLevel, type IceHint } from './simulation/hints';
 import { computeRecipeQuality, getRecipeProfile } from './simulation/recipe';
@@ -192,6 +192,9 @@ export class LemonadeEngine {
     }
     delete (e.state as { squeezersTowardLicense?: number }).squeezersTowardLicense;
     Object.assign(e.copacker, d.copacker || {});
+    // The house had six steps for a while; keep a save from then inside the four.
+    e.state.houseLevel = Math.max(0, Math.min(HOUSE_STEPS.length, e.state.houseLevel ?? 0));
+    if (e.state.houseLevel >= 1 && !HOUSE_COLORS.some(c => c.id === e.state.houseColor)) e.state.houseColor = FIRST_HOUSE_COLOR;
     // Saves from before the profit total: estimate it as the cash gained plus everything spent
     // on upgrades, hiring and prizes (chore money is counted in too; there is no record of it).
     if (typeof e.state.grossProfitTotal !== 'number') {
@@ -440,7 +443,15 @@ export class LemonadeEngine {
     this.state.cash = this.state.cash.sub(step.cost);
     this.ledger.house = (this.ledger.house ?? 0) + step.cost;
     this.state.houseLevel = (this.state.houseLevel ?? 0) + 1;
+    if (step.id === 'paint') this.state.houseColor = FIRST_HOUSE_COLOR;
     this.log(`House: ${step.name}!`);
+    return true;
+  }
+
+  // Repaint the house (free, any time after Fresh Paint).
+  public setHouseColor(id: string): boolean {
+    if ((this.state.houseLevel ?? 0) < 1 || !HOUSE_COLORS.some(c => c.id === id)) return false;
+    this.state.houseColor = id;
     return true;
   }
 
