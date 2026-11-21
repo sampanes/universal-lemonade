@@ -64,7 +64,7 @@ function buyUpgrades(e: LemonadeEngine, reserve: number, chance: number, rand: (
   const s = e.state;
   if (s.lastShopPurchaseDay != null && s.day - s.lastShopPurchaseDay < 2) return;
   const order = ['auto_ice_dispenser', 'fridge', 'franchise_license', 'costco_card',
-    'cargo_wagon', 'bottling_rig', 'commercial_labeler', 'patent_filing', 'global_licensing'];
+    'cargo_wagon', 'bottling_rig', 'commercial_labeler', 'patent_filing', 'squeezer_tv', 'squeezer_states', 'global_licensing'];
   const p = order.map(id => e.projects.find(project => project.id === id)).find(project => project && !project.purchased);
   if (!p || !p.unlocked(s)) return;
   if (p.id === 'cargo_wagon' && Object.values(e.franchiseStands).filter(st => st.hired).length < 2) return;

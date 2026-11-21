@@ -237,6 +237,7 @@ export interface MoneyLedger {
   treats: number;       // trophies
   hiring: number;       // franchise stand setup and wholesale sign-up
   storeUpgrades?: number; // expanded store shelves
+  house?: number;       // house upgrades (src/data/house.ts)
   wages: number;        // franchise workers
   packaging: number;    // wholesale bottles
 }
@@ -269,7 +270,7 @@ export interface GameState {
   reputationHistory?: number[]; // recent daily ratings, for the report trend
   totalRevenueEarned: BigNum;
   totalBottlesSold: number;
-  squeezersTowardLicense: number;
+  totalSqueezersSold: number;   // lifetime lemon squeezers sold (opens the squeezer steps)
   totalStandCupsSold: number;
 
   inv: {
@@ -326,6 +327,7 @@ export interface GameState {
   lastShopPurchaseDay?: number; // spaces the next kid shop item
   friendExpansion?: { day: number; cups: number };
   storeExpansion?: { day: number; bottles: number };
+  houseLevel?: number;   // house steps bought (src/data/house.ts); 0 or missing: none
   ledger?: MoneyLedger;         // today so far
   lastLedger?: MoneyLedger;     // the last finished day
   upgradeSavingsTotal?: number; // everything the stand upgrades have saved, all game

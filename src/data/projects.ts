@@ -2,7 +2,48 @@
 import type { ProjectDef, GameState } from '../types';
 import { BOTTLES_FOR_INVENTION } from './wholesale';
 
-export const WORLDWIDE_LICENSE = { salesRequired: 100, volumeMultiplier: 3, royaltyPerUnit: 3.25 } as const;
+// The lemon squeezer's four steps (Stage 4). Level 1 comes with the patent; each later step
+// is a project bought on the Invention card once enough squeezers have sold in all (counted
+// across saves in state.totalSqueezersSold). Each step sells four times as many a day, so
+// royalties grow from about $125 a day to about $10,000 a day.
+export interface SqueezerLevel {
+  level: number;
+  name: string;            // where it sells, for the kid ("Hometown")
+  project: string | null;  // the project that buys this step (null: the patent itself)
+  cost: number;
+  salesRequired: number;   // lifetime squeezers sold before the step can be bought
+  unitsPerDay: number;
+  royaltyPerUnit: number;
+}
+export const SQUEEZER_LEVELS: readonly SqueezerLevel[] = [
+  { level: 1, name: 'Hometown', project: null, cost: 0, salesRequired: 0, unitsPerDay: 50, royaltyPerUnit: 2.5 },
+  { level: 2, name: 'On TV', project: 'squeezer_tv', cost: 3000, salesRequired: 300, unitsPerDay: 200, royaltyPerUnit: 2.5 },
+  { level: 3, name: 'Every State', project: 'squeezer_states', cost: 12000, salesRequired: 2000, unitsPerDay: 800, royaltyPerUnit: 2.75 },
+  { level: 4, name: 'Worldwide', project: 'global_licensing', cost: 40000, salesRequired: 8000, unitsPerDay: 3200, royaltyPerUnit: 3.25 },
+];
+// Set the squeezer to a step (never down a step: an old save may own a later one already).
+export function applySqueezerLevel(patent: { level: number; baseUnitsPerDay: number; royaltyPerUnit: number }, level: number): void {
+  const step = SQUEEZER_LEVELS[Math.max(1, Math.min(SQUEEZER_LEVELS.length, Math.max(level, patent.level))) - 1];
+  patent.level = step.level;
+  patent.baseUnitsPerDay = step.unitsPerDay;
+  patent.royaltyPerUnit = step.royaltyPerUnit;
+}
+function squeezerStep(level: number): ProjectDef {
+  const step = SQUEEZER_LEVELS[level - 1];
+  return {
+    id: step.project as string,
+    name: `Lemon Squeezer: ${step.name}`,
+    desc: `Sell about ${step.unitsPerDay.toLocaleString('en-US')} squeezers a day at $${step.royaltyPerUnit.toFixed(2)} each.`,
+    phase: 4,
+    costCash: step.cost,
+    purchased: false,
+    unlocked: (s: GameState) => s.phase >= 4 && s.totalSqueezersSold >= step.salesRequired,
+    effect: (e: any) => {
+      applySqueezerLevel(e.patent, step.level);
+      e.log(`Lemon squeezer: ${step.name}! About ${step.unitsPerDay.toLocaleString('en-US')} sold a day now.`);
+    }
+  };
+}
 
 // The two Phase 1 stand upgrades, $275 and $605, each lift a storage limit
 // (src/simulation/storage.ts): a busy summer day needs more ice than the 400-cube bucket
@@ -120,24 +161,13 @@ export function createInitialProjects(): ProjectDef[] {
       effect: (e: any) => {
         e.state.phase = 4;
         e.patent.licensed = true;
+        applySqueezerLevel(e.patent, 1);
         e.log('PHASE 4 UNLOCKED: Patent granted! You now earn passive royalties on every juicer sold nationwide.');
       }
     },
-    {
-      id: 'global_licensing',
-      name: 'International Appliance Licensing',
-      desc: 'Sell three times as many squeezers and earn $3.25 per sale.',
-      phase: 4,
-      costCash: 3000,
-      purchased: false,
-      unlocked: (s: GameState) => s.phase >= 4 && s.squeezersTowardLicense >= WORLDWIDE_LICENSE.salesRequired,
-      effect: (e: any) => {
-        e.patent.level = 2;
-        e.patent.baseUnitsPerDay *= WORLDWIDE_LICENSE.volumeMultiplier;
-        e.patent.royaltyPerUnit = WORLDWIDE_LICENSE.royaltyPerUnit;
-        e.log('Worldwide licensing active! Stores around the world now sell your squeezer.');
-      }
-    },
+    squeezerStep(2),
+    squeezerStep(3),
+    squeezerStep(4),
     {
       id: 'copacker_deal',
       name: 'Industrial Co-Packer Agreement (Phase 5)',

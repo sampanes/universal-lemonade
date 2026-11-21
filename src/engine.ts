@@ -24,8 +24,9 @@ import type {
 import { rollChore } from './data/chores';
 import { createInitialFranchiseStands } from './data/franchise';
 import { createInitialWholesaleAccounts } from './data/wholesale';
-import { createInitialProjects, WORLDWIDE_LICENSE } from './data/projects';
+import { createInitialProjects, SQUEEZER_LEVELS, applySqueezerLevel } from './data/projects';
 import { createInitialTrophies } from './data/trophies';
+import { HOUSE_STEPS, type HouseStep } from './data/house';
 import { rollWeatherForecast, computeIdealIce, getSeasonInfo } from './simulation/weather';
 import { iceHint, crowdLevel, type IceHint } from './simulation/hints';
 import { computeRecipeQuality, getRecipeProfile } from './simulation/recipe';
@@ -171,10 +172,25 @@ export class LemonadeEngine {
       account.bottlesPerDay = account.levels[Math.max(0, account.level - 1)].bottlesPerDay;
     }
     Object.assign(e.patent, d.patent || {});
-    // Earlier saves did not record lifetime squeezer sales. Keep their existing license eligibility.
-    if (d.state.squeezersTowardLicense == null && e.patent.licensed) {
-      e.state.squeezersTowardLicense = WORLDWIDE_LICENSE.salesRequired;
+    // Squeezer steps: a save from before the four steps has at most "worldwide" (its old
+    // level 2). Owning a step means owning the ones before it; the step's sales and royalty
+    // come from SQUEEZER_LEVELS, not the save.
+    const oldSave = d.state.totalSqueezersSold == null;
+    if (oldSave && e.patent.level >= 2) e.patent.level = 1;
+    for (const step of SQUEEZER_LEVELS) {
+      const p = step.project ? e.projects.find(x => x.id === step.project) : null;
+      if (p && p.purchased) {
+        SQUEEZER_LEVELS.slice(1, step.level - 1).forEach(prev => { const q = e.projects.find(x => x.id === prev.project); if (q) q.purchased = true; });
+        e.patent.level = Math.max(e.patent.level, step.level);
+      }
     }
+    if (e.patent.licensed) applySqueezerLevel(e.patent, e.patent.level);
+    // Lifetime squeezer sales: older saves counted up to 100 (or nothing at all).
+    if (oldSave) {
+      const counted = (d.state as { squeezersTowardLicense?: number }).squeezersTowardLicense;
+      e.state.totalSqueezersSold = typeof counted === 'number' ? counted : (e.patent.licensed ? SQUEEZER_LEVELS[1].salesRequired : 0);
+    }
+    delete (e.state as { squeezersTowardLicense?: number }).squeezersTowardLicense;
     Object.assign(e.copacker, d.copacker || {});
     // Saves from before the profit total: estimate it as the cash gained plus everything spent
     // on upgrades, hiring and prizes (chore money is counted in too; there is no record of it).
@@ -218,7 +234,8 @@ export class LemonadeEngine {
       totalCupsSold: new BigNum(0, 0),
       totalRevenueEarned: new BigNum(0, 0),
       totalBottlesSold: 0,
-      squeezersTowardLicense: 0,
+      totalSqueezersSold: 0,
+      houseLevel: 0,
       totalStandCupsSold: 0,
 
       inv: { ...start.inventory },
@@ -409,6 +426,21 @@ export class LemonadeEngine {
     account.bottlesPerDay = next.bottlesPerDay;
     this.state.storeExpansion = { day: this.state.day, bottles: this.state.totalBottlesSold };
     this.log(`Expanded ${account.name} to level ${account.level}.`);
+    return true;
+  }
+
+  // The family house (src/data/house.ts): the next step to buy, or null when all are bought.
+  public nextHouseStep(): HouseStep | null {
+    return HOUSE_STEPS[this.state.houseLevel ?? 0] ?? null;
+  }
+
+  public buyHouseStep(): boolean {
+    const step = this.nextHouseStep();
+    if (!step || this.state.phase < step.phase || this.state.cash.lt(step.cost)) return false;
+    this.state.cash = this.state.cash.sub(step.cost);
+    this.ledger.house = (this.ledger.house ?? 0) + step.cost;
+    this.state.houseLevel = (this.state.houseLevel ?? 0) + 1;
+    this.log(`House: ${step.name}!`);
     return true;
   }
 
@@ -856,7 +888,7 @@ export class LemonadeEngine {
 
       patentUnitsSold = Math.round(this.patent.baseUnitsPerDay * (p.randomMin + this.rand() * p.randomRange) * multiplier);
       patentRoyalties = patentUnitsSold * this.patent.royaltyPerUnit;
-      s.squeezersTowardLicense = Math.min(WORLDWIDE_LICENSE.salesRequired, s.squeezersTowardLicense + patentUnitsSold);
+      s.totalSqueezersSold += patentUnitsSold;
     }
 
     let copackerCasesSold = 0;
@@ -1094,7 +1126,7 @@ function emptyLedger(day: number): MoneyLedger {
 
 // Money in minus money out for one ledger (what the kid really kept that day).
 export function ledgerKept(l: MoneyLedger): number {
-  const out = Object.values(l.supplies).reduce((a, b) => a + b, 0) + l.shop + l.treats + l.hiring + (l.storeUpgrades ?? 0) + l.wages + l.packaging;
+  const out = Object.values(l.supplies).reduce((a, b) => a + b, 0) + l.shop + l.treats + l.hiring + (l.storeUpgrades ?? 0) + (l.house ?? 0) + l.wages + l.packaging;
   return l.sales + l.chores - out;
 }
 

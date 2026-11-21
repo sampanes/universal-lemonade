@@ -768,27 +768,81 @@ test('invention counts actual bottle sales and saves progress', () => {
   assert.equal(LemonadeEngine.fromSave(save), null, 'old saves restart cleanly');
 });
 
-test('worldwide licensing counts actual squeezer sales across saves and opens at 100', () => {
+test('the squeezer grows in four steps, each opened by lifetime squeezer sales', () => {
   const e = new LemonadeEngine({ seed: 71 });
   e.dadJumpToPhase(4);
-  e.state.cash = e.state.cash.add(10000);
-  assert.equal(e.buyProject('global_licensing'), false);
+  e.state.cash = e.state.cash.add(100000);
+  assert.deepEqual([e.patent.level, e.patent.baseUnitsPerDay, e.patent.royaltyPerUnit], [1, 50, 2.5]);
+  assert.equal(e.buyProject('squeezer_tv'), false, 'needs 300 squeezers sold');
   const first = e.runDay().patentUnitsSold;
   assert.ok(first > 0);
+  assert.equal(e.state.totalSqueezersSold, first);
+
+  const steps = [['squeezer_tv', 300, 2, 200, 2.5], ['squeezer_states', 2000, 3, 800, 2.75], ['global_licensing', 8000, 4, 3200, 3.25]];
+  for (const [id, sales, level, perDay, royalty] of steps) {
+    e.state.totalSqueezersSold = sales - 1;
+    assert.equal(e.buyProject(id), false, id + ' waits for ' + sales + ' sold');
+    e.state.totalSqueezersSold = sales;
+    assert.ok(e.buyProject(id), id);
+    assert.deepEqual([e.patent.level, e.patent.baseUnitsPerDay, e.patent.royaltyPerUnit], [level, perDay, royalty]);
+  }
+  const big = e.runDay().patentUnitsSold;
+  assert.ok(big > 2500, 'worldwide sells about 3,200 a day');
+
   const save = JSON.parse(JSON.stringify(e.toSave()));
   const loaded = LemonadeEngine.fromSave(save);
-  assert.equal(loaded.state.squeezersTowardLicense, first);
-  loaded.state.squeezersTowardLicense = 99;
-  assert.equal(loaded.buyProject('global_licensing'), false);
-  loaded.runDay();
-  assert.equal(loaded.state.squeezersTowardLicense, 100);
-  assert.ok(loaded.buyProject('global_licensing'));
-  assert.equal(loaded.buyProject('global_licensing'), false);
+  assert.equal(loaded.patent.level, 4);
+  assert.equal(loaded.state.totalSqueezersSold, e.state.totalSqueezersSold);
+});
 
+test('saves from before the squeezer steps keep what they bought', () => {
+  const e = new LemonadeEngine({ seed: 72 });
+  e.dadJumpToPhase(4);
+  const save = JSON.parse(JSON.stringify(e.toSave()));
+  // An old save that bought the old worldwide license (its level 2: 48 a day at $3.25).
+  delete save.state.totalSqueezersSold;
+  save.state.squeezersTowardLicense = 100;
+  save.patent = { licensed: true, level: 2, baseUnitsPerDay: 48, royaltyPerUnit: 3.25 };
+  save.projects.push('global_licensing');
+  const world = LemonadeEngine.fromSave(save);
+  assert.equal(world.patent.level, 4);
+  assert.equal(world.patent.baseUnitsPerDay, 3200);
+  assert.ok(['squeezer_tv', 'squeezer_states'].every(id => world.projects.find(p => p.id === id).purchased));
+  assert.equal(world.state.totalSqueezersSold, 100);
+  assert.equal('squeezersTowardLicense' in world.state, false);
+
+  // An old patent without worldwide and without a sales count: the first step stays open.
+  save.projects = save.projects.filter(id => id !== 'global_licensing');
+  save.patent = { licensed: true, level: 1, baseUnitsPerDay: 16, royaltyPerUnit: 2.5 };
   delete save.state.squeezersTowardLicense;
-  assert.ok(LemonadeEngine.fromSave(save).buyProject('global_licensing'), 'existing patent keeps its eligibility');
-  save.patent.licensed = false;
-  assert.equal(LemonadeEngine.fromSave(save).state.squeezersTowardLicense, 0);
+  const home = LemonadeEngine.fromSave(save);
+  assert.equal(home.patent.level, 1);
+  assert.equal(home.state.totalSqueezersSold, 300);
+  home.state.cash = home.state.cash.add(5000);
+  assert.ok(home.buyProject('squeezer_tv'));
+});
+
+test('house upgrades go in order, wait for their stage, and save', () => {
+  const e = new LemonadeEngine({ seed: 73 });
+  e.state.cash = e.state.cash.add(1000);
+  assert.equal(e.nextHouseStep().id, 'paint');
+  assert.equal(e.buyHouseStep(), false, 'paint waits for Stage 2');
+  e.dadJumpToPhase(2);
+  e.state.cash = e.state.cash.constructor.fromNumber(2000);
+  assert.ok(e.buyHouseStep());
+  assert.equal(e.state.houseLevel, 1);
+  assert.equal(e.ledger.house, 250);
+  assert.equal(e.state.cash.toNumber(), 1750);
+  assert.ok(e.buyHouseStep(), 'treehouse');
+  assert.equal(e.nextHouseStep().id, 'pool');
+  e.state.cash = e.state.cash.constructor.fromNumber(100000);
+  assert.equal(e.buyHouseStep(), false, 'the pool waits for Stage 3');
+  const loaded = LemonadeEngine.fromSave(JSON.parse(JSON.stringify(e.toSave())));
+  assert.equal(loaded.state.houseLevel, 2);
+
+  const old = JSON.parse(JSON.stringify(new LemonadeEngine({ seed: 74 }).toSave()));
+  delete old.state.houseLevel;
+  assert.equal(LemonadeEngine.fromSave(old).nextHouseStep().id, 'paint', 'older saves start at the first step');
 });
 
 test('stores buy the forecast bottles, the forecast counts their lemons and sugar, and the labeler makes bottles cheaper', () => {

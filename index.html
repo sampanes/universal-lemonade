@@ -846,6 +846,134 @@
     }
     .stand-shop.teaser .stand-shop-buy { display: none; }
 
+    /* My House (kid mode, from Stage 2): a third column with the family house and the next
+       upgrade to save up for. Each upgrade plays a short build scene. */
+    .house-col[hidden] { display: none !important; }
+    body.dad-mode .house-col { display: none !important; }
+    .house-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 12px 14px;
+      background: #ffffff;
+      border: 3px solid #c4b5fd;
+      border-radius: 18px;
+      box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2);
+      color: #3b0764;
+      text-align: center;
+    }
+    .house-title { font-family: var(--font-display); font-size: 20px; letter-spacing: 0.5px; }
+    .house-pic { width: 100%; aspect-ratio: 4 / 3; display: flex; align-items: center; justify-content: center; }
+    .house-pic img { width: 100%; height: 100%; object-fit: contain; }
+    /* Until the house pictures arrive: a frame with the step's name. */
+    .house-ph {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px;
+      box-sizing: border-box;
+      border: 3px dashed #c4b5fd;
+      border-radius: 14px;
+      background: linear-gradient(180deg, #e0f2fe 0 62%, #bbf7d0 62% 100%);
+      font-family: var(--font-display);
+      font-size: 17px;
+      color: #5b21b6;
+    }
+    .house-dots { display: flex; gap: 5px; }
+    .house-dots span { width: 11px; height: 11px; border-radius: 50%; background: #ede9fe; border: 2px solid #c4b5fd; }
+    .house-dots span.on { background: #facc15; border-color: #ca8a04; }
+    .house-next { width: 100%; display: flex; flex-direction: column; align-items: stretch; gap: 5px; }
+    .house-next-name { font-family: var(--font-display); font-size: 16px; line-height: 1.1; }
+    .house-next-desc { font-size: 12px; font-weight: 700; line-height: 1.25; color: #5b21b6; }
+    .house-next .stand-shop-buy { width: 100%; font-size: 16px; padding: 8px 10px; }
+    .house-save { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: #6b7280; text-align: left; }
+    .house-later { font-size: 12px; font-weight: 700; color: #6b7280; }
+    .house-scene {
+      position: fixed;
+      inset: 0;
+      z-index: 3000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      background: rgba(30, 12, 52, 0.62);
+      animation: house-fade-in 0.25s ease-out;
+    }
+    .house-scene[hidden] { display: none; }
+    .house-scene-card {
+      position: relative;
+      width: min(420px, 100%);
+      padding: 16px 16px 18px;
+      border-radius: 22px;
+      background: #fffbeb;
+      border: 4px solid #facc15;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+      text-align: center;
+      color: #3b0764;
+      overflow: hidden;
+    }
+    .house-scene-stage { position: relative; width: 100%; aspect-ratio: 4 / 3; }
+    .house-scene-stage > .house-scene-old,
+    .house-scene-stage > .house-scene-new { position: absolute; inset: 0; display: flex; }
+    .house-scene-stage img { width: 100%; height: 100%; object-fit: contain; }
+    .house-scene-old { animation: house-shake 1.1s ease-in-out, house-out 0.2s ease-in 1.1s forwards; }
+    .house-scene-new { opacity: 0; transform: scale(0.6); animation: house-pop 0.45s cubic-bezier(0.3, 1.6, 0.6, 1) 1.2s forwards; }
+    .house-dust {
+      position: absolute;
+      width: 34%;
+      aspect-ratio: 1;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(214, 196, 168, 0.95), rgba(214, 196, 168, 0) 70%);
+      opacity: 0;
+      animation: house-dust 1.2s ease-out forwards;
+    }
+    .house-confetti {
+      position: absolute;
+      top: -12px;
+      width: 9px;
+      height: 14px;
+      border-radius: 2px;
+      opacity: 0;
+      animation: house-confetti 1.6s ease-in forwards;
+    }
+    .house-scene-title {
+      margin-top: 10px;
+      font-family: var(--font-display);
+      font-size: 24px;
+      opacity: 0;
+      animation: house-fade-in 0.3s ease-out 1.5s forwards;
+    }
+    .house-scene-card .stand-shop-buy { margin-top: 10px; opacity: 0; animation: house-fade-in 0.3s ease-out 1.7s forwards; }
+    @keyframes house-fade-in { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes house-out { to { opacity: 0; } }
+    @keyframes house-pop { to { opacity: 1; transform: scale(1); } }
+    @keyframes house-shake {
+      0%, 100% { transform: translate(0, 0) rotate(0); }
+      15% { transform: translate(-6px, 2px) rotate(-2deg); }
+      30% { transform: translate(6px, -2px) rotate(2deg); }
+      45% { transform: translate(-5px, 1px) rotate(-1.5deg); }
+      60% { transform: translate(5px, -1px) rotate(1.5deg); }
+      75% { transform: translate(-3px, 0) rotate(-1deg); }
+    }
+    @keyframes house-dust {
+      0% { opacity: 0; transform: scale(0.3); }
+      40% { opacity: 1; }
+      100% { opacity: 0; transform: scale(1.4) translateY(-12px); }
+    }
+    @keyframes house-confetti {
+      0% { opacity: 1; transform: translateY(0) rotate(0); }
+      100% { opacity: 1; transform: translateY(380px) rotate(540deg); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .house-scene-old { animation: house-out 0.2s ease-in 0.3s forwards; }
+      .house-scene-new { animation: house-pop 0.2s ease-out 0.4s forwards; }
+      .house-dust, .house-confetti { display: none; }
+      .house-scene-title, .house-scene-card .stand-shop-buy { animation-delay: 0.5s; }
+    }
+
     /* Day Report banner on the day the recipe locks. */
     .report-golden {
       display: flex;
@@ -3152,6 +3280,21 @@
         body:not(.dad-mode) .grid,
         body.phase-1-driveway .grid { grid-template-columns: minmax(0, 1fr) !important; }
       }
+      body:not(.dad-mode).has-house .grid {
+        grid-template-columns: repeat(2, minmax(320px, 460px)) minmax(240px, 290px) !important;
+        max-width: 1250px;
+      }
+      @media (max-width: 1100px) {
+        body:not(.dad-mode).has-house .grid {
+          grid-template-columns: repeat(2, minmax(320px, 460px)) !important;
+          max-width: 960px;
+        }
+        body:not(.dad-mode).has-house .house-col { grid-column: 1 / -1; }
+        .house-card { max-width: 420px; margin: 0 auto; }
+      }
+      @media (max-width: 680px) {
+        body:not(.dad-mode).has-house .grid { grid-template-columns: minmax(0, 1fr) !important; }
+      }
 
       /* In Kid Mode, only show emergency chore button when cash is low (< $5.00) or bankrupt */
       body:not(.dad-mode):not(.low-cash) #bank-chore-wrap {
@@ -3611,6 +3754,11 @@
       </div>
     </div>
 
+    <!-- MY HOUSE (kid mode, from Stage 2): the family house and its next upgrade. -->
+    <div class="panel house-col" id="house-col" hidden>
+      <div class="house-card" id="house-card"></div>
+    </div>
+
     <!-- COLUMN 3: P&L STATEMENT, INVESTMENTS & LOGS -->
     <div class="panel" id="panel-column-3">
       <h3>3. Financial P&L & Upgrades</h3>
@@ -3629,6 +3777,8 @@
   </div>
 
   <!-- VICTORY MODAL (CITRUS CAY) -->
+  <div class="house-scene" id="house-scene" hidden role="dialog" aria-modal="true" aria-labelledby="house-scene-title"></div>
+
   <div id="victory-modal" class="modal-overlay" style="display: none;">
     <div class="modal-card">
       <div style="font-size: 48px; margin-bottom: 8px;">&#x1F3DD;&#xFE0F;&#x1F34B;&#x1F389;</div>
@@ -3663,7 +3813,8 @@
     import { LemonadeEngine, BigNum } from './src/engine.ts';
     import { reputationTrend } from './src/simulation/reputation.ts';
     import { BOTTLES_FOR_INVENTION } from './src/data/wholesale.ts';
-    import { WORLDWIDE_LICENSE } from './src/data/projects.ts';
+    import { SQUEEZER_LEVELS } from './src/data/projects.ts';
+    import { HOUSE_STEPS } from './src/data/house.ts';
     import {
       loadCharacterProfile,
       saveCharacterProfile,
@@ -4854,6 +5005,7 @@
       renderStandShop(s);
       renderFriends(s);
       renderMoneyBag(s);
+      renderHouse(s);
 
       // Projects
       const projectHTML = engine.projects
@@ -5023,6 +5175,78 @@
       }
     };
 
+    // My House (src/data/house.ts): one picture per house level (0: Day 1). Empty until the
+    // art arrives; a framed name stands in for a missing picture.
+    const HOUSE_PICS = [];
+    const HOUSE_PIC = '';           // the Money Bag row's picture
+    function housePicHTML(level) {
+      const pic = HOUSE_PICS[level];
+      return pic ? `<img src="${pic}" alt="" />` : `<div class="house-ph">${level ? HOUSE_STEPS[level - 1].name : 'Our House'}</div>`;
+    }
+    function renderHouse(s) {
+      const col = document.getElementById('house-col');
+      const show = s.phase >= 2;
+      if (col.hidden === show) col.hidden = !show;
+      document.body.classList.toggle('has-house', show);
+      if (!show) return;
+      const level = s.houseLevel || 0;
+      const next = engine.nextHouseStep();
+      const dots = HOUSE_STEPS.map((_, i) => `<span${i < level ? ' class="on"' : ''}></span>`).join('');
+      let nextHTML;
+      if (!next) {
+        nextHTML = '<div class="house-later">All done! The house is paid off!</div>';
+      } else if (s.phase < next.phase) {
+        nextHTML = `<div class="house-next-name">Next: ${next.name}</div><div class="house-later">Opens when your business grows!</div>`;
+      } else {
+        // Like the Stand Shop, only money left after today's supplies counts.
+        const spare = Math.max(0, s.cash.toNumber() - engine.restockCostForToday());
+        const short = Math.max(0, next.cost - spare);
+        nextHTML = `<div class="house-next-name">${next.name}</div><div class="house-next-desc">${next.desc}</div>
+          <button type="button" class="stand-shop-buy" data-act="house-buy"${short ? ' disabled' : ''}>$${fmtWhole(next.cost)}</button>
+          ${short ? `<div class="house-save"><span class="stand-shop-bar"><span style="width:${Math.min(100, (spare / next.cost) * 100).toFixed(1)}%"></span></span>Save $${fmtWhole(Math.ceil(short))} more</div>` : ''}`;
+      }
+      setHTMLIfChanged(document.getElementById('house-card'), `<div class="house-title">My House</div>
+        <div class="house-pic">${housePicHTML(level)}</div>
+        <div class="house-dots" aria-label="${level} of ${HOUSE_STEPS.length} house upgrades">${dots}</div>
+        <div class="house-next">${nextHTML}</div>`);
+    }
+    // The build scene: the old house shakes in a cloud of dust, the new one pops in, confetti.
+    function playHouseScene(level) {
+      const scene = document.getElementById('house-scene');
+      const colors = ['#facc15', '#f472b6', '#a78bfa', '#34d399', '#60a5fa'];
+      const confetti = Array.from({ length: 16 }, (_, i) =>
+        `<span class="house-confetti" style="left:${4 + i * 6}%;background:${colors[i % colors.length]};animation-delay:${(1.2 + ((i * 7) % 10) * 0.06).toFixed(2)}s"></span>`).join('');
+      const dust = [[-4, 50], [33, 58], [70, 50]].map(([x, y], i) =>
+        `<span class="house-dust" style="left:${x}%;top:${y}%;animation-delay:${(0.2 + i * 0.2).toFixed(1)}s"></span>`).join('');
+      scene.innerHTML = `<div class="house-scene-card">
+        <div class="house-scene-stage">
+          <div class="house-scene-old">${housePicHTML(level - 1)}</div>
+          <div class="house-scene-new">${housePicHTML(level)}</div>
+          ${dust}
+        </div>
+        ${confetti}
+        <div class="house-scene-title" id="house-scene-title">${HOUSE_STEPS[level - 1].name}!</div>
+        <button type="button" class="stand-shop-buy" data-act="house-scene-close">Yay!</button>
+      </div>`;
+      scene.hidden = false;
+      scene.querySelector('[data-act="house-scene-close"]').focus({ preventScroll: true });
+    }
+    document.getElementById('house-scene').addEventListener('click', (e) => {
+      // Tap anywhere once the button shows (the scene is short; an early tap skips it).
+      e.currentTarget.hidden = true;
+      e.currentTarget.innerHTML = '';
+    });
+    document.getElementById('house-col').addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-act="house-buy"]');
+      if (!btn || btn.disabled) return;
+      const next = engine.nextHouseStep();
+      if (!next || engine.state.cash.toNumber() - engine.restockCostForToday() < next.cost) return;
+      if (engine.buyHouseStep()) {
+        kidFlash('cheer', 3500);
+        playHouseScene(engine.state.houseLevel);
+      }
+    });
+
     // Friends' stands (Stage 2). Each friend is a paper-doll kid with a look of their own,
     // standing behind their stand sticker (public/sprites/franchise/).
     const FRIENDS = {
@@ -5044,36 +5268,47 @@
     let partnersPhase = null;     // the stage the tabs last saw (a new stage opens its tab)
     // The squeezer picture; once it sells worldwide, the globe of squeezers.
     const INVENTION = { name: 'Lemon Squeezer', pic: './sprites/shop/squeezer.png', worldPic: './sprites/shop/worldwide.png' };
-    function worldwideOffer(s) {
-      const project = engine.projects.find(p => p.id === 'global_licensing');
-      if (!engine.patent.licensed || project.purchased) return null;
-      const sales = Math.max(0, WORLDWIDE_LICENSE.salesRequired - s.squeezersTowardLicense);
+    // The button for each squeezer step after the first (SQUEEZER_LEVELS), with its picture.
+    const SQUEEZER_BUTTONS = {
+      2: { label: 'Put It on TV', pic: null },
+      3: { label: 'Sell in Every State', pic: null },
+      4: { label: 'Sell It Worldwide', pic: INVENTION.worldPic },
+    };
+    // The next squeezer step to buy, and what is still missing: squeezers sold, a day's wait
+    // after the last purchase, and money left over after today's supplies.
+    function squeezerOffer(s) {
+      const step = SQUEEZER_LEVELS[engine.patent.level];
+      if (!engine.patent.licensed || !step) return null;
+      const project = engine.projects.find(p => p.id === step.project);
+      if (!project || project.purchased) return null;
+      const sales = Math.max(0, step.salesRequired - s.totalSqueezersSold);
       const days = shopDaysRemaining(s);
       const short = Math.max(0, project.costCash - Math.max(0, s.cash.toNumber() - engine.restockCostForToday()));
-      return { project, sales, days, short };
+      return { step, project, sales, days, short };
     }
     function inventionHTML(s) {
       const p = engine.patent;
       const each = `$${p.royaltyPerUnit.toFixed(2)}`;
       const d = s.lastDaySummary;
-      const stats = [`About ${Math.round(p.baseUnitsPerDay)} sold a day`];
+      const stats = [`About ${Math.round(p.baseUnitsPerDay).toLocaleString('en-US')} sold a day`, `${s.totalSqueezersSold.toLocaleString('en-US')} sold in all`];
       if (d && d.patentUnitsSold > 0) stats.push(`Yesterday: ${d.patentUnitsSold.toLocaleString('en-US')} sold, +$${fmtDollars(d.patentRoyalties, true)}`);
-      const offer = worldwideOffer(s);
+      const offer = squeezerOffer(s);
       let upgrade = '';
       if (offer) {
+        const btn = SQUEEZER_BUTTONS[offer.step.level];
         const needs = [];
-        if (offer.sales) needs.push(`Sell ${offer.sales} more squeezer${offer.sales === 1 ? '' : 's'}`);
+        if (offer.sales) needs.push(`Sell ${offer.sales.toLocaleString('en-US')} more squeezer${offer.sales === 1 ? '' : 's'}`);
         if (offer.days) needs.push(`Finish ${offer.days} more day${offer.days === 1 ? '' : 's'}`);
         if (offer.short) needs.push(`Save $${fmtDollars(offer.short, true)} more after supplies`);
-        upgrade = `<button type="button" class="friend-btn" data-act="license"${needs.length ? ' disabled aria-describedby="license-needs"' : ''}>${needs.length ? STORE_LOCK : ''}<img class="license-pic" src="${INVENTION.worldPic}" alt="" />Sell It Worldwide &middot; $${fmtWhole(offer.project.costCash)}</button>
-          <small>About ${Math.round(p.baseUnitsPerDay * WORLDWIDE_LICENSE.volumeMultiplier)} sales/day at $${WORLDWIDE_LICENSE.royaltyPerUnit.toFixed(2)} each</small>
+        upgrade = `<button type="button" class="friend-btn" data-act="license"${needs.length ? ' disabled aria-describedby="license-needs"' : ''}>${needs.length ? STORE_LOCK : ''}${btn.pic ? `<img class="license-pic" src="${btn.pic}" alt="" />` : ''}${btn.label} &middot; $${fmtWhole(offer.project.costCash)}</button>
+          <small>Then about ${offer.step.unitsPerDay.toLocaleString('en-US')} sold a day at $${offer.step.royaltyPerUnit.toFixed(2)} each</small>
           ${needs.length ? `<small id="license-needs">${needs.join(' &middot; ')}</small>` : ''}`;
       }
       return `<div class="invention-panel">
-        <img src="${p.level >= 2 ? INVENTION.worldPic : INVENTION.pic}" alt="" />
+        <img src="${p.level >= SQUEEZER_LEVELS.length ? INVENTION.worldPic : INVENTION.pic}" alt="" />
         <div>
           <div class="invention-name">My ${INVENTION.name}</div>
-          <div class="invention-desc">Level ${p.level} &middot; ${p.level >= 2 ? 'Worldwide' : 'Nationwide'} &middot; ${each} per sale</div>
+          <div class="invention-desc">Level ${p.level} &middot; ${SQUEEZER_LEVELS[p.level - 1].name} &middot; ${each} per sale</div>
           <div class="invention-stats">${stats.map(t => `<span>${t}</span>`).join('')}</div>
           ${upgrade}
         </div>
@@ -5195,8 +5430,8 @@
       } else if (btn.dataset.act === 'expand') {
         if (engine.upgradeWholesaleAccount(btn.dataset.id)) kidFlash('cheer', 2000);
       } else if (btn.dataset.act === 'license') {
-        const offer = worldwideOffer(engine.state);
-        if (offer && !offer.days && !offer.short && engine.buyProject(offer.project.id)) kidFlash('cheer', 2000);
+        const offer = squeezerOffer(engine.state);
+        if (offer && !offer.sales && !offer.days && !offer.short && engine.buyProject(offer.project.id)) kidFlash('cheer', 2000);
       } else if (btn.dataset.act === 'off') {
         engine.toggleFriendDayOff(btn.dataset.id);
       }
@@ -5245,6 +5480,7 @@
       if (l.treats > 0.004) rows += mbRow('out', '', 'Prizes', '', l.treats);
       if (l.hiring > 0.004) rows += mbRow('out', './sprites/franchise/ballpark.png', 'Hiring', 'new stands and deals', l.hiring);
       if ((l.storeUpgrades || 0) > 0.004) rows += mbRow('out', './sprites/shop/bottles.png', 'Store shelves', 'bigger store orders', l.storeUpgrades);
+      if ((l.house || 0) > 0.004) rows += mbRow('out', HOUSE_PIC, 'House', 'a new look for home', l.house);
       if (l.wages > 0.004) rows += mbRow('out', './sprites/franchise/elm.png', "Helpers' pay", 'your stand workers', l.wages);
       if (l.packaging > 0.004) rows += mbRow('out', '', 'Bottles and labels', '', l.packaging);
       return rows;
@@ -5254,7 +5490,7 @@
       let html = '';
       if (last) {
         const kept = last.sales + last.chores - (Object.values(last.supplies).reduce((a, b) => a + b, 0)
-          + last.shop + last.treats + last.hiring + (last.storeUpgrades || 0) + last.wages + last.packaging);
+          + last.shop + last.treats + last.hiring + (last.storeUpgrades || 0) + (last.house || 0) + last.wages + last.packaging);
         // Yesterday's whole Day Report is one tap away (this took over the old bottom ticket).
         // The stars are how much the neighbors like the stand (same meter as the report).
         const dLast = s.lastDaySummary;
@@ -5281,7 +5517,7 @@
       }
       // Today so far (the morning's shopping and chores, before the stand opens).
       const today = engine.ledger;
-      const spent = Object.values(today.supplies).reduce((a, b) => a + b, 0) + today.shop + today.treats + today.hiring + (today.storeUpgrades || 0);
+      const spent = Object.values(today.supplies).reduce((a, b) => a + b, 0) + today.shop + today.treats + today.hiring + (today.storeUpgrades || 0) + (today.house || 0);
       const bits = [];
       if (spent > 0.004) bits.push(`spent <b>${mbMoney(spent)}</b>`);
       if (today.chores > 0.004) bits.push(`earned <b>${mbMoney(today.chores)}</b> from chores`);

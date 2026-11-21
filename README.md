@@ -31,10 +31,14 @@ Day Report of what customers said.
   every day (more on hot days), filled from the same lemons and sugar. Save up to expand
   each store's shelf twice and grow its orders. Bottles (glass, cap and label in one price)
   take the ice box's place in Morning Prep, and the morning advice counts what stores need.
-- **Invention.** After selling 1,500 bottles, pay $4,000 to patent a lemon squeezer.
-  After the first 100 squeezer sales, the $3,000 worldwide license opens on the Invention card.
-  Worldwide stores sell about 48 squeezers a day, up from 16, and pay $3.25 per sale,
-  up from $2.50. The Lemonade Factory (Stage 5) shows as "coming soon".
+- **Invention.** After selling 1,500 bottles, pay $4,000 to patent a lemon squeezer. It
+  grows in four steps, bought on the Invention card once enough squeezers have sold:
+  Hometown (about 50 a day), On TV ($3,000 after 300 sold; about 200 a day), Every State
+  ($12,000 after 2,000 sold; about 800 a day) and Worldwide ($40,000 after 8,000 sold; about
+  3,200 a day at $3.25 each). The Lemonade Factory (Stage 5) shows as "coming soon".
+- **My House.** From Stage 2 a third column shows the family house. Save up to upgrade it in
+  six steps, from fresh paint ($250) to paying off the house ($500,000); each plays a short
+  build scene. The upgrades only change the house; the later ones wait for later stages.
 - **Chores.** A broke kid can always do chores for a few dollars.
 - **The kid.** The stand is run by a paper-doll kid with picked skin, hair, hair color and
   shirt. The mirror changes the look any time. New hair styles and colors unlock as the

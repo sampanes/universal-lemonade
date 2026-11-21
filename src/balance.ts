@@ -156,7 +156,7 @@ export const BALANCE = {
 
   patent: {
     royaltyPerUnit: 2.5,
-    baseUnitsPerDay: 16,
+    baseUnitsPerDay: 50,         // SQUEEZER_LEVELS level 1 (src/data/projects.ts)
     randomMin: 0.8,             // units = base * (randomMin + rand * randomRange) * boosts
     randomRange: 0.4,
     teslaBonus: 0.20,

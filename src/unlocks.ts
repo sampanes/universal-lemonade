@@ -90,7 +90,7 @@ export function otherUnlockToday(s: GameState, summary: DaySummary): boolean {
   const sincePurchase = s.lastShopPurchaseDay == null ? null : summary.day - s.lastShopPurchaseDay;
   const shopIntro = (s.lastShopPurchaseDay == null && summary.day === 3) || sincePurchase === 1 || sincePurchase === 2;
   return !!summary.recipeJustLocked || !!shopIntro || !!(ledger &&
-    (ledger.shop > 0 || ledger.hiring > 0 || (ledger.storeUpgrades ?? 0) > 0));
+    (ledger.shop > 0 || ledger.hiring > 0 || (ledger.storeUpgrades ?? 0) > 0 || (ledger.house ?? 0) > 0));
 }
 
 // Remember even one-day milestones, then reveal at most one look on a quiet day.
