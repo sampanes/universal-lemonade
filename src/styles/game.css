@@ -676,6 +676,24 @@ button:disabled {
 }
 .friend-tile.open .store-pic { opacity: 0.8; }
 div.friend-btn { display: flex; flex-direction: column; justify-content: center; cursor: default; }
+/* Each line of a friend or store button stays one line, since a wrap would make that button
+   taller and shift the whole row (it did as "~10 cups" and "~11 cups" took turns). A line too
+   long for the button shrinks to fit instead; --chars comes from tileLine() in main.js, and
+   0.52em (0.5em small) a character is a little over these words' average width. */
+.friend-tile .friend-btn, .store-status { container-type: inline-size; }
+.store-status { align-self: stretch; }
+.tile-line {
+  display: block;
+  white-space: nowrap;
+  font-size: min(13px, calc(100cqw / (var(--chars, 10) * 0.52)));
+  line-height: 14px;
+  height: 14px;   /* the lock emoji's font sits lower and would add a pixel */
+}
+small.tile-line {
+  font-size: min(10px, calc(100cqw / (var(--chars, 10) * 0.5)));
+  line-height: 10.5px;
+  height: 10.5px;
+}
 /* Stage 4: the invention tab is one wide panel the height of the tiles. */
 .invention-panel {
   grid-column: 1 / -1;

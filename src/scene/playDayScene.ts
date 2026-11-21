@@ -22,7 +22,10 @@ const LOOKS = 8;               // customer looks wanted right away (drawn even w
 const FIRST_LOOKS = 2;         // the scene opens once this many are drawn
 const WALK = 0.075;            // walking speed, % of the stage width per ms
 const GAP = 10.5;              // space between people in line, % of the stage width
-const TALK_MS = 1300;          // how long words stay up
+const TALK_MS = 1300;          // how long a passer-by's words stay up
+const READ_MS = 950;           // someone at the counter who talks stands there at least this long
+const TALK_PACE = 0.1;         // a passer-by slows to this share of their speed while talking
+const SLOW_MS = 220;           // ...and takes about this long to slow down before the words show
 const POP_MS = 900;            // the "+3" over the counter
 
 // What people say. Each buyer's line that teaches something (taste, ice, a good price) is said
@@ -68,11 +71,15 @@ interface Walker {
   x: number;          // left edge, % of the stage width
   dir: number;        // 1 walks right, -1 walks left (drawn mirrored)
   speed: number;      // % of the stage width per ms
+  pace: number;       // share of that speed right now (a passer-by slows down to talk)
   share: number;      // the real people (cups, for a buyer) this one stands for
   state: 'coming' | 'served' | 'sad' | 'going';
   timer: number;
   talk: number;       // ms left on the speech bubble
   says: string;       // what a passer-by says on the way past (empty: nothing)
+  measured: string;   // the words in the bubble (hidden unless talking)...
+  half: number;       // ...and half their width, % of the stage width
+  lo: number; hi: number;   // the stretch of stage the words cover while up, % of the stage width
   stride: number;     // distance walked, for the bob
   still: boolean;     // standing in line
   drawn: string;      // last transform written
@@ -119,8 +126,8 @@ export async function playDayScene(summary: DaySummary, location: (id: string) =
     <div class="scene-precipitation" aria-hidden="true"></div>
     <div class="scene-crowd" aria-hidden="true"></div>
     <strong class="scene-sign"></strong></div>
-    <footer><div class="scene-tally"><span>People <b data-people>0</b></span><span>Cups sold <b data-cups>0</b></span></div>
-    <div class="scene-buttons"><button type="button" data-speed aria-pressed="false">Fast forward</button><button type="button" data-skip>Skip</button></div></footer>`;
+    <footer><dl class="scene-tally"><dt>People</dt><dd data-people>0</dd><dt>Cups sold</dt><dd data-cups>0</dd></dl>
+    <div class="scene-buttons"><button type="button" class="scene-speed" data-speed aria-pressed="false"><span>Fast forward</span><span>3x speed</span></button><button type="button" data-skip>Skip</button></div></footer>`;
   const find = <T extends Element>(selector: string) => dialog.querySelector<T>(selector)!;
   const title = find<HTMLElement>('#scene-title');
   const stage = find<HTMLElement>('.scene-stage');
@@ -241,7 +248,7 @@ export async function playDayScene(summary: DaySummary, location: (id: string) =
     const person = document.createElement('div');
     person.className = 'scene-person';
     const bubble = document.createElement('span');
-    bubble.className = 'scene-bubble';
+    bubble.className = 'scene-bubble wait';
     el.append(person, bubble);
     const look = copyCustomer(nextLook++);
     if (look) person.append(look.canvas);
@@ -266,8 +273,8 @@ export async function playDayScene(summary: DaySummary, location: (id: string) =
       role, el, person, bubble, canvas: look?.canvas ?? null, seated: !!look?.seated,
       width, x: dir > 0 ? -width - 1 : 101, dir,
       // Everyone in line walks at one speed (nobody overtakes on the way to the line).
-      speed: passing ? WALK * (0.85 + Math.random() * 0.3) : WALK,
-      share, state: passing ? 'going' : 'coming', timer: 0, talk: 0, says,
+      speed: passing ? WALK * (0.85 + Math.random() * 0.3) : WALK, pace: 1,
+      share, state: passing ? 'going' : 'coming', timer: 0, talk: 0, says, measured: '', half: 0, lo: 0, hi: 0,
       stride: Math.random() * 20, still: false, drawn: '',
     };
     face(walker, dir);
@@ -282,14 +289,34 @@ export async function playDayScene(summary: DaySummary, location: (id: string) =
     if (w.canvas) w.canvas.style.transform = dir < 0 ? 'scaleX(-1)' : '';
   }
 
-  // Up to two speech bubbles at once, never on top of each other.
-  function say(w: Walker, text: string, sad = false): boolean {
+  // Up to two speech bubbles at once, never on top of each other and never cut off at the
+  // stage's edges. Words never fly off with anyone: people in line stand still while they talk
+  // and stop when they walk off, and a passer-by slows to a stroll before the words show, so a
+  // bubble only has to keep clear of the short stretch its speaker strolls through.
+  function say(w: Walker, text: string, ms: number, sad = false): boolean {
     if (!text || walkers.filter(o => o.talk > 0).length >= 2) return false;
-    if (walkers.some(o => o !== w && o.talk > 0 && Math.abs(o.x - w.x) < 24)) return false;
-    w.bubble.textContent = text;
+    if (w.measured !== text) {
+      // Measured while hidden, once per line (a passer-by may wait a while for room).
+      w.bubble.textContent = w.measured = text;
+      w.half = w.bubble.offsetWidth * 50 / stageW;
+    }
+    const walking = w.state === 'going';
+    const center = w.x + w.width / 2;
+    const stroll = walking ? w.speed * (SLOW_MS / 2 + TALK_PACE * ms) : 0;
+    const lo = center - w.half - (w.dir < 0 ? stroll : 0) - 1;
+    const hi = center + w.half + (w.dir > 0 ? stroll : 0) + 1;
+    if (lo < 0 || hi > 100 || walkers.some(o => o !== w && o.talk > 0 && lo < o.hi && o.lo < hi)) return false;
+    w.lo = lo;
+    w.hi = hi;
     w.bubble.classList.toggle('sad', sad);
-    w.talk = TALK_MS;
+    w.talk = walking ? SLOW_MS + ms : ms;
+    if (!walking) w.bubble.classList.remove('wait');
     return true;
+  }
+
+  function hush(w: Walker) {
+    w.talk = 0;
+    w.bubble.classList.add('wait');
   }
 
   function serve(w: Walker) {
@@ -299,7 +326,10 @@ export async function playDayScene(summary: DaySummary, location: (id: string) =
     const name = friendNames.get(crowd.stand);
     const teaching = buyerTalks % 2 === 0 && taught < lines.teach.length;
     const text = teaching ? lines.teach[taught] : buyerTalks === 1 && name ? `Hi, ${name}!` : lines.buying();
-    if (say(w, text)) {
+    // A buyer who talks takes a little longer at the counter, long enough to read.
+    const stay = Math.max(serveMs, READ_MS);
+    if (say(w, text, stay)) {
+      w.timer = stay;
       if (teaching) taught++;
       buyerTalks++;
     }
@@ -334,16 +364,18 @@ export async function playDayScene(summary: DaySummary, location: (id: string) =
         w.state = 'sad';
         w.timer = 450 + 200 * sadOnes++;
         w.person.classList.add('disappointed');
-        if (sadOnes === 1 || Math.random() < 0.5) say(w, lines.missed(), true);
+        const stay = Math.max(w.timer, READ_MS);
+        if ((sadOnes === 1 || Math.random() < 0.5) && say(w, lines.missed(), stay, true)) w.timer = stay;
       } else if (w.role === 'buy' && k === 0) {
         serve(w);
       }
     }
     for (const w of walkers) {
-      if (w.talk > 0 && (w.talk -= dt) <= 0) w.bubble.textContent = '';
+      if (w.talk > 0 && (w.talk -= dt) <= 0) hush(w);
       if (w.state === 'served' || w.state === 'sad') {
         if ((w.timer -= dt) > 0) continue;
         line.splice(line.indexOf(w), 1);
+        hush(w);
         if (w.state === 'served') {
           cups += w.share;
           pop('+' + w.share.toLocaleString('en-US'));
@@ -357,8 +389,12 @@ export async function playDayScene(summary: DaySummary, location: (id: string) =
         }
         w.state = 'going';
       } else if (w.state === 'going') {
-        move(w, w.dir * w.speed * dt);
-        if (w.says && w.x > 18 && w.x < 62 && say(w, w.says)) w.says = '';
+        if (w.role === 'pass') {
+          w.pace += ((w.talk > 0 ? TALK_PACE : 1) - w.pace) * Math.min(1, dt / 100);
+          if (w.talk > 0 && w.pace < 0.2) w.bubble.classList.remove('wait');   // slowed down: the words show
+          if (w.says && say(w, w.says, TALK_MS)) w.says = '';
+        }
+        move(w, w.dir * w.speed * w.pace * dt);
       }
     }
     // Gone off the edge.
@@ -414,10 +450,10 @@ export async function playDayScene(summary: DaySummary, location: (id: string) =
       freshenCustomers(4);   // a few new faces for tomorrow
       resolve();
     }
+    // The button holds both labels and shows one (dayScene.css), so its width never changes.
     speed.onclick = () => {
       rate = rate === 1 ? 3 : 1;
       speed.setAttribute('aria-pressed', String(rate === 3));
-      speed.textContent = rate === 3 ? '3x speed' : 'Fast forward';
     };
     find<HTMLButtonElement>('[data-skip]').onclick = finish;
     dialog.oncancel = e => { e.preventDefault(); finish(); };

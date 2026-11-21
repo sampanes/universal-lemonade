@@ -1072,6 +1072,13 @@ function inventionHTML(s) {
     </div>
   </div>`;
 }
+// One line of a friend or store button. It never wraps: a wrap would make that button taller
+// and shift the whole row. A line too long for the button shrinks to fit instead (.tile-line
+// in game.css, from its character count).
+function tileLine(html, tag = 'span') {
+  const chars = html.replace(/<[^>]*>/g, '').replace(/&[#\w]+;/g, 'x').length;
+  return `<${tag} class="tile-line" style="--chars:${chars}">${html}</${tag}>`;
+}
 function expansionMessage(goal, unit) {
   if (goal.remaining) return `Sell ${goal.remaining.toLocaleString('en-US')} ${unit}`;
   if (goal.days) return goal.days === 1 ? 'Ready tomorrow!' : `Ready in ${goal.days} days`;
@@ -1097,12 +1104,12 @@ function storesHTML(s) {
     let btn;
     if (acc.active && !next) {
       const n = (est.find(x => x.id === acc.id) || { estBottles: 0 }).estBottles;
-      btn = `<div class="store-status">Biggest shelf!<small>~${n} bottles today</small></div>`;
+      btn = `<div class="store-status">${tileLine('Biggest shelf!')}${tileLine(`~${n} bottles today`, 'small')}</div>`;
     } else {
       const cost = acc.active ? next.cost : acc.setupCost;
       const state = wait ? ' disabled aria-describedby="store-unlock-hint"' : s.cash.lt(cost) ? ' disabled' : '';
       const orders = acc.active ? `${acc.bottlesPerDay} &rarr; ${next.bottlesPerDay}/day` : `~ ${acc.bottlesPerDay} bottles/day`;
-      btn = `<button type="button" class="friend-btn" data-act="${acc.active ? 'expand' : 'sign'}" data-id="${acc.id}"${state}>${wait ? STORE_LOCK : ''}${acc.active ? 'Shelf' : 'Sign up'} $${cost}<small>${orders}</small></button>`;
+      btn = `<button type="button" class="friend-btn" data-act="${acc.active ? 'expand' : 'sign'}" data-id="${acc.id}"${state}>${tileLine(`${wait ? STORE_LOCK : ''}${acc.active ? 'Shelf' : 'Sign up'} $${cost}`)}${tileLine(orders, 'small')}</button>`;
     }
     return `<div class="friend-tile ${cls}">
       <div class="friend-pic"><img class="store-pic" src="${info.pic}" alt="" /></div>
@@ -1152,14 +1159,14 @@ function renderFriends(s) {
     let cls, mood, btn;
     if (!st.hired) {
       cls = 'open'; mood = 'wink';
-      btn = `<button type="button" class="friend-btn" data-act="hire" data-id="${st.id}"${wait || s.cash.lt(st.setupCost) ? ' disabled' : ''}>${wait || `Hire $${st.setupCost}`}<small>${wait ? `Hire $${st.setupCost}` : `then $${st.dailyWage} a day`}</small></button>`;
+      btn = `<button type="button" class="friend-btn" data-act="hire" data-id="${st.id}"${wait || s.cash.lt(st.setupCost) ? ' disabled' : ''}>${tileLine(wait || `Hire $${st.setupCost}`)}${tileLine(wait ? `Hire $${st.setupCost}` : `then $${st.dailyWage} a day`, 'small')}</button>`;
     } else if (st.dayOff) {
       cls = 'dayoff'; mood = 'sleepy';
-      btn = `<button type="button" class="friend-btn" data-act="off" data-id="${st.id}">Day off<small>tap to call in</small></button>`;
+      btn = `<button type="button" class="friend-btn" data-act="off" data-id="${st.id}">${tileLine('Day off')}${tileLine('tap to call in', 'small')}</button>`;
     } else {
       const cups = (est.find(x => x.id === st.id) || { estCups: 0 }).estCups;
       cls = 'working'; mood = 'happy';
-      btn = `<button type="button" class="friend-btn" data-act="off" data-id="${st.id}">Working<small>~${cups} cups, $${st.dailyWage} pay</small></button>`;
+      btn = `<button type="button" class="friend-btn" data-act="off" data-id="${st.id}">${tileLine('Working')}${tileLine(`~${cups} cups, $${st.dailyWage} pay`, 'small')}</button>`;
     }
     const kid = friendPortrait(st.id, mood);
     return `<div class="friend-tile ${cls}">
