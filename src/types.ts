@@ -269,6 +269,7 @@ export interface GameState {
   reputationHistory?: number[]; // recent daily ratings, for the report trend
   totalRevenueEarned: BigNum;
   totalBottlesSold: number;
+  squeezersTowardLicense: number;
   totalStandCupsSold: number;
 
   inv: {

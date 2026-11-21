@@ -1,8 +1,10 @@
-"""Cut a row of Stand Shop stickers out of one sheet into art_src/shop/ sources.
+"""Cut rows of Stand Shop stickers out of sheets into art_src/shop/ sources.
 
-Source: art_src/shop/sheets/supplies_sheet.png, stickers in a row on a transparent
-background (Big Wagon, Supply Club Card, bottles). Each sticker is found by its empty
-columns and cropped to itself. Then run build_shop_art.py to make the game-size files.
+Sources: art_src/shop/sheets/*.png, stickers in a row on a transparent background.
+  supplies_sheet.png  - Big Wagon, Supply Club Card, bottles
+  invention_sheet.png - lemon squeezer, Invent It!, Sell It Worldwide
+Each sticker is found by its empty columns and cropped to itself. Then run
+build_shop_art.py to make the game-size files.
 
 Run from the repo root:
     py -3.11 -I art_src/cut_shop_sheet.py
@@ -13,9 +15,12 @@ import os
 import numpy as np
 from PIL import Image
 
-SRC = os.path.join('art_src', 'shop', 'sheets', 'supplies_sheet.png')
+SHEETS = os.path.join('art_src', 'shop', 'sheets')
 DST = os.path.join('art_src', 'shop')
-NAMES = ['big_wagon', 'club_card', 'bottles']
+NAMES = {
+    'supplies_sheet.png': ['big_wagon', 'club_card', 'bottles'],
+    'invention_sheet.png': ['squeezer', 'invent_it', 'worldwide'],
+}
 SOLID = 16      # alpha above this counts as part of a sticker
 
 
@@ -32,17 +37,22 @@ def runs(mask):
     return out
 
 
-def main():
-    sheet = Image.open(SRC).convert('RGBA')
+def cut(sheet_name, names):
+    sheet = Image.open(os.path.join(SHEETS, sheet_name)).convert('RGBA')
     alpha = np.array(sheet)[:, :, 3] > SOLID
     cols = runs(alpha.any(axis=0))
-    assert len(cols) == len(NAMES), 'expected %d stickers, found %d' % (len(NAMES), len(cols))
-    for name, (x0, x1) in zip(NAMES, cols):
+    assert len(cols) == len(names), '%s: expected %d stickers, found %d' % (sheet_name, len(names), len(cols))
+    for name, (x0, x1) in zip(names, cols):
         rows = runs(alpha[:, x0:x1].any(axis=1))
         y0, y1 = rows[0][0], rows[-1][1]
         im = sheet.crop((x0, y0, x1, y1))
         im.save(os.path.join(DST, name + '.png'), optimize=True)
         print('[OK] %s.png %dx%d' % (name, im.size[0], im.size[1]))
+
+
+def main():
+    for sheet_name, names in NAMES.items():
+        cut(sheet_name, names)
 
 
 if __name__ == '__main__':

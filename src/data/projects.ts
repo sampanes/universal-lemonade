@@ -2,7 +2,7 @@
 import type { ProjectDef, GameState } from '../types';
 import { BOTTLES_FOR_INVENTION } from './wholesale';
 
-export const WORLDWIDE_LICENSE = { volumeMultiplier: 3, royaltyPerUnit: 3.25 } as const;
+export const WORLDWIDE_LICENSE = { salesRequired: 100, volumeMultiplier: 3, royaltyPerUnit: 3.25 } as const;
 
 // The two Phase 1 stand upgrades, $275 and $605, each lift a storage limit
 // (src/simulation/storage.ts): a busy summer day needs more ice than the 400-cube bucket
@@ -130,7 +130,7 @@ export function createInitialProjects(): ProjectDef[] {
       phase: 4,
       costCash: 3000,
       purchased: false,
-      unlocked: (s: GameState) => s.phase >= 4,
+      unlocked: (s: GameState) => s.phase >= 4 && s.squeezersTowardLicense >= WORLDWIDE_LICENSE.salesRequired,
       effect: (e: any) => {
         e.patent.level = 2;
         e.patent.baseUnitsPerDay *= WORLDWIDE_LICENSE.volumeMultiplier;

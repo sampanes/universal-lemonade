@@ -768,6 +768,29 @@ test('invention counts actual bottle sales and saves progress', () => {
   assert.equal(LemonadeEngine.fromSave(save), null, 'old saves restart cleanly');
 });
 
+test('worldwide licensing counts actual squeezer sales across saves and opens at 100', () => {
+  const e = new LemonadeEngine({ seed: 71 });
+  e.dadJumpToPhase(4);
+  e.state.cash = e.state.cash.add(10000);
+  assert.equal(e.buyProject('global_licensing'), false);
+  const first = e.runDay().patentUnitsSold;
+  assert.ok(first > 0);
+  const save = JSON.parse(JSON.stringify(e.toSave()));
+  const loaded = LemonadeEngine.fromSave(save);
+  assert.equal(loaded.state.squeezersTowardLicense, first);
+  loaded.state.squeezersTowardLicense = 99;
+  assert.equal(loaded.buyProject('global_licensing'), false);
+  loaded.runDay();
+  assert.equal(loaded.state.squeezersTowardLicense, 100);
+  assert.ok(loaded.buyProject('global_licensing'));
+  assert.equal(loaded.buyProject('global_licensing'), false);
+
+  delete save.state.squeezersTowardLicense;
+  assert.ok(LemonadeEngine.fromSave(save).buyProject('global_licensing'), 'existing patent keeps its eligibility');
+  save.patent.licensed = false;
+  assert.equal(LemonadeEngine.fromSave(save).state.squeezersTowardLicense, 0);
+});
+
 test('stores buy the forecast bottles, the forecast counts their lemons and sugar, and the labeler makes bottles cheaper', () => {
   const e = new LemonadeEngine({ seed: 52 });
   e.dadJumpToPhase(3);

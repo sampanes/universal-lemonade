@@ -737,6 +737,7 @@
     .invention-name { font-family: var(--font-display); font-size: 18px; color: #3b0764; line-height: 1.1; }
     .invention-panel small { display: block; margin-top: 3px; font-size: 12px; line-height: 1.25; color: #514965; }
     #license-needs { font-weight: 700; color: #663a15; }
+    .license-pic { width: 24px; height: 24px; object-fit: contain; vertical-align: middle; margin: -4px 4px -4px 0; }
     .invention-desc { font-size: 12.5px; font-weight: 700; color: #6b7280; margin: 2px 0 6px; line-height: 1.25; }
     .invention-stats { display: flex; flex-wrap: wrap; gap: 6px; }
     .invention-stats span {
@@ -4948,7 +4949,7 @@
       { id: 'bottling_rig', name: 'Bottle It!', desc: 'Bottle your lemonade and sell it to stores!', pic: './sprites/shop/bottles.png', early: true,
         notYet: (s) => `Sell ${Math.max(1, 250 - Math.floor(s.totalCupsSold.toNumber()))} more cups first!` },
       { id: 'commercial_labeler', name: 'Bottle Labeler', desc: 'Labels bottles by machine: bottles cost 30% less!', pic: './sprites/shop/labeler.png' },
-      { id: 'patent_filing', name: 'Invent It!', desc: 'Invent a lemon squeezer! Stores sell it, and you get money for every one.', pic: null, early: true,
+      { id: 'patent_filing', name: 'Invent It!', desc: 'Invent a lemon squeezer! Stores sell it, and you get money for every one.', pic: './sprites/shop/invent_it.png', early: true,
         notYet: (s) => `${Math.max(0, BOTTLES_FOR_INVENTION - s.totalBottlesSold).toLocaleString('en-US')} bottles to go` },
       { id: 'copacker_deal', name: 'Lemonade Factory', desc: 'Coming soon: a real factory bottles your lemonade for supermarkets!', pic: null, teaser: true },
     ];
@@ -5041,13 +5042,15 @@
     // Stage 4 adds an Invention tab: the patented lemon squeezer that stores sell for you.
     let partnersTab = 'friends';
     let partnersPhase = null;     // the stage the tabs last saw (a new stage opens its tab)
-    const INVENTION = { name: 'Lemon Squeezer', pic: './sprites/lemon.png' };
+    // The squeezer picture; once it sells worldwide, the globe of squeezers.
+    const INVENTION = { name: 'Lemon Squeezer', pic: './sprites/shop/squeezer.png', worldPic: './sprites/shop/worldwide.png' };
     function worldwideOffer(s) {
       const project = engine.projects.find(p => p.id === 'global_licensing');
-      if (!engine.patent.licensed || project.purchased || !project.unlocked(s)) return null;
+      if (!engine.patent.licensed || project.purchased) return null;
+      const sales = Math.max(0, WORLDWIDE_LICENSE.salesRequired - s.squeezersTowardLicense);
       const days = shopDaysRemaining(s);
       const short = Math.max(0, project.costCash - Math.max(0, s.cash.toNumber() - engine.restockCostForToday()));
-      return { project, days, short };
+      return { project, sales, days, short };
     }
     function inventionHTML(s) {
       const p = engine.patent;
@@ -5059,14 +5062,15 @@
       let upgrade = '';
       if (offer) {
         const needs = [];
+        if (offer.sales) needs.push(`Sell ${offer.sales} more squeezer${offer.sales === 1 ? '' : 's'}`);
         if (offer.days) needs.push(`Finish ${offer.days} more day${offer.days === 1 ? '' : 's'}`);
         if (offer.short) needs.push(`Save $${fmtDollars(offer.short, true)} more after supplies`);
-        upgrade = `<button type="button" class="friend-btn" data-act="license"${needs.length ? ' disabled aria-describedby="license-needs"' : ''}>${needs.length ? STORE_LOCK : ''}Sell It Worldwide &middot; $${fmtWhole(offer.project.costCash)}</button>
+        upgrade = `<button type="button" class="friend-btn" data-act="license"${needs.length ? ' disabled aria-describedby="license-needs"' : ''}>${needs.length ? STORE_LOCK : ''}<img class="license-pic" src="${INVENTION.worldPic}" alt="" />Sell It Worldwide &middot; $${fmtWhole(offer.project.costCash)}</button>
           <small>About ${Math.round(p.baseUnitsPerDay * WORLDWIDE_LICENSE.volumeMultiplier)} sales/day at $${WORLDWIDE_LICENSE.royaltyPerUnit.toFixed(2)} each</small>
           ${needs.length ? `<small id="license-needs">${needs.join(' &middot; ')}</small>` : ''}`;
       }
       return `<div class="invention-panel">
-        <img src="${INVENTION.pic}" alt="" />
+        <img src="${p.level >= 2 ? INVENTION.worldPic : INVENTION.pic}" alt="" />
         <div>
           <div class="invention-name">My ${INVENTION.name}</div>
           <div class="invention-desc">Level ${p.level} &middot; ${p.level >= 2 ? 'Worldwide' : 'Nationwide'} &middot; ${each} per sale</div>

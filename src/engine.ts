@@ -24,7 +24,7 @@ import type {
 import { rollChore } from './data/chores';
 import { createInitialFranchiseStands } from './data/franchise';
 import { createInitialWholesaleAccounts } from './data/wholesale';
-import { createInitialProjects } from './data/projects';
+import { createInitialProjects, WORLDWIDE_LICENSE } from './data/projects';
 import { createInitialTrophies } from './data/trophies';
 import { rollWeatherForecast, computeIdealIce, getSeasonInfo } from './simulation/weather';
 import { iceHint, crowdLevel, type IceHint } from './simulation/hints';
@@ -171,6 +171,10 @@ export class LemonadeEngine {
       account.bottlesPerDay = account.levels[Math.max(0, account.level - 1)].bottlesPerDay;
     }
     Object.assign(e.patent, d.patent || {});
+    // Earlier saves did not record lifetime squeezer sales. Keep their existing license eligibility.
+    if (d.state.squeezersTowardLicense == null && e.patent.licensed) {
+      e.state.squeezersTowardLicense = WORLDWIDE_LICENSE.salesRequired;
+    }
     Object.assign(e.copacker, d.copacker || {});
     // Saves from before the profit total: estimate it as the cash gained plus everything spent
     // on upgrades, hiring and prizes (chore money is counted in too; there is no record of it).
@@ -214,6 +218,7 @@ export class LemonadeEngine {
       totalCupsSold: new BigNum(0, 0),
       totalRevenueEarned: new BigNum(0, 0),
       totalBottlesSold: 0,
+      squeezersTowardLicense: 0,
       totalStandCupsSold: 0,
 
       inv: { ...start.inventory },
@@ -851,6 +856,7 @@ export class LemonadeEngine {
 
       patentUnitsSold = Math.round(this.patent.baseUnitsPerDay * (p.randomMin + this.rand() * p.randomRange) * multiplier);
       patentRoyalties = patentUnitsSold * this.patent.royaltyPerUnit;
+      s.squeezersTowardLicense = Math.min(WORLDWIDE_LICENSE.salesRequired, s.squeezersTowardLicense + patentUnitsSold);
     }
 
     let copackerCasesSold = 0;
