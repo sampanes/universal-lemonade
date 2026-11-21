@@ -24,9 +24,9 @@ import type {
 import { rollChore } from './data/chores';
 import { createInitialFranchiseStands } from './data/franchise';
 import { createInitialWholesaleAccounts } from './data/wholesale';
-import { createInitialProjects, SQUEEZER_LEVELS, applySqueezerLevel } from './data/projects';
+import { createInitialProjects } from './data/projects';
 import { createInitialTrophies } from './data/trophies';
-import { HOUSE_STEPS, HOUSE_COLORS, FIRST_HOUSE_COLOR, HOUSE_LADDER, type HouseStep } from './data/house';
+import { HOUSE_STEPS, HOUSE_COLORS, FIRST_HOUSE_COLOR, type HouseStep } from './data/house';
 import { rollWeatherForecast, computeIdealIce, getSeasonInfo } from './simulation/weather';
 import { iceHint, crowdLevel, type IceHint } from './simulation/hints';
 import { computeRecipeQuality, getRecipeProfile } from './simulation/recipe';
@@ -53,8 +53,9 @@ export interface EngineOptions {
 
 export const DEFAULT_SEED = 1337;
 
-// Bump when a save from an older version can no longer be loaded as-is.
-export const SAVE_VERSION = 2;
+// Bump whenever the save changes shape. An older save is not upgraded: it is dropped and a new
+// game starts (src/storage.ts also clears every other stored setting when that version moves).
+export const SAVE_VERSION = 3;
 
 export interface EngineSave {
   v: number;
@@ -120,7 +121,7 @@ export class LemonadeEngine {
   // A save is plain JSON: the game state, which upgrades and treats were bought, and the
   // franchise, wholesale, patent and co-packer details (upgrades change those in place, so
   // they are saved as they are rather than replayed). Loading starts from a fresh engine and
-  // lays the save on top, so anything a newer version of the game adds gets its default.
+  // lays the save on top. Only saves of this SAVE_VERSION load.
   public toSave(): EngineSave {
     return {
       v: SAVE_VERSION,
@@ -172,42 +173,7 @@ export class LemonadeEngine {
       account.bottlesPerDay = account.levels[Math.max(0, account.level - 1)].bottlesPerDay;
     }
     Object.assign(e.patent, d.patent || {});
-    // Squeezer steps: a save from before the four steps has at most "worldwide" (its old
-    // level 2). Owning a step means owning the ones before it; the step's sales and royalty
-    // come from SQUEEZER_LEVELS, not the save.
-    const oldSave = d.state.totalSqueezersSold == null;
-    if (oldSave && e.patent.level >= 2) e.patent.level = 1;
-    for (const step of SQUEEZER_LEVELS) {
-      const p = step.project ? e.projects.find(x => x.id === step.project) : null;
-      if (p && p.purchased) {
-        SQUEEZER_LEVELS.slice(1, step.level - 1).forEach(prev => { const q = e.projects.find(x => x.id === prev.project); if (q) q.purchased = true; });
-        e.patent.level = Math.max(e.patent.level, step.level);
-      }
-    }
-    if (e.patent.licensed) applySqueezerLevel(e.patent, e.patent.level);
-    // Lifetime squeezer sales: older saves counted up to 100 (or nothing at all).
-    if (oldSave) {
-      const counted = (d.state as { squeezersTowardLicense?: number }).squeezersTowardLicense;
-      e.state.totalSqueezersSold = typeof counted === 'number' ? counted : (e.patent.licensed ? SQUEEZER_LEVELS[1].salesRequired : 0);
-    }
-    delete (e.state as { squeezersTowardLicense?: number }).squeezersTowardLicense;
     Object.assign(e.copacker, d.copacker || {});
-    // Older house lists (six steps, then four) had no Second Floor and started on the two-story
-    // house: past Fresh Paint, count the Second Floor as built. Then keep the level in the list.
-    let houseLevel = e.state.houseLevel ?? 0;
-    if ((d.state.houseLadder ?? 1) < 2 && houseLevel >= 2) houseLevel += 1;   // d: the fresh state fills in a new ladder
-    e.state.houseLevel = Math.max(0, Math.min(HOUSE_STEPS.length, houseLevel));
-    e.state.houseLadder = HOUSE_LADDER;
-    if (e.state.houseLevel >= 1 && !HOUSE_COLORS.some(c => c.id === e.state.houseColor)) e.state.houseColor = FIRST_HOUSE_COLOR;
-    // Saves from before the profit total: estimate it as the cash gained plus everything spent
-    // on upgrades, hiring and prizes (chore money is counted in too; there is no record of it).
-    if (typeof e.state.grossProfitTotal !== 'number') {
-      const spent = e.projects.filter(p => p.purchased).reduce((a, p) => a + p.costCash, 0)
-        + e.trophies.filter(t => t.purchased).reduce((a, t) => a + t.costCash, 0)
-        + Object.values(e.franchiseStands).filter(st => st.hired).reduce((a, st) => a + st.setupCost, 0)
-        + Object.values(e.wholesaleAccounts).filter(w => w.active).reduce((a, w) => a + w.setupCost, 0);
-      e.state.grossProfitTotal = e.state.cash.toNumber() - e.balance.start.cash + spent;
-    }
     return e;
   }
 
@@ -243,7 +209,11 @@ export class LemonadeEngine {
       totalBottlesSold: 0,
       totalSqueezersSold: 0,
       houseLevel: 0,
-      houseLadder: HOUSE_LADDER,
+      houseColor: FIRST_HOUSE_COLOR,
+      reputationHistory: [],
+      tipCounts: {},
+      upgradeSavingsTotal: 0,
+      grossProfitTotal: 0,
       totalStandCupsSold: 0,
 
       inv: { ...start.inventory },
@@ -429,7 +399,7 @@ export class LemonadeEngine {
     const goal = this.storeExpansionGoal();
     if (!next || goal.remaining || goal.days || this.state.cash.lt(next.cost)) return false;
     this.state.cash = this.state.cash.sub(next.cost);
-    this.ledger.storeUpgrades = (this.ledger.storeUpgrades ?? 0) + next.cost;
+    this.ledger.storeUpgrades += next.cost;
     account.level += 1;
     account.bottlesPerDay = next.bottlesPerDay;
     this.state.storeExpansion = { day: this.state.day, bottles: this.state.totalBottlesSold };
@@ -439,23 +409,22 @@ export class LemonadeEngine {
 
   // The family house (src/data/house.ts): the next step to buy, or null when all are bought.
   public nextHouseStep(): HouseStep | null {
-    return HOUSE_STEPS[this.state.houseLevel ?? 0] ?? null;
+    return HOUSE_STEPS[this.state.houseLevel] ?? null;
   }
 
   public buyHouseStep(): boolean {
     const step = this.nextHouseStep();
     if (!step || this.state.phase < step.phase || this.state.cash.lt(step.cost)) return false;
     this.state.cash = this.state.cash.sub(step.cost);
-    this.ledger.house = (this.ledger.house ?? 0) + step.cost;
-    this.state.houseLevel = (this.state.houseLevel ?? 0) + 1;
-    if (step.id === 'paint') this.state.houseColor = FIRST_HOUSE_COLOR;
+    this.ledger.house += step.cost;
+    this.state.houseLevel += 1;
     this.log(`House: ${step.name}!`);
     return true;
   }
 
-  // Repaint the house (free, any time after Fresh Paint).
+  // Repaint the house (free, any time after Fresh Paint, which starts it FIRST_HOUSE_COLOR).
   public setHouseColor(id: string): boolean {
-    if ((this.state.houseLevel ?? 0) < 1 || !HOUSE_COLORS.some(c => c.id === id)) return false;
+    if (this.state.houseLevel < 1 || !HOUSE_COLORS.some(c => c.id === id)) return false;
     this.state.houseColor = id;
     return true;
   }
@@ -938,11 +907,10 @@ export class LemonadeEngine {
     // kid shop). Ice from the machine melts too, but it was free, so nothing is said. The full tip shows the first TIP_FULL_TIMES days it happens; after that both
     // go on one short line.
     const TIP_FULL_TIMES = 2;
-    s.tipCounts = s.tipCounts ?? {};
     const shortSpoil: string[] = [];
     const spoilNote = (key: string, full: string, short: string) => {
-      const seen = s.tipCounts![key] ?? 0;
-      s.tipCounts![key] = seen + 1;
+      const seen = s.tipCounts[key] ?? 0;
+      s.tipCounts[key] = seen + 1;
       if (seen < TIP_FULL_TIMES) notes.push(full);
       else shortSpoil.push(short);
     };
@@ -984,8 +952,8 @@ export class LemonadeEngine {
     led.wages += franchiseWages;
     led.packaging += packagingCosts;
     s.lastLedger = led;
-    s.upgradeSavingsTotal = (s.upgradeSavingsTotal ?? 0) + upgradeSavings;
-    s.grossProfitTotal = (s.grossProfitTotal ?? 0) + ledgerGrossProfit(led);
+    s.upgradeSavingsTotal += upgradeSavings;
+    s.grossProfitTotal += ledgerGrossProfit(led);
     s.totalBottlesSold += bottlesSold;
     s.totalStandCupsSold += drivewayCupsSold + franchiseCupsSold;
     s.totalCupsSold = s.totalCupsSold.add(totalCupsToday);
@@ -1015,7 +983,7 @@ export class LemonadeEngine {
       const excessivePriceSeen = totalTraffic > 0 && s.recipe.pricePerCup >= fairPrice * b.reputation.excessivePriceRatio;
       s.reputation = nextReputation(s, customerScore, b, excessivePriceSeen);
     }
-    const recentRatings = (s.reputationHistory ?? []).filter(Number.isFinite).slice(-4);
+    const recentRatings = s.reputationHistory.slice(-4);
     if (!recentRatings.length || Math.abs(recentRatings[recentRatings.length - 1] - reputationBefore) > 1e-9) {
       recentRatings.push(reputationBefore);
     }
@@ -1023,7 +991,7 @@ export class LemonadeEngine {
     s.reputationHistory = recentRatings.slice(-4);
     const ratingTrend = reputationTrend(s.reputationHistory);
     // Happy driveway customers tell their neighbors (franchise stands are in other neighborhoods).
-    const buzzBefore = s.buzz ?? 0;
+    const buzzBefore = s.buzz;
     s.buzz = nextBuzz(buzzBefore, drivewayCupsSold * (customerScore ?? 0), b);
 
     const reviews = this.generateCustomerReviews({
@@ -1136,13 +1104,13 @@ function emptyLedger(day: number): MoneyLedger {
   return {
     day, sales: 0, cups: 0, chores: 0,
     supplies: { lemons: 0, sugar: 0, ice: 0, cups: 0, bottles: 0 },
-    shop: 0, shopIds: [], treats: 0, hiring: 0, wages: 0, packaging: 0,
+    shop: 0, shopIds: [], treats: 0, hiring: 0, storeUpgrades: 0, house: 0, wages: 0, packaging: 0,
   };
 }
 
 // Money in minus money out for one ledger (what the kid really kept that day).
 export function ledgerKept(l: MoneyLedger): number {
-  const out = Object.values(l.supplies).reduce((a, b) => a + b, 0) + l.shop + l.treats + l.hiring + (l.storeUpgrades ?? 0) + (l.house ?? 0) + l.wages + l.packaging;
+  const out = Object.values(l.supplies).reduce((a, b) => a + b, 0) + l.shop + l.treats + l.hiring + l.storeUpgrades + l.house + l.wages + l.packaging;
   return l.sales + l.chores - out;
 }
 

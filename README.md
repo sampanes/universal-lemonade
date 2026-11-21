@@ -47,7 +47,9 @@ Day Report of what customers said.
   business grows; the fanciest ones take a long time.
 
 The game saves itself in the browser (about once a second) and picks up where it left off.
-Reset starts a new game.
+Reset starts a new game. Saves are not carried over between versions: when the save changes
+shape, `STORAGE_VERSION` in `src/storage.ts` goes up and every saved game, look and secret
+look is cleared on the next visit (only the Dad Mode switch is kept).
 
 ## Later stages
 
@@ -90,7 +92,13 @@ Every push to `main` builds and deploys to GitHub Pages (`.github/workflows/depl
 
 | Path | What is there |
 | --- | --- |
-| `index.html` | The whole page: markup, CSS and the UI script |
+| `index.html` | The page markup |
+| `src/styles/game.css` | The page's styles (the day scene has `src/scene/dayScene.css`) |
+| `src/main.js` | The page script: wires the engine to the page, the frame loop, saving, the mirror |
+| `src/ui/` | Page pieces split out of `main.js`: number formats, the Day Report, the Money Bag, the Stand Shop list, house pictures, friends and stores, Dad Mode's panels, the Reset card |
+| `src/scene/` | The day scene: who walks by, the customers' art, the forecast art |
+| `src/preload.ts` | Loads pictures ahead of time so nothing pops in |
+| `src/storage.ts` | Everything kept in the browser, and the save version |
 | `src/engine.ts` | The game engine (no DOM): state, days, buying, upgrades, save and load |
 | `src/balance.ts` | Every economy tuning number |
 | `src/simulation/` | Weather, demand, recipe taste, reviews, reputation, storage limits |

@@ -166,12 +166,12 @@ export interface RecipeProfile {
 
 export interface DaySummary {
   soldOutItem?: string;
-  standVisits?: import('./scene/dayScene').StandVisits[]; // absent on older reports
+  standVisits: import('./scene/dayScene').StandVisits[];
   day: number;
   tempF: number;
   weather: WeatherCondition;
-  seasonInfo?: SeasonInfo;
-  seasonBadge?: string;
+  seasonInfo: SeasonInfo;
+  seasonBadge: string;
 
   // Driveway Stand
   drivewayCupsSold: number;
@@ -182,10 +182,10 @@ export interface DaySummary {
   franchiseGrossRevenue: number;
   franchiseWagesPaid: number;
   franchiseNet: number;
-  friends?: FriendDayResult[];   // each hired friend, in hiring-list order
+  friends: FriendDayResult[];    // each hired friend, in hiring-list order
 
   // Wholesale Bottling (Phase 3+)
-  stores?: StoreDayResult[];     // each signed store, in list order
+  stores: StoreDayResult[];      // each signed store, in list order
   bottlesSold: number;
   wholesaleRevenue: number;
   packagingCosts: number;         // always 0 now (caps and labels are in the bottle price)
@@ -205,21 +205,21 @@ export interface DaySummary {
   netProfit: number;
 
   recipeQuality: number;
-  // Reputation at the start and end of the day (0..1). Optional so older saves still load.
-  reputationBefore?: number;
-  reputationAfter?: number;
-  reputationTrend?: 'up' | 'down' | 'steady';
-  buzzBefore?: number;
-  buzzAfter?: number;
-  goldenStreak?: number;        // golden open days in a row, counting today
-  recipeJustLocked?: boolean;   // today the neighbors asked to keep the recipe forever
-  // Stand upgrades (optional so older saves still load).
-  iceMadeByMachine?: number;    // cubes the ice machine made today
-  iceKeptByCooler?: number;     // leftover cubes the cooler kept frozen overnight
-  lemonsKeptByFridge?: number;  // lemons that would have gone bad without the mini-fridge
-  upgradeSavings?: number;      // what those were worth at store prices
-  storageShort?: '' | 'ice' | 'lemons';  // sold out because the stand could not hold more
-  soldOut?: boolean;            // some stand ran out before every customer got a cup
+  // Reputation and buzz at the start and end of the day (0..1).
+  reputationBefore: number;
+  reputationAfter: number;
+  reputationTrend: 'up' | 'down' | 'steady';
+  buzzBefore: number;
+  buzzAfter: number;
+  goldenStreak: number;         // golden open days in a row, counting today
+  recipeJustLocked: boolean;    // today the neighbors asked to keep the recipe forever
+  // Stand upgrades.
+  iceMadeByMachine: number;     // cubes the ice machine made today
+  iceKeptByCooler: number;      // leftover cubes the cooler kept frozen overnight
+  lemonsKeptByFridge: number;   // lemons that would have gone bad without the mini-fridge
+  upgradeSavings: number;       // what those were worth at store prices
+  storageShort: '' | 'ice' | 'lemons';   // sold out because the stand could not hold more
+  soldOut: boolean;             // some stand ran out before every customer got a cup
   reviews: CustomerReview[];
   notes: string[];
 }
@@ -236,8 +236,8 @@ export interface MoneyLedger {
   shopIds: string[];    // which ones, for the picture
   treats: number;       // trophies
   hiring: number;       // franchise stand setup and wholesale sign-up
-  storeUpgrades?: number; // expanded store shelves
-  house?: number;       // house upgrades (src/data/house.ts)
+  storeUpgrades: number; // expanded store shelves
+  house: number;        // house upgrades (src/data/house.ts)
   wages: number;        // franchise workers
   packaging: number;    // wholesale bottles
 }
@@ -267,7 +267,7 @@ export interface GameState {
   // Working Capital & Inventory
   cash: BigNum;
   totalCupsSold: BigNum;
-  reputationHistory?: number[]; // recent daily ratings, for the report trend
+  reputationHistory: number[];  // recent daily ratings, for the report trend
   totalRevenueEarned: BigNum;
   totalBottlesSold: number;
   totalSqueezersSold: number;   // lifetime lemon squeezers sold (opens the squeezer steps)
@@ -290,7 +290,7 @@ export interface GameState {
   goldenRecipe: GoldenRecipe;
   goldenStreak: number;
   // How many days each kid tip has been shown ('melt', 'rot'), so long tips can get shorter.
-  tipCounts?: Record<string, number>;      // open days in a row sold at the exact golden lemons:sugar
+  tipCounts: Record<string, number>;
   recipeLocked: boolean;     // neighbors asked to keep it: lemons:sugar stay golden for good
 
   // Upgrades & Flag States
@@ -327,12 +327,11 @@ export interface GameState {
   lastShopPurchaseDay?: number; // spaces the next kid shop item
   friendExpansion?: { day: number; cups: number };
   storeExpansion?: { day: number; bottles: number };
-  houseLevel?: number;   // house steps bought (src/data/house.ts); 0 or missing: none
-  houseColor?: string;   // wall color id (HOUSE_COLORS), once Fresh Paint is bought
-  houseLadder?: number;  // which HOUSE_STEPS list houseLevel counts in (HOUSE_LADDER)
+  houseLevel: number;    // house steps bought (src/data/house.ts); 0: none
+  houseColor: string;    // wall color id (HOUSE_COLORS), shown once Fresh Paint is bought
   ledger?: MoneyLedger;         // today so far
   lastLedger?: MoneyLedger;     // the last finished day
-  upgradeSavingsTotal?: number; // everything the stand upgrades have saved, all game
-  grossProfitTotal?: number;    // sales minus supplies, wages and bottles, all game
+  upgradeSavingsTotal: number;  // everything the stand upgrades have saved, all game
+  grossProfitTotal: number;     // sales minus supplies, wages and bottles, all game
   logs: string[];
 }

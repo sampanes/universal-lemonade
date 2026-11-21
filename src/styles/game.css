@@ -1,0 +1,2985 @@
+/* src/styles/game.css -- the game screen (loaded by index.html). The day scene has its own
+   src/scene/dayScene.css. */
+/* Typefaces. Both files are served from this site (public/fonts, SIL Open Font License,
+   license texts next to them) instead of from a font CDN, so the page needs nothing
+   from other servers and works behind a strict site allowlist.
+     Fredoka    : everything you read (buttons, prices, descriptions). Weights 300-700.
+     Lilita One : banners, the big button and big numbers. It has ONE weight, so every
+                  rule that uses it also sets font-weight: 400; "bold" would make the
+                  browser smear a fake bold over it.
+   Outlines use -webkit-text-stroke with paint-order: stroke fill. The stroke is painted
+   behind the letter, so a 2px stroke shows 1px outside it and never eats the inside.
+   Keep them thin, and give ordinary reading text none. */
+@font-face {
+  font-family: 'Fredoka';
+  font-style: normal;
+  font-weight: 300 700;
+  font-stretch: 100%;
+  font-display: swap;
+  src: url('/fonts/Fredoka-Variable-latin.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Lilita One';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/LilitaOne-Regular-latin.woff2') format('woff2');
+}
+:root {
+  color-scheme: dark;
+  --font-ui: 'Fredoka', 'Trebuchet MS', 'Segoe UI', sans-serif;
+  --font-display: 'Lilita One', 'Fredoka', 'Trebuchet MS', sans-serif;
+}
+* { box-sizing: border-box; }
+body {
+  font-family: var(--font-ui);
+  font-weight: 500;
+  background: #111;
+  color: #eee;
+  margin: 0;
+  padding: 12px;
+  font-size: 13px;
+  line-height: 1.4;
+  -webkit-text-size-adjust: 100%;
+}
+.header-bar {
+  margin-bottom: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #333;
+  padding-bottom: 8px;
+}
+.header-title {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: 0.6px;
+  color: #ffd700;
+  font-size: 21px;
+  line-height: 1.1;
+}
+.header-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+@media (max-width: 900px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+  body {
+    padding: 8px;
+  }
+}
+/* Big screens (this is played on a 1080p touchscreen all-in-one): everything is scaled
+   up, so text reads from a step back and buttons are finger-sized. The tests are the
+   window size in CSS pixels, so a screen Windows already magnifies (1080p at 125% is
+   1536 px wide) is left alone. Each step is the largest scale at which the first two
+   columns of a new game still fit without scrolling:
+     width  >= 1536 x scale keeps the Money Box wide enough for chips beside the cat,
+     height >=  890 x scale keeps the recipe card (with the auto-ice button) on screen. */
+@media (min-width: 1690px) and (min-height: 979px) {
+  body { zoom: 1.1; } /* 1080p in a window with a title bar */
+}
+@media (min-width: 1840px) and (min-height: 1068px) {
+  body { zoom: 1.2; } /* 1080p full screen */
+}
+@media (min-width: 2310px) and (min-height: 1335px) {
+  body { zoom: 1.5; } /* 1440p */
+}
+@media (min-width: 3080px) and (min-height: 1780px) {
+  body { zoom: 2; } /* 4K at 100% */
+}
+.panel {
+  border: 1px solid #444;
+  padding: 12px;
+  background: #1a1a1a;
+  border-radius: 4px;
+}
+h3 {
+  margin: 0 0 8px 0;
+  color: #ffd700;
+  border-bottom: 1px solid #333;
+  padding-bottom: 6px;
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: 0.4px;
+  font-size: 16px;
+  line-height: 1.2;
+}
+select.dad-jump {
+  background: #2b2b2b;
+  color: #fff;
+  border: 1px solid #666;
+  border-radius: 4px;
+  margin: 2px;
+  padding: 0 8px;
+  min-height: 38px;
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+}
+button {
+  background: #2b2b2b;
+  color: #fff;
+  border: 1px solid #666;
+  padding: 8px 12px;
+  margin: 2px;
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-size: 13px;
+  border-radius: 4px;
+  touch-action: manipulation;
+  min-height: 38px;
+}
+/* Hover styles are for a mouse only. After a finger tap :hover sticks to the tapped
+   button, which left it gold-bordered / enlarged until the next tap. Two guards:
+   the media query covers phones, and html.touch-input (set by the script from the last
+   pointer type) covers a touchscreen PC that also has a mouse, where the query is true.
+   :where() keeps this rule as weak as a bare `button`, so it only dresses plain buttons;
+   a button with its own colors (See report, the mirror, Reset) keeps them under the mouse. */
+@media (hover: hover) {
+  :where(html:not(.touch-input)) button:where(:hover:not(:disabled)) {
+    background: #444;
+    border-color: #ffd700;
+  }
+}
+button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.stat {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 4px 0;
+  padding: 2px 0;
+}
+.badge {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: bold;
+  background: #2e442e;
+  color: #4ade80;
+  border: 1px solid #4ade80;
+}
+.card {
+  border: 1px solid #444;
+  background: #222;
+  padding: 8px;
+  margin-top: 6px;
+  border-radius: 4px;
+}
+
+.log {
+  height: 140px;
+  overflow-y: auto;
+  background: #080808;
+  padding: 6px;
+  border: 1px solid #333;
+  font-family: Consolas, 'Courier New', monospace; /* the activity log keeps its terminal look */
+  font-weight: 400;
+  font-size: 12px;
+  border-radius: 3px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.trophy-shelf {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px;
+  background: #141414;
+  border: 1px solid #333;
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+.trophy-icon {
+  font-size: 20px;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  background: #1f1f1f;
+  border: 1px solid #444;
+  transition: all 0.2s;
+  user-select: none;
+}
+.trophy-icon.owned {
+  background: #2a2200;
+  border-color: #ffd700;
+  box-shadow: 0 0 6px rgba(255, 215, 0, 0.4);
+  filter: none;
+}
+.trophy-icon.locked {
+  filter: grayscale(100%);
+  opacity: 0.25;
+}
+.category-badge {
+  display: inline-block;
+  padding: 1px 6px;
+  font-size: 10px;
+  border-radius: 3px;
+  font-weight: bold;
+}
+.category-kid {
+  background: #1e3a5f;
+  color: #93c5fd;
+  border: 1px solid #3b82f6;
+}
+.category-teen {
+  background: #3b1d54;
+  color: #d8b4fe;
+  border: 1px solid #a855f7;
+}
+.category-mogul {
+  background: #432808;
+  color: #fde047;
+  border: 1px solid #eab308;
+}
+.category-billionaire {
+  background: #042f2e;
+  color: #5eead4;
+  border: 1px solid #14b8a6;
+}
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 16px;
+}
+.modal-card {
+  background: #1a1a1a;
+  border: 2px solid #ffd700;
+  border-radius: 8px;
+  max-width: 520px;
+  width: 100%;
+  padding: 24px;
+  text-align: center;
+  box-shadow: 0 0 35px rgba(255, 215, 0, 0.4);
+}
+
+/* Recipe Ratio Workbench Card */
+.ratio-card {
+  background: #fbf7ee;
+  border: 3px solid #8b5cf6;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.25);
+  margin-top: 10px;
+  color: #1e1b4b;
+}
+.ratio-banner {
+  background: linear-gradient(90deg, #9333ea, #a855f7, #c084fc);
+  color: #fff;
+  font-family: var(--font-display);
+  font-weight: 400;
+  text-align: center;
+  padding: 6px 10px;
+  font-size: 17px;
+  line-height: 1.15;
+  letter-spacing: 0.8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border-bottom: 2px solid #7e22ce;
+  -webkit-text-stroke: 2px #6b21a8;
+  paint-order: stroke fill;
+  text-shadow: 0 2px 0 rgba(88, 28, 135, 0.55);
+}
+.ratio-body {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 8px;
+  padding: 10px 8px;
+  background: linear-gradient(180deg, #fffdf5 0%, #fef9c3 60%, #fed7aa 100%);
+  align-items: center;
+}
+@media (max-width: 900px) {
+  .ratio-body {
+    grid-template-columns: 1fr;
+  }
+}
+/* Yesterday's taste comment under the pitcher: a speech bubble pointing up at it. */
+.recipe-taste-bubble {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-align: left;
+  margin: 10px auto 0;
+  max-width: 250px;
+  padding: 6px 10px 6px 6px;
+  background: #ffffff;
+  border: 2px solid #e9d5ff;
+  border-radius: 14px;
+  color: #4a044e;
+  font-weight: 700;
+  font-size: 12px;
+  line-height: 1.3;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
+}
+.recipe-taste-bubble::before {
+  content: '';
+  position: absolute;
+  top: -9px;
+  left: 50%;
+  margin-left: -8px;
+  border: 8px solid transparent;
+  border-top: 0;
+  border-bottom: 9px solid #e9d5ff;
+}
+.recipe-taste-face {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+}
+.recipe-taste-bubble[data-mood="happy"] { border-color: #86efac; background: #f0fdf4; color: #14532d; }
+.recipe-taste-bubble[data-mood="happy"]::before { border-bottom-color: #86efac; }
+.recipe-taste-bubble[data-mood="off"] { border-color: #fdba74; background: #fff7ed; color: #7c2d12; }
+.recipe-taste-bubble[data-mood="off"]::before { border-bottom-color: #fdba74; }
+
+/* Golden recipe lock: the lemon and sugar rows fold away and the seal row says it. */
+.golden-badge-row {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 2px 0 4px;
+  padding: 2px 14px 2px 4px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 2px solid #fde047;
+  border-radius: 30px;
+  color: #713f12;
+  font-family: var(--font-display);
+  font-size: 18px;
+  letter-spacing: 0.5px;
+  animation: golden-stamp 0.5s ease-out;
+}
+.golden-seal {
+  width: 60px;
+  height: 60px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 6px rgba(250, 204, 21, 0.7));
+}
+@keyframes golden-stamp {
+  0% { transform: scale(1.6); opacity: 0; }
+  70% { transform: scale(0.95); opacity: 1; }
+  100% { transform: scale(1); }
+}
+.ratio-card.golden-locked .golden-badge-row { display: flex; }
+.ratio-card.golden-locked .ratio-row-lemons,
+.ratio-card.golden-locked .ratio-row-sugar,
+.ratio-card.golden-locked .recipe-taste-bubble { display: none; }
+/* Locked header: the purple bar becomes the gold ribbon (golden_ribbon.png, 900 x 217;
+   its flat band is y 12-133, x 12%-88%, where the title sits). */
+.ratio-card.golden-locked .ratio-banner {
+  position: relative;
+  width: min(92%, 340px);
+  margin: 8px auto 0;
+  aspect-ratio: 900 / 217;
+  padding: 0;
+  background: url('/sprites/golden_ribbon.png') no-repeat center / 100% 100%;
+  border-bottom: none;
+  -webkit-text-stroke-color: #581c87;
+  animation: golden-stamp 0.5s ease-out;
+}
+.ratio-card.golden-locked .ratio-banner .ribbon-sparkle { display: none; }
+.ratio-card.golden-locked #ratio-banner-text {
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  top: 5%;
+  height: 56%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+}
+.ratio-card.golden-locked .ratio-banner { container-type: inline-size; }
+.ratio-card.golden-locked #ratio-banner-text { font-size: min(21px, 7.4cqw); }
+/* One background for the whole card, so the ribbon area and the body do not meet in a seam.
+   Locked layout: the gold ribbon and a small pitcher share the top row; the seal, ice and
+   price sit on one line under them (they wrap on narrow screens). The body box steps aside
+   (display: contents) so its controls and pitcher can be placed on the card's grid. */
+.ratio-card.golden-locked {
+  border-color: #eab308;
+  background: linear-gradient(180deg, #fffdf5 0%, #fef9c3 60%, #fed7aa 100%);
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+}
+.ratio-card.golden-locked .ratio-banner { grid-column: 1; grid-row: 1; }
+.ratio-card.golden-locked .ratio-body { display: contents; }
+.ratio-card.golden-locked .pitcher-col {
+  grid-column: 2;
+  grid-row: 1;
+  padding: 6px 14px 0 0;
+}
+.ratio-card.golden-locked .pitcher-container {
+  width: 96px !important;
+  height: 96px !important;
+}
+.ratio-card.golden-locked .ratio-controls {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  padding: 2px 10px 10px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 4px 10px;
+}
+.ratio-card.golden-locked .ratio-controls > .ratio-row { flex: 1 1 150px; max-width: 200px; margin: 0 !important; }
+.ratio-card.golden-locked .golden-badge-row {
+  padding: 0;
+  margin: 0;
+  background: none;
+  border: none;
+}
+.ratio-card.golden-locked .golden-badge-row span { display: none; }
+.ratio-card.golden-locked .golden-badge-row .golden-seal { width: 52px; height: 52px; }
+.ratio-card.golden-locked #autoice-container { flex-basis: 100%; margin-top: 0 !important; }
+/* The ice machine picks the ice every day, so the ice buttons and its on/off switch go
+   away; with a golden recipe too, price is the only thing left to set. */
+.ratio-card.auto-ice .ratio-row-ice,
+.ratio-card.auto-ice #autoice-container { display: none; }
+/* Golden recipe AND the ice machine: price is the only choice left, so the card shrinks
+   to one short strip: a small floating pitcher, then the title over the price buttons.
+   The gold ribbon and seal step aside (the recipe was celebrated days ago). */
+.ratio-card.price-only {
+  grid-template-columns: auto 1fr;
+  padding: 6px 14px 6px 8px;
+  column-gap: 10px;
+}
+.ratio-card.price-only .pitcher-col { grid-column: 1; grid-row: 1 / span 2; padding: 0; }
+.ratio-card.price-only .pitcher-container { width: 74px !important; height: 74px !important; }
+.ratio-card.price-only .golden-badge-row { display: none; }
+.ratio-card.price-only .ratio-banner {
+  grid-column: 2;
+  grid-row: 1;
+  width: auto;
+  margin: 0;
+  aspect-ratio: auto;
+  background: none;
+  padding: 0;
+  animation: none;
+  justify-content: center;
+  container-type: normal;
+}
+.ratio-card.price-only #ratio-banner-text {
+  position: static;
+  height: auto;
+  font-size: 18px;
+  white-space: normal;
+  text-align: center;
+  justify-content: center;
+}
+.ratio-card.price-only .ratio-controls {
+  grid-column: 2;
+  grid-row: 2;
+  padding: 0;
+  justify-content: center;
+}
+.ratio-card.price-only .ratio-controls > .ratio-row { flex: 0 1 170px; max-width: 170px; }
+.ratio-card.price-only .price-label { display: none; }
+/* Friends' stands (Stage 2): one tile per friend, the stand sticker with the friend
+   behind it. Hired friends work (green) or have the day off (grey, sleepy) when tapped. */
+.friends-card {
+  margin-top: 10px;
+  padding: 6px 8px 8px;
+  background: #ffffff;
+  border: 3px solid #c4b5fd;
+  border-radius: 18px;
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2);
+  color: #3b0764;
+}
+.friends-card[hidden] { display: none; }
+.friends-title {
+  font-family: var(--font-display);
+  font-size: 15px;
+  letter-spacing: 0.4px;
+  text-align: center;
+  color: #6d28d9;
+  margin-bottom: 4px;
+}
+.friends-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+.friend-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 4px 4px 6px;
+  border-radius: 14px;
+  background: #f5f3ff;
+  border: 2px solid #ede9fe;
+  text-align: center;
+  min-width: 0;
+}
+.friend-tile.working { background: #f0fdf4; border-color: #86efac; }
+.friend-tile.dayoff { background: #f3f4f6; border-color: #d1d5db; }
+.friend-pic {
+  position: relative;
+  width: 100%;
+  height: 62px;
+}
+.friend-pic .friend-stand {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  height: 52px;
+  transform: translateX(-38%);
+  z-index: 2;
+}
+.friend-pic .friend-kid {
+  position: absolute;
+  left: 50%;
+  bottom: 14px;
+  height: 50px;
+  transform: translateX(-112%);
+  z-index: 1;
+}
+.friend-tile.dayoff .friend-pic { filter: grayscale(0.7); opacity: 0.75; }
+.friend-tile.open .friend-kid { opacity: 0.55; }
+.friend-name {
+  margin-top: 2px;
+  font-family: var(--font-display);
+  font-size: 14px;
+  line-height: 1.05;
+  white-space: nowrap;
+}
+.friend-where {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #6b7280;
+  white-space: nowrap;
+}
+.store-status {
+  margin-top: 4px;
+  color: #047857;
+  font-family: var(--font-display);
+  font-size: 13px;
+  line-height: 1.1;
+}
+.store-status small {
+  display: block;
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-weight: 800;
+}
+.store-unlock-hint {
+  grid-column: 1 / -1;
+  margin: 0;
+  text-align: center;
+  font: 700 13px/1.25 var(--font-ui);
+  color: #51377a;
+}
+.store-lock { font-size: 0.85em; }
+.friend-btn {
+  margin: 4px 0 0;
+  min-height: 30px;
+  width: 100%;
+  padding: 3px 4px;
+  border-radius: 999px;
+  border: 2px solid #6ee7b7;
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #fff;
+  font-family: var(--font-display);
+  font-size: 13px;
+  letter-spacing: 0.3px;
+  line-height: 1.05;
+  -webkit-text-stroke: 1.5px #065f46;
+  paint-order: stroke fill;
+  touch-action: manipulation;
+}
+.friend-btn small {
+  display: block;
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-weight: 800;
+  -webkit-text-stroke: 0;
+  opacity: 0.95;
+}
+.friend-btn:disabled {
+  background: #e5e7eb;
+  border-color: #d1d5db;
+  color: #6b7280;
+  -webkit-text-stroke: 0;
+  opacity: 1;
+  cursor: not-allowed;
+}
+.friend-tile.dayoff .friend-btn {
+  background: #e5e7eb;
+  border-color: #9ca3af;
+  color: #374151;
+  -webkit-text-stroke: 0;
+}
+/* Stage 3: the card gets two tabs, the friends' stands and the stores that buy bottles. */
+.friends-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+.friends-tabs[hidden], .friends-title[hidden], .friends-tab[hidden] { display: none; }
+.friends-tab {
+  flex: 0 1 150px;
+  min-height: 26px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  border: 2px solid #ddd6fe;
+  background: #f5f3ff;
+  color: #6d28d9;
+  font-family: var(--font-display);
+  font-size: 14px;
+  letter-spacing: 0.3px;
+  touch-action: manipulation;
+  cursor: pointer;
+}
+.friends-tab.on {
+  background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+  border-color: #7c3aed;
+  color: #fff;
+}
+.friend-pic .store-pic {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  height: 60px;
+  transform: translateX(-50%);
+}
+.friend-tile.open .store-pic { opacity: 0.8; }
+div.friend-btn { display: flex; flex-direction: column; justify-content: center; cursor: default; }
+/* Stage 4: the invention tab is one wide panel the height of the tiles. */
+.invention-panel {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 140px;
+  padding: 8px 10px;
+  border-radius: 14px;
+  background: #fffbeb;
+  border: 2px solid #fcd34d;
+}
+.invention-panel > img { width: 96px; height: 96px; object-fit: contain; flex-shrink: 0; }
+.invention-name { font-family: var(--font-display); font-size: 18px; color: #3b0764; line-height: 1.1; }
+.invention-panel small { display: block; margin-top: 3px; font-size: 12px; line-height: 1.25; color: #514965; }
+#license-needs { font-weight: 700; color: #663a15; }
+.license-pic { width: 24px; height: 24px; object-fit: contain; vertical-align: middle; margin: -4px 4px -4px 0; }
+.invention-desc { font-size: 12.5px; font-weight: 700; color: #6b7280; margin: 2px 0 6px; line-height: 1.25; }
+.invention-stats { display: flex; flex-wrap: wrap; gap: 6px; }
+.invention-stats span {
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: #f0fdf4;
+  border: 2px solid #86efac;
+  font-size: 12px;
+  font-weight: 800;
+  color: #065f46;
+}
+/* Kid Stand Shop: one upgrade at a time under the recipe card. */
+.stand-shop {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  padding: 8px 10px 8px 8px;
+  background: #ffffff;
+  border: 3px solid #c4b5fd;
+  border-radius: 18px;
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2);
+  color: #3b0764;
+  animation: golden-stamp 0.45s ease-out;
+}
+.stand-shop[hidden] { display: none; }
+body.dad-mode .stand-shop { display: none; }
+.stand-shop-pic {
+  flex: 0 0 auto;
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+}
+.stand-shop-info { flex: 1 1 auto; min-width: 0; }
+.stand-shop-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-display);
+  font-size: 17px;
+  letter-spacing: 0.4px;
+  line-height: 1.1;
+}
+.stand-shop-tag {
+  font-size: 10px;
+  letter-spacing: 1px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: #ede9fe;
+  color: #6d28d9;
+}
+.stand-shop-desc {
+  margin-top: 2px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.25;
+  color: #5b21b6;
+}
+.stand-shop-save {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #6b7280;
+}
+.stand-shop-save[hidden] { display: none; }
+.stand-shop-bar {
+  flex: 1 1 auto;
+  height: 8px;
+  border-radius: 999px;
+  background: #ede9fe;
+  overflow: hidden;
+}
+.stand-shop-bar span {
+  display: block;
+  height: 100%;
+  width: 0;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #fde047, #facc15);
+  transition: width 0.4s ease-out;
+}
+.stand-shop-buy {
+  flex: 0 0 auto;
+  min-width: 76px;
+  padding: 10px 12px;
+  border: 3px solid #6ee7b7;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #ffffff;
+  font-family: var(--font-display);
+  font-size: 17px;
+  letter-spacing: 0.5px;
+  -webkit-text-stroke: 2px #065f46;
+  paint-order: stroke fill;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.stand-shop-buy:disabled {
+  background: #e5e7eb;
+  border-color: #d1d5db;
+  -webkit-text-stroke-color: #6b7280;
+  opacity: 1;                     /* the global button:disabled fade made it unreadable */
+  cursor: not-allowed;
+}
+.stand-shop.teaser .stand-shop-buy { display: none; }
+
+/* My House (kid mode, from Stage 2): a third column with the family house and the next
+   upgrade to save up for. Each upgrade plays a short build scene. */
+.house-col[hidden] { display: none !important; }
+body.dad-mode .house-col { display: none !important; }
+.house-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 12px 14px;
+  background: #ffffff;
+  border: 3px solid #c4b5fd;
+  border-radius: 18px;
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2);
+  color: #3b0764;
+  text-align: center;
+}
+.house-title { font-family: var(--font-display); font-size: 20px; letter-spacing: 0.5px; }
+.house-pic { width: 100%; }
+/* The house picture: the art, the kid's wall color over the walls mask (the color
+   blend keeps the drawing's shading), and the party decorations once it is paid off. */
+.house-art { position: relative; width: 100%; aspect-ratio: 4 / 3; isolation: isolate; }
+.house-art > img, .house-art > svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.house-paint {
+  position: absolute;
+  inset: 0;
+  background: var(--paint);
+  mix-blend-mode: color;
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+}
+.house-swatches { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+.house-swatch {
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  width: 24px;
+  height: 24px;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border-radius: 50%;
+  border: 3px solid #ffffff;
+  box-shadow: 0 0 0 2px #c4b5fd;
+  background: var(--swatch);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.house-swatch[aria-pressed="true"] { box-shadow: 0 0 0 3px #6d28d9; }
+.house-dots { display: flex; gap: 5px; }
+.house-dots span { width: 11px; height: 11px; border-radius: 50%; background: #ede9fe; border: 2px solid #c4b5fd; }
+.house-dots span.on { background: #facc15; border-color: #ca8a04; }
+.house-next { width: 100%; display: flex; flex-direction: column; align-items: stretch; gap: 5px; }
+.house-next-name { font-family: var(--font-display); font-size: 16px; line-height: 1.1; }
+.house-next-desc { font-size: 12px; font-weight: 700; line-height: 1.25; color: #5b21b6; }
+.house-next .stand-shop-buy { width: 100%; font-size: 16px; padding: 8px 10px; }
+.house-save { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: #6b7280; text-align: left; }
+.house-later { font-size: 12px; font-weight: 700; color: #6b7280; }
+.house-scene {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(30, 12, 52, 0.62);
+  animation: house-fade-in 0.25s ease-out;
+}
+.house-scene[hidden] { display: none; }
+.house-scene-card {
+  position: relative;
+  width: min(420px, 100%);
+  padding: 16px 16px 18px;
+  border-radius: 22px;
+  background: #fffbeb;
+  border: 4px solid #facc15;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  text-align: center;
+  color: #3b0764;
+  overflow: hidden;
+}
+.house-scene-stage { position: relative; width: 100%; aspect-ratio: 4 / 3; }
+.house-scene-stage > .house-scene-old,
+.house-scene-stage > .house-scene-new { position: absolute; inset: 0; display: flex; }
+.house-scene-old { animation: house-shake 1.1s ease-in-out, house-out 0.2s ease-in 1.1s forwards; }
+.house-scene-new { opacity: 0; transform: scale(0.6); animation: house-pop 0.45s cubic-bezier(0.3, 1.6, 0.6, 1) 1.2s forwards; }
+.house-dust {
+  position: absolute;
+  width: 34%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(214, 196, 168, 0.95), rgba(214, 196, 168, 0) 70%);
+  opacity: 0;
+  animation: house-dust 1.2s ease-out forwards;
+}
+.house-confetti {
+  position: absolute;
+  top: -12px;
+  width: 9px;
+  height: 14px;
+  border-radius: 2px;
+  opacity: 0;
+  animation: house-confetti 1.6s ease-in forwards;
+}
+.house-scene-title {
+  margin-top: 10px;
+  font-family: var(--font-display);
+  font-size: 24px;
+  opacity: 0;
+  animation: house-fade-in 0.3s ease-out 1.5s forwards;
+}
+.house-scene-card .stand-shop-buy { margin-top: 10px; opacity: 0; animation: house-fade-in 0.3s ease-out 1.7s forwards; }
+@keyframes house-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes house-out { to { opacity: 0; } }
+@keyframes house-pop { to { opacity: 1; transform: scale(1); } }
+@keyframes house-shake {
+  0%, 100% { transform: translate(0, 0) rotate(0); }
+  15% { transform: translate(-6px, 2px) rotate(-2deg); }
+  30% { transform: translate(6px, -2px) rotate(2deg); }
+  45% { transform: translate(-5px, 1px) rotate(-1.5deg); }
+  60% { transform: translate(5px, -1px) rotate(1.5deg); }
+  75% { transform: translate(-3px, 0) rotate(-1deg); }
+}
+@keyframes house-dust {
+  0% { opacity: 0; transform: scale(0.3); }
+  40% { opacity: 1; }
+  100% { opacity: 0; transform: scale(1.4) translateY(-12px); }
+}
+@keyframes house-confetti {
+  0% { opacity: 1; transform: translateY(0) rotate(0); }
+  100% { opacity: 1; transform: translateY(380px) rotate(540deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .house-scene-old { animation: house-out 0.2s ease-in 0.3s forwards; }
+  .house-scene-new { animation: house-pop 0.2s ease-out 0.4s forwards; }
+  .house-dust, .house-confetti { display: none; }
+  .house-scene-title, .house-scene-card .stand-shop-buy { animation-delay: 0.5s; }
+}
+
+/* Day Report banner on the day the recipe locks. */
+.report-golden {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  padding: 8px 12px;
+  background: linear-gradient(180deg, #fef9c3 0%, #fde047 100%);
+  border: 2px solid #eab308;
+  border-radius: 14px;
+  color: #713f12;
+  font-family: var(--font-display);
+  font-size: 16px;
+  line-height: 1.2;
+  animation: golden-stamp 0.5s ease-out;
+}
+.report-golden .golden-seal { width: 72px; height: 72px; flex-shrink: 0; }
+
+.ratio-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 4px 0;
+  background: rgba(255, 255, 255, 0.9);
+  border: 2px solid #e9d5ff;
+  border-radius: 30px;
+  padding: 3px 6px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+}
+.ratio-icon {
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+}
+.ratio-btn {
+  position: relative;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: auto;
+  transition: transform 0.1s;
+}
+/* Invisible finger margin: the + and - art stays 30 px, the tappable area is 42 px.
+   On the 21-inch 1080p touchscreen this is played on, 30 px is under 9 mm even after
+   the big-screen scale-up, which is small for a kid's finger. Rows are 44 px apart, so
+   neighboring tap areas do not overlap. */
+.ratio-btn::after {
+  content: '';
+  position: absolute;
+  inset: -6px;
+}
+@media (hover: hover) {
+  html:not(.touch-input) .ratio-btn:hover:not(:disabled) {
+    background: transparent;
+    border-color: transparent;
+    transform: scale(1.08);
+  }
+}
+.ratio-btn:active:not(:disabled) {
+  transform: scale(0.92);
+}
+.ratio-btn img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.ratio-pill {
+  min-width: 32px;
+  height: 26px;
+  background: #fff;
+  border: 2px solid #c084fc;
+  border-radius: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: bold;
+  color: #581c87;
+  padding: 0 4px;
+}
+@keyframes float-gentle-1 {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-8px) rotate(4deg); }
+}
+@keyframes float-gentle-2 {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-10px) rotate(-6deg); }
+}
+.floating-bob-1 { animation: float-gentle-1 2.8s ease-in-out infinite; transform-origin: center; }
+.floating-bob-2 { animation: float-gentle-2 3.4s ease-in-out infinite; transform-origin: center; }
+
+/* Lemon wheels and ice inside the pitcher SVG. transform-box: fill-box makes "center" mean
+   the sprite's own center; without it SVG resolves it against the whole 1024-unit viewBox,
+   which swung every rotated sprite away from where it was placed. The viewBox is drawn
+   about 170 px wide, so the bob distance is in (larger) viewBox units. */
+.pitcher-item,
+.pitcher-bob-1,
+.pitcher-bob-2 {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.pitcher-bob-1 { animation: pitcher-bob-1 2.8s ease-in-out infinite; }
+.pitcher-bob-2 { animation: pitcher-bob-2 3.4s ease-in-out infinite; }
+@keyframes pitcher-bob-1 {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-16px) rotate(4deg); }
+}
+@keyframes pitcher-bob-2 {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-22px) rotate(-6deg); }
+}
+.autoice-btn {
+  min-height: 30px;
+  margin: 2px 0 0 0;
+  padding: 3px 12px;
+  background: #ffffff;
+  border: 2px solid #c084fc;
+  border-radius: 15px;
+  color: #6b21a8;
+  font-weight: 800;
+  font-size: 11px;
+}
+.autoice-btn.on {
+  background: #dbeafe;
+  border-color: #3b82f6;
+  color: #1d4ed8;
+}
+@media (hover: hover) {
+  html:not(.touch-input) .autoice-btn:hover:not(:disabled) { background: #f5f3ff; border-color: #a855f7; }
+  html:not(.touch-input) .autoice-btn.on:hover:not(:disabled) { background: #bfdbfe; border-color: #2563eb; }
+}
+
+/* Morning Prep & Operations Kawaii Styles */
+.weather-card {
+  margin: 0 auto 8px auto;
+  filter: drop-shadow(0 3px 6px rgba(0,0,0,0.22));
+}
+.weather-panel-inner {
+  min-height: 104px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  box-sizing: border-box;
+}
+.weather-art-slot {
+  width: 82px;
+  height: 78px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  flex-shrink: 0;
+}
+.weather-sun {
+  width: 76px;
+  height: 76px;
+  object-fit: contain;
+}
+.weather-cloud-rain {
+  position: relative;
+  width: 76px;
+  height: 74px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.weather-cloud {
+  width: 74px;
+  height: 52px;
+  object-fit: contain;
+}
+.weather-cloud-rain[data-sky="SNOWY"]::after {
+  content: '\2744\00a0\2744'; color: #497ca5; font-size: 19px; line-height: 1;
+}
+.weather-rain {
+  width: 44px;
+  height: 46px;
+  object-fit: contain;
+  margin-top: -10px;
+  animation: rain-drip 1.2s linear infinite;
+}
+@keyframes rain-drip {
+  0% { transform: translateY(-3px); opacity: 0.6; }
+  50% { opacity: 1; }
+  100% { transform: translateY(3px); opacity: 0.7; }
+}
+.weather-details {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.weather-ice-icon {
+  width: 14px;
+  height: 14px;
+  object-fit: contain;
+  vertical-align: -2px;
+}
+.header-title-lemon {
+  width: 1.1em;
+  height: 1.1em;
+  object-fit: contain;
+  vertical-align: -0.15em;
+}
+.weather-ice-hint {
+  font-size: 11px;
+  font-weight: 700;
+  color: #1e1b4b;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1.5px solid #a855f7;
+  border-radius: 14px;
+  padding: 2px 9px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  /* May wrap: as one unbreakable line this hint made the weather card 306 px wide at
+     minimum, wider than a 320 px phone, so the whole page overflowed sideways. */
+  text-align: center;
+  transition: border-color 0.2s, background-color 0.2s;
+}
+/* Busy-day meter: 1 to 4 cups light up (data-level), the rest stay faded. */
+.weather-crowd-meter {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1.5px solid #a855f7;
+  border-radius: 14px;
+  padding: 1px 7px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+.weather-crowd-meter img {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  transition: opacity 0.2s, filter 0.2s;
+}
+/* Glowing cups: the neighborhood knows about the stand (buzz). */
+.weather-crowd-meter img.glow {
+  filter: drop-shadow(0 0 3px #facc15) drop-shadow(0 0 2px #fde047);
+  animation: crowd-cup-glow 1.6s ease-in-out infinite alternate;
+}
+@keyframes crowd-cup-glow {
+  from { filter: drop-shadow(0 0 2px #facc15); }
+  to { filter: drop-shadow(0 0 5px #facc15) drop-shadow(0 0 2px #fde047); }
+}
+.weather-crowd-meter[data-level="1"] img:nth-child(n+2),
+.weather-crowd-meter[data-level="2"] img:nth-child(n+3),
+.weather-crowd-meter[data-level="3"] img:nth-child(n+4) {
+  opacity: 0.25;
+  filter: grayscale(1);
+}
+/* The ice hint turns green once the kid's ice per cup matches today's heat. */
+.weather-ice-hint[data-mood="right"] {
+  border-color: #22c55e;
+  background: #f0fdf4;
+  color: #166534;
+}
+.weather-season-pill {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 700;
+  color: #581c87;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1.5px solid #c084fc;
+  border-radius: 12px;
+  padding: 1px 9px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+
+/* Dad Mode Test Controls */
+body:not(.dad-mode) .dad-test-only {
+  display: none !important;
+}
+.dad-seed-info {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 600;
+  color: #fef08a;
+  opacity: 0.85;
+  white-space: nowrap;
+  align-self: center;
+}
+.dad-pill {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  letter-spacing: 0.3px;
+}
+body.dad-mode .dad-pill {
+  background: #3b2800;
+  color: #fef08a;
+  border: 1.5px solid #eab308;
+  box-shadow: 0 0 8px rgba(234, 179, 8, 0.4);
+}
+body.dad-mode .dad-pill:hover {
+  background: #451a03;
+  transform: scale(1.04);
+}
+body:not(.dad-mode) .dad-pill {
+  background: #1e1e24;
+  color: #94a3b8;
+  border: 1.5px solid #475569;
+  opacity: 0.85;
+}
+body:not(.dad-mode) .dad-pill:hover {
+  opacity: 1;
+  border-color: #cbd5e1;
+  color: #f8fafc;
+  transform: scale(1.04);
+}
+
+/* Mascot & Demand Advice */
+
+/* Stand frame: the border is drawn in CSS so it stays sharp at any size. Only the
+   pictures are images (sprites/frame, made by art_src/build_frame_art.py): the ribbon
+   on the top edge, the awning repeated across the top and the tablecloth across the
+   bottom. The rounded inner box trims the awning and cloth at the corners.
+     <div class="stand-frame">
+       <div class="stand-ribbon"><span class="stand-ribbon-title">TITLE</span></div>
+       <div class="stand-frame-inner">
+         <div class="stand-awning"></div> ...content... <div class="stand-cloth"></div>
+       </div>
+     </div> */
+.stand-frame {
+  position: relative;
+  margin-top: 26px;                 /* the ribbon pokes up above the frame */
+  border: 4px solid #6b2fa0;
+  border-radius: 28px;
+  background: #6b2fa0;
+}
+.stand-frame-inner {
+  position: relative;
+  border: 6px solid #eebdf8;      /* one colour: mixed side colours leave a diagonal at the corners */
+  border-radius: 24px;
+  overflow: hidden;
+  background: #fef5e4;
+}
+.stand-awning {
+  height: 42px;
+  background: url('/sprites/frame/awning_tile.png') repeat-x center top / auto 100%;
+}
+.stand-cloth {
+  height: 36px;
+  /* drawn 72px tall and only the bottom 36 shown: bigger gingham squares, thin strip */
+  background: url('/sprites/frame/tablecloth_tile.png') repeat-x center bottom / auto 72px;
+}
+.stand-ribbon {
+  position: absolute;
+  z-index: 2;
+  top: 0;
+  left: 50%;
+  width: 64%;
+  max-width: 420px;
+  transform: translate(-50%, -29%);
+  aspect-ratio: 1000 / 226;
+  background: url('/sprites/frame/ribbon.png') no-repeat center / 100% 100%;
+  container-type: inline-size;     /* the title sizes itself from the ribbon width */
+}
+
+/* Morning Prep Stand Card (a stand-frame). */
+.prep-stand-card {
+  color: #1e1b4b;
+  filter: drop-shadow(0 4px 8px rgba(124, 58, 237, 0.25));
+}
+/* Inside the ribbon's flat band (ribbon.png: band at 6-70% of the height, 9% in from
+   each end). */
+.stand-ribbon-title {
+  position: absolute;
+  left: 10%;
+  right: 10%;
+  top: 8%;
+  height: 60%;
+  color: #fff;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 16px;
+  font-size: clamp(12px, 6.6cqw, 28px); /* follows the ribbon as it grows or shrinks */
+  letter-spacing: 0.8px;
+  -webkit-text-stroke: 2px #5b21b6;
+  paint-order: stroke fill;
+  text-shadow: 0 2px 0 rgba(76, 29, 149, 0.6);
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ribbon-sparkle {
+  width: 17px;
+  height: 17px;
+  object-fit: contain;
+}
+.prep-stand-body {
+  padding: 12px 10px 6px;
+}
+.prep-mult-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  padding: 4px 8px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 2px solid #e9d5ff;
+  border-radius: 20px;
+}
+.prep-mult-label {
+  font-weight: 700;
+  font-size: 11px;
+  color: #581c87;
+}
+.prep-mult-pills {
+  display: flex;
+  gap: 4px;
+}
+.prep-items-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+@media (max-width: 480px) {
+  .prep-items-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.supply-item-box {
+  background: rgba(255, 255, 255, 0.96);
+  border: 2px solid #e9d5ff;
+  border-radius: 14px;
+  padding: 6px 8px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 6px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+}
+.supply-item-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.supply-item-icon {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+.supply-item-meta {
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-width: 0;
+}
+.supply-item-title {
+  font-weight: 700;
+  font-size: 11.5px;
+  color: #4a044e;
+}
+.supply-stock-row {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.inv-number-pill {
+  background: url('/sprites/morning_prep/inventory_number_pill_bg.png') no-repeat center / 100% 100%;
+  min-width: 44px;
+  height: 24px;
+  padding: 0 8px;   /* clears the pill art's thick rim, so "200/400" never touches it */
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 12px;
+  color: #581c87;
+  letter-spacing: 0;
+}
+/* An upgrade just lifted this item's storage limit ("38/48" becomes "38"): a tag pops
+   out of the pill for a few seconds so the shorter number reads as a win, not a loss. */
+.supply-stock-row { position: relative; }
+.supply-stock-row.cap-lifted::after {
+  content: 'No limit!';
+  position: absolute;
+  left: 50%;
+  top: -15px;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  padding: 1px 7px;
+  border-radius: 10px;
+  background: #22c55e;
+  border: 2px solid #15803d;
+  color: #fff;
+  font-weight: 800;
+  font-size: 11px;
+  pointer-events: none;
+  animation: cap-lifted-pop 3.5s ease-out forwards;
+}
+@keyframes cap-lifted-pop {
+  0% { opacity: 0; transform: translateX(-50%) scale(0.4); }
+  10% { opacity: 1; transform: translateX(-50%) scale(1.15); }
+  18% { transform: translateX(-50%) scale(1); }
+  85% { opacity: 1; }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-6px); }
+}
+.supply-alert {
+  font-size: 13px;
+  animation: pulse-warn 1.5s ease-in-out infinite;
+}
+@keyframes pulse-warn {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.3); }
+}
+.kawaii-buy-btn {
+  background: url('/sprites/morning_prep/buy_button_cart_bg.png') no-repeat center / 100% 100%;
+  height: 38px;
+  width: 100%;
+  border: none;
+  cursor: pointer;
+  padding: 0 6px 0 26%; /* clear cart icon + divider */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 14.5px;
+  letter-spacing: 0.3px;
+  -webkit-text-stroke: 2px #a3155f;
+  paint-order: stroke fill;
+  text-shadow: 0 1.5px 0 #a3155f;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+  border-radius: 18px;
+  touch-action: manipulation;
+  transition: transform 0.1s, filter 0.15s;
+  min-height: auto;
+}
+@media (hover: hover) {
+  html:not(.touch-input) .kawaii-buy-btn:hover:not(:disabled) {
+    transform: scale(1.03);
+    filter: brightness(1.08);
+    background: url('/sprites/morning_prep/buy_button_cart_bg.png') no-repeat center / 100% 100%;
+    border-color: transparent;
+  }
+}
+.kawaii-buy-btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+.kawaii-buy-btn:disabled {
+  filter: grayscale(80%) opacity(0.45);
+  cursor: not-allowed;
+  transform: none;
+}
+#btn-buy-ice.is-automatic:disabled {
+  opacity: 1;
+  filter: none;
+  cursor: default;
+  padding: 0 6px;
+  border: 2px solid #7dd3fc;
+  background: #e8f8ff;
+  color: #075985;
+  -webkit-text-stroke: 0;
+  text-shadow: none;
+  box-shadow: none;
+}
+/* Juicy Run Day Simulation Button */
+.kawaii-run-day-btn {
+  width: 100%;
+  margin-top: 10px;
+  padding: 12px 14px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%);
+  color: #ffffff;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 20px;
+  line-height: 1.1;
+  letter-spacing: 0.8px;
+  -webkit-text-stroke: 3px #065f46;
+  paint-order: stroke fill;
+  border: 3px solid #6ee7b7;
+  border-radius: 26px;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.45), 0 0 12px rgba(110, 231, 183, 0.3);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  touch-action: manipulation;
+  transition: transform 0.12s, filter 0.15s, box-shadow 0.15s;
+  min-height: 50px;
+  text-shadow: 0 2px 0 #064e3b;
+}
+@media (hover: hover) {
+  html:not(.touch-input) .kawaii-run-day-btn:hover:not(:disabled) {
+    transform: translateY(-2px) scale(1.02);
+    filter: brightness(1.08);
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.55), 0 0 16px rgba(110, 231, 183, 0.4);
+    background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%);
+    border-color: #6ee7b7;
+  }
+}
+.kawaii-run-day-btn:active:not(:disabled) {
+  transform: translateY(1px) scale(0.98);
+}
+.btn-sparkle {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
+.kawaii-run-day-btn.short-stock .btn-sparkle { visibility: hidden; }
+.btn-sun {
+  width: 30px;
+  height: 30px;
+  margin: -6px 0;
+  object-fit: contain;
+}
+
+/* ==================================================================
+   Money Box: cat cash counter (sprites/kawaii_cat)
+   ================================================================== */
+.bank-card {
+  background: #fdf4ff;
+  border: 3px solid #8b5cf6;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.25);
+  color: #1e1b4b;
+}
+.bank-body {
+  position: relative;
+  container: bank / inline-size; /* lets the stat chips react to the box width, see below */
+  padding: 10px 10px 12px 10px;
+  background: linear-gradient(180deg, #fef6ff 0%, #f6eaff 55%, #ecdcff 100%);
+  overflow: hidden;
+}
+.bank-cloud,
+.bank-twinkle {
+  position: absolute;
+  pointer-events: none;
+  user-select: none;
+}
+.bank-cloud-a { width: 104px; left: -30px; top: 96px; opacity: 0.7; animation: bank-drift 9s ease-in-out infinite; }
+.bank-cloud-b { width: 78px; right: -20px; top: 44px; opacity: 0.6; animation: bank-drift 11s ease-in-out infinite reverse; }
+.bank-twinkle-a { width: 20px; left: 16px; top: 46px; animation: bank-twinkle 2.6s ease-in-out infinite; }
+.bank-twinkle-b { width: 13px; right: 30px; top: 110px; animation: bank-twinkle 3.1s ease-in-out 0.8s infinite; }
+@keyframes bank-drift {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(10px); }
+}
+@keyframes bank-twinkle {
+  0%, 100% { transform: scale(0.7) rotate(0deg); opacity: 0.45; }
+  50% { transform: scale(1.1) rotate(12deg); opacity: 1; }
+}
+.bank-stage-pill {
+  position: relative;
+  display: table;
+  margin: 0 auto;
+  padding: 3px 12px;
+  background: #ffffff;
+  border: 2px solid #c084fc;
+  border-radius: 14px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #6b21a8;
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(124, 58, 237, 0.15);
+}
+
+/* Counter geometry is expressed in fractions of the base pill width (--bw) so the whole
+   cat + pill + digits group scales with the column. Sprite sheet scale: pill = 376 px.
+   --cw is the room the column offers: a long number (millions, billions) first widens
+   the pill up to --cw and only then shrinks its digits. */
+.bank-counter {
+  position: relative;
+  margin: 4px 0 0 0;
+  container-type: inline-size;
+}
+.bank-counter-inner {
+  --cw: 100cqw;
+  --bw: min(100cqw, 330px);
+  position: relative;
+  width: var(--bw);
+  margin: 0 auto;
+  padding-top: calc(var(--bw) * 0.51); /* headroom for the tallest (cheering) cat */
+}
+@supports not (width: 1cqw) {
+  .bank-counter { width: 240px; margin: 4px auto 0 auto; }
+  .bank-counter-inner { --cw: 240px; --bw: 240px; }
+}
+.bank-cat {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: calc(var(--bw) * 0.545); /* paws overlap the pill rim */
+  z-index: 2;
+  pointer-events: none;
+  animation: bank-cat-peek 3.4s ease-in-out infinite;
+}
+.bank-cat img {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: calc(var(--bw) * var(--w) / 376);
+  transform: translateX(-50%);
+  opacity: 0;
+}
+.bank-cat img.on { opacity: 1; }
+.bank-cat.cheer img.on { animation: bank-cat-hop 0.42s ease-out 2; }
+@keyframes bank-cat-peek {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(calc(var(--bw) * -0.008)); }
+}
+@keyframes bank-cat-hop {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  45% { transform: translateX(-50%) translateY(calc(var(--bw) * -0.035)); }
+}
+.bank-pill {
+  position: relative;
+  z-index: 1;
+  /* at least the base width, centered under the cat, growing with the number */
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  min-width: 100%;
+  max-width: var(--cw);
+  height: calc(var(--bw) * 0.34);
+  border: calc(var(--bw) * 0.024) solid #dba6f5;
+  border-radius: calc(var(--bw) * 0.17);
+  background: linear-gradient(180deg, #ffffff 0%, #fffafd 60%, #fbf0ff 100%);
+  box-shadow:
+    0 0 0 calc(var(--bw) * 0.006) #c992ea,
+    inset 0 calc(var(--bw) * -0.012) calc(var(--bw) * 0.02) rgba(216, 180, 254, 0.35),
+    0 3px 8px rgba(124, 58, 237, 0.22);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: calc(var(--bw) * 0.028);
+  padding: 0 calc(var(--bw) * 0.04);
+}
+.bank-coin {
+  flex: none;
+  width: calc(var(--bw) * 0.15);
+  height: calc(var(--bw) * 0.15);
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff6b8 0%, #fcd34d 48%, #f59e0b 100%);
+  border: calc(var(--bw) * 0.009) solid #c2780a;
+  box-shadow: inset 0 calc(var(--bw) * -0.008) 0 rgba(180, 100, 0, 0.3), 0 1px 2px rgba(120, 60, 0, 0.3);
+  color: #8a4b06;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: calc(var(--bw) * 0.105);
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+/* A number drawn with the n0..n9 / nc digit sprites (68 px tall on a shared baseline).
+   --units = the number's width in glyph-heights, set from JS. Every digit gets the same
+   cell, so the size depends only on how many digits there are, and a small gain on a big
+   number changes the last digits without moving or resizing the rest.
+   0.36 = the pill's border, padding, coin and gap, in fractions of --bw. */
+.sprite-num {
+  --units: 4;
+  --h: min(calc(var(--bw) * 0.165), calc((var(--cw) - var(--bw) * 0.36) / var(--units)));
+  height: var(--h);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  flex: none;
+}
+.sprite-num img {
+  height: 100%;
+  width: auto;
+  display: block;
+}
+.sprite-num img.sn-d {
+  width: calc(var(--h) * 54 / 68); /* widest digit ("4"); narrower ones sit centered */
+  object-fit: contain;
+  object-position: center bottom;
+}
+.sprite-num .sn-dot {
+  width: calc(var(--h) * 0.24);
+  height: calc(var(--h) * 0.24);
+  margin: 0 calc(var(--h) * 0.055) calc(var(--h) * 0.074) calc(var(--h) * 0.055);
+  border-radius: 50%;
+  background: #541e60;
+}
+.sprite-num .sn-gap { width: calc(var(--h) * 0.18); }
+.sprite-num .sn-txt {
+  align-self: center;
+  margin-left: calc(var(--h) * 0.06);
+  font-family: var(--font-display);
+  font-size: calc(var(--h) * 0.8);
+  font-weight: 400;
+  line-height: 1;
+  color: #541e60;
+}
+.bank-floaters {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(var(--bw) * 0.48);
+  height: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+.bank-float {
+  position: absolute;
+  top: 0;
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 400;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff, 0 2px 4px rgba(88, 28, 135, 0.25);
+  animation: bank-float-up 1.25s ease-out forwards;
+}
+.bank-float.gain { right: 2%; color: #059669; }
+.bank-float.spend { left: 2%; color: #e11d74; }
+@keyframes bank-float-up {
+  0% { opacity: 0; transform: translateY(8px) scale(0.8); }
+  15% { opacity: 1; transform: translateY(0) scale(1.12); }
+  70% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-34px) scale(1); }
+}
+.bank-caption-wrap {
+  position: relative;
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 0 4px;
+}
+.bank-caption {
+  font-size: 11px;
+  font-weight: 700;
+  color: #7e22ce;
+}
+.fold-pill-btn {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 700;
+  color: #6b21a8;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1.5px solid #c084fc;
+  border-radius: 12px;
+  padding: 2px 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 1px 2px rgba(107, 33, 168, 0.1);
+  transition: transform 0.12s ease, background 0.12s ease;
+  white-space: nowrap;
+}
+.fold-pill-btn:hover {
+  background: #ffffff;
+  transform: scale(1.03);
+}
+.fold-arrow {
+  display: inline-block;
+  font-size: 10px;
+  transition: transform 0.25s ease;
+}
+.fold-pill-btn.open .fold-arrow,
+.foldable-card.is-expanded .fold-arrow {
+  transform: rotate(180deg);
+}
+
+/* Generalizable Foldable Drawer */
+.foldable-drawer {
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: max-height 0.32s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.24s ease,
+              transform 0.24s ease,
+              margin 0.24s ease;
+  pointer-events: none;
+  margin-top: 0;
+}
+.foldable-drawer.is-open {
+  max-height: 500px;
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+  margin-top: 8px;
+}
+
+.bank-stats {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.bank-chip {
+  min-width: 0;
+  container-type: inline-size;
+  padding: 4px 8px 5px 8px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 2px solid #e9d5ff;
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+}
+.bank-chip-label {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  color: #7e22ce;
+}
+.bank-chip-value {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2px 5px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #4a044e;
+}
+.bank-chip-sub {
+  font-size: 10px;
+  font-weight: 700;
+  color: #86198f;
+}
+/* Full-digit totals ("$123,456,789,012") shrink to the chip instead of spilling out of it.
+   --chars comes from JS. 0.54em per character: a long number in Fredoka bold averages
+   0.50em even when every digit is the widest one (digits 0.57em, commas 0.22em). */
+.bank-chip-value.fit-text { font-size: min(13px, calc(100cqw / (var(--chars, 6) * 0.54))); }
+/* Five smiling stars; the lit row is clipped to a percentage. */
+.star-meter {
+  position: relative;
+  display: inline-block;
+  width: calc(var(--star, 14px) * 5);
+  height: var(--star, 14px);
+  flex: none;
+}
+.star-meter-row {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: 0;
+  line-height: 0;
+}
+.star-meter-row img {
+  width: var(--star, 14px);
+  height: var(--star, 14px);
+  object-fit: contain;
+}
+.star-meter-row.dim img { filter: grayscale(1) brightness(1.25); opacity: 0.38; }
+
+/* Chore: glossy candy button with a rest timer */
+.chore-wrap {
+  position: relative;
+  margin-top: 10px;
+}
+.chore-title {
+  margin-bottom: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #6b21a8;
+  text-align: center;
+}
+.chore-btn {
+  position: relative;
+  width: 100%;
+  min-height: 48px;
+  margin: 0;
+  padding: 6px 8px 6px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  overflow: hidden;
+  border: 2px solid #db2777;
+  border-radius: 26px;
+  background: linear-gradient(180deg, #ff9cc4 0%, #f9689f 55%, #ec4899 100%);
+  box-shadow: 0 3px 0 #be185d, 0 6px 10px rgba(190, 24, 93, 0.28);
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 14.5px;
+  letter-spacing: 0.2px;
+  text-align: left;
+  text-shadow: 0 1px 2px rgba(131, 24, 67, 0.6);
+  transition: transform 0.1s, filter 0.15s, box-shadow 0.1s;
+}
+.chore-btn::before {
+  content: '';
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  top: 3px;
+  height: 36%;
+  border-radius: 20px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0));
+  pointer-events: none;
+}
+.chore-btn:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 #be185d, 0 2px 5px rgba(190, 24, 93, 0.28);
+}
+.chore-btn:disabled { opacity: 1; cursor: wait; }
+.chore-btn.is-busy {
+  background: linear-gradient(180deg, #f3e8ff 0%, #e2ccff 100%);
+  border-color: #a78bfa;
+  box-shadow: 0 3px 0 #a78bfa;
+  color: #581c87;
+  text-shadow: none;
+}
+.chore-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 0;
+  background: rgba(168, 85, 247, 0.3);
+  pointer-events: none;
+}
+.chore-name {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  line-height: 1.2;
+}
+.chore-reward {
+  position: relative;
+  flex: none;
+  min-width: 62px;
+  padding: 4px 9px;
+  background: #ffffff;
+  border-radius: 14px;
+  box-shadow: inset 0 -2px 0 rgba(190, 24, 93, 0.14);
+  color: #be185d;
+  font-size: 14.5px;
+  font-weight: 700;
+  text-align: center;
+  text-shadow: none;
+}
+.chore-btn.is-busy .chore-reward { color: #6b21a8; box-shadow: inset 0 -2px 0 rgba(107, 33, 168, 0.14); }
+
+/* Packs-per-tap candy step buttons (+1 / +10 / +100 sprites) */
+.step-btn {
+  width: 58px;
+  height: 34px;
+  min-height: auto;
+  margin: 0;
+  padding: 2px 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  opacity: 0.55;
+  filter: saturate(0.55);
+  transition: transform 0.12s, opacity 0.12s, filter 0.12s;
+}
+.step-btn img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+.step-btn.active {
+  opacity: 1;
+  transform: scale(1.1);
+  filter: saturate(1) drop-shadow(0 0 3px rgba(250, 204, 21, 1)) drop-shadow(0 2px 2px rgba(0, 0, 0, 0.2));
+}
+.step-btn:active { transform: scale(0.96); }
+
+/* ==================================================================
+   Day Report: cat mood + smiling-star customer reviews
+   ================================================================== */
+.report-card {
+  margin-bottom: 10px;
+  background: #fffdf7;
+  border: 3px solid #8b5cf6;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.25);
+  color: #1e1b4b;
+}
+.report-banner {
+  justify-content: space-between;
+  padding: 6px 12px;
+}
+/* Leave room for the popup's round close button so it does not sit on the weather pill. */
+.report-card.in-modal .report-banner { padding-right: 44px; }
+.report-weather {
+  padding: 1px 8px;
+  background: rgba(255, 255, 255, 0.22);
+  border-radius: 10px;
+  font-family: var(--font-ui);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+  -webkit-text-stroke: 0; /* small text: no outline */
+  text-shadow: 0 1px 1px rgba(88, 28, 135, 0.5);
+}
+.report-body {
+  padding: 10px;
+  background: linear-gradient(180deg, #fffdf5 0%, #fef9e7 100%);
+}
+.report-hero {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  background: linear-gradient(180deg, #fef6ff 0%, #f3e8ff 100%);
+  border: 2px solid #e9d5ff;
+  border-radius: 14px;
+}
+.report-cat {
+  flex: none;
+  width: 78px;
+  height: 72px;
+  object-fit: contain;
+  object-position: center bottom;
+}
+.report-kid { flex: none; width: 84px; height: 84px; margin: -4px 0; }
+.report-kid .kid-pic { width: 100%; height: 100%; }
+.report-hero-text { flex: 1 1 0; min-width: 0; container-type: inline-size; }
+.report-hero-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #7e22ce;
+}
+.report-profit {
+  font-family: var(--font-display);
+  font-size: 27px;
+  /* Long profits shrink to fit: Lilita One averages at most 0.58em per character here. */
+  font-size: min(27px, calc(100cqw / (var(--chars, 8) * 0.6)));
+  font-weight: 400;
+  letter-spacing: 0.3px;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+.report-profit.pos { color: #059669; }
+.report-profit.neg { color: #e11d74; }
+.report-hero-sub {
+  font-size: 11px;
+  font-weight: 700;
+  color: #4a044e;
+}
+.report-rows {
+  margin-top: 8px;
+  padding: 6px 10px;
+  background: #ffffff;
+  border: 2px dashed #e9d5ff;
+  border-radius: 12px;
+  font-size: 12px;
+}
+.report-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 2px 0;
+  font-weight: 700;
+  color: #4a044e;
+}
+.report-row .amt { flex: none; color: #047857; }
+.report-row.cost .amt { color: #be123c; }
+.report-row.total {
+  margin-top: 4px;
+  padding-top: 5px;
+  border-top: 2px dashed #e9d5ff;
+  font-size: 13px;
+  font-weight: 900;
+}
+.report-row.total.neg .amt { color: #be123c; }
+/* "What neighbors say": reputation after the day, and which way it moved. (Buzz, how
+   many neighbors know the stand, is shown as glowing cups on the weather card.) */
+.report-rep {
+  margin-top: 8px;
+  padding: 6px 10px;
+  background: #ffffff;
+  border: 2px solid #e9d5ff;
+  border-radius: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #4a044e;
+}
+.report-rep .star-meter { --star: 16px; }
+.report-rep-trend {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  font-size: 12px;
+  color: #6b21a8;
+}
+.report-rep-trend.up { color: #047857; }
+.report-rep-trend.down { color: #be123c; }
+/* CSS triangle arrows (no glyphs): up for going up, down for going down. */
+.report-rep-trend.up::before,
+.report-rep-trend.down::before {
+  content: '';
+  border: 6px solid transparent;
+}
+.report-rep-trend.up::before { border-top: 0; border-bottom: 9px solid currentColor; }
+.report-rep-trend.down::before { border-bottom: 0; border-top: 9px solid currentColor; }
+.report-section-title {
+  margin: 10px 0 4px 0;
+  font-size: 11px;
+  font-weight: 800;
+  color: #6b21a8;
+}
+.report-review {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 5px;
+  padding: 6px 10px;
+  background: #ffffff;
+  border: 2px solid #e9d5ff;
+  border-left-width: 6px;
+  border-radius: 12px;
+}
+/* No stars on comments: a green edge for happy ones, orange for complaints. */
+.report-review.good { border-color: #bbf7d0; border-left-color: #22c55e; }
+.report-review.bad { border-color: #fed7aa; border-left-color: #f97316; }
+.report-review-text { min-width: 0; }
+.report-review-face {
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+.report-review.team {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  border-left-color: #3b82f6;
+}
+
+.report-review-who {
+  min-width: 0;
+  font-size: 10.5px;
+  font-weight: 800;
+  color: #7e22ce;
+}
+.report-review.team .report-review-who { color: #1d4ed8; }
+.report-review-quote {
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: #3b0764;
+}
+.report-notes {
+  margin: 8px 0 0 0;
+  padding: 6px 10px 6px 26px;
+  background: #fff7ed;
+  border: 2px solid #fed7aa;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: #7c2d12;
+}
+.report-notes li + li { margin-top: 3px; }
+
+/* ==================================================================
+   Day Report Dock & Modal Architecture
+   ================================================================== */
+.report-dock-ticket {
+  margin-bottom: 10px;
+  background: linear-gradient(180deg, #2a1538 0%, #1c0e27 100%);
+  border: 2.5px solid #a855f7;
+  border-radius: 14px;
+  padding: 7px 11px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  cursor: pointer;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.28);
+  transition: transform 0.12s ease, border-color 0.12s ease, background 0.12s ease;
+  user-select: none;
+}
+.report-dock-ticket:hover {
+  border-color: #c084fc;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);
+}
+.report-dock-ticket.placeholder {
+  opacity: 0.85;
+  cursor: default;
+}
+.report-dock-ticket.placeholder:hover {
+  transform: none;
+}
+.report-dock-cat {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+.report-dock-info {
+  flex: 1;
+  min-width: 0;
+}
+.report-dock-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.report-dock-title {
+  font-family: var(--font-display);
+  font-size: 13.5px;
+  color: #ffd700;
+  letter-spacing: 0.4px;
+}
+.report-dock-profit {
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 800;
+}
+.report-dock-profit.pos { color: #4ade80; }
+.report-dock-profit.neg { color: #f87171; }
+.report-dock-sub {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  color: #cbd5e1;
+  margin-top: 1px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* A little pop-in for the kid's picture and the magic-look banner. */
+@keyframes kid-ticket-pop {
+  from { opacity: 0; transform: translateY(-8px) scale(0.92); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Modal Celebration Dialog */
+.report-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 7, 25, 0.82);
+  backdrop-filter: blur(5px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.22s ease;
+}
+.report-modal-backdrop.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+.report-modal-dialog {
+  position: relative;
+  max-width: 440px;
+  width: 100%;
+  max-height: 92vh;
+  overflow-y: auto;
+  overflow-x: hidden; /* the full-width Continue button was 4 px too wide: a sideways scrollbar */
+  box-sizing: border-box;
+  border-radius: 18px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 0 3px #c084fc;
+  transform: scale(0.92) translateY(18px);
+  transition: transform 0.26s cubic-bezier(0.34, 1.56, 0.64, 1);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: #1c0e27;
+  padding: 10px;
+}
+.report-modal-backdrop.active .report-modal-dialog {
+  transform: scale(1) translateY(0);
+}
+.report-modal-close-x {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 20;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1.5px solid rgba(255, 255, 255, 0.5);
+  color: #fff;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  line-height: 1;
+  transition: transform 0.12s ease, background 0.12s ease;
+}
+.report-modal-close-x:hover {
+  background: #e11d48;
+  border-color: #fda4af;
+  transform: scale(1.1);
+}
+.report-modal-continue-btn {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 16px;
+  border-radius: 14px;
+  border: 2px solid #f472b6;
+  background: linear-gradient(180deg, #ec4899 0%, #db2777 100%);
+  color: #fff;
+  font-family: var(--font-display);
+  font-size: 16px;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(219, 39, 119, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: transform 0.12s ease, filter 0.12s ease;
+}
+.report-modal-continue-btn:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.08);
+}
+.report-modal-continue-btn:active {
+  transform: translateY(1px);
+}
+
+/* Mouse-only hover effects (see the note on the global button:hover rule). */
+@media (hover: hover) {
+  html:not(.touch-input) .chore-btn:hover:not(:disabled) {
+    background: linear-gradient(180deg, #ff9cc4 0%, #f9689f 55%, #ec4899 100%);
+    border-color: #db2777;
+    filter: brightness(1.07);
+    transform: translateY(-1px);
+  }
+  html:not(.touch-input) .step-btn:hover:not(:disabled) {
+    background: transparent;
+    opacity: 1;
+  }
+}
+
+  /* --- DRIVEWAY HERO STAND & CHARACTER CUSTOMIZER --- */
+
+  /* --- PHASE 1: DRIVEWAY-ONLY VIEW (REST BLANK / LOCKED) --- */
+
+  /* Milestone Progress Card (Phase 1 -> 2) */
+
+  @keyframes pulse {
+    0% { transform: scale(0.99); }
+    100% { transform: scale(1.02); filter: brightness(1.1); }
+  }
+
+  /* --- CHARACTER CUSTOMIZER MIRROR MODAL --- */
+
+  /* --- THE MIRROR: make your lemonade hero --- */
+  .kid-mirror {
+    position: relative;
+    width: min(1060px, 100%);
+    max-height: calc(100vh - 28px);
+    overflow-y: auto;
+    background: linear-gradient(180deg, #fffbeb 0%, #fef3c7 100%);
+    border: 5px solid #7c3aed;
+    border-radius: 28px;
+    box-shadow: inset 0 0 0 4px #ede9fe, 0 14px 40px rgba(0, 0, 0, 0.5);
+    padding: 0 18px 16px;
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+  }
+  .kid-mirror-banner {
+    margin-top: 12px;
+    background: linear-gradient(180deg, #a855f7 0%, #7c3aed 100%);
+    color: #fff; font-family: var(--font-display); font-size: 24px; letter-spacing: 1px;
+    text-transform: uppercase; text-align: center;
+    padding: 8px 28px 6px; border-radius: 999px; border: 4px solid #4c1d95;
+    -webkit-text-stroke: 1px #4c1d95; paint-order: stroke fill;
+    box-shadow: 0 4px 0 #4c1d95;
+  }
+  .kid-mirror-x { position: absolute; top: 10px; right: 12px; }
+  .kid-mirror-x[hidden] { display: none; }
+  .kid-mirror-body { display: flex; gap: 16px; align-items: center; width: 100%; }
+  .kid-mirror-left { flex: none; width: 290px; display: flex; flex-direction: column; align-items: center; }
+  .kid-mirror-bubble {
+    position: relative; background: #fff; border: 4px solid #7c3aed; border-radius: 22px;
+    padding: 8px 14px; font-family: var(--font-display); font-size: 18px; color: #6d28d9;
+    text-align: center; line-height: 1.15; max-width: 250px; height: 45px; box-sizing: border-box;
+    display: flex; align-items: center; justify-content: center; white-space: nowrap;
+  }
+  .kid-mirror-bubble::after {
+    content: ''; position: absolute; left: 50%; bottom: -14px; transform: translateX(-50%);
+    border: 10px solid transparent; border-top: 12px solid #7c3aed; border-bottom: 0;
+  }
+  .kid-mirror-preview {
+    width: 290px; height: auto; aspect-ratio: 480 / 402; margin-top: 16px;
+    background: radial-gradient(ellipse at 50% 45%, #fef9c3 0%, rgba(254, 240, 138, 0) 70%);
+  }
+  .kid-mirror-rows { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+  .kid-mirror-row {
+    display: flex; align-items: center; gap: 12px;
+    background: #fff; border: 4px solid #e9d5ff; border-radius: 22px; padding: 8px 12px;
+  }
+  .kid-mirror-label {
+    flex: none; width: 112px; text-align: center;
+    background: linear-gradient(180deg, #a855f7 0%, #7c3aed 100%); color: #fff;
+    font-family: var(--font-display); font-size: 15px; line-height: 1.1;
+    padding: 7px 8px; border-radius: 14px; box-shadow: 0 3px 0 #5b21b6;
+  }
+  .kid-mirror-opts { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .kid-gear { display:flex; align-items:center; gap:5px; flex-wrap:wrap; }
+  .kid-gear .kid-hair-opt { width:42px; height:42px; padding:3px; font:13px var(--font-display); color:#582883; }
+  .kid-gear [data-key="sunglasses"] { margin-left:5px; }
+  .kid-gear img { object-fit:contain; }
+  #kid-opt-hair { gap: 6px; }
+  .kid-hair-opt {
+    width: 56px; height: 56px; box-sizing: border-box; margin: 0; padding: 0; cursor: pointer;
+    background: #fffbeb; border: 3px solid #e9d5ff; border-radius: 16px; overflow: hidden;
+    transition: transform 0.12s ease, border-color 0.12s ease;
+  }
+  .kid-hair-opt img { width: 100%; height: 100%; display: block; }
+  .kid-swatch {
+    width: 42px; height: 42px; padding: 0; cursor: pointer; border-radius: 50%;
+    background: var(--sw); border: 4px solid #fff; box-shadow: 0 0 0 3px #e9d5ff, 0 3px 6px rgba(0, 0, 0, 0.18);
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+  }
+  .kid-hair-opt.on { border-color: #7c3aed; box-shadow: 0 0 0 3px #facc15; transform: scale(1.06); }
+  .kid-swatch.on { box-shadow: 0 0 0 4px #7c3aed, 0 0 0 7px #facc15; transform: scale(1.08); }
+  .kid-hair-opt:active, .kid-swatch:active { transform: scale(0.92); }
+  .kid-mirror-done {
+    margin-top: 10px; cursor: pointer;
+    background: linear-gradient(180deg, #4ade80 0%, #16a34a 100%);
+    border: 4px solid #14532d; border-radius: 999px; box-shadow: 0 5px 0 #14532d;
+    color: #fff; font-family: var(--font-display); font-size: 24px; letter-spacing: 0.5px;
+    padding: 8px 40px; -webkit-text-stroke: 1px #14532d; paint-order: stroke fill;
+  }
+  .kid-mirror-done:active { transform: translateY(3px); box-shadow: 0 2px 0 #14532d; }
+  /* Phones: kid on top, rows below, the card scrolls. */
+  @media (max-width: 700px) {
+    .kid-mirror { padding: 0 10px 12px; border-width: 4px; }
+    .kid-mirror-banner { font-size: 17px; padding: 6px 16px 4px; margin-right: 34px; }
+    .kid-mirror-body { flex-direction: column; gap: 8px; }
+    .kid-mirror-left { width: 100%; }
+    .kid-mirror-bubble { font-size: 15px; }
+    .kid-mirror-preview { width: 190px; }
+    .kid-mirror-row { flex-direction: column; align-items: stretch; gap: 6px; padding: 6px 8px; }
+    .kid-mirror-label { width: auto; align-self: flex-start; font-size: 13px; padding: 4px 12px; }
+    .kid-hair-opt { width: 50px; height: 50px; }
+    .kid-mirror-opts { gap: 6px; }
+    .kid-swatch { width: 36px; height: 36px; }
+    .kid-mirror-done { font-size: 20px; padding: 6px 28px; }
+  }
+
+  /* Reset: a hold-to-confirm button fills up; let go early and nothing happens. */
+  .reset-card {
+    width: min(420px, 100%); box-sizing: border-box; text-align: center;
+    background: linear-gradient(180deg, #fff1f2 0%, #ffe4e6 100%); color: #4c0519;
+    border: 5px solid #e11d48; border-radius: 26px; padding: 18px 20px 16px;
+    box-shadow: inset 0 0 0 4px #fecdd3, 0 14px 40px rgba(0, 0, 0, 0.5);
+    display: flex; flex-direction: column; align-items: center; gap: 12px;
+  }
+  .reset-title { font-family: var(--font-display); font-size: 28px; color: #be123c; }
+  .reset-text { margin: 0; font-size: 16px; line-height: 1.35; }
+  .reset-hold {
+    position: relative; overflow: hidden; width: 100%; padding: 14px 10px; cursor: pointer;
+    border: 4px solid #9f1239; border-radius: 999px; background: #fecdd3;
+    box-shadow: 0 4px 0 #9f1239; touch-action: none; user-select: none; -webkit-user-select: none;
+    -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent;
+  }
+  .reset-hold-fill {
+    position: absolute; left: 0; top: 0; bottom: 0; width: 0%;
+    background: linear-gradient(180deg, #fb7185 0%, #e11d48 100%);
+  }
+  .reset-hold-label {
+    position: relative; font-family: var(--font-display); font-size: 21px; color: #fff;
+    -webkit-text-stroke: 1px #881337; paint-order: stroke fill;
+  }
+  .reset-no {
+    cursor: pointer; border: 3px solid #15803d; border-radius: 999px; padding: 8px 26px;
+    background: linear-gradient(180deg, #4ade80 0%, #16a34a 100%); color: #fff;
+    font-family: var(--font-display); font-size: 18px; box-shadow: 0 3px 0 #14532d;
+  }
+
+  /* The player's kid (beside the cash pill); tapping it opens the mirror. */
+  .kid-avatar-btn {
+    flex: none; width: 56px; height: 56px; padding: 0; cursor: pointer; box-sizing: border-box;
+    border-radius: 50%; border: 3px solid #a855f7; overflow: hidden;
+    background: radial-gradient(circle at 50% 40%, #fef9c3 0%, #fde68a 100%);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.28);
+    animation: kid-ticket-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: transform 0.12s ease;
+  }
+  .kid-avatar-btn img { width: 100%; height: 100%; display: block; }
+  .kid-avatar-btn:active { transform: scale(0.94); }
+  .kid-avatar-btn { position: relative; }
+
+  /* Kid picture with its special-hair layer (rainbow colors flowing, or twinkles). */
+  .kid-pic { position: relative; display: inline-block; line-height: 0; }
+  .kid-pic > img { width: 100%; height: 100%; display: block; }
+  .kid-fx { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+  .kid-fx img { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .kid-fx-rainbow { animation: kid-rainbow 7s linear infinite; }
+  @keyframes kid-rainbow { from { filter: hue-rotate(0deg); } to { filter: hue-rotate(360deg); } }
+  .kid-spark {
+    position: absolute; aspect-ratio: 1; transform: translate(-50%, -50%) scale(0);
+    animation: kid-twinkle 2.6s ease-in-out infinite;
+    filter: drop-shadow(0 0 2px #fff) drop-shadow(0 0 3px rgba(240, 171, 252, 0.9));
+  }
+  .kid-spark::before {
+    content: ''; position: absolute; inset: 0; background: #fff;
+    clip-path: polygon(50% 0, 60% 40%, 100% 50%, 60% 60%, 50% 100%, 40% 60%, 0 50%, 40% 40%);
+  }
+  .kid-spark-galaxy { animation-duration: 3.2s; filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.9)); }
+  .kid-spark-galaxy::before { background: #fffbe8; clip-path: polygon(50% 0, 57% 43%, 100% 50%, 57% 57%, 50% 100%, 43% 57%, 0 50%, 43% 43%); }
+  @keyframes kid-twinkle {
+    0%, 100% { transform: translate(-50%, -50%) scale(0) rotate(0deg); opacity: 0; }
+    25% { opacity: 1; }
+    45% { transform: translate(-50%, -50%) scale(1) rotate(45deg); opacity: 1; }
+    70% { transform: translate(-50%, -50%) scale(0.2) rotate(90deg); opacity: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .kid-fx-rainbow { animation: none; }
+    .kid-spark { animation: none; transform: translate(-50%, -50%) scale(0.8); }
+  }
+
+  /* A secret look just showed up: it glows in the mirror (and so does the kid) until seen. */
+  .kid-hair-opt.is-new, .kid-swatch.is-new, .kid-avatar-btn.has-new {
+    animation: kid-new-glow 0.9s ease-in-out infinite alternate;
+  }
+  @keyframes kid-new-glow {
+    from { box-shadow: 0 0 0 3px #fde68a, 0 0 4px 2px rgba(250, 204, 21, 0.35); }
+    to { box-shadow: 0 0 0 3px #facc15, 0 0 14px 6px rgba(250, 204, 21, 0.85); }
+  }
+  .magic-look {
+    display: flex; align-items: center; gap: 12px; margin: 0 40px 12px 0;   /* clear of the X */
+    padding: 8px 12px; border-radius: 18px; border: 3px solid #facc15;
+    background: linear-gradient(135deg, #fdf4ff 0%, #fef9c3 100%);
+    box-shadow: 0 0 18px rgba(250, 204, 21, 0.55);
+    animation: kid-ticket-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .magic-look-pics { display: flex; flex: none; }
+  .magic-look-pics .kid-pic {
+    width: 62px; height: 62px; border-radius: 50%; overflow: hidden; margin-right: -10px;
+    border: 3px solid #a855f7; background: radial-gradient(circle at 50% 40%, #fef9c3 0%, #fde68a 100%);
+  }
+  .magic-look-text { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.2; padding-left: 10px; }
+  .magic-look-text b { font-family: var(--font-display); font-size: 19px; color: #7c3aed; }
+  .magic-look-text span { font-size: 14px; color: #6b21a8; }
+  .magic-look-try {
+    flex: none; cursor: pointer; border: 3px solid #6d28d9; border-radius: 999px;
+    background: linear-gradient(180deg, #c084fc 0%, #9333ea 100%); color: #fff;
+    font-family: var(--font-display); font-size: 17px; padding: 6px 16px; box-shadow: 0 3px 0 #5b21b6;
+  }
+
+  /* Header Cash Pill & Cat */
+  .header-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.12);
+    padding-bottom: 8px;
+    margin-bottom: 12px;
+  }
+  .header-brand-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .header-cash-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(180deg, #2d2438 0%, #1e1828 100%);
+    border: 2px solid #facc15;
+    border-radius: 999px;
+    padding: 7px 14px;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35), 0 0 10px rgba(250, 204, 21, 0.25);
+    position: relative;
+  }
+  /* The kid's head beside the cash pill; it shows from Day 1 (tap: the mirror). */
+  .header-money-wrap { display: flex; align-items: center; gap: 10px; }
+  .header-kid-btn { width: 52px; height: 52px; animation: none; }
+  /* The cat is resting for now (the kid took its spot); the markup and art stay. */
+  .header-cat-slot { display: none !important; }
+  .header-cat-slot {
+    width: 36px;
+    height: 36px;
+    background: #fef08a;
+    border: 1.5px solid #ca8a04;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    flex-shrink: 0;
+    transition: transform 0.2s ease;
+  }
+  .header-cat-slot img {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+    transform: translateY(2px);
+  }
+  .header-cat-slot.cheer {
+    animation: cat-cheer-hop 0.4s ease-out 2;
+  }
+  @keyframes cat-cheer-hop {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50% { transform: translateY(-4px) scale(1.15); }
+  }
+  .header-cash-val-wrap {
+    display: flex;
+    align-items: baseline;
+    gap: 2px;
+  }
+  .header-coin-symbol {
+    font-family: var(--font-display);
+    font-size: 16px;
+    color: #facc15;
+    font-weight: 700;
+  }
+  .header-cash-num {
+    font-family: var(--font-display);
+    font-size: 21px;
+    font-weight: 400;
+    color: #ffffff;
+    letter-spacing: 0.5px;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+  }
+  .header-cash-float {
+    position: absolute;
+    right: 12px;
+    top: -16px;
+    pointer-events: none;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 14px;
+  }
+
+  /* Money Bag: tap the cash pill to see where the money came from and went. Floats over
+     the page, so it never changes the layout. */
+  .header-cash-pill { cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent; }
+  .header-cash-pill:focus-visible { outline: 3px solid #fef08a; outline-offset: 3px; }
+  .header-cash-caret {
+    width: 0; height: 0; margin-left: 2px;
+    border-left: 6px solid transparent; border-right: 6px solid transparent;
+    border-top: 7px solid #facc15;
+    transition: transform 0.2s ease;
+  }
+  .header-cash-pill[aria-expanded="true"] .header-cash-caret { transform: rotate(180deg); }
+  .money-bag {
+    position: absolute; z-index: 60; top: calc(100% + 12px); left: 50%;
+    transform: translateX(-50%);
+    width: min(380px, calc(100vw - 32px));
+    background: #fffdf7; color: #1e1b4b;
+    border: 4px solid #6b2fa0; border-radius: 24px;
+    box-shadow: inset 0 0 0 4px #eebdf8, 0 12px 28px rgba(0, 0, 0, 0.45);
+    overflow: hidden; cursor: default;
+    animation: money-bag-drop 0.18s ease-out;
+  }
+  .money-bag[hidden] { display: none; }
+  /* Phones: the pill is not centered, so pin the card to the screen edges instead. */
+  @media (max-width: 600px) {
+    .money-bag {
+      position: fixed; top: 70px; left: 16px; width: calc(100vw - 32px);
+      transform: none; animation-name: money-bag-drop-phone;
+    }
+  }
+  @keyframes money-bag-drop-phone {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes money-bag-drop {
+    from { opacity: 0; transform: translate(-50%, -8px) scale(0.97); }
+    to { opacity: 1; transform: translate(-50%, 0) scale(1); }
+  }
+  .money-bag-banner {
+    background: linear-gradient(180deg, #a855f7 0%, #7c3aed 100%);
+    color: #fff; font-family: var(--font-display); font-size: 20px; letter-spacing: 1px;
+    text-align: center; padding: 8px 12px 6px; margin: 4px 4px 0; border-radius: 18px 18px 8px 8px;
+    -webkit-text-stroke: 1px #4c1d95; paint-order: stroke fill;
+  }
+  .money-bag-body {
+    padding: 10px 14px 14px; display: flex; flex-direction: column; gap: 8px;
+    max-height: calc(100vh - 140px); overflow-y: auto;   /* later phases add rows */
+  }
+  .mb-day { font-family: var(--font-display); font-size: 15px; color: #6d28d9; text-align: center; }
+  .mb-day-row { display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; }
+  .mb-stars { display: inline-flex; line-height: 0; }
+  .mb-stars .star-meter { --star: 17px; }
+  .mb-see-report {
+    cursor: pointer; border: 3px solid #6d28d9; border-radius: 999px; padding: 4px 14px;
+    background: linear-gradient(180deg, #c084fc 0%, #9333ea 100%); color: #fff;
+    font-family: var(--font-display); font-size: 15px; box-shadow: 0 3px 0 #5b21b6;
+  }
+  .mb-see-report:active { transform: translateY(2px); box-shadow: 0 1px 0 #5b21b6; }
+  .mb-label { font-family: var(--font-display); font-size: 14px; margin: 2px 0 -2px 4px; }
+  .mb-label.in { color: #15803d; }
+  .mb-label.out { color: #be185d; }
+  .mb-row {
+    display: flex; align-items: center; gap: 10px;
+    background: #fff; border: 3px solid #e9d5ff; border-radius: 16px;
+    padding: 5px 12px 5px 8px; min-height: 42px; font-weight: 700; font-size: 15px;
+  }
+  .mb-row.in { border-color: #bbf7d0; background: #f0fdf4; }
+  .mb-row.out { border-color: #fbcfe8; background: #fdf2f8; }
+  .mb-row img { width: 30px; height: 30px; object-fit: contain; flex-shrink: 0; }
+  .mb-row .mb-what { flex: 1; line-height: 1.15; }
+  .mb-row .mb-what small { display: block; font-size: 12px; font-weight: 600; color: #6b7280; }
+  .mb-amt { font-family: var(--font-display); font-size: 18px; white-space: nowrap; }
+  .mb-row.in .mb-amt { color: #15803d; }
+  .mb-row.out .mb-amt { color: #be185d; }
+  .mb-chips { display: flex; flex-wrap: wrap; gap: 4px 8px; margin-top: 2px; }
+  .mb-chip { display: inline-flex; align-items: center; gap: 2px; font-size: 12px; font-weight: 700; color: #6b7280; }
+  .mb-chip img { width: 16px; height: 16px; object-fit: contain; }
+  /* Two chunky tiles: that day, and everything since Day 1. */
+  .mb-kept {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+    border-radius: 20px; padding: 8px;
+    background: linear-gradient(180deg, #fef9c3 0%, #fde68a 100%); border: 3px solid #eab308;
+  }
+  .mb-tile {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: #fffbeb; border: 3px solid #fcd34d; border-radius: 16px; padding: 4px 6px 6px;
+    box-shadow: inset 0 -3px 0 rgba(234,179,8,0.25);
+  }
+  .mb-tile-label { font-family: var(--font-display); font-size: 15px; color: #713f12; line-height: 1.1; }
+  .mb-tile-amt {
+    font-family: var(--font-display); font-size: 26px; line-height: 1.1; white-space: nowrap;
+    -webkit-text-stroke: 1px rgba(0,0,0,0.15);
+  }
+  .mb-tile.pos .mb-tile-amt { color: #15803d; }
+  .mb-tile.neg .mb-tile-amt { color: #be185d; }
+  .mb-note { font-size: 13px; font-weight: 700; color: #6b7280; text-align: center; line-height: 1.3; }
+  .mb-note b { color: #6d28d9; }
+  .mb-saved { font-size: 13px; font-weight: 800; color: #92400e; text-align: center; }
+
+  /* Unified Weather Window */
+  .weather-card {
+    max-width: 100%;
+    margin: 0 0 10px 0;
+    filter: drop-shadow(0 3px 6px rgba(0,0,0,0.22));
+  }
+  /* Sky window drawn in CSS so the edge stays sharp at any size: dark purple outline,
+     pale glass rim, a sky gradient with a soft shine at the top, and two puffy clouds
+     (plain circles) along the bottom corners. */
+  .weather-panel-inner {
+    --wp-cloud: #f4fbff;
+    border: 4px solid #6a38a0;
+    border-radius: 26px;
+    box-shadow: inset 0 0 0 4px #d8f1ff;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.45) 0, rgba(255,255,255,0) 32%),
+      radial-gradient(circle at 4% calc(100% + 8px), var(--wp-cloud) 30px, transparent 31px),
+      radial-gradient(circle at 13% calc(100% + 16px), var(--wp-cloud) 38px, transparent 39px),
+      radial-gradient(circle at 22% calc(100% + 8px), var(--wp-cloud) 26px, transparent 27px),
+      radial-gradient(circle at 79% calc(100% + 8px), var(--wp-cloud) 26px, transparent 27px),
+      radial-gradient(circle at 89% calc(100% + 14px), var(--wp-cloud) 40px, transparent 41px),
+      radial-gradient(circle at 98% calc(100% + 4px), var(--wp-cloud) 30px, transparent 31px),
+      linear-gradient(180deg, #6ccaff 0%, #98d9fc 100%);
+    min-height: 100px;
+    padding: 8px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .weather-top-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 2px;
+  }
+  .weather-bold-cond {
+    --temp-color: #b45309;
+    --temp-border: #fbbf24;
+    --temp-bg: #fff8df;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 1px 7px;
+    border: 2px solid var(--temp-border);
+    border-radius: 999px;
+    background: linear-gradient(180deg, #fff 0%, var(--temp-bg) 100%);
+    box-shadow: 0 2px 0 rgba(106, 56, 160, 0.15);
+    font-family: var(--font-display);
+    font-size: 15px;
+    line-height: 1.1;
+    color: #3b2563;
+    white-space: nowrap;
+  }
+  .weather-bold-cond[data-heat="cold"] { --temp-color: #1d4ed8; --temp-border: #60a5fa; --temp-bg: #e8f4ff; }
+  .weather-bold-cond[data-heat="cool"] { --temp-color: #0f766e; --temp-border: #5eead4; --temp-bg: #e9fffa; }
+  .weather-bold-cond[data-heat="warm"] { --temp-color: #b45309; --temp-border: #fbbf24; --temp-bg: #fff8df; }
+  .weather-bold-cond[data-heat="hot"] { --temp-color: #be123c; --temp-border: #fb7185; --temp-bg: #fff0ed; }
+  .weather-temp { color: var(--temp-color); }
+  .weather-mid-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #4338ca;
+    margin-bottom: 3px;
+  }
+  .weather-mid-row {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .weather-tip-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11.5px;
+    color: #374151;
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(250, 204, 21, 0.5);
+    border-radius: 8px;
+    padding: 2px 8px;
+    max-width: 320px;
+    line-height: 1.25;
+  }
+  /* One line, always: the phrases are written to fit. The ellipsis is only a guard for
+     very narrow phones. */
+  #mascot-bubble-phrase { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .weather-tip-lemon {
+    width: 18px;
+    height: 18px;
+    object-fit: contain;
+    flex-shrink: 0;
+  }
+
+  /* Kid Mode chore banner: always shown, calm; yellow and pulsing when cash < $5. */
+  /* Looks like the supply tiles above it (supply-item-box); only the row layout differs. */
+  .emergency-chore-pill {
+    display: none;
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+    transition: background-color 0.3s, border-color 0.3s;
+  }
+  body:not(.dad-mode) .emergency-chore-pill {
+    display: flex !important;
+  }
+  /* "Need cash?" may wrap onto two short lines, so a long chore name keeps one line
+     and the tile does not grow taller. */
+  .emergency-chore-text {
+    flex-shrink: 0;
+    max-width: 4.6em;
+    line-height: 1.1;
+  }
+  #btn-chore-emergency {
+    flex: 1;
+    min-width: 0;
+    min-height: 38px; /* same height as the buy buttons */
+    padding: 4px 6px 4px 12px;
+    font-size: 13px;
+  }
+  #btn-chore-emergency .chore-reward { font-size: 13px; padding: 3px 8px; }
+  #btn-chore-emergency .chore-name { overflow-wrap: anywhere; }
+  /* Phones: the coin jar says "need cash" by itself; give the chore name the room. */
+  @media (max-width: 480px) {
+    .emergency-chore-text { display: none; }
+  }
+  body:not(.dad-mode).low-cash .emergency-chore-pill {
+    background: #fef08a;
+    border-color: #eab308;
+    animation: pulse 1s infinite alternate;
+  }
+  body:not(.dad-mode).low-cash .emergency-chore-text {
+    color: #713f12;
+  }
+
+  /* Kid Mode Rules: Hide executive office titles and giant bank card */
+  body:not(.dad-mode) .panel-exec-heading,
+  body:not(.dad-mode) #bank-card {
+    display: none !important;
+  }
+
+  /* --- DAD MODE OFF: ULTRA-CLEAN SIMPLIFIED DAY 1 --- */
+  body:not(.dad-mode) .prep-mult-bar,
+  body:not(.dad-mode) #panel-column-3,
+  body:not(.dad-mode) #expansion-sections,
+  body:not(.dad-mode) #btn-toggle-bank-stats {
+    display: none !important;
+  }
+
+  body:not(.dad-mode) .grid {
+    grid-template-columns: repeat(2, minmax(320px, 460px)) !important;
+    justify-content: center;
+    max-width: 960px;
+    margin: 0 auto;
+  }
+  /* Too narrow for two 320px columns (phones): one column. Without this the two-column
+     rules above made the page wider than the screen and it scrolled sideways. */
+  @media (max-width: 680px) {
+    body:not(.dad-mode) .grid { grid-template-columns: minmax(0, 1fr) !important; }
+  }
+  body:not(.dad-mode).has-house .grid {
+    grid-template-columns: repeat(2, minmax(320px, 460px)) minmax(240px, 290px) !important;
+    max-width: 1250px;
+  }
+  @media (max-width: 1100px) {
+    body:not(.dad-mode).has-house .grid {
+      grid-template-columns: repeat(2, minmax(320px, 460px)) !important;
+      max-width: 960px;
+    }
+    body:not(.dad-mode).has-house .house-col { grid-column: 1 / -1; }
+    .house-card { max-width: 420px; margin: 0 auto; }
+  }
+  @media (max-width: 680px) {
+    body:not(.dad-mode).has-house .grid { grid-template-columns: minmax(0, 1fr) !important; }
+  }
+
+  /* In Kid Mode, only show emergency chore button when cash is low (< $5.00) or bankrupt */
+  body:not(.dad-mode):not(.low-cash) #bank-chore-wrap {
+    display: none !important;
+  }
+  body.low-cash #bank-chore-wrap {
+    animation: pulse 1.2s infinite alternate;
+  }

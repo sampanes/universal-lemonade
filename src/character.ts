@@ -2,6 +2,7 @@
 // The picture itself is stacked from paper-doll art in src/kid.ts.
 import { HATS } from './headwear';
 import type { CharacterProfile } from './types';
+import { STORAGE_KEYS, readStored, writeStored, removeStored } from './storage';
 
 export const SKIN_PALETTES = [
   { name: 'Porcelain', base: '#FFE0BD', shadow: '#F3C59D', blush: '#FF9999' },
@@ -68,15 +69,13 @@ export const DEFAULT_CHARACTER: CharacterProfile = {
   uniformColor: 0,  // Lemon Yellow
 };
 
-const STORAGE_KEY = 'universal_lemonade_character_profile';
 // Dad Mode keeps its own look: its mirror has every secret look open, and trying them on
 // there must not hand the kid a look they have not earned yet.
-const DAD_STORAGE_KEY = 'universal_lemonade_dad_look';
 
 /** The saved look; dad = Dad Mode's own look (a copy of the kid's until Dad changes it). */
 export function loadCharacterProfile(dad = false): CharacterProfile {
   try {
-    const raw = (dad ? localStorage.getItem(DAD_STORAGE_KEY) : null) ?? localStorage.getItem(STORAGE_KEY);
+    const raw = (dad ? readStored(STORAGE_KEYS.dadLook) : null) ?? readStored(STORAGE_KEYS.kidLook);
     if (raw) {
       const parsed = JSON.parse(raw);
       return {
@@ -97,26 +96,14 @@ export function loadCharacterProfile(dad = false): CharacterProfile {
 
 /** True once the player has saved a look (a new player meets the mirror first). */
 export function hasSavedCharacterProfile(): boolean {
-  try {
-    return localStorage.getItem(STORAGE_KEY) !== null;
-  } catch {
-    return false;
-  }
+  return readStored(STORAGE_KEYS.kidLook) !== null;
 }
 
 /** Forget the saved look (Reset): the next mirror is a new player's mirror. */
 export function clearCharacterProfile(): void {
-  try {
-    localStorage.removeItem(STORAGE_KEY);
-  } catch (e) {
-    console.warn('[Character] Error clearing profile:', e);
-  }
+  removeStored(STORAGE_KEYS.kidLook);
 }
 
 export function saveCharacterProfile(profile: CharacterProfile, dad = false): void {
-  try {
-    localStorage.setItem(dad ? DAD_STORAGE_KEY : STORAGE_KEY, JSON.stringify(profile));
-  } catch (e) {
-    console.warn('[Character] Error saving profile:', e);
-  }
+  writeStored(dad ? STORAGE_KEYS.dadLook : STORAGE_KEYS.kidLook, JSON.stringify(profile));
 }

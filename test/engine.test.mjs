@@ -703,11 +703,8 @@ test('profit since Day 1 is sales minus supplies and pay; upgrades and hiring do
   e.buyProject('cargo_wagon');
   e.hireFranchiseStand('leo');
   assert.equal(e.state.grossProfitTotal, before);
-  // It is saved, and an old save without it gets an estimate instead of nothing.
   const save = JSON.parse(JSON.stringify(e.toSave()));
   assert.equal(LemonadeEngine.fromSave(save).state.grossProfitTotal, before);
-  delete save.state.grossProfitTotal;
-  assert.ok(LemonadeEngine.fromSave(save).state.grossProfitTotal > 0);
 });
 
 test('store shelves cost money, grow orders, and survive save and load', () => {
@@ -764,8 +761,8 @@ test('invention counts actual bottle sales and saves progress', () => {
   e.state.totalBottlesSold = 1500;
   assert.equal(patent.unlocked(e.state), true);
   assert.ok(e.buyProject(patent.id));
-  save.v = 1;
-  assert.equal(LemonadeEngine.fromSave(save), null, 'old saves restart cleanly');
+  save.v -= 1;
+  assert.equal(LemonadeEngine.fromSave(save), null, 'a save from an older version starts a new game');
 });
 
 test('the squeezer grows in four steps, each opened by lifetime squeezer sales', () => {
@@ -795,33 +792,6 @@ test('the squeezer grows in four steps, each opened by lifetime squeezer sales',
   assert.equal(loaded.state.totalSqueezersSold, e.state.totalSqueezersSold);
 });
 
-test('saves from before the squeezer steps keep what they bought', () => {
-  const e = new LemonadeEngine({ seed: 72 });
-  e.dadJumpToPhase(4);
-  const save = JSON.parse(JSON.stringify(e.toSave()));
-  // An old save that bought the old worldwide license (its level 2: 48 a day at $3.25).
-  delete save.state.totalSqueezersSold;
-  save.state.squeezersTowardLicense = 100;
-  save.patent = { licensed: true, level: 2, baseUnitsPerDay: 48, royaltyPerUnit: 3.25 };
-  save.projects.push('global_licensing');
-  const world = LemonadeEngine.fromSave(save);
-  assert.equal(world.patent.level, 4);
-  assert.equal(world.patent.baseUnitsPerDay, 3200);
-  assert.ok(['squeezer_tv', 'squeezer_states'].every(id => world.projects.find(p => p.id === id).purchased));
-  assert.equal(world.state.totalSqueezersSold, 100);
-  assert.equal('squeezersTowardLicense' in world.state, false);
-
-  // An old patent without worldwide and without a sales count: the first step stays open.
-  save.projects = save.projects.filter(id => id !== 'global_licensing');
-  save.patent = { licensed: true, level: 1, baseUnitsPerDay: 16, royaltyPerUnit: 2.5 };
-  delete save.state.squeezersTowardLicense;
-  const home = LemonadeEngine.fromSave(save);
-  assert.equal(home.patent.level, 1);
-  assert.equal(home.state.totalSqueezersSold, 300);
-  home.state.cash = home.state.cash.add(5000);
-  assert.ok(home.buyProject('squeezer_tv'));
-});
-
 test('house upgrades go in order, wait for their stage, and save', () => {
   const e = new LemonadeEngine({ seed: 73 });
   e.state.cash = e.state.cash.add(1000);
@@ -847,20 +817,6 @@ test('house upgrades go in order, wait for their stage, and save', () => {
   assert.equal(loaded.nextHouseStep().id, 'treehouse');
   assert.equal(loaded.state.houseColor, 'sky');
 
-  const old = JSON.parse(JSON.stringify(new LemonadeEngine({ seed: 74 }).toSave()));
-  delete old.state.houseLevel;
-  assert.equal(LemonadeEngine.fromSave(old).nextHouseStep().id, 'paint', 'older saves start at the first step');
-  delete old.state.houseLadder;
-  const oldAt = (level) => { const s = JSON.parse(JSON.stringify(old)); s.state.houseLevel = level; return LemonadeEngine.fromSave(s); };
-  const six = oldAt(6);   // from when the house had six steps
-  assert.equal(six.state.houseLevel, 5);
-  assert.equal(six.nextHouseStep(), null);
-  assert.equal(six.state.houseColor, 'mint');
-  const four = oldAt(2);   // the four-step list: paint, then the treehouse
-  assert.equal(four.state.houseLevel, 3, 'the second floor counts as built');
-  assert.equal(four.nextHouseStep().id, 'hq');
-  assert.equal(LemonadeEngine.fromSave(JSON.parse(JSON.stringify(four.toSave()))).state.houseLevel, 3, 'moved only once');
-  assert.equal(oldAt(1).nextHouseStep().id, 'second_floor', 'painted only: the second floor is next');
   assert.equal(new LemonadeEngine({ seed: 75 }).setHouseColor('sky'), false, 'no repainting before Fresh Paint');
 });
 

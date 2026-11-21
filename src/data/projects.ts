@@ -21,7 +21,7 @@ export const SQUEEZER_LEVELS: readonly SqueezerLevel[] = [
   { level: 3, name: 'Every State', project: 'squeezer_states', cost: 12000, salesRequired: 2000, unitsPerDay: 800, royaltyPerUnit: 2.75 },
   { level: 4, name: 'Worldwide', project: 'global_licensing', cost: 40000, salesRequired: 8000, unitsPerDay: 3200, royaltyPerUnit: 3.25 },
 ];
-// Set the squeezer to a step (never down a step: an old save may own a later one already).
+// Set the squeezer to a step (never down a step).
 export function applySqueezerLevel(patent: { level: number; baseUnitsPerDay: number; royaltyPerUnit: number }, level: number): void {
   const step = SQUEEZER_LEVELS[Math.max(1, Math.min(SQUEEZER_LEVELS.length, Math.max(level, patent.level))) - 1];
   patent.level = step.level;

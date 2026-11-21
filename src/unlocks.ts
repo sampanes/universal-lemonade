@@ -5,6 +5,7 @@
 // Looks are ids: 'hair:<style id>' (from kid.json) or 'color:<hair color id>' (character.ts).
 // Unlocks belong to the player, not to one game, so a new game keeps them.
 import type { DaySummary, GameState } from './types';
+import { STORAGE_KEYS, readStored, writeStored, removeStored } from './storage';
 
 export interface UnlockCheck {
   summary: DaySummary;     // the day that just ended
@@ -90,7 +91,7 @@ export function otherUnlockToday(s: GameState, summary: DaySummary): boolean {
   const sincePurchase = s.lastShopPurchaseDay == null ? null : summary.day - s.lastShopPurchaseDay;
   const shopIntro = (s.lastShopPurchaseDay == null && summary.day === 3) || sincePurchase === 1 || sincePurchase === 2;
   return !!summary.recipeJustLocked || !!shopIntro || !!(ledger &&
-    (ledger.shop > 0 || ledger.hiring > 0 || (ledger.storeUpgrades ?? 0) > 0 || (ledger.house ?? 0) > 0));
+    (ledger.shop > 0 || ledger.hiring > 0 || ledger.storeUpgrades > 0 || ledger.house > 0));
 }
 
 // Remember even one-day milestones, then reveal at most one look on a quiet day.
@@ -117,11 +118,9 @@ export function advanceLookUnlocks(u: Unlocks, c: UnlockCheck, otherEvent: boole
   return look;
 }
 
-const STORAGE_KEY = 'universal_lemonade_unlocks';
-
 export function loadUnlocks(): Unlocks {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = readStored(STORAGE_KEYS.unlocks);
     if (raw) {
       const p = JSON.parse(raw);
       const ok = (a: unknown) => (Array.isArray(a) ? a.filter(x => typeof x === 'string') : []);
@@ -139,23 +138,15 @@ export function loadUnlocks(): Unlocks {
 }
 
 export function saveUnlocks(u: Unlocks): void {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({
-      have: [...u.have], unseen: [...u.unseen], pending: u.pending ?? [],
-      lastAwardDay: u.lastAwardDay, lastBusyDay: u.lastBusyDay, lastProcessedDay: u.lastProcessedDay
-    }));
-  } catch (e) {
-    console.warn('[Unlocks] Error saving unlocks:', e);
-  }
+  writeStored(STORAGE_KEYS.unlocks, JSON.stringify({
+    have: [...u.have], unseen: [...u.unseen], pending: u.pending ?? [],
+    lastAwardDay: u.lastAwardDay, lastBusyDay: u.lastBusyDay, lastProcessedDay: u.lastProcessedDay
+  }));
 }
 
 /** Forget every earned look (Reset). */
 export function clearUnlocks(): void {
-  try {
-    localStorage.removeItem(STORAGE_KEY);
-  } catch (e) {
-    console.warn('[Unlocks] Error clearing unlocks:', e);
-  }
+  removeStored(STORAGE_KEYS.unlocks);
 }
 
 /** True when the look is free or already earned. */

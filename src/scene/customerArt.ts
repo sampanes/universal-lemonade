@@ -1,5 +1,6 @@
 import catalog from '../../public/sprites/kid_back/kid_back.json';
 import { HAIR_PALETTES, SKIN_PALETTES, UNIFORM_PALETTES } from '../character';
+import type { LoadPriority } from '../preload';
 
 const standing = catalog.items.filter(item => item.sheet <= 3);
 // The sheet mixes camera angles. Only these bodies have a clear rear landmark.
@@ -21,18 +22,28 @@ function rgb(hex: string): RGB {
 }
 
 const spriteCache = new Map<string, Promise<HTMLImageElement>>();
-function loadSprite(file: string) {
+const spriteReady = new Set<string>();   // files already decoded
+function loadSprite(file: string, priority: LoadPriority = 'auto') {
   let pending = spriteCache.get(file);
   if (!pending) {
     const image = new Image();
+    image.fetchPriority = priority;
     image.src = './sprites/kid_back/' + file;
-    pending = image.decode().then(() => image).catch(error => {
+    pending = image.decode().then(() => { spriteReady.add(file); return image; }).catch(error => {
       spriteCache.delete(file);
       throw error;
     });
     spriteCache.set(file, pending);
   }
   return pending;
+}
+
+// Every sprite a customer can be drawn from, loaded in the background one at a time (low
+// priority, so it never slows down a picture that is about to show).
+export async function preloadCustomers(): Promise<void> {
+  const files = [...outfits, ...hair, ...handProps, ...wheelchairs].map(item => item.file)
+    .concat(caps.map(cap => 'headwear/' + cap + '.png'));
+  for (const file of files) await loadSprite(file, 'low').catch(() => null);
 }
 
 interface Layer { file: string; x: number; y: number; width: number; color: RGB }
@@ -61,8 +72,17 @@ function paint(ctx: CanvasRenderingContext2D, image: HTMLImageElement, layer: La
   ctx.drawImage(tile, layer.x, layer.y);
 }
 
-export async function dressCustomer(node: HTMLElement, random = Math.random): Promise<void> {
+// A random customer, seen from behind, painted on a canvas of its own. Resolves once the
+// canvas is fully painted, so the scene can draw the next customer ahead of time and swap it
+// in without a blank frame. seated: in a wheelchair (rolls instead of walking).
+export interface Customer { canvas: HTMLCanvasElement; seated: boolean }
+export async function drawCustomer(random = Math.random): Promise<Customer> {
   const pick = <T>(items: T[]) => items[Math.floor(random() * items.length)];
+  // While the sprites are still loading, customers are made from the ones already in.
+  const pickSprite = <T extends { file: string }>(items: T[]) => {
+    const loaded = items.filter(item => spriteReady.has(item.file));
+    return pick(loaded.length ? loaded : items);
+  };
   const seated = random() < 0.125;
   const clothes = rgb(pick(UNIFORM_PALETTES).base);
   const skin = rgb(pick(SKIN_PALETTES).base);
@@ -70,17 +90,14 @@ export async function dressCustomer(node: HTMLElement, random = Math.random): Pr
   const canvas = document.createElement('canvas');
   canvas.width = 374;
   canvas.height = 520;
-  node.classList.toggle('rolling', seated);
-  node.replaceChildren(canvas);
-  // Each visit owns its canvas, so a late image decode can't dress the next visitor.
   if (seated) {
-    const chair = pick(wheelchairs);
+    const chair = pickSprite(wheelchairs);
     const width = Math.round(chair.width * 0.617);
     layers.push({ file: chair.file, x: (canvas.width - width) / 2,
       y: canvas.height - Math.round(chair.height * width / chair.width), width, color: clothes });
   } else {
-    const outfit = pick(outfits);
-    const style = pick(outfit.id === 'outfit_hoodie' ? hair.filter(h => shortHair.includes(h.id)) : hair);
+    const outfit = pickSprite(outfits);
+    const style = pickSprite(outfit.id === 'outfit_hoodie' ? hair.filter(h => shortHair.includes(h.id)) : hair);
     const collarX = 184;
     const collarY = canvas.height - outfit.height;
     const outfitX = collarX - outfit.width * 0.46;
@@ -94,11 +111,12 @@ export async function dressCustomer(node: HTMLElement, random = Math.random): Pr
       layers.push({ file: 'headwear/' + pick(caps) + '.png', x: collarX - 102, y: hairY - 4, width: 204, color: clothes });
     }
     if (random() < 0.28) {
-      const prop = pick(handProps);
+      const prop = pickSprite(handProps);
       layers.push({ file: prop.file, x: outfitX - 6, y: collarY + outfit.height * 0.44, width: 52, color: rgb(pick(UNIFORM_PALETTES).base) });
     }
   }
   const images = await Promise.all(layers.map(layer => loadSprite(layer.file)));
   const ctx = canvas.getContext('2d')!;
   layers.forEach((layer, i) => paint(ctx, images[i], layer, skin));
+  return { canvas, seated };
 }
