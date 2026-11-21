@@ -3,7 +3,11 @@
 .day-scene header, .day-scene footer { display:flex; align-items:center; justify-content:space-between; padding:8px 14px; gap:10px; }
 .day-scene header { font-size:clamp(15px,4vw,21px); }
 .day-scene header span { color:#7747a1; }
-.day-scene footer { justify-content:flex-end; }
+.day-scene footer { flex-wrap:wrap; }
+.scene-tally { display:flex; gap:14px; color:#7747a1; font-size:clamp(14px,3.4vw,18px); }
+.scene-tally b { color:#402253; font-variant-numeric:tabular-nums; }
+.scene-tally.off { visibility:hidden; }
+.scene-buttons { display:flex; gap:10px; margin-left:auto; }
 .day-scene button { border:2px solid #674298; background:white; color:#553086; padding:7px 14px; border-radius:14px; font:inherit; cursor:pointer; }
 .day-scene button[aria-pressed=true] { background:#65349a; color:white; }
 .scene-stage { position:relative; isolation:isolate; height:min(260px,42dvh); overflow:hidden; background:linear-gradient(#94dafa,#e1f6ff 64%,#95cf72 64%,#a0d77e 83%,#e0c39c 83%,#efd7ae); }
@@ -43,12 +47,18 @@
 .scene-booth[data-stand=leo] .scene-sold-out { left:42%; top:70%; }
 .scene-booth[data-stand=sarah] .scene-sold-out { left:58%; top:72%; }
 .scene-sold-out:empty { display:none; }
-.scene-walker { position:absolute; left:-22%; bottom:1%; height:48%; aspect-ratio:64/80; filter:drop-shadow(0 2px 1px #49314166); }
+/* The crowd: each walker is moved by transform only (scripted), so walking never re-lays out
+   the scene. Passers-by stand a step farther back (z-index 1) than the line (2). */
+.scene-crowd { position:absolute; inset:0; pointer-events:none; }
+.scene-walker { position:absolute; left:0; bottom:1%; height:48%; aspect-ratio:64/80; will-change:transform; filter:drop-shadow(0 2px 1px #49314166); }
 .scene-person { position:absolute; inset:0; }
 .scene-person canvas { width:100%; height:100%; object-fit:contain; object-position:center bottom; }
+.scene-pop { position:absolute; z-index:3; left:var(--seller-x); bottom:70%; translate:-50% 0; color:#16753a; font-size:clamp(17px,3.8vw,24px); text-shadow:0 2px 0 #fff,0 -2px 0 #fff,2px 0 0 #fff,-2px 0 0 #fff; animation:scene-pop .9s ease-out forwards; }
+@keyframes scene-pop { from { opacity:0; translate:-50% 10px; } 18% { opacity:1; } to { opacity:0; translate:-50% -36px; } }
+@media (prefers-reduced-motion:reduce) { .scene-pop { animation:none; } }
 .scene-bubble,.scene-sign { position:absolute; border-radius:12px; background:white; color:#462556; padding:4px 9px; font-size:clamp(13px,3vw,18px); white-space:nowrap; }
 .scene-bubble { bottom:100%; left:50%; transform:translateX(-50%); border:2px solid #76529e; }
 .scene-bubble.sad { color:#734167; background:#fff0f3; }
-.scene-sign { left:8px; bottom:12px; background:#ffedb4; }
+.scene-sign { left:8px; bottom:12px; z-index:3; background:#ffedb4; }
 .scene-bubble:empty,.scene-sign:empty { display:none; }
 .scene-person.disappointed { rotate:7deg; transform-origin:center bottom; }

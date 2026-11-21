@@ -1,6 +1,6 @@
 import catalog from '../../public/sprites/kid_back/kid_back.json';
 import { HAIR_PALETTES, SKIN_PALETTES, UNIFORM_PALETTES } from '../character';
-import type { LoadPriority } from '../preload';
+import { whenIdle, type LoadPriority } from '../preload';
 
 const standing = catalog.items.filter(item => item.sheet <= 3);
 // The sheet mixes camera angles. Only these bodies have a clear rear landmark.
@@ -38,12 +38,94 @@ function loadSprite(file: string, priority: LoadPriority = 'auto') {
   return pending;
 }
 
-// Every sprite a customer can be drawn from, loaded in the background one at a time (low
-// priority, so it never slows down a picture that is about to show).
-export async function preloadCustomers(): Promise<void> {
+// Called once the page is idle: every sprite a customer can be drawn from is loaded in the
+// background one at a time (low priority, so it never slows down a picture that is about to
+// show), then the pool of looks below is drawn.
+export async function prepareCustomers(): Promise<void> {
   const files = [...outfits, ...hair, ...handProps, ...wheelchairs].map(item => item.file)
     .concat(caps.map(cap => 'headwear/' + cap + '.png'));
   for (const file of files) await loadSprite(file, 'low').catch(() => null);
+  void keepDrawing();
+}
+
+// The day scene shows a crowd, so customers are drawn ahead of time into a pool of looks
+// (drawing one takes a moment, copying one is instant) and the scene copies a look for each
+// person it shows. Looks are kept at LOOK_SCALE, still sharper than the scene shows them.
+const POOL = 16;
+const LOOK_SCALE = 0.6;
+const looks: Customer[] = [];
+let oldest = 0;          // the look replaced next when freshening
+let stale = 0;           // looks still to be replaced with new ones
+let urgent = 0;          // draw without waiting for idle moments until there are this many
+let paused = false;      // the day scene is playing: no drawing (it could cost a frame)
+let running = false;
+const waiters: { count: number; resolve: () => void }[] = [];
+
+async function drawLook(): Promise<Customer> {
+  const full = await drawCustomer();
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round(full.canvas.width * LOOK_SCALE);
+  canvas.height = Math.round(full.canvas.height * LOOK_SCALE);
+  const ctx = canvas.getContext('2d')!;
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(full.canvas, 0, 0, canvas.width, canvas.height);
+  return { canvas, seated: full.seated };
+}
+
+// Looks the scene is waiting for are drawn even while it plays (better than nobody there).
+const wanted = () => looks.length < urgent || (!paused && (looks.length < POOL || stale > 0));
+async function keepDrawing(): Promise<void> {
+  if (running) return;
+  running = true;
+  try {
+    while (wanted()) {
+      if (looks.length >= urgent) {
+        await new Promise<void>(resolve => whenIdle(resolve));
+        if (!wanted()) break;
+      }
+      const look = await drawLook();
+      if (looks.length < POOL) looks.push(look);
+      else { looks[oldest] = look; oldest = (oldest + 1) % POOL; stale--; }
+      for (const waiter of waiters.filter(w => looks.length >= w.count)) {
+        waiters.splice(waiters.indexOf(waiter), 1);
+        waiter.resolve();
+      }
+    }
+  } catch (error) {
+    console.warn('Customer art could not load', error);
+  } finally {
+    running = false;
+  }
+}
+
+// Resolves once there are count looks to copy (drawing them right away if they are not in yet).
+export function customersReady(count: number): Promise<void> {
+  count = Math.min(count, POOL);
+  if (looks.length >= count) return Promise.resolve();
+  urgent = Math.max(urgent, count);
+  void keepDrawing();
+  return new Promise(resolve => waiters.push({ count, resolve }));
+}
+
+// The day scene stops the drawing while it plays and asks for some new faces when it ends.
+export function pauseCustomers(pause: boolean): void {
+  paused = pause;
+  if (!pause) void keepDrawing();
+}
+export function freshenCustomers(count: number): void {
+  stale = Math.min(POOL, stale + count);
+  if (!paused) void keepDrawing();
+}
+
+// A copy of one of the looks (index wraps around), or null if none is drawn yet.
+export function copyCustomer(index: number): Customer | null {
+  if (!looks.length) return null;
+  const look = looks[index % looks.length];
+  const canvas = document.createElement('canvas');
+  canvas.width = look.canvas.width;
+  canvas.height = look.canvas.height;
+  canvas.getContext('2d')!.drawImage(look.canvas, 0, 0);
+  return { canvas, seated: look.seated };
 }
 
 interface Layer { file: string; x: number; y: number; width: number; color: RGB }
@@ -51,7 +133,7 @@ function paint(ctx: CanvasRenderingContext2D, image: HTMLImageElement, layer: La
   const tile = document.createElement('canvas');
   tile.width = layer.width;
   tile.height = Math.round(layer.width * image.height / image.width);
-  const ink = tile.getContext('2d')!;
+  const ink = tile.getContext('2d', { willReadFrequently: true })!;
   ink.drawImage(image, 0, 0, tile.width, tile.height);
   const pixels = ink.getImageData(0, 0, tile.width, tile.height);
   const data = pixels.data;
@@ -72,11 +154,10 @@ function paint(ctx: CanvasRenderingContext2D, image: HTMLImageElement, layer: La
   ctx.drawImage(tile, layer.x, layer.y);
 }
 
-// A random customer, seen from behind, painted on a canvas of its own. Resolves once the
-// canvas is fully painted, so the scene can draw the next customer ahead of time and swap it
-// in without a blank frame. seated: in a wheelchair (rolls instead of walking).
+// A random customer, seen from behind, painted on a canvas of its own (resolves once fully
+// painted). seated: in a wheelchair (rolls instead of walking).
 export interface Customer { canvas: HTMLCanvasElement; seated: boolean }
-export async function drawCustomer(random = Math.random): Promise<Customer> {
+async function drawCustomer(random = Math.random): Promise<Customer> {
   const pick = <T>(items: T[]) => items[Math.floor(random() * items.length)];
   // While the sprites are still loading, customers are made from the ones already in.
   const pickSprite = <T extends { file: string }>(items: T[]) => {

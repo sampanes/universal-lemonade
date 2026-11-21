@@ -26,7 +26,7 @@ import { moneyBagHTML } from './ui/moneyBag.js';
 import { renderDadPanel, initDadPanel } from './ui/dadPanel.js';
 import { initResetCard } from './ui/resetCard.js';
 import { preloadInBackground, whenIdle } from './preload.ts';
-import { preloadCustomers } from './scene/customerArt.ts';
+import { prepareCustomers } from './scene/customerArt.ts';
 import { STORAGE_KEYS, clearOutdatedStorage, readStored, writeStored } from './storage.ts';
 import { loadUnlocks, saveUnlocks, clearUnlocks, advanceLookUnlocks, unlockCheckFrom, otherUnlockToday, shopDaysRemaining, lookOpen } from './unlocks.ts';
 
@@ -113,8 +113,7 @@ function saveGame() {
   writeStored(engineIsDads ? STORAGE_KEYS.dadGame : STORAGE_KEYS.kidGame, JSON.stringify(engine.toSave()));
 }
 const seedInUrl = urlParams.has('seed');
-let engine = (!seedInUrl && loadGame(dadModeActive)) || new LemonadeEngine({ seed: newGameSeed() });
-updateDadSeedInfo();
+let engine = (!seedInUrl && loadGame(dadModeActive)) || new LemonadeEngine({ seed: newGameSeed() });updateDadSeedInfo();
 window.addEventListener('pagehide', saveGame);
 document.addEventListener('visibilitychange', () => { if (document.hidden) saveGame(); });
 
@@ -1424,7 +1423,7 @@ whenIdle(() => {
   void preloadInBackground([
     ...ALL_HOUSE_IMAGES, ...ALL_PLACE_IMAGES, './sprites/morning_prep/cloud_puff.png',
     ...KID_SHOP.map(item => item.pic), INVENTION.pic, INVENTION.worldPic,
-  ]).then(preloadCustomers);
+  ]).then(prepareCustomers);
 });
 initDadPanel(() => engine);
 
