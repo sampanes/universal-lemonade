@@ -3,7 +3,9 @@
 // The house is a money sink: each step only changes how the house looks (in the kid's My
 // House column, the build scene, and behind the driveway stand in the day scene). Steps are
 // bought in order; each waits for its stage, so the big ones wait for the money the later
-// stages bring in. state.houseLevel is how many steps are bought (0: the house on Day 1).
+// stages bring in. state.houseLevel is how many steps are bought (0: the one-story house on
+// Day 1). HOUSE_LADDER numbers this list; bump it when steps are added or moved, and teach
+// LemonadeEngine.fromSave to move older levels over.
 export interface HouseStep {
   id: string;
   name: string;     // the button and the build scene ("Treehouse")
@@ -14,10 +16,12 @@ export interface HouseStep {
 
 export const HOUSE_STEPS: readonly HouseStep[] = [
   { id: 'paint', name: 'Fresh Paint', desc: 'Paint the house any color you like!', cost: 250, phase: 2 },
-  { id: 'treehouse', name: 'Treehouse', desc: 'A treehouse in the big backyard tree.', cost: 1500, phase: 2 },
-  { id: 'hq', name: 'Lemon HQ', desc: 'Turn the garage into your lemonade headquarters.', cost: 10000, phase: 3 },
+  { id: 'second_floor', name: 'Second Floor', desc: 'Build a whole new floor on top!', cost: 2500, phase: 2 },
+  { id: 'treehouse', name: 'Treehouse', desc: 'A treehouse in the big backyard tree.', cost: 5000, phase: 3 },
+  { id: 'hq', name: 'Lemon HQ', desc: 'Turn the garage into your lemonade headquarters.', cost: 15000, phase: 3 },
   { id: 'paid_off', name: 'Pay Off the House', desc: 'Pay off the house for Mom and Dad!', cost: 500000, phase: 4 },
 ];
+export const HOUSE_LADDER = 2;   // 1 (or missing): paint, treehouse, hq, paid_off
 
 // Wall colors once Fresh Paint is bought ('cream' is the house's own color). The kid can
 // switch any time for free.

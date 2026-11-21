@@ -36,10 +36,10 @@ Day Report of what customers said.
   Hometown (about 50 a day), On TV ($3,000 after 300 sold; about 200 a day), Every State
   ($12,000 after 2,000 sold; about 800 a day) and Worldwide ($40,000 after 8,000 sold; about
   3,200 a day at $3.25 each). The Lemonade Factory (Stage 5) shows as "coming soon".
-- **My House.** From Stage 2 a third column shows the family house. Save up to upgrade it:
-  Fresh Paint ($250; then pick the wall color any time), a Treehouse ($1,500), Lemon HQ in
-  the garage ($10,000, Stage 3) and Pay Off the House ($500,000, Stage 4: bunting and
-  balloons). Each plays a short build scene. The house also stands behind the kid's stand in
+- **My House.** From Stage 2 a third column shows the family's one-story house. Save up to
+  upgrade it: Fresh Paint ($250; then pick the wall color any time), a Second Floor ($2,500),
+  a Treehouse ($5,000, Stage 3), Lemon HQ in the garage ($15,000, Stage 3) and Pay Off the
+  House ($500,000, Stage 4: bunting and balloons). Each plays a short build scene. The house also stands behind the kid's stand in
   the day scene, under the day's sky, clouds, rain or snow.
 - **Chores.** A broke kid can always do chores for a few dollars.
 - **The kid.** The stand is run by a paper-doll kid with picked skin, hair, hair color and

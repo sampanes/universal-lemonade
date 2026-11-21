@@ -1,7 +1,7 @@
 """Make the game-size My House pictures and their wall masks.
 
 Sources: art_src/house/sources/house_<name>.png, the same house from the same angle on a
-transparent background (base, treehouse, hq). For each one this writes
+transparent background (onestory, base, treehouse, hq). For each one this writes
   public/sprites/house/house_<name>.webp  - the picture, SIZE wide
   public/sprites/house/walls_<name>.png   - white where the painted walls are (alpha mask)
 The game repaints the house by laying the kid's color over the walls mask (CSS
@@ -19,7 +19,7 @@ from scipy import ndimage
 
 SRC = os.path.join('art_src', 'house', 'sources')
 DST = os.path.join('public', 'sprites', 'house')
-NAMES = ['base', 'treehouse', 'hq']
+NAMES = ['onestory', 'base', 'treehouse', 'hq']
 CANVAS = (1448, 1086)   # every source is put on this canvas so the pictures line up
 SIZE = (640, 480)
 MIN_WALL = 1500         # wall patches smaller than this many source pixels are dropped

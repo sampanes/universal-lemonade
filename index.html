@@ -5190,17 +5190,18 @@
       }
     };
 
-    // My House (src/data/house.ts). Three pictures (art_src/build_house_art.py), each with a
+    // My House (src/data/house.ts). Four pictures (art_src/build_house_art.py), each with a
     // walls mask for the paint color; standX is where the stand on the driveway is (0 to 1 across
     // the picture), so the day scene can put the kid's booth right over it.
     const HOUSE_ART = {
+      onestory: { pic: './sprites/house/house_onestory.webp', walls: './sprites/house/walls_onestory.png', standX: 0.76 },
       base: { pic: './sprites/house/house_base.webp', walls: './sprites/house/walls_base.png', standX: 0.76 },
       treehouse: { pic: './sprites/house/house_treehouse.webp', walls: './sprites/house/walls_treehouse.png', standX: 0.77 },
       hq: { pic: './sprites/house/house_hq.webp', walls: './sprites/house/walls_hq.png', standX: 0.82 },
     };
     const HOUSE_PIC = HOUSE_ART.base.pic;     // the Money Bag row's picture
     function houseArtFor(level) {
-      return level >= 3 ? HOUSE_ART.hq : level >= 2 ? HOUSE_ART.treehouse : HOUSE_ART.base;
+      return level >= 4 ? HOUSE_ART.hq : level >= 3 ? HOUSE_ART.treehouse : level >= 2 ? HOUSE_ART.base : HOUSE_ART.onestory;
     }
     // Bunting along the roof and balloons by the fence, in the pictures' own coordinates
     // (1448 x 1086 source canvas).

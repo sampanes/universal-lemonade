@@ -837,22 +837,30 @@ test('house upgrades go in order, wait for their stage, and save', () => {
   assert.ok(e.setHouseColor('sky'));
   assert.equal(e.setHouseColor('plaid'), false);
   assert.equal(e.state.houseColor, 'sky');
-  assert.ok(e.buyHouseStep(), 'treehouse');
-  assert.equal(e.nextHouseStep().id, 'hq');
+  e.state.cash = e.state.cash.constructor.fromNumber(3000);
+  assert.ok(e.buyHouseStep(), 'second floor');
+  assert.equal(e.nextHouseStep().id, 'treehouse');
   e.state.cash = e.state.cash.constructor.fromNumber(100000);
-  assert.equal(e.buyHouseStep(), false, 'Lemon HQ waits for Stage 3');
+  assert.equal(e.buyHouseStep(), false, 'the treehouse waits for Stage 3');
   const loaded = LemonadeEngine.fromSave(JSON.parse(JSON.stringify(e.toSave())));
   assert.equal(loaded.state.houseLevel, 2);
+  assert.equal(loaded.nextHouseStep().id, 'treehouse');
   assert.equal(loaded.state.houseColor, 'sky');
 
   const old = JSON.parse(JSON.stringify(new LemonadeEngine({ seed: 74 }).toSave()));
   delete old.state.houseLevel;
   assert.equal(LemonadeEngine.fromSave(old).nextHouseStep().id, 'paint', 'older saves start at the first step');
-  old.state.houseLevel = 6;   // from when the house had six steps
-  const six = LemonadeEngine.fromSave(old);
-  assert.equal(six.state.houseLevel, 4);
+  delete old.state.houseLadder;
+  const oldAt = (level) => { const s = JSON.parse(JSON.stringify(old)); s.state.houseLevel = level; return LemonadeEngine.fromSave(s); };
+  const six = oldAt(6);   // from when the house had six steps
+  assert.equal(six.state.houseLevel, 5);
   assert.equal(six.nextHouseStep(), null);
   assert.equal(six.state.houseColor, 'mint');
+  const four = oldAt(2);   // the four-step list: paint, then the treehouse
+  assert.equal(four.state.houseLevel, 3, 'the second floor counts as built');
+  assert.equal(four.nextHouseStep().id, 'hq');
+  assert.equal(LemonadeEngine.fromSave(JSON.parse(JSON.stringify(four.toSave()))).state.houseLevel, 3, 'moved only once');
+  assert.equal(oldAt(1).nextHouseStep().id, 'second_floor', 'painted only: the second floor is next');
   assert.equal(new LemonadeEngine({ seed: 75 }).setHouseColor('sky'), false, 'no repainting before Fresh Paint');
 });
 

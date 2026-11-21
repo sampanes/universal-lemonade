@@ -26,7 +26,7 @@ import { createInitialFranchiseStands } from './data/franchise';
 import { createInitialWholesaleAccounts } from './data/wholesale';
 import { createInitialProjects, SQUEEZER_LEVELS, applySqueezerLevel } from './data/projects';
 import { createInitialTrophies } from './data/trophies';
-import { HOUSE_STEPS, HOUSE_COLORS, FIRST_HOUSE_COLOR, type HouseStep } from './data/house';
+import { HOUSE_STEPS, HOUSE_COLORS, FIRST_HOUSE_COLOR, HOUSE_LADDER, type HouseStep } from './data/house';
 import { rollWeatherForecast, computeIdealIce, getSeasonInfo } from './simulation/weather';
 import { iceHint, crowdLevel, type IceHint } from './simulation/hints';
 import { computeRecipeQuality, getRecipeProfile } from './simulation/recipe';
@@ -192,8 +192,12 @@ export class LemonadeEngine {
     }
     delete (e.state as { squeezersTowardLicense?: number }).squeezersTowardLicense;
     Object.assign(e.copacker, d.copacker || {});
-    // The house had six steps for a while; keep a save from then inside the four.
-    e.state.houseLevel = Math.max(0, Math.min(HOUSE_STEPS.length, e.state.houseLevel ?? 0));
+    // Older house lists (six steps, then four) had no Second Floor and started on the two-story
+    // house: past Fresh Paint, count the Second Floor as built. Then keep the level in the list.
+    let houseLevel = e.state.houseLevel ?? 0;
+    if ((d.state.houseLadder ?? 1) < 2 && houseLevel >= 2) houseLevel += 1;   // d: the fresh state fills in a new ladder
+    e.state.houseLevel = Math.max(0, Math.min(HOUSE_STEPS.length, houseLevel));
+    e.state.houseLadder = HOUSE_LADDER;
     if (e.state.houseLevel >= 1 && !HOUSE_COLORS.some(c => c.id === e.state.houseColor)) e.state.houseColor = FIRST_HOUSE_COLOR;
     // Saves from before the profit total: estimate it as the cash gained plus everything spent
     // on upgrades, hiring and prizes (chore money is counted in too; there is no record of it).
@@ -239,6 +243,7 @@ export class LemonadeEngine {
       totalBottlesSold: 0,
       totalSqueezersSold: 0,
       houseLevel: 0,
+      houseLadder: HOUSE_LADDER,
       totalStandCupsSold: 0,
 
       inv: { ...start.inventory },
