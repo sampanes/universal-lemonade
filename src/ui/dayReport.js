@@ -61,7 +61,7 @@ export function renderFullDayReportHTML(d, s, isModal = false, hero = () => '') 
   }
   if (d.packagingCosts > 0.004) rows += row('Bottle packaging', `-${money(d.packagingCosts)}`, 'cost');
   if (s.phase >= 4) rows += row(`Your Lemon Squeezer (${count(d.patentUnitsSold)} sold)`, `+${money(d.patentRoyalties)}`);
-  if (s.phase >= 5) rows += row(`Co-packer (${count(d.copackerCasesSold)} cases)`, `+${money(d.copackerNet)}`);
+  if (s.phase >= 5) rows += row(`Lemonade factory (${count(d.copackerCasesSold)} cases)`, `+${money(d.copackerNet)}`);
   if (brandBonus > 0.005) rows += row('Famous brand bonus', `+${money(brandBonus)}`);
   rows += row("Today's profit", fmtSigned(d.netProfit, true), `total ${d.netProfit < 0 ? 'neg' : ''}`);
 

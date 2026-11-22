@@ -22,7 +22,13 @@ export const KID_SHOP = [
   { id: 'commercial_labeler', name: 'Bottle Labeler', desc: 'Labels bottles by machine: bottles cost 30% less!', pic: './sprites/shop/labeler.png' },
   { id: 'patent_filing', name: 'Invent It!', desc: 'Invent a lemon squeezer! Stores sell it, and you get money for every one.', pic: './sprites/shop/invent_it.png', early: true,
     notYet: (s) => `${Math.max(0, BOTTLES_FOR_INVENTION - s.totalBottlesSold).toLocaleString('en-US')} bottles to go` },
-  { id: 'copacker_deal', name: 'Lemonade Factory', desc: 'Coming soon: a real factory bottles your lemonade for supermarkets!', pic: null, teaser: true },
+  { id: 'copacker_deal', name: 'Lemonade Factory', desc: 'A factory makes your lemonade for stores, with its own supplies!', pic: './sprites/shop/bottles.png', early: true },
+  { id: 'regional_supermarkets', name: 'More Supermarkets', desc: 'Send about 300 cases a day to supermarkets!', pic: './sprites/shop/bottles.png', early: true },
+  { id: 'automated_canning_line', name: 'Canning Line', desc: 'Make about 1,500 cases a day and earn more per case!', pic: './sprites/shop/bottles.png', early: true },
+  { id: 'national_bigbox', name: 'Stores Across the Country', desc: 'Send about 6,000 cases a day across the country!', pic: './sprites/shop/bottles.png', early: true },
+  { id: 'club_store_pallets', name: 'Club Store Pallets', desc: 'Ship about 25,000 cases a day to club stores!', pic: './sprites/shop/bottles.png', early: true },
+  { id: 'qsr_fountain_licensing', name: 'Restaurant Fountains', desc: 'Serve your lemonade in restaurants around the world!', pic: './sprites/shop/bottles.png', early: true },
+  { id: 'global_beverage_jv', name: 'Factories Around the World', desc: 'Make your lemonade around the world!', pic: './sprites/shop/bottles.png', early: true },
 ];
 // Returns { item, p } for the next upgrade, or, while neither of the first choice is bought,
 // { item, p, choices: [{ item, p }, { item, p }] } (item and p are then the first of them).

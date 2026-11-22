@@ -958,12 +958,12 @@ function renderStandShop(s) {
     setText(document.getElementById('stand-shop-save-text'), bottlesPending && short
       ? `${item.notYet(s)} | $${Math.floor(spare).toLocaleString('en-US')}/$${cost.toLocaleString('en-US')}`
       : notYet ? (item.notYet ? item.notYet(s) : 'Make your recipe tastier first!')
-      : `Saving up: $${Math.floor(spare)} of $${cost}${need > 0 ? ' after supplies' : ''}`);
+      : `Saving up: $${Math.floor(spare).toLocaleString('en-US')} of $${cost.toLocaleString('en-US')}${need > 0 ? ' after supplies' : ''}`);
   }
   const btn = document.getElementById('btn-stand-shop-buy');
   btn.dataset.id = item.id;
   if (btn.disabled !== showSave) btn.disabled = showSave;
-  setText(btn, `$${cost}`);
+  setText(btn, `$${cost.toLocaleString('en-US')}`);
 }
 // The first choice: two tiles side by side with an OR between them, each tile a button with
 // its price, over one savings bar (they cost the same). Kept short so the page still fits
@@ -1190,7 +1190,7 @@ function renderFriends(s) {
   if (title.hidden !== tabs) title.hidden = tabs;
   // The newest tab opens by itself when a stage starts (and after a load); a tab the
   // game has not reached falls back to the newest one.
-  const avail = ['friends'].concat(s.phase >= 3 ? ['stores'] : [], s.phase >= 4 ? ['invention'] : []);
+  const avail = ['friends'].concat(s.phase >= 3 ? ['stores'] : [], s.phase >= 4 ? ['invention'] : [], s.phase >= 5 ? ['factory'] : []);
   if (partnersPhase !== s.phase) {
     if (partnersPhase === null || s.phase > partnersPhase) partnersTab = avail[avail.length - 1];
     partnersPhase = s.phase;
@@ -1209,6 +1209,19 @@ function renderFriends(s) {
   }
   if (tab === 'invention') {
     setHTMLIfChanged(document.getElementById('friends-row'), inventionHTML(s));
+    return;
+  }
+  if (tab === 'factory') {
+    const factory = engine.copacker;
+    const d = s.lastDaySummary;
+    const yesterday = d && d.copackerCasesSold > 0
+      ? `<span>Yesterday: ${d.copackerCasesSold.toLocaleString('en-US')} cases, +$${fmtDollars(d.copackerNet, true)}</span>` : '';
+    setHTMLIfChanged(document.getElementById('friends-row'), `<div class="invention-panel">
+      <img src="./sprites/shop/bottles.png" alt="" />
+      <div><div class="invention-name">My Lemonade Factory</div>
+      <div class="invention-desc">The factory uses its own supplies to make and ship your lemonade.</div>
+      <div class="invention-stats"><span>About ${factory.casesPerDay.toLocaleString('en-US')} cases a day</span><span>$${fmtDollars(factory.netPerCase, true)} per case after factory costs</span>${yesterday}</div>
+      <small>Look in the Stand Shop to grow your factory!</small></div></div>`);
     return;
   }
   const est = engine.getDailyDemandEstimate().franchiseEstimates;

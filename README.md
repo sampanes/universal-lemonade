@@ -36,7 +36,10 @@ Day Report of what customers said.
   grows in four steps, bought on the Invention card once enough squeezers have sold:
   Hometown (about 50 a day), On TV ($3,000 after 300 sold; about 200 a day), Every State
   ($12,000 after 2,000 sold; about 800 a day) and Worldwide ($40,000 after 8,000 sold; about
-  3,200 a day at $3.25 each). The Lemonade Factory (Stage 5) shows as "coming soon".
+  3,200 a day at $3.25 each).
+- **Lemonade Factory.** After the squeezer goes worldwide, open a factory that makes and
+  ships lemonade using its own supplies. The Factory tab shows its estimated cases and
+  earnings; grow from supermarkets to factories around the world in the Stand Shop.
 - **My House.** From Stage 2 a third column shows the family's one-story house. Save up to
   upgrade it: Fresh Paint ($250; then pick the wall color any time), a Second Floor ($2,500),
   a Treehouse ($5,000, Stage 3), Lemon HQ in the garage ($15,000, Stage 3) and Pay Off the
@@ -54,7 +57,7 @@ look is cleared on the next visit (only the Dad Mode switch is kept).
 
 ## Later stages
 
-Kid mode covers the first four stages for now; Stage 5 is playable in Dad Mode:
+Kid mode and Dad Mode cover all five stages:
 
 1. **Driveway stand** - recipe, weather, supplies, chores, Stand Shop.
 2. **Neighborhood franchise** - hire neighborhood kids to run stands at Elm Street, the

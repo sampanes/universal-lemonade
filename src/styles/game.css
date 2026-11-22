@@ -643,6 +643,7 @@ button:disabled {
 /* Stage 3: the card gets two tabs, the friends' stands and the stores that buy bottles. */
 .friends-tabs {
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
   gap: 6px;
   margin-bottom: 4px;

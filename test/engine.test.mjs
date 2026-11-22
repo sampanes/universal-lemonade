@@ -810,6 +810,35 @@ test('the squeezer grows in four steps, each opened by lifetime squeezer sales',
   assert.equal(loaded.state.totalSqueezersSold, e.state.totalSqueezersSold);
 });
 
+test('kid shop opens the factory after worldwide licensing and grows it in order across saves', () => {
+  let e = new LemonadeEngine({ seed: 72 });
+  e.dadJumpToPhase(4);
+  e.state.cash = e.state.cash.add(100000000);
+  assert.equal(sim.kidShopNext(e, e.state), null, 'factory waits for worldwide licensing');
+  e.state.totalSqueezersSold = 8000;
+  assert.ok(e.buyProject('global_licensing'));
+  assert.equal(sim.kidShopNext(e, e.state), null, 'shop waits after a purchase');
+  e.state.day += 2;
+  const stages = [
+    ['copacker_deal', 40], ['regional_supermarkets', 300], ['automated_canning_line', 1500],
+    ['national_bigbox', 6000], ['club_store_pallets', 25000],
+    ['qsr_fountain_licensing', 100000], ['global_beverage_jv', 350000],
+  ];
+  for (const [id, cases] of stages) {
+    assert.equal(sim.kidShopNext(e, e.state).item.id, id);
+    assert.ok(e.buyProject(id));
+    assert.equal(e.copacker.casesPerDay, cases);
+    assert.equal(sim.kidShopNext(e, e.state), null);
+    e.state.day += 2;
+    e = LemonadeEngine.fromSave(JSON.parse(JSON.stringify(e.toSave())));
+    assert.equal(e.copacker.casesPerDay, cases);
+  }
+  assert.equal(sim.kidShopNext(e, e.state), null);
+  const day = e.runDay();
+  assert.ok(day.copackerCasesSold > 0 && day.copackerNet > 0);
+  assert.equal(day.copackerNet, day.copackerCasesSold * e.copacker.netPerCase);
+});
+
 test('house upgrades go in order, wait for their stage, and save', () => {
   const e = new LemonadeEngine({ seed: 73 });
   e.state.cash = e.state.cash.add(1000);

@@ -53,7 +53,7 @@ export function moneyBagHTML(engine) {
       (dLast ? `<span class="mb-stars">${repStars(dLast)}</span>` +
         `<button type="button" class="mb-see-report" id="btn-mb-see-report">See report</button>` : '') + `</div>`;
     html += `<div class="mb-label in">Money in</div>`;
-    html += mbRow('in', './sprites/lemonade_cup.png', 'Lemonade', `${last.cups.toLocaleString('en-US')} ${last.cups === 1 ? 'cup' : 'cups'} sold`, last.sales);
+    html += mbRow('in', './sprites/lemonade_cup.png', 'Business sales', `${last.cups.toLocaleString('en-US')} drinks sold at stands and stores`, last.sales);
     if (last.chores > 0.004) html += mbRow('in', './sprites/morning_prep/coin_jar.png', 'Chores', '', last.chores);
     const out = mbOutRows(last, engine);
     html += `<div class="mb-label out">Money out</div>`;
