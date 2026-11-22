@@ -45,13 +45,20 @@ function squeezerStep(level: number): ProjectDef {
   };
 }
 
-// The two Phase 1 stand upgrades, $275 and $605, each lift a storage limit
+// The two Phase 1 stand upgrades are the kid's first choice: the Stand Shop shows both from
+// Day 3, the kid picks which one to get first, and the other one comes next. They cost the
+// same, so the pick is about what each does: the ice machine saves money and never runs out
+// of ice, the mini-fridge brings more customers and keeps lemons fresh. (Played by the bots,
+// either pick reaches Stage 2 on about the same day.) Each also lifts a storage limit
 // (src/simulation/storage.ts): a busy summer day needs more ice than the 400-cube bucket
 // holds, and a second stand more lemons than the 24-lemon bowl. There is no cooler step any
 // more (the ice machine made it useless a few days later); the kid gets by with the bucket
 // and runs short of ice a couple of times first. (The engine still knows hasCooler, so it
 // can come back.) The kid shop only spends money left over after today's supplies
 // (engine.restockCostForToday), so buying one never leaves the stand without lemons.
+export const FIRST_CHOICE = ['auto_ice_dispenser', 'fridge'] as const;
+const FIRST_CHOICE_COST = 400;
+
 export function createInitialProjects(): ProjectDef[] {
   return [
     {
@@ -59,7 +66,7 @@ export function createInitialProjects(): ProjectDef[] {
       name: 'Digital Weather-Synced Ice Dispenser',
       desc: 'Makes all the ice the day needs for free, with no storage limit, and dials in ideal ice per cup (Auto toggle).',
       phase: 1,
-      costCash: 275,
+      costCash: FIRST_CHOICE_COST,
       purchased: false,
       unlocked: (s: GameState) => s.phase >= 1 && s.day >= 3,
       effect: (e: any) => {
@@ -74,7 +81,7 @@ export function createInitialProjects(): ProjectDef[] {
       name: 'Garage Mini-Fridge',
       desc: 'Unlimited lemons, no spoilage, and 10% more customers.',
       phase: 1,
-      costCash: 605,
+      costCash: FIRST_CHOICE_COST,
       purchased: false,
       unlocked: (s: GameState) => s.phase >= 1 && s.day >= 3,
       effect: (e: any) => {

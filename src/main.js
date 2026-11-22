@@ -923,10 +923,13 @@ function renderStandShop(s) {
   const next = kidShopNext(engine, s);
   if (card.hidden === !!next) card.hidden = !next;
   if (!next) { card._item = null; return; }
-  const { item, p } = next;
-  if (card._item !== item.id) {
-    card._item = item.id;
+  const { item, p, choices } = next;
+  const key = choices ? choices.map(c => c.item.id).join('+') : item.id;
+  if (card._item !== key) {
+    card._item = key;
     card.classList.toggle('teaser', !!item.teaser);
+    card.classList.toggle('choosing', !!choices);
+    setHTMLIfChanged(document.getElementById('stand-shop-choice'), choices ? shopChoiceHTML(choices) : '');
     setText(document.getElementById('stand-shop-tag'), item.teaser ? 'SOON' : 'SHOP');
     const pic = document.getElementById('stand-shop-pic');
     pic.hidden = !item.pic;
@@ -935,13 +938,14 @@ function renderStandShop(s) {
     void card.offsetWidth;      // replay the pop-in for the new item
     card.style.animation = '';
   }
-  setText(document.getElementById('stand-shop-name'), item.name);
-  setText(document.getElementById('stand-shop-desc'), item.desc);
   // Only spare money counts: what is left after today's supplies are paid for. Buying an
   // upgrade with the lemon money left kids stuck doing chores just to reopen the stand.
-  const cost = p.costCash;
   const need = item.teaser ? 0 : engine.restockCostForToday();
   const spare = Math.max(0, s.cash.toNumber() - need);
+  if (choices) { renderShopChoice(choices, spare, need); return; }
+  setText(document.getElementById('stand-shop-name'), item.name);
+  setText(document.getElementById('stand-shop-desc'), item.desc);
+  const cost = p.costCash;
   const short = !item.teaser && spare < cost;
   // Enough money but not open yet (the second stand also wants a tasty recipe).
   const notYet = !item.teaser && !short && !p.unlocked(s);
@@ -961,16 +965,49 @@ function renderStandShop(s) {
   if (btn.disabled !== showSave) btn.disabled = showSave;
   setText(btn, `$${cost}`);
 }
-document.getElementById('btn-stand-shop-buy').onclick = (e) => {
-  const id = e.currentTarget.dataset.id;
+// The first choice: two tiles side by side with an OR between them, each tile a button with
+// its price, over one savings bar (they cost the same). Kept short so the page still fits
+// the kids' screen without scrolling. Built once; renderShopChoice keeps the money current.
+function shopChoiceHTML(choices) {
+  return `<div class="stand-shop-ask">Pick one!</div>
+    <div class="stand-shop-options">${choices.map(({ item }) => `<button type="button" class="stand-shop-option" data-id="${item.id}">
+      <img class="stand-shop-option-pic" src="${item.pic}" alt="" />
+      <span class="stand-shop-option-name">${item.name}</span>
+      <span class="stand-shop-option-desc">${item.pick}</span>
+      <span class="stand-shop-option-price"></span>
+    </button>`).join('<span class="stand-shop-or" aria-hidden="true">OR</span>')}</div>
+    <div class="stand-shop-save"><div class="stand-shop-bar" hidden><span></span></div><span class="stand-shop-choice-text"></span></div>`;
+}
+function renderShopChoice(choices, spare, need) {
+  const box = document.getElementById('stand-shop-choice');
+  const cost = Math.min(...choices.map(c => c.p.costCash));
+  const short = spare < cost;
+  const bar = box.querySelector('.stand-shop-bar');
+  if (bar.hidden === short) bar.hidden = !short;
+  if (short) bar.firstElementChild.style.width = `${Math.min(100, (spare / cost) * 100).toFixed(1)}%`;
+  setText(box.querySelector('.stand-shop-choice-text'), short
+    ? `Saving up: $${Math.floor(spare)} of $${cost}${need > 0 ? ' after supplies' : ''}`
+    : 'Tap the one you want first. The other one comes next!');
+  for (const btn of box.querySelectorAll('.stand-shop-option')) {
+    const c = choices.find(x => x.item.id === btn.dataset.id);
+    const off = spare < c.p.costCash;
+    if (btn.disabled !== off) btn.disabled = off;
+    setText(btn.querySelector('.stand-shop-option-price'), `$${c.p.costCash}`);
+  }
+}
+function buyShopItem(id) {
   const item = KID_SHOP.find(x => x.id === id);
   if (!item || item.teaser) return;
   const p = engine.projects.find(x => x.id === id);
-  if (p && engine.state.cash.toNumber() - engine.restockCostForToday() >= p.costCash) {
-    engine.buyProject(id);
+  if (p && engine.state.cash.toNumber() - engine.restockCostForToday() >= p.costCash && engine.buyProject(id)) {
     kidFlash('determined', 2500);      // new gear: let's do this
   }
-};
+}
+document.getElementById('btn-stand-shop-buy').onclick = (e) => buyShopItem(e.currentTarget.dataset.id);
+document.getElementById('stand-shop-choice').addEventListener('click', (e) => {
+  const btn = e.target.closest('.stand-shop-option');
+  if (btn && !btn.disabled) buyShopItem(btn.dataset.id);
+});
 
 function renderHouse(s) {
   const col = document.getElementById('house-col');

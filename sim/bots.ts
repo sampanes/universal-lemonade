@@ -5,6 +5,7 @@
 // the customer estimate) unless they are explicitly "perfect" players.
 
 import type { LemonadeEngine } from '../src/engine';
+import { FIRST_CHOICE } from '../src/data/projects';
 
 export interface BotContext {
   rand: () => number;          // the bot's own random numbers (separate from the game's)
@@ -59,11 +60,13 @@ function nudgeFromCustomers(e: LemonadeEngine): void {
   }
 }
 
-// Follow the kid shop's order and its day between purchases.
+// Follow the kid shop's order and its day between purchases. The shop starts with a choice
+// (FIRST_CHOICE); games with an odd seed pick the second one first, so a run covers both.
 function buyUpgrades(e: LemonadeEngine, reserve: number, chance: number, rand: () => number): void {
   const s = e.state;
   if (s.lastShopPurchaseDay != null && s.day - s.lastShopPurchaseDay < 2) return;
-  const order = ['auto_ice_dispenser', 'fridge', 'franchise_license', 'costco_card',
+  const first = e.seed & 1 ? [...FIRST_CHOICE].reverse() : [...FIRST_CHOICE];
+  const order = [...first, 'franchise_license', 'costco_card',
     'cargo_wagon', 'bottling_rig', 'commercial_labeler', 'patent_filing', 'squeezer_tv', 'squeezer_states', 'global_licensing'];
   const p = order.map(id => e.projects.find(project => project.id === id)).find(project => project && !project.purchased);
   if (!p || !p.unlocked(s)) return;

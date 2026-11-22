@@ -4,7 +4,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 const sim = await import(new URL('../.sim-build/index.js', import.meta.url).href);
-const { LemonadeEngine, BALANCE, BOTS, runGame, runBatch, withOverrides, summarize } = sim;
+const { LemonadeEngine, BALANCE, BOTS, FIRST_CHOICE, runGame, runBatch, withOverrides, summarize } = sim;
 
 // Plays a fixed little routine and returns a fingerprint of the whole state each day.
 function playFingerprint(engine, days = 30) {
@@ -555,11 +555,12 @@ test('a full ice bucket on a big day says the ice machine would help', () => {
 });
 
 // The kid Stand Shop only spends money left over after today's supplies. Played that way,
-// the upgrades never leave the stand broke, and nobody gets the ice machine right away.
+// the upgrades never leave the stand broke, and nobody gets the first upgrade right away.
+// Half the games pick the fridge first (the shop's first choice), half the ice machine.
 test('the kid shop never leaves a careful kid broke in Phase 1', () => {
-  const SHOP = ['auto_ice_dispenser', 'fridge'];
-  let zeroDays = 0, shortMornings = 0, firstMachine = Infinity, games = 0, gotAll = 0;
+  let zeroDays = 0, shortMornings = 0, firstBuy = Infinity, games = 0, gotAll = 0;
   for (let g = 0; g < 100; g++) {
+    const SHOP = g % 2 ? ['fridge', 'auto_ice_dispenser'] : ['auto_ice_dispenser', 'fridge'];
     const e = new LemonadeEngine({ seed: 5000 + g });
     const buy = e.buyProject.bind(e);
     e.buyProject = () => false;               // the bot's own upgrade buying is off
@@ -571,7 +572,7 @@ test('the kid shop never leaves a careful kid broke in Phase 1', () => {
       const p = SHOP.map(id => e.projects.find(x => x.id === id)).find(x => !x.purchased);
       if (p && p.unlocked(e.state) && e.state.cash.toNumber() - e.restockCostForToday() >= p.costCash) {
         buy(p.id);
-        if (p.id === 'auto_ice_dispenser') firstMachine = Math.min(firstMachine, d);
+        if (p.id === SHOP[0]) firstBuy = Math.min(firstBuy, d);
       }
       const sum = e.runDay();
       e.tick(e.balance.secondsPerDay);
@@ -582,8 +583,25 @@ test('the kid shop never leaves a careful kid broke in Phase 1', () => {
   }
   assert.equal(zeroDays, 0, `${zeroDays} days hit $0`);
   assert.ok(shortMornings / games <= 0.5, `${(shortMornings / games).toFixed(2)} short mornings per game`);
-  assert.ok(firstMachine >= 6, `earliest ice machine on day ${firstMachine}`);
+  assert.ok(firstBuy >= 6, `earliest first upgrade on day ${firstBuy}`);
   assert.ok(gotAll / games >= 0.8, `${gotAll}/${games} games bought both by day 40`);
+});
+
+// The shop's first choice is a fair pick: the two open together on Day 3 at the same price,
+// and buying either one leaves the other to buy next.
+test('the ice machine and the fridge are a choice', () => {
+  const e = new LemonadeEngine({ seed: 21 });
+  const [a, b] = FIRST_CHOICE.map(id => e.projects.find(p => p.id === id));
+  assert.deepEqual([a.id, b.id].sort(), ['auto_ice_dispenser', 'fridge']);
+  assert.equal(a.costCash, b.costCash, 'same price, so the pick is about what each does');
+  e.state.cash = e.state.cash.add(2000);
+  e.state.day = 2;
+  assert.ok(!a.unlocked(e.state) && !b.unlocked(e.state), 'not before Day 3');
+  e.state.day = 3;
+  assert.ok(a.unlocked(e.state) && b.unlocked(e.state), 'both open on Day 3');
+  assert.ok(e.buyProject(b.id));
+  assert.ok(a.unlocked(e.state) && !a.purchased, 'the other one is still for sale');
+  assert.ok(e.buyProject(a.id));
 });
 
 // ---- Slow start: buzz ----

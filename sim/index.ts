@@ -1,5 +1,6 @@
 // sim/index.ts -- Entry point bundled to .sim-build/index.js for the CLI, workers and tests.
 export { LemonadeEngine, BALANCE, DEFAULT_SEED, ledgerKept } from '../src/engine';
+export { FIRST_CHOICE } from '../src/data/projects';
 export { generateDailyReviews } from '../src/simulation/reviews';
 export { reputationTrend, nextReputation } from '../src/simulation/reputation';
 export { allocateStandSales } from '../src/simulation/demand';

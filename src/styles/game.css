@@ -819,6 +819,137 @@ body.dad-mode .stand-shop { display: none; }
 }
 .stand-shop.teaser .stand-shop-buy { display: none; }
 
+/* The first choice (renderStandShop): two tiles side by side with an OR between them, each
+   tile the buy button, over one savings line. While it shows, the one-item parts of the card
+   hide. Kept under about 116px tall, so the page still fits 1280x660 without scrolling. */
+.stand-shop-choice { display: none; }
+.stand-shop.choosing { display: block; position: relative; padding: 13px 8px 6px; }
+.stand-shop.choosing[hidden] { display: none; }
+.stand-shop.choosing > :not(.stand-shop-choice) { display: none; }
+.stand-shop.choosing .stand-shop-choice { display: block; }
+/* "Pick one!" sits on the card's top edge, like a ribbon. */
+.stand-shop-ask {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 2px 12px;
+  border: 3px solid #c4b5fd;
+  border-radius: 999px;
+  background: #ede9fe;
+  color: #6d28d9;
+  font-family: var(--font-display);
+  font-size: 12px;
+  letter-spacing: 0.8px;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+.stand-shop-options {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+}
+.stand-shop-or {
+  z-index: 1;
+  align-self: center;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  margin: 0 -9px;
+  border: 3px solid #c4b5fd;
+  border-radius: 50%;
+  background: #ffffff;
+  color: #6d28d9;
+  font-family: var(--font-display);
+  font-size: 10px;
+  letter-spacing: 0.5px;
+}
+.stand-shop-option {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  column-gap: 7px;
+  row-gap: 2px;
+  align-items: center;
+  align-content: center;
+  min-width: 0;
+  padding: 3px 8px 4px;
+  border: 3px solid #6ee7b7;
+  border-radius: 14px;
+  background: #f0fdf4;
+  color: #3b0764;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: transform 0.12s ease-out;
+}
+.stand-shop-option > :not(img) { grid-column: 2; min-width: 0; }
+.stand-shop-option:not(:disabled):active { transform: scale(0.97); }
+.stand-shop-option:disabled {
+  border-color: #ddd6fe;
+  background: #faf5ff;
+  opacity: 1;                     /* the global button:disabled fade would hide the choice */
+  cursor: not-allowed;
+}
+.stand-shop-option-pic {
+  grid-row: 1 / 4;
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+}
+.stand-shop-option-name,
+.stand-shop-option-desc {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.stand-shop-option-name {
+  font-family: var(--font-display);
+  font-size: 15px;
+  letter-spacing: 0.3px;
+  line-height: 1.05;
+}
+.stand-shop-option-desc {
+  font-size: 11.5px;
+  font-weight: 700;
+  line-height: 1.15;
+  color: #5b21b6;
+}
+.stand-shop-option-price {
+  justify-self: start;
+  min-width: 68px;
+  padding: 1px 10px;
+  border: 2px solid #6ee7b7;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #ffffff;
+  font-family: var(--font-display);
+  font-size: 14px;
+  letter-spacing: 0.5px;
+  line-height: 1.1;
+  text-align: center;
+  -webkit-text-stroke: 2px #065f46;
+  paint-order: stroke fill;
+}
+.stand-shop-option:disabled .stand-shop-option-price {
+  background: #e5e7eb;
+  border-color: #d1d5db;
+  -webkit-text-stroke-color: #6b7280;
+}
+.stand-shop-choice .stand-shop-save { margin-top: 4px; line-height: 1.2; }
+.stand-shop-bar[hidden] { display: none; }
+@media (hover: hover) {
+  .stand-shop-option:not(:disabled):hover { transform: translateY(-1px); box-shadow: 0 3px 8px rgba(16, 185, 129, 0.25); }
+}
+/* A narrow phone: each tile stacks, picture on top. */
+@media (max-width: 420px) {
+  .stand-shop-option { grid-template-columns: minmax(0, 1fr); justify-items: center; text-align: center; }
+  .stand-shop-option > :not(img) { grid-column: 1; }
+  .stand-shop-option-pic { grid-row: auto; }
+  .stand-shop-option-name, .stand-shop-option-desc { white-space: normal; }
+  .stand-shop-option-price { justify-self: stretch; }
+}
+
 /* My House (kid mode, from Stage 2): a third column with the family house and the next
    upgrade to save up for. Each upgrade plays a short build scene. */
 .house-col[hidden] { display: none !important; }

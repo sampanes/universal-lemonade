@@ -15,9 +15,10 @@ Day Report of what customers said.
 - **The golden recipe.** Every game has one best lemon and sugar mix. Nothing on screen gives
   a score; the customers' comments point the way ("a little more lemon"). Sell it a few days
   in a row and the recipe locks in gold.
-- **Stand Shop.** One upgrade at a time: an ice machine (no more running out of ice, and the
-  ice buttons go away), then a mini-fridge (no lemon limit or spoilage, 10% more customers), then
-  a second stand, which opens the friends' stands, then a Supply Club Card (cheaper
+- **Stand Shop.** One upgrade at a time. It starts with a choice on Day 3: the ice machine
+  (free ice, no more running out, and the ice buttons go away) or the mini-fridge (10% more
+  customers, no lemon limit or spoilage), $400 each. The kid picks one and the other one comes
+  next. Then a second stand, which opens the friends' stands, then a Supply Club Card (cheaper
   supplies). The Big Wagon (friends sell more) waits until two friends are hired. Then
   Bottle It! (after 250 cups sold) opens the stores, and a Bottle Labeler makes bottles
   cheaper.

@@ -297,9 +297,11 @@
         <div class="friends-row" id="friends-row"></div>
       </div>
 
-      <!-- KID STAND SHOP: one upgrade at a time (ice machine, mini-fridge, the second stand,
-           then Stage 2 upgrades). Filled by renderStandShop(). -->
+      <!-- KID STAND SHOP: one upgrade at a time (first a pick between the ice machine and the
+           mini-fridge, then the other one, the second stand, then Stage 2 upgrades). Filled by
+           renderStandShop(); the pick goes in #stand-shop-choice. -->
       <div class="stand-shop" id="stand-shop" hidden>
+        <div class="stand-shop-choice" id="stand-shop-choice"></div>
         <img class="stand-shop-pic" id="stand-shop-pic" src="./sprites/shop/ice_dispenser.png" alt="" />
         <div class="stand-shop-info">
           <div class="stand-shop-title"><span class="stand-shop-tag" id="stand-shop-tag">SHOP</span><span id="stand-shop-name">Ice Machine</span></div>
