@@ -2357,6 +2357,10 @@ body:not(.dad-mode) .dad-pill:hover {
 .report-modal-backdrop.active .report-modal-dialog {
   transform: scale(1) translateY(0);
 }
+.report-modal-backdrop.no-fade,
+.report-modal-backdrop.no-fade .report-modal-dialog {
+  transition: none;
+}
 .report-modal-close-x {
   position: absolute;
   top: 14px;

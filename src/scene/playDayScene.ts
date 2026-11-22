@@ -1,8 +1,8 @@
 import { dayCrowds, type StandCrowd } from './dayScene';
 import { copyCustomer, customersReady, freshenCustomers, pauseCustomers } from './customerArt';
 import { skyCondition, temperatureBand } from './forecastArt';
-import { preloadImages } from '../preload';
-import type { DaySummary } from '../types';
+import { preloadImages, whenIdle } from '../preload';
+import type { DaySummary, WeatherCondition } from '../types';
 import './dayScene.css';
 
 // house: the kid's own stand stands in front of the family house (its HTML, whose pictures are
@@ -27,11 +27,12 @@ const READ_MS = 950;           // someone at the counter who talks stands there 
 const TALK_PACE = 0.1;         // a passer-by slows to this share of their speed while talking
 const SLOW_MS = 220;           // ...and takes about this long to slow down before the words show
 const POP_MS = 900;            // the "+3" over the counter
+const REHEARSAL_MS = 3000;     // scene time the rehearsal plays (at triple speed: about a second)
 
 // What people say. Each buyer's line that teaches something (taste, ice, a good price) is said
 // once a day, by every other buyer who speaks until they are all said (the Day Report has
 // them too); the rest is chatter that fits the day.
-function sceneLines(summary: DaySummary, sky: string) {
+function sceneLines(summary: Pick<DaySummary, 'tempF' | 'reviews' | 'soldOutItem'>, sky: string) {
   const hot = summary.tempF >= 85, cold = summary.tempF < 60;
   const teach = summary.reviews
     .filter(r => r.topic === 'taste' || r.topic === 'ice' || (r.topic === 'price' && r.sentiment === 'positive'))
@@ -92,7 +93,32 @@ interface Walker {
 // Nothing shows half loaded: each stand's pictures are fetched before the scene shows that
 // stand (one stand after another while the earlier ones play), and the customers are copies
 // of looks drawn ahead of time (src/scene/customerArt.ts), so nobody waits on their art.
-export async function playDayScene(summary: DaySummary, location: (id: string) => LocationArt): Promise<void> {
+export function playDayScene(summary: DaySummary, location: (id: string) => LocationArt): Promise<void> {
+  scenePlayed = true;
+  endRehearsal?.();
+  return runScene(summary, location, false);
+}
+
+// The first day scene on a page used to freeze for a moment just after it opened (about a
+// tenth of a second, and over half a second the first time a computer ever showed it): the
+// browser was getting ready to draw it. Later scenes never did. So once the page is idle, a
+// short made-up day at the kid's stand plays at triple speed, all but invisible (1% opacity,
+// and clicks go through it), and the first real day starts as smoothly as the rest.
+let scenePlayed = false;
+let rehearsed = false;
+let endRehearsal: (() => void) | null = null;
+export function rehearseDayScene(weather: WeatherCondition, tempF: number, location: (id: string) => LocationArt): void {
+  if (rehearsed || scenePlayed) return;
+  rehearsed = true;
+  const standVisits = [{ id: 'driveway', traffic: 12, wanted: 6, sold: 4 }];   // 2 buyers, a sold-out customer, 2 passers-by
+  void runScene({ day: 0, weather, tempF, standVisits, friends: [], reviews: [] }, location, true);
+}
+
+type SceneDay = Pick<DaySummary, 'day' | 'weather' | 'tempF' | 'standVisits' | 'friends' | 'reviews' | 'soldOutItem'>;
+
+async function runScene(summary: SceneDay, location: (id: string) => LocationArt, rehearsal: boolean): Promise<void> {
+  let stopped = false;
+  if (rehearsal) endRehearsal = () => { stopped = true; };
   const crowds = dayCrowds(summary.standVisits, summary.friends);
   if (!crowds.length) return;
   const sky = skyCondition(summary.weather, summary.tempF);
@@ -107,12 +133,18 @@ export async function playDayScene(summary: DaySummary, location: (id: string) =
     loading = loading.then(() => preloadImages(pictures, Infinity, 'high')).then(() => { ready.add(id); });
     firstLoaded ??= loading;
   }
-  void customersReady(LOOKS);
-  await Promise.race([
-    Promise.all([firstLoaded, customersReady(FIRST_LOOKS)]),
-    new Promise(resolve => setTimeout(resolve, OPEN_WAIT_MS)),
-  ]);
-  pauseCustomers(true);
+  if (rehearsal) {
+    await Promise.all([firstLoaded, customersReady(FIRST_LOOKS)]);
+    await new Promise<void>(resolve => whenIdle(resolve));
+    if (stopped) return;
+  } else {
+    void customersReady(LOOKS);
+    await Promise.race([
+      Promise.all([firstLoaded, customersReady(FIRST_LOOKS)]),
+      new Promise(resolve => setTimeout(resolve, OPEN_WAIT_MS)),
+    ]);
+    pauseCustomers(true);
+  }
 
   const dialog = document.createElement('dialog');
   dialog.className = 'day-scene';
@@ -435,21 +467,33 @@ export async function playDayScene(summary: DaySummary, location: (id: string) =
   }
 
   document.body.append(dialog);
-  dialog.showModal();
+  if (rehearsal) {
+    dialog.classList.add('rehearsal');
+    dialog.setAttribute('inert', '');
+    dialog.setAttribute('aria-hidden', 'true');
+    dialog.setAttribute('open', '');   // not show(): that would move the focus into it
+  } else {
+    dialog.showModal();
+  }
   stageW = stage.clientWidth || stageW;
   stageH = stage.clientHeight || stageH;
   showStand(crowds[0]);
   return new Promise(resolve => {
-    let frame = 0, last = performance.now(), held = 0, rate = 1;
+    let frame = 0, last = performance.now(), held = 0, rate = rehearsal ? 3 : 1;
     function finish() {
       cancelAnimationFrame(frame);
       sizes.disconnect();
       dialog.close();
       dialog.remove();
-      pauseCustomers(false);
-      freshenCustomers(4);   // a few new faces for tomorrow
+      if (rehearsal) {
+        endRehearsal = null;
+      } else {
+        pauseCustomers(false);
+        freshenCustomers(4);   // a few new faces for tomorrow
+      }
       resolve();
     }
+    if (rehearsal) endRehearsal = finish;
     // The button holds both labels and shows one (dayScene.css), so its width never changes.
     speed.onclick = () => {
       rate = rate === 1 ? 3 : 1;
@@ -461,6 +505,7 @@ export async function playDayScene(summary: DaySummary, location: (id: string) =
       // A long frame (a hidden tab) never jumps anyone across the stage.
       const dt = Math.min(100, now - last) * rate;
       last = now;
+      if (rehearsal && clock >= REHEARSAL_MS) { finish(); return; }
       if (standOver()) {
         const next = crowds[index + 1];
         if (!next) { finish(); return; }

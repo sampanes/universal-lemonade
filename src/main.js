@@ -12,7 +12,7 @@ import {
   HAIR_PALETTES,
   UNIFORM_PALETTES
 } from './character.ts';
-import { playDayScene } from './scene/playDayScene.ts';
+import { playDayScene, rehearseDayScene } from './scene/playDayScene.ts';
 import { skyCondition, temperatureBand } from './scene/forecastArt.ts';
 import { HATS, SHADES, accessoryURL } from './headwear.ts';
 import { loadKidArt, kidImageURL, kidHairCount, kidHairIds, kidFx } from './kid.ts';
@@ -113,7 +113,8 @@ function saveGame() {
   writeStored(engineIsDads ? STORAGE_KEYS.dadGame : STORAGE_KEYS.kidGame, JSON.stringify(engine.toSave()));
 }
 const seedInUrl = urlParams.has('seed');
-let engine = (!seedInUrl && loadGame(dadModeActive)) || new LemonadeEngine({ seed: newGameSeed() });updateDadSeedInfo();
+let engine = (!seedInUrl && loadGame(dadModeActive)) || new LemonadeEngine({ seed: newGameSeed() });
+updateDadSeedInfo();
 window.addEventListener('pagehide', saveGame);
 document.addEventListener('visibilitychange', () => { if (document.hidden) saveGame(); });
 
@@ -350,12 +351,27 @@ if (btnToggleBank) {
 }
 
 function openReportModal(summary) {
-  const modalBackdrop = document.getElementById('report-modal-backdrop');
+  renderReportModal(summary);
+  showReportModal();
+}
+
+function renderReportModal(summary) {
   const modalContent = document.getElementById('report-modal-content');
-  if (modalBackdrop && modalContent) {
-    modalContent.innerHTML = renderFullDayReportHTML(summary, engine.state, true, reportKidHTML);
-    modalBackdrop.classList.add('active');
-    modalBackdrop.setAttribute('aria-hidden', 'false');
+  if (modalContent) modalContent.innerHTML = renderFullDayReportHTML(summary, engine.state, true, reportKidHTML);
+}
+
+// instant: no fade or pop. The day's report shows the moment the day scene closes (in the same
+// frame), so the page never shows in between. It used to be filled in and opened behind the
+// scene, where drawing it (its blur most of all) made the scene's first moments stutter.
+function showReportModal(instant = false) {
+  const modalBackdrop = document.getElementById('report-modal-backdrop');
+  if (!modalBackdrop) return;
+  if (instant) modalBackdrop.classList.add('no-fade');
+  modalBackdrop.classList.add('active');
+  modalBackdrop.setAttribute('aria-hidden', 'false');
+  if (instant) {
+    void modalBackdrop.offsetWidth;   // settle it open with no transition, then put them back
+    modalBackdrop.classList.remove('no-fade');
   }
 }
 
@@ -421,14 +437,20 @@ let playingDay = false;
 document.getElementById('btn-run-day').onclick = async () => {
   if (playingDay) return;
   playingDay = true;
+  let summary = null, look = null;
   try {
-    const summary = engine.runDay();
-    openReportModal(summary);
-    checkMagicLooks(summary, !dadModeActive);
+    summary = engine.runDay();
+    look = checkMagicLooks(summary);
     saveGame();
     await playDayScene(summary, id => sceneLocation(id, engine, kidProfile));
   } finally {
     playingDay = false;
+    // The report is filled in and shown the moment the scene closes, in the same frame.
+    if (summary) {
+      renderReportModal(summary);
+      if (look) showMagicLook(look);
+      showReportModal(true);
+    }
     document.getElementById('btn-report-modal-continue').focus();
   }
 };
@@ -476,7 +498,7 @@ function loop(now) {
     autoDayTimer += dt;
     if (autoDayTimer >= 2.5) { // Run day every 2.5 real seconds (scaled by timeScale)
       autoDayTimer = 0;
-      checkMagicLooks(engine.runDay(), false);
+      checkMagicLooks(engine.runDay());
     }
   }
 
@@ -1302,14 +1324,19 @@ function profileWithLook(look) {
   return i < 0 ? null : { ...kidProfile, hairColor: i };
 }
 const MAGIC_LINES = ['Whoa! Magic in the mirror!', 'Something sparkly appeared!', 'Psst... check the mirror!'];
-function checkMagicLooks(summary, show) {
-  if (!summary || dadModeActive) return;   // Dad's test days do not spend the kid's surprises
+// The new look the day brought (saved right away), or null. The report shows it (showMagicLook).
+function checkMagicLooks(summary) {
+  if (!summary || dadModeActive) return null;   // Dad's test days do not spend the kid's surprises
   const look = advanceLookUnlocks(kidUnlocks, unlockCheckFrom(engine.state, summary), otherUnlockToday(engine.state, summary));
   saveUnlocks(kidUnlocks); // also save milestones waiting for a quiet day
-  if (!look) return;
+  if (!look) return null;
   refreshKidNew();
+  return look;
+}
+
+function showMagicLook(look) {
   const content = document.getElementById('report-modal-content');
-  if (!show || !content) return;
+  if (!content) return;
   const profile = profileWithLook(look);
   const pics = profile ? kidPicHTML(profile, 'surprised', true) : '';
   content.insertAdjacentHTML('afterbegin',
@@ -1438,10 +1465,13 @@ loadKidArt().then(() => {
   kidVersion++;
   renderMirror();
   // The day scene's sellers (the kid and each friend at their stand) are drawn now, while
-  // nothing is happening, instead of when the stand opens.
+  // nothing is happening, instead of when the stand opens. Then the scene has a rehearsal, so
+  // the first real one starts smoothly (playDayScene.ts).
   whenIdle(() => {
     const sellers = [kidImageURL(kidProfile, 'happy', 'stand'), ...Object.keys(FRIENDS).map(id => friendPortrait(id, 'happy', 'stand'))];
-    void preloadInBackground(sellers);
+    void preloadInBackground(sellers).then(() => {
+      rehearseDayScene(engine.state.weather, engine.state.tempF, id => sceneLocation(id, engine, kidProfile));
+    });
   });
 }).catch((e) => console.warn('[Kid]', e.message));
 refreshKidNew();
