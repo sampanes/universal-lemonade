@@ -1,6 +1,6 @@
 // src/data/projects.ts -- Business Investments & Technology Upgrades (Phases 1-5)
 import type { ProjectDef, GameState } from '../types';
-import { BOTTLES_FOR_INVENTION } from './wholesale';
+import { BOTTLES_FOR_INVENTION, BOTTLES_FOR_LABELER } from './wholesale';
 
 // The lemon squeezer's four steps (Stage 4). Level 1 comes with the patent; each later step
 // is a project bought on the Invention card once enough squeezers have sold in all (counted
@@ -151,7 +151,7 @@ export function createInitialProjects(): ProjectDef[] {
       phase: 3,
       costCash: 250,
       purchased: false,
-      unlocked: (s: GameState) => s.phase >= 3,
+      unlocked: (s: GameState) => s.phase >= 3 && s.totalBottlesSold >= BOTTLES_FOR_LABELER,
       effect: (e: any) => {
         e.state.flags.hasCommercialLabeler = true;   // supplyPack('bottles') reads it
         e.log('Project: Semi-Auto Labeler running! Bottles cost less.');

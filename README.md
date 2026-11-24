@@ -20,8 +20,8 @@ Day Report of what customers said.
   customers, no lemon limit or spoilage), $400 each. The kid picks one and the other one comes
   next. Then a second stand, which opens the friends' stands, then a Supply Club Card (cheaper
   supplies). The Big Wagon (friends sell more) waits until two friends are hired. Then
-  Bottle It! (after 250 cups sold) opens the stores, and a Bottle Labeler makes bottles
-  cheaper.
+  Bottle It! (after 250 cups sold) opens the stores, and once 250 bottles have sold, a Bottle
+  Labeler makes bottles cheaper.
 - **Friends' stands.** Timmy (Elm Street), Leo (Ballpark) and Sarah (Pool) can each be hired
   to run a stand with the kid's recipe, price and supplies. Each is paid a flat wage every
   day they work, even a slow one, so a friend can cost money; tapping a friend gives them

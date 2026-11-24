@@ -915,6 +915,8 @@ test('stores buy the forecast bottles, the forecast counts their lemons and suga
   assert.equal(d.packagingCosts, 0, 'caps and labels are in the bottle price');
   const before = e.supplyPack('bottles').cost;
   e.state.cash = e.state.cash.add(1000);
+  assert.equal(e.buyProject('commercial_labeler'), false, 'the labeler waits for 250 bottles sold');
+  e.state.totalBottlesSold = 250;
   assert.ok(e.buyProject('commercial_labeler'));
   assert.ok(e.supplyPack('bottles').cost < before);
 });

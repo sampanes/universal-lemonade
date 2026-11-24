@@ -4,9 +4,10 @@ import { BOTTLES_FOR_INVENTION } from '../data/wholesale.ts';
 import { shopReady } from '../unlocks.ts';
 
 // Kid Stand Shop: the next upgrade in this order, one at a time. An item shows once the
-// game unlocks it (from Day 3), so the card can be hidden for a day between buys; an
-// "early" item shows as a savings goal before it unlocks. The second stand starts Stage
-// 2 (the friends' stands); bottling starts Stage 3 (the stores).
+// game unlocks it (from Day 3; the labeler once BOTTLES_FOR_LABELER bottles have sold), so
+// the card can be hidden for a while between buys; an "early" item shows as a savings goal
+// before it unlocks. The second stand starts Stage 2 (the friends' stands); bottling starts
+// Stage 3 (the stores).
 // The first two are a choice (FIRST_CHOICE): both show side by side, the kid picks one, and
 // the other one comes next. pick: the short line under each in the choice.
 // pic: null shows no picture. friends: N hides the item until N friends are hired.

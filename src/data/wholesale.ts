@@ -2,6 +2,9 @@
 import type { WholesaleAccount } from '../types';
 
 export const BOTTLES_FOR_INVENTION = 1500;
+// The bottle labeler waits until the kid has really bottled (not the day bottling starts);
+// until then the Stand Shop card stays hidden.
+export const BOTTLES_FOR_LABELER = 250;
 
 export function createInitialWholesaleAccounts(): Record<string, WholesaleAccount> {
   return {
