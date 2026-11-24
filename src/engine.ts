@@ -205,6 +205,7 @@ export class LemonadeEngine {
       totalQualitySum: 0,
       brandMultiplier: 1.0,
       gameWon: false,
+      endingSeen: false,
 
       cash: BigNum.fromNumber(start.cash),
       totalCupsSold: new BigNum(0, 0),
@@ -499,6 +500,7 @@ export class LemonadeEngine {
 
     this.state.cash = this.state.cash.sub(t.costCash);
     this.ledger.treats += t.costCash;
+    this.state.lastShopPurchaseDay = this.state.day;   // the kid's Stand Shop sells the big dreams
     t.purchased = true;
 
     if (id === 'skateboard') this.state.flags.hasSkateboard = true;

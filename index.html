@@ -519,25 +519,9 @@
   <!-- MY HOUSE build scene (src/main.js playHouseScene) -->
   <div class="house-scene" id="house-scene" hidden role="dialog" aria-modal="true" aria-labelledby="house-scene-title"></div>
 
-  <!-- VICTORY MODAL (CITRUS CAY) -->
-  <div id="victory-modal" class="modal-overlay" style="display: none;">
-    <div class="modal-card">
-      <div style="font-size: 48px; margin-bottom: 8px;">&#x1F3DD;&#xFE0F;&#x1F34B;&#x1F389;</div>
-      <h2 style="color: #ffd700; margin: 0 0 8px 0; font-size: 20px;">VICTORY: CITRUS CAY!</h2>
-      <p style="color: #eee; font-size: 13px; line-height: 1.5; margin: 0 0 14px 0;">
-        You started with $60 and a folding table on Elm Street. Today, you purchased <strong>Citrus Cay</strong>, your private Caribbean island sanctuary. You beat Universal Lemonade!
-      </p>
-      <div style="background: #111; padding: 12px; border-radius: 6px; margin-bottom: 16px; font-size: 12px; text-align: left; border: 1px solid #333;">
-        <div class="stat"><span>&#x1F3C6; Career Revenue:</span><strong style="color:#ffd700;">$<span id="vic-revenue">0</span></strong></div>
-        <div class="stat"><span>&#x1F34B; Total Cups Sold:</span><strong style="color:#4ade80;"><span id="vic-cups">0</span></strong></div>
-        <div class="stat"><span>&#x1F4C5; Days in Business:</span><strong style="color:#60a5fa;"><span id="vic-days">0</span></strong></div>
-        <div class="stat"><span>&#x1F3E1; Parents' Mortgage:</span><span style="color:#4ade80; font-weight:bold;">PAID IN FULL</span></div>
-      </div>
-      <button id="btn-victory-dismiss" style="background: #2e442e; border: 1px solid #4ade80; color: #4ade80; font-weight: bold; font-size: 14px; padding: 12px 20px; cursor: pointer; width: 100%;">
-        Enjoy Paradise (Continue Sandbox)
-      </button>
-    </div>
-  </div>
+  <!-- THE ENDING: Citrus Cay, the last dream in the Stand Shop. Plays once (state.endingSeen),
+       then the game goes on. Filled by showEnding() in src/main.js. -->
+  <div class="house-scene ending-scene" id="ending-scene" hidden role="dialog" aria-modal="true" aria-labelledby="ending-title"></div>
 
   <!-- DAY REPORT CELEBRATION MODAL (Morphs/Docks to Column 3) -->
   <div id="report-modal-backdrop" class="report-modal-backdrop" aria-hidden="true">

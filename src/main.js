@@ -23,7 +23,7 @@ import { setText, setFitText, setHTMLIfChanged, STORE_LOCK } from './ui/dom.js';
 import { housePicHTML, ALL_HOUSE_IMAGES } from './ui/houseArt.js';
 import { STORES, FRIENDS, ALL_PLACE_IMAGES, friendPortrait, sceneLocation } from './ui/places.js';
 import { reportCatMood, renderFullDayReportHTML, renderDayReport } from './ui/dayReport.js';
-import { KID_SHOP, kidShopNext } from './ui/kidShop.js';
+import { KID_SHOP, kidShopNext, shopEntry } from './ui/kidShop.js';
 import { moneyBagHTML, SUPPLY_PICS } from './ui/moneyBag.js';
 import { renderDadPanel, initDadPanel } from './ui/dadPanel.js';
 import { initResetCard } from './ui/resetCard.js';
@@ -65,7 +65,6 @@ function updateDadSeedInfo() {
 let timeScale = 1;
 let autoDay = false;
 let autoDayTimer = 0;
-let victoryDismissed = false;
 let buyPackMult = 1;
 
 // ---- Dad-Testing Mode Flag ----
@@ -275,13 +274,11 @@ function setEngine(next) {
   engine = next;
   updateDadSeedInfo();
   refreshDadJump();
-  victoryDismissed = false;
   prevCashNum = null; // a jump in cash between games is not income: no float, no cheer
   catCheerUntil = 0;
   choreMaxRemain = 0;
   partnersPhase = null;     // the other game opens on its newest tab
-  const vModal = document.getElementById('victory-modal');
-  if (vModal) vModal.style.display = 'none';
+  closeEnding(false);
 }
 
 // Reset (see the hold-to-confirm card near the mirror code): a brand-new game. In kid
@@ -306,11 +303,48 @@ document.addEventListener('dadmodechange', () => {
   }
 });
 
-document.getElementById('btn-victory-dismiss').onclick = () => {
-  victoryDismissed = true;
-  const vModal = document.getElementById('victory-modal');
-  if (vModal) vModal.style.display = 'none';
-};
+// THE ENDING: buying Citrus Cay (the last dream in the Stand Shop) wins the game. The island
+// with the kid on it, the stand, a palm and confetti, then what the business did since Day
+// 1. It plays once (state.endingSeen); "Keep playing!" goes back to the game.
+function showEnding() {
+  const s = engine.state;
+  const scene = document.getElementById('ending-scene');
+  const colors = ['#facc15', '#f472b6', '#a78bfa', '#34d399', '#60a5fa'];
+  const confetti = Array.from({ length: 18 }, (_, i) =>
+    `<span class="house-confetti" style="left:${3 + i * 5.4}%;background:${colors[i % colors.length]};animation-delay:${(0.8 + ((i * 7) % 10) * 0.07).toFixed(2)}s"></span>`).join('');
+  scene.innerHTML = `<div class="house-scene-card ending-card">
+    <div class="ending-stage">
+      <img class="ending-sun" src="./sprites/morning_prep/sun_happy.png" alt="" />
+      <img class="ending-cloud" src="./sprites/morning_prep/cloud_puff.png" alt="" />
+      <div class="ending-sea"></div>
+      <div class="ending-island"></div>
+      <div class="ending-palm"><span class="ending-trunk"></span><span class="ending-leaf a"></span><span class="ending-leaf b"></span><span class="ending-leaf c"></span><span class="ending-leaf d"></span></div>
+      <img class="ending-stand" src="./sprites/franchise/pool.png" alt="" />
+      <span class="ending-kid">${kidPicHTML(kidProfile, 'cheer', false)}</span>
+    </div>
+    ${confetti}
+    <div class="house-scene-title" id="ending-title">Citrus Cay is yours!</div>
+    <p class="ending-text">From one driveway stand to your very own lemonade island. You did it!</p>
+    <div class="ending-stats">
+      <span><b>${s.day.toLocaleString('en-US')}</b> days</span>
+      <span><b>${fmtCount(s.totalCupsSold)}</b> drinks sold</span>
+      <span><b>$${fmtMoney(s.totalRevenueEarned)}</b> in sales</span>
+    </div>
+    <button type="button" class="stand-shop-buy" data-act="ending-close">Keep playing!</button>
+  </div>`;
+  scene.hidden = false;
+  scene.querySelector('[data-act="ending-close"]').focus({ preventScroll: true });
+}
+// seen: the kid watched it (it will not play again); false: just hide it (another game).
+function closeEnding(seen = true) {
+  const scene = document.getElementById('ending-scene');
+  if (seen && !scene.hidden) { engine.state.endingSeen = true; saveGame(); }
+  scene.hidden = true;
+  scene.innerHTML = '';
+}
+document.getElementById('ending-scene').addEventListener('click', (e) => {
+  if (e.target.closest('[data-act="ending-close"]')) closeEnding();
+});
 
 // Chore Click
 document.getElementById('btn-chore').onclick = () => engine.doChore();
@@ -934,18 +968,9 @@ function loop(now) {
   renderMoneyBag(s);
   renderHouse(s);
 
-  // Victory Modal Trigger
-  const vModal = document.getElementById('victory-modal');
-  if (s.gameWon && !victoryDismissed) {
-    if (vModal && vModal.style.display !== 'flex') {
-      vModal.style.display = 'flex';
-      document.getElementById('vic-revenue').textContent = fmtMoney(s.totalRevenueEarned);
-      document.getElementById('vic-cups').textContent = fmtCount(s.totalCupsSold);
-      document.getElementById('vic-days').textContent = s.day;
-    }
-  } else if (vModal && vModal.style.display === 'flex' && !s.gameWon) {
-    vModal.style.display = 'none';
-  }
+  // The ending plays once, the moment Citrus Cay is bought (or on the next visit if the page
+  // closed first).
+  if (s.gameWon && !s.endingSeen && document.getElementById('ending-scene').hidden) showEnding();
 
   requestAnimationFrame(loop);
 }
@@ -991,7 +1016,8 @@ function renderStandShop(s) {
     setText(document.getElementById('stand-shop-save-text'), bottlesPending && short
       ? `${item.notYet(s)} | $${Math.floor(spare).toLocaleString('en-US')}/$${cost.toLocaleString('en-US')}`
       : notYet ? (item.notYet ? item.notYet(s) : 'Make your recipe tastier first!')
-      : `Saving up: $${Math.floor(spare).toLocaleString('en-US')} of $${cost.toLocaleString('en-US')}${need > 0 ? ' after supplies' : ''}`);
+      // The big dreams' numbers are long: the bar alone says "saving up".
+      : `${cost >= 1e8 ? '' : 'Saving up: '}$${Math.floor(spare).toLocaleString('en-US')} of $${cost.toLocaleString('en-US')}${need > 0 && cost < 1e8 ? ' after supplies' : ''}`);
   }
   const btn = document.getElementById('btn-stand-shop-buy');
   btn.dataset.id = item.id;
@@ -1031,9 +1057,10 @@ function renderShopChoice(choices, spare, need) {
 function buyShopItem(id) {
   const item = KID_SHOP.find(x => x.id === id);
   if (!item || item.teaser) return;
-  const p = engine.projects.find(x => x.id === id);
-  if (p && engine.state.cash.toNumber() - engine.restockCostForToday() >= p.costCash && engine.buyProject(id)) {
-    kidFlash('determined', 2500);      // new gear: let's do this
+  const p = shopEntry(engine, item);
+  if (!p || engine.state.cash.toNumber() - engine.restockCostForToday() < p.costCash) return;
+  if (item.treat ? engine.buyTrophy(id) : engine.buyProject(id)) {
+    kidFlash(item.treat ? 'cheer' : 'determined', 2500);      // new gear: let's do this
   }
 }
 document.getElementById('btn-stand-shop-buy').onclick = (e) => buyShopItem(e.currentTarget.dataset.id);

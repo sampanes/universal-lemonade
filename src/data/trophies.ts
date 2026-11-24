@@ -1,6 +1,11 @@
 // src/data/trophies.ts -- 15 Lifestyle Trophies across 4 Career Tiers
 import type { LifestyleTrophy } from '../types';
 
+// Citrus Cay, the ending. Played through by a careful kid (the careful bot's mornings, the
+// Stand Shop in order, following the flavor comments, a brand move whenever the money is
+// there), the island comes about 12 days after the last factory step, around day 136 to 145.
+export const ISLAND_COST = 1000000000;
+
 export function createInitialTrophies(): LifestyleTrophy[] {
   return [
     {
@@ -162,10 +167,11 @@ export function createInitialTrophies(): LifestyleTrophy[] {
       name: 'Buy Citrus Cay Private Caribbean Island',
       emoji: '\u{1F3DD}\u{FE0F}',
       category: 'billionaire',
-      costCash: 150000000,
+      // The last dream in the kid's Stand Shop (src/ui/kidShop.js): the ending.
+      costCash: ISLAND_COST,
       purchased: false,
       desc: 'A 500-acre tropical private island with citrus orchards, white sand beaches, and an infinity pool filled with iced lemonade.',
-      perkDesc: 'THE GRAND VICTORY: You won the game! Retires to paradise and unlocks Golden Seeds (+50% Empire Profit)!',
+      perkDesc: 'THE GRAND VICTORY: You won the game! (Keep playing as long as you like.)',
       phaseRequired: 5
     }
   ];

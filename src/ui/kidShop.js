@@ -36,7 +36,18 @@ export const KID_SHOP = [
   { id: 'club_store_pallets', name: 'Club Store Pallets', desc: 'Ship about 25,000 cases a day to club stores!', pic: './sprites/shop/bottles.png', early: true },
   { id: 'qsr_fountain_licensing', name: 'Restaurant Fountains', desc: 'Serve your lemonade in restaurants around the world!', pic: './sprites/shop/bottles.png', early: true },
   { id: 'global_beverage_jv', name: 'Factories Around the World', desc: 'Make your lemonade around the world!', pic: './sprites/shop/bottles.png', early: true },
+  // The big dreams (treats: engine.buyTrophy): the last one, the island, is the ending.
+  { id: 'private_jet', treat: true, name: 'Lemonade Jet', desc: 'Fly around the world! Your squeezers sell twice as much.', pic: './sprites/shop/worldwide.png', early: true },
+  { id: 'arena_naming', treat: true, name: 'The Lemonade Arena', desc: 'A giant arena with your name on it! The factory sells twice as much.', pic: './sprites/franchise/ballpark.png', early: true },
+  { id: 'private_island', treat: true, name: 'Citrus Cay', desc: 'Your very own lemonade island! The biggest dream of all.', pic: './sprites/lemon.png', early: true },
 ];
+// The thing a KID_SHOP item buys: a project, or for a treat, the trophy (always open once
+// the shop gets to it).
+export function shopEntry(engine, item) {
+  if (!item.treat) return engine.projects.find(x => x.id === item.id);
+  const t = engine.trophies.find(x => x.id === item.id);
+  return t && { id: t.id, costCash: t.costCash, purchased: t.purchased, unlocked: () => true };
+}
 // Returns { item, p } for the next upgrade, or, while neither of the first choice is bought,
 // { item, p, choices: [{ item, p }, { item, p }] } (item and p are then the first of them).
 export function kidShopNext(engine, s) {
@@ -47,7 +58,7 @@ export function kidShopNext(engine, s) {
     return choices.every(c => c.p.unlocked(s)) ? { ...choices[0], choices } : null;
   }
   for (const item of KID_SHOP) {
-    const p = engine.projects.find(x => x.id === item.id);
+    const p = shopEntry(engine, item);
     if (!p || p.purchased) continue;
     if (item.id === 'copacker_deal' && !engine.projects.find(project => project.id === 'global_licensing').purchased) return null;
     if (item.teaser || item.early) return { item, p };

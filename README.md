@@ -58,6 +58,12 @@ Day Report of what customers said.
   Commercial ($75,000,000). Each makes everything sell 10% to 25% more (the Day Report's
   "Famous brand bonus" line), so the kid weighs growing the brand against growing the
   factory.
+- **The big dreams and the ending.** After the last factory step the Stand Shop offers three
+  dreams, one at a time: the Lemonade Jet ($65,000,000; squeezers sell twice as much), the
+  Lemonade Arena ($80,000,000; the factory sells twice as much) and Citrus Cay, the kid's own
+  lemonade island ($1,000,000,000). Buying the island plays the ending once (the kid on the
+  island, the days, drinks and sales since Day 1), then the game goes on. A careful player
+  gets there around day 140.
 - **My House.** Once the kid has sold $2,000 of lemonade in all, the next quiet day (nothing
   bought, no new shop item; any day at all once sales pass $5,000) ends with big news in the
   Day Report, and a third column shows the family's one-story house. Save up to upgrade it:

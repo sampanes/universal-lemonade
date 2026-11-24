@@ -274,6 +274,7 @@ export interface GameState {
   totalQualitySum: number;
   brandMultiplier: number;
   gameWon: boolean;
+  endingSeen: boolean;   // the Citrus Cay ending was shown (it plays once; then the game goes on)
 
   // Working Capital & Inventory
   cash: BigNum;

@@ -839,10 +839,34 @@ test('kid shop offers the helpers in Stage 4, opens the factory after worldwide 
     e = LemonadeEngine.fromSave(JSON.parse(JSON.stringify(e.toSave())));
     assert.equal(e.copacker.casesPerDay, cases);
   }
-  assert.equal(sim.kidShopNext(e, e.state), null);
   const day = e.runDay();
   assert.ok(day.copackerCasesSold > 0 && day.copackerNet > 0);
   assert.equal(day.copackerNet, day.copackerCasesSold * e.copacker.netPerCase);
+});
+
+test('after the factory the Stand Shop offers the big dreams, and the island is the ending', () => {
+  const e = new LemonadeEngine({ seed: 79 });
+  e.dadJumpToPhase(5);
+  e.state.cash = e.state.cash.add(5e9);
+  for (const p of e.projects.filter(p => p.phase === 5)) { p.purchased = true; }
+  e.state.day += 2;
+  for (const id of ['private_jet', 'arena_naming', 'private_island']) {
+    const next = sim.kidShopNext(e, e.state);
+    assert.equal(next.item.id, id);
+    assert.ok(next.item.treat && next.p.unlocked(e.state));
+    assert.equal(e.state.gameWon, false);
+    assert.ok(e.buyTrophy(id));
+    assert.equal(sim.kidShopNext(e, e.state), null, 'one dream a day');
+    e.state.day += 2;
+  }
+  assert.equal(e.trophies.find(t => t.id === 'private_island').costCash, 1000000000);
+  assert.equal(e.state.gameWon, true);
+  assert.equal(e.state.endingSeen, false, 'the page plays the ending once');
+  assert.equal(sim.kidShopNext(e, e.state), null, 'nothing after the island');
+  e.state.endingSeen = true;
+  const loaded = LemonadeEngine.fromSave(JSON.parse(JSON.stringify(e.toSave())));
+  assert.ok(loaded.state.gameWon && loaded.state.endingSeen);
+  assert.ok(Number.isFinite(loaded.runDay().netProfit), 'the game goes on');
 });
 
 test('the Supply Truck shops for the forecast the moment it comes and every morning after', () => {
