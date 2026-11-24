@@ -10,6 +10,10 @@
 // day (no purchase, no new shop item, no golden recipe) once the kid has sold this much in
 // all. state.houseOpen remembers it; the Day Report announces it.
 export const HOUSE_OPENS_AT_SALES = 2000;
+// A kid who buys something every few days never has a quiet day, so past this much in
+// sales the house opens at the end of any day. (Played by the bots, most get a quiet day
+// first: the cap opens it in 0 to 21% of games, and the median day stays the same.)
+export const HOUSE_OPENS_ANYWAY_AT_SALES = 5000;
 
 export interface HouseStep {
   id: string;

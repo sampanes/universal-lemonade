@@ -26,7 +26,7 @@ import { createInitialFranchiseStands } from './data/franchise';
 import { createInitialWholesaleAccounts } from './data/wholesale';
 import { createInitialProjects } from './data/projects';
 import { createInitialTrophies } from './data/trophies';
-import { HOUSE_STEPS, HOUSE_COLORS, FIRST_HOUSE_COLOR, HOUSE_OPENS_AT_SALES, type HouseStep } from './data/house';
+import { HOUSE_STEPS, HOUSE_COLORS, FIRST_HOUSE_COLOR, HOUSE_OPENS_AT_SALES, HOUSE_OPENS_ANYWAY_AT_SALES, type HouseStep } from './data/house';
 import { otherUnlockToday } from './unlocks';
 import { rollWeatherForecast, computeIdealIce, getSeasonInfo } from './simulation/weather';
 import { iceHint, crowdLevel, type IceHint } from './simulation/hints';
@@ -1069,8 +1069,10 @@ export class LemonadeEngine {
       notes: notes.length ? notes : ['All operations ran smoothly!']
     };
 
-    // My House opens on its own, on a day with nothing else to announce (src/data/house.ts).
-    if (!s.houseOpen && s.totalRevenueEarned.gte(HOUSE_OPENS_AT_SALES) && !otherUnlockToday(s, summary)) {
+    // My House opens on its own, on a day with nothing else to announce, or on any day once
+    // sales pass the cap (src/data/house.ts).
+    if (!s.houseOpen && s.totalRevenueEarned.gte(HOUSE_OPENS_AT_SALES) &&
+        (s.totalRevenueEarned.gte(HOUSE_OPENS_ANYWAY_AT_SALES) || !otherUnlockToday(s, summary))) {
       s.houseOpen = true;
       summary.houseOpened = true;
       this.log('My House is open: the house can be fixed up now.');

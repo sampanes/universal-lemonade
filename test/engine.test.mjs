@@ -890,6 +890,15 @@ test('my house opens on the first quiet day after $2,000 in sales', () => {
   assert.equal(e.state.houseOpen, true);
   assert.ok(otherUnlockToday(e.state, quiet), 'a magic look waits for another day');
   assert.equal(e.runDay().houseOpened, false, 'only once');
+
+  // A kid who keeps buying never has a quiet day: past $5,000 the house opens anyway.
+  const busy = new LemonadeEngine({ seed: 78 });
+  busy.state.cash = BigNum.fromNumber(500);
+  busy.state.totalRevenueEarned = BigNum.fromNumber(4000);   // the day's own sales stay under $5,000
+  busy.state.lastShopPurchaseDay = busy.state.day - 1;
+  assert.equal(busy.runDay().houseOpened, false, 'a busy day under $5,000 waits');
+  busy.state.totalRevenueEarned = BigNum.fromNumber(5000);
+  assert.equal(busy.runDay().houseOpened, true, 'a busy day at $5,000 opens it');
 });
 
 test('stores buy the forecast bottles, the forecast counts their lemons and sugar, and the labeler makes bottles cheaper', () => {
