@@ -2,6 +2,7 @@
 import { fmtDollars, fmtSigned } from './format.js';
 import { skyCondition } from '../scene/forecastArt.ts';
 import { STORES } from './places.js';
+import { FLAVORS, FLAVOR_BOOST } from '../data/flavors.ts';
 
 const SPRITE_DIR = './sprites/kawaii_cat/';
 
@@ -106,7 +107,25 @@ export function renderFullDayReportHTML(d, s, isModal = false, hero = () => '') 
       </div>
     </div>`;
   }).join('');
-  const notes = (d.notes || []).filter(n => n !== 'All operations ran smoothly!');
+  // From Stage 4 the cents the ice machine and fridge save are not worth a line.
+  const notes = (d.notes || []).filter(n => n !== 'All operations ran smoothly!' && !(s.phase >= 4 && n.startsWith('Your upgrades saved')));
+  // The Flavor Lab's tasting (Stage 5): the testers' comment, or the new flavor's big day.
+  const ft = d.flavorTaste;
+  const flavor = ft && FLAVORS.find(f => f.id === ft.id);
+  let flavorHTML = '';
+  if (ft && flavor && ft.launched) {
+    flavorHTML = `<div class="report-golden report-flavor" style="--drink:${flavor.color}">
+      <img src="./sprites/golden_seal.png" class="golden-seal" alt="" />
+      <span>${flavor.name} is in the stores! The factory sells ${Math.round(FLAVOR_BOOST * 100)}% more.</span>
+    </div>`;
+  } else if (ft && flavor) {
+    flavorHTML = `<div class="report-section-title">Flavor Lab: ${flavor.name}</div>
+      <div class="report-review ${ft.review.sentiment === 'positive' ? 'good' : 'bad'}">
+        ${ft.review.face ? `<img class="report-review-face" src="./sprites/faces/taste_${ft.review.face}.png" alt="" />` : ''}
+        <div class="report-review-text"><div class="report-review-who">${ft.review.reviewer}</div>
+        <div class="report-review-quote">&quot;${ft.review.quote}&quot;</div></div>
+      </div>`;
+  }
 
   const sInfo = d.seasonInfo;
 
@@ -144,6 +163,7 @@ export function renderFullDayReportHTML(d, s, isModal = false, hero = () => '') 
         </div>
       </div>
       ${showRows ? `<div class="report-rows">${rows}</div>` : ''}
+      ${flavorHTML}
       ${rep}
       ${reviews ? `<div class="report-section-title">What people said</div>${reviews}` : ''}
       ${notes.length ? `<ul class="report-notes">${notes.map(n => `<li>${n}</li>`).join('')}</ul>` : ''}

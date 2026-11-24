@@ -91,7 +91,7 @@ export function otherUnlockToday(s: GameState, summary: DaySummary): boolean {
   const ledger = s.lastLedger;
   const sincePurchase = s.lastShopPurchaseDay == null ? null : summary.day - s.lastShopPurchaseDay;
   const shopIntro = (s.lastShopPurchaseDay == null && summary.day === 3) || sincePurchase === 1 || sincePurchase === 2;
-  return !!summary.recipeJustLocked || !!summary.houseOpened || !!shopIntro || !!(ledger &&
+  return !!summary.recipeJustLocked || !!summary.houseOpened || !!summary.flavorTaste?.launched || !!shopIntro || !!(ledger &&
     (ledger.shop > 0 || ledger.hiring > 0 || ledger.storeUpgrades > 0 || ledger.house > 0));
 }
 

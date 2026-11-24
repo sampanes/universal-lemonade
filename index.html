@@ -446,6 +446,41 @@
         </div>
       </div>
 
+      <!-- FLAVOR LAB (Stage 5, src/data/flavors.ts): the fruit and sugar for the factory's next
+           flavor; the taste testers try it when the stand opens. Filled by renderFlavorLab(). -->
+      <div class="ratio-card flavor-lab" id="flavor-lab" hidden>
+        <div class="ratio-banner"><span>FLAVOR LAB</span></div>
+        <div class="ratio-body flavor-lab-body">
+          <div class="flavor-lab-controls">
+            <div class="flavor-lab-name" id="flavor-lab-name"></div>
+            <div class="ratio-row">
+              <img id="flavor-fruit-icon" src="./sprites/lemon_wheel.png" class="ratio-icon" alt="Fruit" />
+              <button type="button" id="btn-fruit-down" class="ratio-btn" title="Less fruit"><img src="./sprites/btn_minus.png" alt="-" /></button>
+              <div class="ratio-pill" id="lbl-fruit">3</div>
+              <button type="button" id="btn-fruit-up" class="ratio-btn" title="More fruit"><img src="./sprites/btn_plus.png" alt="+" /></button>
+            </div>
+            <div class="ratio-row">
+              <img src="./sprites/sugar_scoop.png" class="ratio-icon" alt="Sugar" />
+              <button type="button" id="btn-fsugar-down" class="ratio-btn" title="Less sugar"><img src="./sprites/btn_minus.png" alt="-" /></button>
+              <div class="ratio-pill" id="lbl-fsugar">3</div>
+              <button type="button" id="btn-fsugar-up" class="ratio-btn" title="More sugar"><img src="./sprites/btn_plus.png" alt="+" /></button>
+            </div>
+          </div>
+          <div class="flavor-lab-side">
+            <div class="flavor-glass" id="flavor-glass">
+              <div class="flavor-glass-liquid"></div>
+              <img class="flavor-glass-fruit" src="./sprites/lemon_wheel.png" alt="" />
+              <img class="flavor-glass-fruit two" src="./sprites/lemon_wheel.png" alt="" />
+            </div>
+            <div class="flavor-lab-progress" id="flavor-lab-progress"></div>
+          </div>
+          <div class="recipe-taste-bubble flavor-lab-bubble" id="flavor-lab-bubble" data-mood="none">
+            <img id="flavor-lab-face" class="recipe-taste-face" src="./sprites/faces/taste_happy.png" alt="" />
+            <span id="flavor-lab-say"></span>
+          </div>
+        </div>
+      </div>
+
       <!-- 4. BIG ACTION BUTTON: OPEN FOR BUSINESS -->
       <button id="btn-run-day" class="kawaii-run-day-btn">
         <img src="./sprites/morning_prep/sparkle_small.png" class="btn-sparkle floating-bob-1" alt="" />

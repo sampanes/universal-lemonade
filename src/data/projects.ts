@@ -267,6 +267,20 @@ export function createInitialProjects(): ProjectDef[] {
         e.log('Project: High-Speed Rotary Canning Line online! 1,500 cases/day at $22/case net margin.');
       }
     },
+    // The Flavor Lab: see src/data/flavors.ts.
+    {
+      id: 'flavor_lab',
+      name: 'Flavor Lab',
+      desc: 'Invent new flavors: each one made just right adds 20% more factory cases.',
+      phase: 5,
+      costCash: 150000,
+      purchased: false,
+      unlocked: (s: GameState) => s.phase >= 5,
+      effect: (e: any) => {
+        e.state.flags.hasFlavorLab = true;
+        e.log('Project: the Flavor Lab is open! The taste testers try a new flavor every day.');
+      }
+    },
     {
       id: 'national_bigbox',
       name: 'National Big-Box Retail Rollout (Target & Walmart)',

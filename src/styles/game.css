@@ -509,6 +509,41 @@ button:disabled {
    golden and the ice machine too there is nothing left to choose, so the card goes. */
 .ratio-card.captain .ratio-row-price { display: none !important; }
 .ratio-card.helper-done { display: none !important; }
+/* The Flavor Lab (Stage 5, src/data/flavors.ts): looks like the recipe card. The name and the
+   fruit and sugar rows on the left, a glass of the drink and the flavors in stores so far on
+   the right, the taste testers' comment under both. The fruit art is the lemon slice tinted
+   (placeholder until real fruit art). */
+.flavor-lab[hidden] { display: none; }
+.flavor-lab-body { padding: 8px 10px; row-gap: 4px; }
+.flavor-lab-name { font-family: var(--font-display); font-size: 16px; color: #4a044e; text-align: center; line-height: 1.1; }
+.flavor-lab-side { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.flavor-glass {
+  position: relative;
+  width: 58px;
+  height: 70px;
+  border: 3px solid #c4b5fd;
+  border-top-width: 0;
+  border-radius: 4px 4px 18px 18px;
+  background: rgba(255, 255, 255, 0.75);
+  overflow: hidden;
+}
+.flavor-glass-liquid {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: var(--fill, 60%);
+  background: var(--drink, #fde047);
+  opacity: 0.9;
+  transition: height 0.3s, background-color 0.3s;
+}
+.flavor-glass-fruit { position: absolute; width: 26px; height: 26px; left: 6px; bottom: 8px; filter: var(--tint, none); animation: float-gentle-1 3s ease-in-out infinite; }
+.flavor-glass-fruit.two { left: 24px; bottom: 22px; animation-name: float-gentle-2; }
+.flavor-lab .ratio-icon { filter: var(--tint, none); }
+.flavor-lab-progress { display: flex; gap: 4px; justify-content: center; flex-wrap: wrap; font-size: 11px; font-weight: 700; color: #6b21a8; }
+.flavor-lab-progress .dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid #c4b5fd; background: #fff; }
+.flavor-lab-progress .dot.on { border-color: #7e22ce; }
+.flavor-lab-progress .label { flex-basis: 100%; text-align: center; }
+.flavor-lab-bubble { grid-column: 1 / -1; margin-top: 6px; max-width: none; }
+.flavor-lab-bubble .recipe-taste-face { width: 38px; height: 38px; }
 /* Friends' stands (Stage 2): one tile per friend, the stand sticker with the friend
    behind it. Hired friends work (green) or have the day off (grey, sleepy) when tapped. */
 .friends-card {

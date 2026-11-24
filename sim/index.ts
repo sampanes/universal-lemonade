@@ -4,7 +4,7 @@ export { FIRST_CHOICE } from '../src/data/projects';
 // The UI is plain JavaScript; Vite bundles it here for the shop progression test.
 // @ts-expect-error The JavaScript UI has no TypeScript declarations.
 export { kidShopNext } from '../src/ui/kidShop.js';
-export { generateDailyReviews } from '../src/simulation/reviews';
+export { generateDailyReviews, flavorTasteReview } from '../src/simulation/reviews';
 export { reputationTrend, nextReputation } from '../src/simulation/reputation';
 export { allocateStandSales } from '../src/simulation/demand';
 export { dayCrowds, crowdSize, shares } from '../src/scene/dayScene';

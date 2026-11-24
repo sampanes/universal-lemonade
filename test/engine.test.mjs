@@ -826,7 +826,7 @@ test('kid shop offers the helpers in Stage 4, opens the factory after worldwide 
   assert.equal(sim.kidShopNext(e, e.state), null, 'shop waits after a purchase');
   e.state.day += 2;
   const stages = [
-    ['copacker_deal', 40], ['regional_supermarkets', 300], ['delivery_route', 300], ['automated_canning_line', 1500],
+    ['copacker_deal', 40], ['regional_supermarkets', 300], ['delivery_route', 300], ['automated_canning_line', 1500], ['flavor_lab', 1500],
     ['national_bigbox', 6000], ['club_store_pallets', 25000],
     ['qsr_fountain_licensing', 100000], ['global_beverage_jv', 350000],
   ];
@@ -913,6 +913,50 @@ test('the Delivery Route signs up and grows the stores when the store rules allo
     e.runHelpers();
   }
   assert.ok(accounts.every(a => a.level === a.levels.length), 'every shelf grows to the biggest');
+});
+
+test('the Flavor Lab: the testers point the way, and the right mix goes to the stores', () => {
+  const e = new LemonadeEngine({ seed: 77 });
+  e.dadJumpToPhase(5);
+  e.state.cash = e.state.cash.add(1000000);
+  assert.equal(e.currentFlavor(), null, 'no lab yet');
+  assert.equal(e.runDay().flavorTaste, null);
+  assert.ok(e.buyProject('flavor_lab'));
+  assert.equal(e.currentFlavor().id, 'strawberry');
+  assert.notDeepEqual(e.flavorGolden(), { fruit: 3, sugar: 3 }, 'never the starting mix');
+  let days = 0, last;
+  while (days < 12) {
+    last = e.runDay().flavorTaste; days++;
+    assert.equal(last.id, 'strawberry');
+    if (last.launched) break;
+    // Follow the comment: one scoop for "a little", two for "way".
+    for (const [item, word] of [['fruit', 'strawberry'], ['sugar', 'sugar']]) {
+      const m = last.review.quote.match(new RegExp(`(a little|way) (more|less) ${word}`));
+      if (m) e.adjustFlavor(item, (m[2] === 'more' ? 1 : -1) * (m[1] === 'way' ? 2 : 1));
+    }
+  }
+  assert.ok(last.launched && days <= 5, 'the comments lead to it in a few days');
+  assert.deepEqual(e.state.flavorsLaunched, ['strawberry']);
+  assert.equal(e.currentFlavor().id, 'peach', 'the next flavor starts');
+  assert.deepEqual(e.state.flavorMix, { fruit: 3, sugar: 3 });
+
+  // Same day twice from one save, with and without the flavor: 20% more cases.
+  const save = JSON.stringify(e.toSave());
+  const a = LemonadeEngine.fromSave(JSON.parse(save)), b = LemonadeEngine.fromSave(JSON.parse(save));
+  assert.equal(a.currentFlavor().id, 'peach', 'saved');
+  b.state.flavorsLaunched = [];
+  const ca = a.runDay().copackerCasesSold, cb = b.runDay().copackerCasesSold;
+  assert.ok(Math.abs(ca / cb - 1.2) < 0.01, `${ca} vs ${cb}`);
+});
+
+test('every flavor taste comment points toward the best mix', () => {
+  for (const [dF, dS] of [[1, 0], [-2, 0], [0, 1], [0, -3], [2, -1], [-1, -1], [1, 2]]) {
+    const q = sim.flavorTasteReview(dF, dS, 'mint', 'Mint Lemonade').quote;
+    if (dF) assert.match(q, new RegExp(`${Math.abs(dF) >= 2 ? 'way' : 'a little'} ${dF < 0 ? 'more' : 'less'} mint`));
+    else assert.doesNotMatch(q, /mint\./);
+    if (dS) assert.match(q, new RegExp(`${Math.abs(dS) >= 2 ? 'way' : 'a little'} ${dS < 0 ? 'more' : 'less'} sugar`));
+  }
+  assert.match(sim.flavorTasteReview(0, 0, 'mint', 'Mint Lemonade').quote, /PERFECT/);
 });
 
 test('house upgrades go in order, wait for their stage, and save', () => {

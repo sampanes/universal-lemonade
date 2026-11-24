@@ -2,6 +2,7 @@
 // runs the frame loop, and saves the game.
 import { LemonadeEngine } from './engine.ts';
 import { SQUEEZER_LEVELS } from './data/projects.ts';
+import { FLAVORS, FLAVOR_BOOST } from './data/flavors.ts';
 import { HOUSE_STEPS, HOUSE_COLORS } from './data/house.ts';
 import {
   loadCharacterProfile,
@@ -927,6 +928,7 @@ function loop(now) {
     : dHead ? kidMoodFor(dHead) : (Date.now() < kidFlashUntil ? kidFlashMood : 'happy'), true);
 
   renderStandShop(s);
+  renderFlavorLab(s);
   renderFriends(s);
   renderMoneyBag(s);
   renderHouse(s);
@@ -1038,6 +1040,47 @@ document.getElementById('stand-shop-choice').addEventListener('click', (e) => {
   const btn = e.target.closest('.stand-shop-option');
   if (btn && !btn.disabled) buyShopItem(btn.dataset.id);
 });
+
+// The Flavor Lab (Stage 5, src/data/flavors.ts): the new flavor's fruit and sugar, a glass of
+// it, the flavors in stores so far, and what the taste testers said last time.
+function renderFlavorLab(s) {
+  const card = document.getElementById('flavor-lab');
+  const flavor = engine.currentFlavor();
+  if (card.hidden === !!flavor) card.hidden = !flavor;
+  if (!flavor) return;
+  const mix = s.flavorMix;
+  if (card.dataset.flavor !== flavor.id) {
+    card.dataset.flavor = flavor.id;
+    card.style.setProperty('--tint', flavor.tint);
+    card.style.setProperty('--drink', flavor.color);
+    setText(document.getElementById('flavor-lab-name'), flavor.name);
+    document.getElementById('flavor-fruit-icon').alt = flavor.fruit;
+  }
+  setText(document.getElementById('lbl-fruit'), String(mix.fruit));
+  setText(document.getElementById('lbl-fsugar'), String(mix.sugar));
+  const fill = `${Math.round(30 + Math.min(1, (mix.fruit + mix.sugar) / 12) * 60)}%`;
+  if (card.style.getPropertyValue('--fill') !== fill) card.style.setProperty('--fill', fill);
+  const done = s.flavorsLaunched.length;
+  setHTMLIfChanged(document.getElementById('flavor-lab-progress'), FLAVORS.map((f, i) =>
+    `<span class="dot${i < done ? ' on' : ''}" style="${i < done ? `background:${f.color}` : ''}" title="${f.name}"></span>`).join('') +
+    `<span class="label">${done} of ${FLAVORS.length} in stores</span>`);
+  // Yesterday's tasting of this flavor (a new flavor has not been tasted yet).
+  const last = s.lastDaySummary && s.lastDaySummary.flavorTaste;
+  const tasted = last && last.id === flavor.id ? last.review : null;
+  const bubble = document.getElementById('flavor-lab-bubble');
+  const mood = tasted ? (tasted.stars >= 5 ? 'happy' : tasted.stars >= 3 ? 'close' : 'off') : 'none';
+  if (bubble.dataset.mood !== mood) bubble.dataset.mood = mood;
+  const face = document.getElementById('flavor-lab-face');
+  const faceSrc = tasted && tasted.face ? `./sprites/faces/taste_${tasted.face}.png` : '';
+  if (face.dataset.src !== faceSrc) { face.dataset.src = faceSrc; if (faceSrc) face.src = faceSrc; face.style.display = faceSrc ? '' : 'none'; }
+  setText(document.getElementById('flavor-lab-say'), tasted ? `"${tasted.quote}"`
+    : 'Pick the fruit and sugar. The taste testers try it when you open!');
+}
+const flavorStep = (item, delta) => () => engine.adjustFlavor(item, delta);
+document.getElementById('btn-fruit-down').onclick = flavorStep('fruit', -1);
+document.getElementById('btn-fruit-up').onclick = flavorStep('fruit', 1);
+document.getElementById('btn-fsugar-down').onclick = flavorStep('sugar', -1);
+document.getElementById('btn-fsugar-up').onclick = flavorStep('sugar', 1);
 
 function renderHouse(s) {
   const col = document.getElementById('house-col');
@@ -1266,11 +1309,13 @@ function renderFriends(s) {
     const d = s.lastDaySummary;
     const yesterday = d && d.copackerCasesSold > 0
       ? `<span>Yesterday: ${d.copackerCasesSold.toLocaleString('en-US')} cases, +$${fmtDollars(d.copackerNet, true)}</span>` : '';
+    const flavors = s.flags.hasFlavorLab
+      ? `<span>Flavors in stores: ${s.flavorsLaunched.length} of ${FLAVORS.length} (+${Math.round(s.flavorsLaunched.length * FLAVOR_BOOST * 100)}% cases)</span>` : '';
     setHTMLIfChanged(document.getElementById('friends-row'), `<div class="invention-panel">
       <img src="./sprites/shop/bottles.png" alt="" />
       <div><div class="invention-name">My Lemonade Factory</div>
       <div class="invention-desc">The factory uses its own supplies to make and ship your lemonade.</div>
-      <div class="invention-stats"><span>About ${factory.casesPerDay.toLocaleString('en-US')} cases a day</span><span>$${fmtDollars(factory.netPerCase, true)} per case after factory costs</span>${yesterday}</div>
+      <div class="invention-stats"><span>About ${Math.round(factory.casesPerDay * engine.flavorMult()).toLocaleString('en-US')} cases a day</span><span>$${fmtDollars(factory.netPerCase, true)} per case after factory costs</span>${flavors}${yesterday}</div>
       <small>Look in the Stand Shop to grow your factory!</small></div></div>`);
     return;
   }

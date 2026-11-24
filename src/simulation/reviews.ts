@@ -84,6 +84,35 @@ export function tasteReview(dL: number, dS: number, streak: number, justLocked: 
   return taste(stars, `${headline} Try ${parts.join(' and ')}.`, reviewer);
 }
 
+// What the Flavor Lab's taste testers say about a new flavor (src/data/flavors.ts). dF / dS =
+// fruit / sugar minus the best mix (+ = too much). Same words as the lemonade: which way to
+// go for each, "a little" for one step and "way" for two or more.
+export function flavorTasteReview(dF: number, dS: number, word: string, name: string): CustomerReview {
+  const face: CustomerReview['face'] =
+    dF === 0 && dS === 0 ? 'happy'
+    : dF < 0 && dS < 0 ? 'watery'
+    : dF > 0 || dS < 0 ? 'sour'
+    : 'sweet';
+  const review = (stars: number, quote: string, bubble: string): CustomerReview => ({
+    stars, quote, bubble, reviewer: 'Taste testers', topic: 'taste', face,
+    sentiment: stars >= 4 ? 'positive' : stars === 3 ? 'mixed' : 'negative'
+  });
+  if (dF === 0 && dS === 0) return review(5, `This ${name} is PERFECT! Send it to the stores!`, 'Perfect!');
+  const amount = (d: number) => (Math.abs(d) >= 2 ? 'way' : 'a little');
+  const parts: string[] = [];
+  if (dF !== 0) parts.push(`${amount(dF)} ${dF < 0 ? 'more' : 'less'} ${word}`);
+  if (dS !== 0) parts.push(`${amount(dS)} ${dS < 0 ? 'more' : 'less'} sugar`);
+  const off = Math.abs(dF) + Math.abs(dS);
+  const headline = off === 1 ? 'So close!'
+    : dF < 0 && dS < 0 ? 'Kind of watery.'
+    : dF > 0 && dS > 0 ? 'Whoa, super strong!'
+    : dF > 0 ? `Too much ${word}!`
+    : dS > 0 ? 'Too sweet!'
+    : dF < 0 ? `Not enough ${word}!`
+    : 'Not sweet enough.';
+  return review(Math.max(1, 5 - off), `${headline} Try ${parts.join(' and ')}.`, headline);
+}
+
 export function generateDailyReviews(params: ReviewGenerationParams): CustomerReview[] {
   const { state: s, franchiseStands, tempF, pricePerCup, fairPrice, soldOutStands, bottleneck, rand } = params;
   const reviews: CustomerReview[] = [];

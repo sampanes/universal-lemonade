@@ -31,6 +31,7 @@ export const KID_SHOP = [
   { id: 'regional_supermarkets', name: 'More Supermarkets', desc: 'Send about 300 cases a day to supermarkets!', pic: './sprites/shop/bottles.png', early: true },
   { id: 'delivery_route', name: 'Delivery Route', desc: 'Runs your stores: signs them up and grows their shelves!', pic: './sprites/shop/big_wagon.png' },
   { id: 'automated_canning_line', name: 'Canning Line', desc: 'Make about 1,500 cases a day and earn more per case!', pic: './sprites/shop/bottles.png', early: true },
+  { id: 'flavor_lab', name: 'Flavor Lab', desc: 'Invent new flavors! Each one you get just right sells in stores.', pic: './sprites/lemon_wheel.png', early: true },
   { id: 'national_bigbox', name: 'Stores Across the Country', desc: 'Send about 6,000 cases a day across the country!', pic: './sprites/shop/bottles.png', early: true },
   { id: 'club_store_pallets', name: 'Club Store Pallets', desc: 'Ship about 25,000 cases a day to club stores!', pic: './sprites/shop/bottles.png', early: true },
   { id: 'qsr_fountain_licensing', name: 'Restaurant Fountains', desc: 'Serve your lemonade in restaurants around the world!', pic: './sprites/shop/bottles.png', early: true },

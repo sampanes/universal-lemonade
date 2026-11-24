@@ -28,11 +28,12 @@ import { createInitialProjects } from './data/projects';
 import { createInitialTrophies } from './data/trophies';
 import { HOUSE_STEPS, HOUSE_COLORS, FIRST_HOUSE_COLOR, HOUSE_OPENS_AT_SALES, HOUSE_OPENS_ANYWAY_AT_SALES, type HouseStep } from './data/house';
 import { otherUnlockToday } from './unlocks';
+import { FLAVORS, FLAVOR_START, FLAVOR_BOOST, FLAVOR_MAX_SCOOPS, flavorGoldenMix, type Flavor } from './data/flavors';
 import { rollWeatherForecast, computeIdealIce, getSeasonInfo } from './simulation/weather';
 import { iceHint, crowdLevel, type IceHint } from './simulation/hints';
 import { computeRecipeQuality, getRecipeProfile } from './simulation/recipe';
 import { getDailyDemandEstimate, getKidDemandAdvice, getMaxPourableCups } from './simulation/demand';
-import { generateDailyReviews } from './simulation/reviews';
+import { generateDailyReviews, flavorTasteReview } from './simulation/reviews';
 import { ewma, dailyCustomerScore, nextReputation, nextBuzz, reputationTrend } from './simulation/reputation';
 import { allocateStandSales, computeDayDemand, storeDemand } from './simulation/demand';
 import { cupsPerPitcher as pitcherCups, rollGoldenRecipe } from './simulation/recipe';
@@ -212,6 +213,8 @@ export class LemonadeEngine {
       houseOpen: false,
       houseLevel: 0,
       houseColor: FIRST_HOUSE_COLOR,
+      flavorsLaunched: [],
+      flavorMix: { ...FLAVOR_START },
       reputationHistory: [],
       tipCounts: {},
       upgradeSavingsTotal: 0,
@@ -236,6 +239,7 @@ export class LemonadeEngine {
         hasSupplyTruck: false,
         hasStandCaptain: false,
         hasDeliveryRoute: false,
+        hasFlavorLab: false,
 
         hasSkateboard: false,
         hasMountainBike: false,
@@ -744,6 +748,50 @@ export class LemonadeEngine {
     return best;
   }
 
+  // ---- The Flavor Lab (src/data/flavors.ts) ----
+  // The flavor being tasted now, or null (no lab yet, or every flavor is in the stores).
+  public currentFlavor(): Flavor | null {
+    if (!this.state.flags.hasFlavorLab) return null;
+    return FLAVORS[this.state.flavorsLaunched.length] ?? null;
+  }
+
+  // The best fruit:sugar for the flavor being tasted (null when there is none).
+  public flavorGolden(): { fruit: number; sugar: number } | null {
+    return this.currentFlavor() ? flavorGoldenMix(this.seed, this.state.flavorsLaunched.length) : null;
+  }
+
+  // One scoop of fruit or sugar more or less (1 to FLAVOR_MAX_SCOOPS); returns whether it changed.
+  public adjustFlavor(item: 'fruit' | 'sugar', delta: number): boolean {
+    if (!this.currentFlavor()) return false;
+    const mix = this.state.flavorMix;
+    const next = Math.max(1, Math.min(FLAVOR_MAX_SCOOPS, mix[item] + delta));
+    if (next === mix[item]) return false;
+    mix[item] = next;
+    return true;
+  }
+
+  // How much more the factory sells for the flavors in stores (1 = none yet).
+  public flavorMult(): number {
+    return 1 + FLAVOR_BOOST * this.state.flavorsLaunched.length;
+  }
+
+  // The taste testers try today's mix (runDay). Exactly right: the flavor goes to the stores
+  // and the next one starts at FLAVOR_START tomorrow.
+  private tasteFlavor(): DaySummary['flavorTaste'] {
+    const flavor = this.currentFlavor(), golden = this.flavorGolden();
+    if (!flavor || !golden) return null;
+    const s = this.state;
+    const { fruit, sugar } = s.flavorMix;
+    const review = flavorTasteReview(fruit - golden.fruit, sugar - golden.sugar, flavor.word, flavor.name);
+    const launched = fruit === golden.fruit && sugar === golden.sugar;
+    if (launched) {
+      s.flavorsLaunched = [...s.flavorsLaunched, flavor.id];
+      s.flavorMix = { ...FLAVOR_START };
+      this.log(`Flavor Lab: ${flavor.name} is in the stores!`);
+    }
+    return { id: flavor.id, fruit, sugar, review, launched };
+  }
+
   public generateCustomerReviews(info: {
     tempF: number;
     quality: number;
@@ -955,7 +1003,7 @@ export class LemonadeEngine {
     if (s.phase >= 5 && this.copacker.active) {
       const c = b.copacker;
       const arenaMult = s.flags.hasArenaNaming ? c.arenaMult : 1.0;
-      copackerCasesSold = Math.round(this.copacker.casesPerDay * (c.randomMin + this.rand() * c.randomRange) * arenaMult);
+      copackerCasesSold = Math.round(this.copacker.casesPerDay * (c.randomMin + this.rand() * c.randomRange) * arenaMult * this.flavorMult());
       copackerNet = copackerCasesSold * this.copacker.netPerCase;
     }
 
@@ -1130,6 +1178,7 @@ export class LemonadeEngine {
       goldenStreak: s.goldenStreak,
       recipeJustLocked,
       houseOpened: false,
+      flavorTaste: this.tasteFlavor(),   // after the factory sold: a new flavor counts from tomorrow
       iceMadeByMachine,
       iceKeptByCooler,
       lemonsKeptByFridge,

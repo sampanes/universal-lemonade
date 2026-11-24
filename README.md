@@ -47,6 +47,12 @@ Day Report of what customers said.
 - **Lemonade Factory.** After the squeezer goes worldwide, open a factory that makes and
   ships lemonade using its own supplies. The Factory tab shows its estimated cases and
   earnings; grow from supermarkets to factories around the world in the Stand Shop.
+- **Flavor Lab.** After the canning line ($150,000), the factory invents six flavors, one at
+  a time (strawberry, peach, mint, blueberry, watermelon, mango). Each has a secret best mix
+  of fruit and sugar, found like the golden recipe: the kid sets the scoops, and the taste
+  testers say which way to go when the stand opens ("a little more strawberry and way less
+  sugar"). The day they taste the exact mix, the flavor goes to the stores and the factory
+  sells 20% more from then on.
 - **My House.** Once the kid has sold $2,000 of lemonade in all, the next quiet day (nothing
   bought, no new shop item; any day at all once sales pass $5,000) ends with big news in the
   Day Report, and a third column shows the family's one-story house. Save up to upgrade it:
@@ -116,7 +122,7 @@ Every push to `main` builds and deploys to GitHub Pages (`.github/workflows/depl
 | `src/engine.ts` | The game engine (no DOM): state, days, buying, upgrades, save and load |
 | `src/balance.ts` | Every economy tuning number |
 | `src/simulation/` | Weather, demand, recipe taste, reviews, reputation, storage limits |
-| `src/data/` | Stand upgrades and business projects, chores, franchise stands, wholesale, trophies |
+| `src/data/` | Stand upgrades and business projects, chores, franchise stands, wholesale, flavors, trophies |
 | `src/character.ts`, `src/kid.ts` | The kid's saved look, and drawing the paper-doll kid |
 | `src/unlocks.ts` | Which looks unlock when |
 | `sim/` | The balance simulator (bot players) |

@@ -164,6 +164,15 @@ export interface RecipeProfile {
   liquidColor: string;
 }
 
+// What the Flavor Lab's taste testers said about today's mix (src/data/flavors.ts).
+export interface FlavorTaste {
+  id: string;            // the flavor
+  fruit: number;         // the mix they tasted
+  sugar: number;
+  review: CustomerReview;
+  launched: boolean;     // it was just right: the flavor went to the stores today
+}
+
 export interface DaySummary {
   soldOutItem?: string;
   standVisits: import('./scene/dayScene').StandVisits[];
@@ -214,6 +223,7 @@ export interface DaySummary {
   goldenStreak: number;         // golden open days in a row, counting today
   recipeJustLocked: boolean;    // today the neighbors asked to keep the recipe forever
   houseOpened: boolean;         // the My House column opened at the end of today
+  flavorTaste?: FlavorTaste | null;   // the Flavor Lab's tasting today (Stage 5)
   // Stand upgrades.
   iceMadeByMachine: number;     // cubes the ice machine made today
   iceKeptByCooler: number;      // leftover cubes the cooler kept frozen overnight
@@ -308,6 +318,7 @@ export interface GameState {
     hasSupplyTruck: boolean;     // buys each morning's supplies
     hasStandCaptain: boolean;    // runs the stands: the price, who works, hiring
     hasDeliveryRoute: boolean;   // runs the stores: signing up and bigger shelves
+    hasFlavorLab: boolean;       // the factory invents flavors (src/data/flavors.ts)
 
     // Lifestyle Trophy Flags
     hasSkateboard: boolean;
@@ -335,6 +346,10 @@ export interface GameState {
   houseOpen: boolean;    // the My House column is open (HOUSE_OPENS_AT_SALES, src/data/house.ts)
   houseLevel: number;    // house steps bought (src/data/house.ts); 0: none
   houseColor: string;    // wall color id (HOUSE_COLORS), shown once Fresh Paint is bought
+  // The Flavor Lab (src/data/flavors.ts): the flavors in stores so far (FLAVORS order), and
+  // the fruit and sugar scoops in the flavor being tasted now.
+  flavorsLaunched: string[];
+  flavorMix: { fruit: number; sugar: number };
   ledger?: MoneyLedger;         // today so far
   lastLedger?: MoneyLedger;     // the last finished day
   upgradeSavingsTotal: number;  // everything the stand upgrades have saved, all game
