@@ -233,6 +233,9 @@ export class LemonadeEngine {
         weatherLocked95F: false,
         hasAutoIce: false,
         autoIceEnabled: false,
+        hasSupplyTruck: false,
+        hasStandCaptain: false,
+        hasDeliveryRoute: false,
 
         hasSkateboard: false,
         hasMountainBike: false,
@@ -652,7 +655,8 @@ export class LemonadeEngine {
     return this.restockPlan().totalCost;
   }
 
-  public autoRestockForToday(): { success: boolean; message: string } {
+  // quiet: no log line (the Supply Truck shops every morning).
+  public autoRestockForToday(quiet = false): { success: boolean; message: string } {
     const s = this.state;
     const { packsL, packsS, packsI, packsC, packsB, totalCost } = this.restockPlan();
 
@@ -670,8 +674,74 @@ export class LemonadeEngine {
     if (packsC > 0) this.buySupplies('cups', packsC);
     if (packsB > 0) this.buySupplies('bottles', packsB);
 
-    this.log(`Auto-Restocked for today: bought supplies for $${totalCost.toFixed(2)}.`);
+    if (!quiet) this.log(`Auto-Restocked for today: bought supplies for $${totalCost.toFixed(2)}.`);
     return { success: true, message: `Restocked all supplies for $${totalCost.toFixed(2)}!` };
+  }
+
+  // ---- Helpers (src/data/projects.ts): by Stage 4 the stands and stores earn pocket change
+  // next to the squeezer and the factory, so helpers bought in the Stand Shop take over their
+  // daily jobs. runDay runs them for the new morning and again just before the stand opens
+  // (so a change made during the morning is covered too); buying one runs them right away.
+  // Stores first (a new store needs bottles), then the stands (the price and who works decide
+  // how many cups), then the truck buys what all of that needs.
+  public runHelpers(): void {
+    const f = this.state.flags;
+    if (f.hasDeliveryRoute) this.routeStores();
+    if (f.hasStandCaptain) this.captainStands();
+    if (f.hasSupplyTruck) this.autoRestockForToday(true);
+  }
+
+  // Money left after today's supplies: helpers never spend the lemon money.
+  private spareCash(): number {
+    return this.state.cash.toNumber() - this.restockCostForToday();
+  }
+
+  // Delivery Route: signs up every store, then grows each shelf, as soon as the store rules
+  // allow the next move (storeExpansionGoal) and the money is there.
+  private routeStores(): void {
+    const goal = this.storeExpansionGoal();
+    if (goal.remaining || goal.days) return;
+    const accounts = Object.values(this.wholesaleAccounts);
+    const sign = accounts.find(acc => !acc.active);
+    if (sign) {
+      if (this.spareCash() >= sign.setupCost) this.signWholesaleAccount(sign.id);
+      return;
+    }
+    const grow = accounts.find(acc => acc.levels[acc.level]);
+    if (grow && this.spareCash() >= grow.levels[grow.level].cost) this.upgradeWholesaleAccount(grow.id);
+  }
+
+  // Stand Captain: hires the friends not hired yet (when the next hire is open), picks the
+  // price, and gives the day off to a friend whose stand would not earn their pay today.
+  private captainStands(): void {
+    const s = this.state;
+    for (const st of Object.values(this.franchiseStands)) {
+      if (!st.hired && this.spareCash() >= st.setupCost + st.dailyWage * 3) this.hireFranchiseStand(st.id);
+    }
+    const hired = Object.values(this.franchiseStands).filter(st => st.hired);
+    hired.forEach(st => { st.dayOff = false; });
+    s.recipe.pricePerCup = this.captainPrice();
+    const est = this.getDailyDemandEstimate().franchiseEstimates;
+    for (const st of hired) {
+      const cups = est.find(x => x.id === st.id)?.estCups ?? 0;
+      st.dayOff = cups * s.recipe.pricePerCup < st.dailyWage;
+    }
+  }
+
+  // The price the forecast says earns the most today, in quarter steps, never above what
+  // customers think is fair (a higher price makes them grumpy: src/simulation/reputation.ts).
+  public captainPrice(): number {
+    const s = this.state;
+    const keep = s.recipe.pricePerCup;
+    const fair = computeDayDemand(s, this.franchiseStands, this.balance).fairPrice;
+    let best = keep, bestRevenue = -1;
+    for (let q = 1; q <= Math.max(1, Math.floor(fair * 4 + 1e-9)); q++) {
+      s.recipe.pricePerCup = q / 4;
+      const revenue = this.getDailyDemandEstimate().totalEstCups * s.recipe.pricePerCup;
+      if (revenue > bestRevenue) { bestRevenue = revenue; best = s.recipe.pricePerCup; }
+    }
+    s.recipe.pricePerCup = keep;
+    return best;
   }
 
   public generateCustomerReviews(info: {
@@ -709,6 +779,7 @@ export class LemonadeEngine {
   public runDay(): DaySummary {
     const s = this.state;
     const notes: string[] = [];
+    this.runHelpers();
 
     if (s.flags.hasAutoIce && s.flags.autoIceEnabled) {
       s.recipe.icePerCup = this.computeIdealIce(s.tempF);
@@ -1097,6 +1168,7 @@ export class LemonadeEngine {
       s.currentChore.remainingSec = 0;
     }
     s.choresToday = 0;
+    this.runHelpers();   // the new morning: helpers shop and set up before the kid looks
 
     return summary;
   }

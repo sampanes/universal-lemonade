@@ -36,20 +36,31 @@ export function renderFullDayReportHTML(d, s, isModal = false, hero = () => '') 
 
   // With only the driveway stand, the rows would just repeat the big number above them.
   const showRows = s.phase >= 2 || brandBonus > 0.005;
-  let rows = row(`Driveway stand (${count(d.drivewayCupsSold)} cups)`, `+${money(d.drivewayRevenue)}`);
-  if (d.friends && d.friends.length) {
-    // One row per friend: what their stand took in minus their pay, so a slow rainy
-    // day shows up as a friend who cost money.
-    d.friends.forEach(f => {
-      if (f.dayOff) { rows += row(`${f.workerName} had the day off`, money(0)); return; }
-      const net = f.revenue - f.wage;
-      rows += row(`${f.workerName} (${count(f.cups)} cups, paid ${money(f.wage)})`, fmtSigned(net, true), net < 0 ? 'cost' : '');
-    });
-  } else if (s.phase >= 2) {
-    rows += row(`Franchise stands (${count(d.franchiseCupsSold)} cups)`, `+${money(d.franchiseGrossRevenue)}`);
-    rows += row('Franchise wages', `-${money(d.franchiseWagesPaid)}`, 'cost');
+  // Once a helper runs them (the Stand Captain, the Delivery Route), the stands are one line
+  // and the stores are one line: next to the squeezer and the factory they are pocket change.
+  const helpers = s.flags || {};
+  let rows = '';
+  if (helpers.hasStandCaptain) {
+    const net = d.drivewayRevenue + d.franchiseGrossRevenue - d.franchiseWagesPaid;
+    rows += row(`Lemonade stands (${count(d.drivewayCupsSold + d.franchiseCupsSold)} cups)`, fmtSigned(net, true), net < 0 ? 'cost' : '');
+  } else {
+    rows += row(`Driveway stand (${count(d.drivewayCupsSold)} cups)`, `+${money(d.drivewayRevenue)}`);
+    if (d.friends && d.friends.length) {
+      // One row per friend: what their stand took in minus their pay, so a slow rainy
+      // day shows up as a friend who cost money.
+      d.friends.forEach(f => {
+        if (f.dayOff) { rows += row(`${f.workerName} had the day off`, money(0)); return; }
+        const net = f.revenue - f.wage;
+        rows += row(`${f.workerName} (${count(f.cups)} cups, paid ${money(f.wage)})`, fmtSigned(net, true), net < 0 ? 'cost' : '');
+      });
+    } else if (s.phase >= 2) {
+      rows += row(`Franchise stands (${count(d.franchiseCupsSold)} cups)`, `+${money(d.franchiseGrossRevenue)}`);
+      rows += row('Franchise wages', `-${money(d.franchiseWagesPaid)}`, 'cost');
+    }
   }
-  if (d.stores && d.stores.length) {
+  if (helpers.hasDeliveryRoute) {
+    rows += row(`Stores (${count(d.bottlesSold)} bottles)`, `+${money(d.wholesaleRevenue)}`);
+  } else if (d.stores && d.stores.length) {
     // One row per store; "12 of 25" when the bottles, lemons or sugar ran out first.
     d.stores.forEach(st => {
       const name = (STORES[st.id] || { name: st.name }).name;

@@ -22,7 +22,7 @@ import { housePicHTML, ALL_HOUSE_IMAGES } from './ui/houseArt.js';
 import { STORES, FRIENDS, ALL_PLACE_IMAGES, friendPortrait, sceneLocation } from './ui/places.js';
 import { reportCatMood, renderFullDayReportHTML, renderDayReport } from './ui/dayReport.js';
 import { KID_SHOP, kidShopNext } from './ui/kidShop.js';
-import { moneyBagHTML } from './ui/moneyBag.js';
+import { moneyBagHTML, SUPPLY_PICS } from './ui/moneyBag.js';
 import { renderDadPanel, initDadPanel } from './ui/dadPanel.js';
 import { initResetCard } from './ui/resetCard.js';
 import { preloadInBackground, whenIdle } from './preload.ts';
@@ -664,6 +664,12 @@ function loop(now) {
   if (ratioCard && ratioCard.classList.contains('auto-ice') !== autoIce) ratioCard.classList.toggle('auto-ice', autoIce);
   const priceOnly = locked && autoIce;   // nothing left to choose but the price
   if (ratioCard && ratioCard.classList.contains('price-only') !== priceOnly) ratioCard.classList.toggle('price-only', priceOnly);
+  // The Stand Captain (a Stage 4 helper) picks the price; with nothing else left to choose,
+  // the whole card folds away.
+  const captain = !!s.flags.hasStandCaptain;
+  if (ratioCard && ratioCard.classList.contains('captain') !== captain) ratioCard.classList.toggle('captain', captain);
+  const recipeDone = priceOnly && captain;
+  if (ratioCard && ratioCard.classList.contains('helper-done') !== recipeDone) ratioCard.classList.toggle('helper-done', recipeDone);
   setText(document.getElementById('ratio-banner-text'), priceOnly ? 'All set! Just pick a price' : locked ? 'RATIO IS GOLDEN!' : 'RECIPE RATIO');
   const tasteBubble = document.getElementById('recipe-taste-bubble');
   if (tasteBubble) {
@@ -875,6 +881,22 @@ function loop(now) {
   if (btnB) {
     btnB.style.display = s.phase >= 3 ? 'flex' : 'none';
     if (s.phase >= 3) setBuyBtn('btn-buy-bottles', 'bottles');
+  }
+
+  // The Supply Truck (a Stage 4 helper) shops every morning: the supply tiles fold away and
+  // one tile says what it brought (engine.runHelpers already bought it).
+  const prepCard = document.querySelector('.prep-stand-card');
+  const truck = !!s.flags.hasSupplyTruck;
+  if (prepCard.classList.contains('has-truck') !== truck) prepCard.classList.toggle('has-truck', truck);
+  const truckBox = document.getElementById('prep-truck');
+  if (truckBox.hidden === truck) truckBox.hidden = !truck;
+  if (truck) {
+    const spent = Object.values(engine.ledger.supplies).reduce((a, b) => a + b, 0);
+    setText(document.getElementById('prep-truck-sub'), !advice.isFullyStocked
+      ? "Not enough money for all of today's supplies!"
+      : spent > 0.004 ? `It brought everything for today: $${fmtDollars(spent, true)}` : 'Everything for today is here.');
+    setHTMLIfChanged(document.getElementById('prep-truck-stock'), ['lemons', 'sugar', 'cups'].concat(s.phase >= 3 ? ['bottles'] : [])
+      .map(item => `<span class="prep-truck-chip"><img src="./sprites/${SUPPLY_PICS[item]}.png" alt="${item}" />${fmtWhole(s.inv[item])}</span>`).join(''));
   }
 
   // "?" and a worried sun (no sparkles) when the forecast says something will run out today.
@@ -1215,7 +1237,10 @@ function renderFriends(s) {
   if (title.hidden !== tabs) title.hidden = tabs;
   // The newest tab opens by itself when a stage starts (and after a load); a tab the
   // game has not reached falls back to the newest one.
-  const avail = ['friends'].concat(s.phase >= 3 ? ['stores'] : [], s.phase >= 4 ? ['invention'] : [], s.phase >= 5 ? ['factory'] : []);
+  // A tab whose daily jobs a helper took over goes away (the Stand Captain: friends; the
+  // Delivery Route: stores).
+  const avail = [].concat(s.flags.hasStandCaptain ? [] : ['friends'], s.phase >= 3 && !s.flags.hasDeliveryRoute ? ['stores'] : [],
+    s.phase >= 4 ? ['invention'] : [], s.phase >= 5 ? ['factory'] : []);
   if (partnersPhase !== s.phase) {
     if (partnersPhase === null || s.phase > partnersPhase) partnersTab = avail[avail.length - 1];
     partnersPhase = s.phase;

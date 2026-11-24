@@ -505,6 +505,10 @@ button:disabled {
 }
 .ratio-card.price-only .ratio-controls > .ratio-row { flex: 0 1 170px; max-width: 170px; }
 .ratio-card.price-only .price-label { display: none; }
+/* The Stand Captain (a Stage 4 helper) picks the price: its row goes, and with the recipe
+   golden and the ice machine too there is nothing left to choose, so the card goes. */
+.ratio-card.captain .ratio-row-price { display: none !important; }
+.ratio-card.helper-done { display: none !important; }
 /* Friends' stands (Stage 2): one tile per friend, the stand sticker with the friend
    behind it. Hired friends work (green) or have the day off (grey, sleepy) when tapped. */
 .friends-card {
@@ -1537,6 +1541,20 @@ body:not(.dad-mode) .dad-pill:hover {
     grid-template-columns: 1fr;
   }
 }
+/* The Supply Truck (a Stage 4 helper) shops every morning: one tile says what it brought,
+   in place of the supply tiles (src/main.js). The chore tile hides too unless cash is low. */
+.prep-stand-card.has-truck .prep-items-grid,
+.prep-stand-card.has-truck .prep-mult-bar { display: none !important; }
+body:not(.dad-mode):not(.low-cash) .prep-stand-card.has-truck .emergency-chore-pill { display: none !important; }
+.supply-item-box.prep-truck { flex-direction: row; align-items: center; justify-content: flex-start; gap: 10px; }
+.prep-truck[hidden] { display: none; }
+.prep-truck-pic { width: 54px; height: 54px; object-fit: contain; flex: none; }
+.prep-truck-info { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.prep-truck-title { font-family: 'Lilita One', 'Fredoka', sans-serif; font-size: 15px; color: #4a044e; }
+.prep-truck-sub { font-size: 12px; font-weight: 600; color: #6b21a8; }
+.prep-truck-stock { display: flex; flex-wrap: wrap; gap: 4px 8px; margin-top: 2px; }
+.prep-truck-chip { display: inline-flex; align-items: center; gap: 3px; font-weight: 800; font-size: 12px; color: #581c87; }
+.prep-truck-chip img { width: 20px; height: 20px; object-fit: contain; }
 .supply-item-box {
   background: rgba(255, 255, 255, 0.96);
   border: 2px solid #e9d5ff;

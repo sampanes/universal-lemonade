@@ -7,7 +7,9 @@ import { shopReady } from '../unlocks.ts';
 // game unlocks it (from Day 3; the labeler once BOTTLES_FOR_LABELER bottles have sold), so
 // the card can be hidden for a while between buys; an "early" item shows as a savings goal
 // before it unlocks. The second stand starts Stage 2 (the friends' stands); bottling starts
-// Stage 3 (the stores).
+// Stage 3 (the stores). In Stages 4 and 5 helpers take over the daily jobs (engine.runHelpers):
+// the Supply Truck (Morning Prep), the Stand Captain (the price and the friends) and the
+// Delivery Route (the stores), each folding its part of the page away.
 // The first two are a choice (FIRST_CHOICE): both show side by side, the kid picks one, and
 // the other one comes next. pick: the short line under each in the choice.
 // pic: null shows no picture. friends: N hides the item until N friends are hired.
@@ -23,8 +25,11 @@ export const KID_SHOP = [
   { id: 'commercial_labeler', name: 'Bottle Labeler', desc: 'Labels bottles by machine: bottles cost 30% less!', pic: './sprites/shop/labeler.png' },
   { id: 'patent_filing', name: 'Invent It!', desc: 'Invent a lemon squeezer! Stores sell it, and you get money for every one.', pic: './sprites/shop/invent_it.png', early: true,
     notYet: (s) => `${Math.max(0, BOTTLES_FOR_INVENTION - s.totalBottlesSold).toLocaleString('en-US')} bottles to go` },
+  { id: 'supply_truck', name: 'Supply Truck', desc: 'Brings the lemons, sugar, cups and bottles every morning. No more buying!', pic: './sprites/supplies.png' },
+  { id: 'stand_captain', name: 'Stand Captain', desc: 'Runs your stands: picks the price and who works each day!', pic: './sprites/shop/second_stand.png' },
   { id: 'copacker_deal', name: 'Lemonade Factory', desc: 'A factory makes your lemonade for stores, with its own supplies!', pic: './sprites/shop/bottles.png', early: true },
   { id: 'regional_supermarkets', name: 'More Supermarkets', desc: 'Send about 300 cases a day to supermarkets!', pic: './sprites/shop/bottles.png', early: true },
+  { id: 'delivery_route', name: 'Delivery Route', desc: 'Runs your stores: signs them up and grows their shelves!', pic: './sprites/shop/big_wagon.png' },
   { id: 'automated_canning_line', name: 'Canning Line', desc: 'Make about 1,500 cases a day and earn more per case!', pic: './sprites/shop/bottles.png', early: true },
   { id: 'national_bigbox', name: 'Stores Across the Country', desc: 'Send about 6,000 cases a day across the country!', pic: './sprites/shop/bottles.png', early: true },
   { id: 'club_store_pallets', name: 'Club Store Pallets', desc: 'Ship about 25,000 cases a day to club stores!', pic: './sprites/shop/bottles.png', early: true },

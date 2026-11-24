@@ -59,6 +59,13 @@ function squeezerStep(level: number): ProjectDef {
 export const FIRST_CHOICE = ['auto_ice_dispenser', 'fridge'] as const;
 const FIRST_CHOICE_COST = 400;
 
+// The helpers' prices. Stage 4 opens with about $2,000 to $4,000 a day coming in, so the
+// truck is about a day's money and the captain two or three; the route comes in Stage 5,
+// after the first supermarkets (about $15,000 a day).
+const SUPPLY_TRUCK_COST = 2000;
+const STAND_CAPTAIN_COST = 6000;
+const DELIVERY_ROUTE_COST = 25000;
+
 export function createInitialProjects(): ProjectDef[] {
   return [
     {
@@ -175,6 +182,36 @@ export function createInitialProjects(): ProjectDef[] {
     squeezerStep(2),
     squeezerStep(3),
     squeezerStep(4),
+    // Helpers (engine.runHelpers). By Stage 4 the stands and stores earn pocket change next to
+    // the squeezer, so the kid can hand their daily jobs to helpers, one at a time.
+    {
+      id: 'supply_truck',
+      name: 'Supply Truck',
+      desc: 'Buys the lemons, sugar, cups and bottles each morning for what the forecast needs.',
+      phase: 4,
+      costCash: SUPPLY_TRUCK_COST,
+      purchased: false,
+      unlocked: (s: GameState) => s.phase >= 4,
+      effect: (e: any) => {
+        e.state.flags.hasSupplyTruck = true;
+        e.runHelpers();
+        e.log('Helper: the Supply Truck brings the supplies every morning now.');
+      }
+    },
+    {
+      id: 'stand_captain',
+      name: 'Stand Captain',
+      desc: 'Runs the stands: picks the price, who works each day, and hires the friends.',
+      phase: 4,
+      costCash: STAND_CAPTAIN_COST,
+      purchased: false,
+      unlocked: (s: GameState) => s.phase >= 4,
+      effect: (e: any) => {
+        e.state.flags.hasStandCaptain = true;
+        e.runHelpers();
+        e.log('Helper: the Stand Captain runs the lemonade stands now.');
+      }
+    },
     {
       id: 'copacker_deal',
       name: 'Industrial Co-Packer Agreement (Phase 5)',
@@ -200,6 +237,20 @@ export function createInitialProjects(): ProjectDef[] {
       effect: (e: any) => {
         e.copacker.casesPerDay = 300;
         e.log('Project: Regional Supermarket Distribution active! Shipping 300 cases/day across 3 states.');
+      }
+    },
+    {
+      id: 'delivery_route',
+      name: 'Delivery Route',
+      desc: 'Runs the stores: signs up every store and grows their shelves.',
+      phase: 5,
+      costCash: DELIVERY_ROUTE_COST,
+      purchased: false,
+      unlocked: (s: GameState) => s.phase >= 5,
+      effect: (e: any) => {
+        e.state.flags.hasDeliveryRoute = true;
+        e.runHelpers();
+        e.log('Helper: the Delivery Route runs the stores now.');
       }
     },
     {

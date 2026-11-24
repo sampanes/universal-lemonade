@@ -810,17 +810,23 @@ test('the squeezer grows in four steps, each opened by lifetime squeezer sales',
   assert.equal(loaded.state.totalSqueezersSold, e.state.totalSqueezersSold);
 });
 
-test('kid shop opens the factory after worldwide licensing and grows it in order across saves', () => {
+test('kid shop offers the helpers in Stage 4, opens the factory after worldwide licensing and grows it in order across saves', () => {
   let e = new LemonadeEngine({ seed: 72 });
   e.dadJumpToPhase(4);
   e.state.cash = e.state.cash.add(100000000);
+  for (const id of ['supply_truck', 'stand_captain']) {
+    assert.equal(sim.kidShopNext(e, e.state).item.id, id);
+    assert.ok(e.buyProject(id));
+    assert.equal(sim.kidShopNext(e, e.state), null, 'shop waits after a purchase');
+    e.state.day += 2;
+  }
   assert.equal(sim.kidShopNext(e, e.state), null, 'factory waits for worldwide licensing');
   e.state.totalSqueezersSold = 8000;
   assert.ok(e.buyProject('global_licensing'));
   assert.equal(sim.kidShopNext(e, e.state), null, 'shop waits after a purchase');
   e.state.day += 2;
   const stages = [
-    ['copacker_deal', 40], ['regional_supermarkets', 300], ['automated_canning_line', 1500],
+    ['copacker_deal', 40], ['regional_supermarkets', 300], ['delivery_route', 300], ['automated_canning_line', 1500],
     ['national_bigbox', 6000], ['club_store_pallets', 25000],
     ['qsr_fountain_licensing', 100000], ['global_beverage_jv', 350000],
   ];
@@ -837,6 +843,76 @@ test('kid shop opens the factory after worldwide licensing and grows it in order
   const day = e.runDay();
   assert.ok(day.copackerCasesSold > 0 && day.copackerNet > 0);
   assert.equal(day.copackerNet, day.copackerCasesSold * e.copacker.netPerCase);
+});
+
+test('the Supply Truck shops for the forecast the moment it comes and every morning after', () => {
+  const e = new LemonadeEngine({ seed: 74 });
+  e.dadJumpToPhase(4);
+  e.state.cash = e.state.cash.add(50000);
+  Object.assign(e.state.inv, { lemons: 0, sugar: 0, cups: 0, bottles: 0 });
+  assert.equal(e.getKidDemandAdvice().isFullyStocked, false);
+  assert.ok(e.buyProject('supply_truck'));
+  assert.equal(e.getKidDemandAdvice().isFullyStocked, true, 'stocked right away');
+  for (let i = 0; i < 5; i++) {
+    const day = e.runDay();
+    assert.ok(day.drivewayCupsSold > 0 && !day.soldOut, 'nothing runs out');
+    assert.equal(e.getKidDemandAdvice().isFullyStocked, true, 'the new morning is stocked too');
+    const shopping = Object.values(e.ledger.supplies).reduce((a, b) => a + b, 0);
+    assert.ok(shopping > 0, "the truck's shopping is in the new day's money diary");
+  }
+  const save = LemonadeEngine.fromSave(JSON.parse(JSON.stringify(e.toSave())));
+  assert.equal(save.state.flags.hasSupplyTruck, true);
+});
+
+test('the Stand Captain hires the friends, prices at most fair, and sends a friend home on a losing day', () => {
+  const e = new LemonadeEngine({ seed: 75 });
+  e.dadJumpToPhase(4);
+  e.state.cash = e.state.cash.add(50000);
+  Object.values(e.franchiseStands).forEach(st => { st.hired = false; });
+  e.state.friendExpansion = undefined;
+  assert.ok(e.buyProject('stand_captain'));
+  assert.ok(Object.values(e.franchiseStands).some(st => st.hired), 'hires a friend right away');
+  e.state.friendExpansion = undefined;      // the next hire is open
+  e.runHelpers();
+  const price = e.state.recipe.pricePerCup;
+  assert.equal(price, e.captainPrice());
+  assert.equal(price * 4, Math.round(price * 4), 'a quarter step');
+
+  // A hot sunny day: everybody works, except a friend whose pay is more than their stand sells.
+  Object.values(e.franchiseStands).forEach(st => { st.hired = true; });
+  Object.assign(e.state, { weather: 'SUNNY', tempF: 95 });
+  e.runHelpers();
+  assert.ok(Object.values(e.franchiseStands).every(st => !st.dayOff), 'a hot day: all work');
+  const leo = Object.values(e.franchiseStands)[1];
+  const pay = leo.dailyWage;
+  leo.dailyWage = 100000;
+  e.runHelpers();
+  assert.equal(leo.dayOff, true, 'a friend who would cost more than they sell stays home');
+  assert.ok(Object.values(e.franchiseStands).filter(st => st !== leo).every(st => !st.dayOff));
+  // A cold, rainy day: nobody sells enough to cover their pay.
+  leo.dailyWage = pay;
+  Object.assign(e.state, { weather: 'RAINY', tempF: 40 });
+  e.runHelpers();
+  const est = Object.values(e.franchiseStands).map(st => st.dayOff);
+  assert.ok(est.some(off => off), 'a losing day sends someone home');
+  assert.ok(e.runDay().franchiseWagesPaid <= pay * 3);
+});
+
+test('the Delivery Route signs up and grows the stores when the store rules allow', () => {
+  const e = new LemonadeEngine({ seed: 76 });
+  e.dadJumpToPhase(5);
+  e.state.cash = e.state.cash.add(10000000);
+  const accounts = Object.values(e.wholesaleAccounts);
+  accounts[2].active = false; accounts[2].level = 0;
+  e.state.storeExpansion = undefined;
+  assert.ok(e.buyProject('delivery_route'));
+  assert.equal(accounts[2].active, true, 'signs the missing store first');
+  assert.equal(accounts.filter(a => a.level > 1).length, 0, 'one store move at a time');
+  for (let i = 0; i < 6; i++) {
+    e.state.storeExpansion = { day: -100, bottles: -1000000 };   // the next move is open
+    e.runHelpers();
+  }
+  assert.ok(accounts.every(a => a.level === a.levels.length), 'every shelf grows to the biggest');
 });
 
 test('house upgrades go in order, wait for their stage, and save', () => {

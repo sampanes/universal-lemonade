@@ -304,6 +304,10 @@ export interface GameState {
     weatherLocked95F: boolean;
     hasAutoIce: boolean;
     autoIceEnabled: boolean;
+    // Helpers that take over the small daily jobs (src/data/projects.ts, engine.runHelpers).
+    hasSupplyTruck: boolean;     // buys each morning's supplies
+    hasStandCaptain: boolean;    // runs the stands: the price, who works, hiring
+    hasDeliveryRoute: boolean;   // runs the stores: signing up and bigger shelves
 
     // Lifestyle Trophy Flags
     hasSkateboard: boolean;

@@ -37,6 +37,13 @@ Day Report of what customers said.
   Hometown (about 50 a day), On TV ($3,000 after 300 sold; about 200 a day), Every State
   ($12,000 after 2,000 sold; about 800 a day) and Worldwide ($40,000 after 8,000 sold; about
   3,200 a day at $3.25 each).
+- **Helpers.** By Stage 4 the stands and stores earn pocket change next to the squeezer, so
+  the Stand Shop offers helpers that take over their daily jobs. The Supply Truck ($2,000)
+  buys each morning's supplies (the supply tiles fold into one). The Stand Captain ($6,000)
+  picks the price, hires the friends and sends a friend home on a day their stand would lose
+  money (the recipe card and the Friends tab go away). In Stage 5 the Delivery Route
+  ($25,000) signs up the stores and grows their shelves (the Stores tab goes away). The Day
+  Report then shows all the stands on one line and all the stores on one line.
 - **Lemonade Factory.** After the squeezer goes worldwide, open a factory that makes and
   ships lemonade using its own supplies. The Factory tab shows its estimated cases and
   earnings; grow from supermarkets to factories around the world in the Stand Shop.

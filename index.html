@@ -226,8 +226,8 @@
               </button>
             </div>
 
-            <!-- PRICE ROW -->
-            <div class="ratio-row" style="margin-top: 6px; background: rgba(254, 240, 138, 0.6); border-color: #facc15;">
+            <!-- PRICE ROW (the Stand Captain picks the price once hired) -->
+            <div class="ratio-row ratio-row-price" style="margin-top: 6px; background: rgba(254, 240, 138, 0.6); border-color: #facc15;">
               <span class="price-label" style="font-weight:bold; font-size:12px; color:#713f12; margin-left:4px;">Price:</span>
               <button id="btn-price-down" class="ratio-btn" title="Decrease Price" style="width:28px; height:28px;">
                 <img src="./sprites/btn_minus.png" alt="-" />
@@ -414,6 +414,17 @@
                 </div>
               </div>
               <button id="btn-buy-bottles" class="kawaii-buy-btn">+25 ($10.00)</button>
+            </div>
+          </div>
+
+          <!-- SUPPLY TRUCK (a Stage 4 helper, engine.runHelpers): it does the shopping every
+               morning, so this one tile takes the place of the supply tiles. -->
+          <div class="supply-item-box prep-truck" id="prep-truck" hidden>
+            <img src="./sprites/supplies.png" class="prep-truck-pic" alt="" />
+            <div class="prep-truck-info">
+              <div class="prep-truck-title">The Supply Truck came!</div>
+              <div class="prep-truck-sub" id="prep-truck-sub"></div>
+              <div class="prep-truck-stock" id="prep-truck-stock"></div>
             </div>
           </div>
 
