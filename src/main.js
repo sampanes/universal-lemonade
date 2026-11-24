@@ -3,6 +3,7 @@
 import { LemonadeEngine } from './engine.ts';
 import { SQUEEZER_LEVELS } from './data/projects.ts';
 import { FLAVORS, FLAVOR_BOOST } from './data/flavors.ts';
+import { BRAND_STEPS } from './data/brand.ts';
 import { HOUSE_STEPS, HOUSE_COLORS } from './data/house.ts';
 import {
   loadCharacterProfile,
@@ -1221,6 +1222,34 @@ function inventionHTML(s) {
     </div>
   </div>`;
 }
+// The famous brand (Stage 5, src/data/brand.ts): the bonus so far, a dot per move, and the
+// next move with what is still missing (a day's wait, money left after today's supplies).
+function brandHTML(s) {
+  const pct = Math.round((s.brandMultiplier - 1) * 100);
+  const dots = BRAND_STEPS.map((_, i) => `<span${i < s.brandLevel ? ' class="on"' : ''}></span>`).join('');
+  const next = engine.nextBrandStep();
+  let move;
+  if (next) {
+    const needs = [];
+    if (engine.brandWaitDays()) needs.push('Ready tomorrow!');
+    const short = Math.max(0, next.cost - Math.max(0, s.cash.toNumber() - engine.restockCostForToday()));
+    if (short) needs.push(`Save $${fmtWhole(Math.ceil(short))} more`);
+    move = `<button type="button" class="friend-btn" data-act="brand"${needs.length ? ' disabled' : ''}>${needs.length ? STORE_LOCK : ''}${next.name} &middot; $${fmtWhole(next.cost)}</button>
+      <small>${next.desc} Then everything sells ${Math.round(next.bonus * 100)}% more.</small>
+      ${needs.length ? `<small>${needs.join(' &middot; ')}</small>` : ''}`;
+  } else {
+    move = '<small>Your lemonade is the most famous in the whole world!</small>';
+  }
+  return `<div class="invention-panel">
+    <img src="./sprites/morning_prep/mascot_lemon_head.png" alt="" />
+    <div>
+      <div class="invention-name">My Famous Brand</div>
+      <div class="invention-desc">Brand bonus: +${pct}% on everything you sell</div>
+      <div class="brand-dots" aria-label="${s.brandLevel} of ${BRAND_STEPS.length} brand moves">${dots}</div>
+      ${move}
+    </div>
+  </div>`;
+}
 // One line of a friend or store button. It never wraps: a wrap would make that button taller
 // and shift the whole row. A line too long for the button shrinks to fit instead (.tile-line
 // in game.css, from its character count).
@@ -1283,7 +1312,7 @@ function renderFriends(s) {
   // A tab whose daily jobs a helper took over goes away (the Stand Captain: friends; the
   // Delivery Route: stores).
   const avail = [].concat(s.flags.hasStandCaptain ? [] : ['friends'], s.phase >= 3 && !s.flags.hasDeliveryRoute ? ['stores'] : [],
-    s.phase >= 4 ? ['invention'] : [], s.phase >= 5 ? ['factory'] : []);
+    s.phase >= 4 ? ['invention'] : [], s.phase >= 5 ? ['factory'] : [], engine.brandOpen() ? ['brand'] : []);
   if (partnersPhase !== s.phase) {
     if (partnersPhase === null || s.phase > partnersPhase) partnersTab = avail[avail.length - 1];
     partnersPhase = s.phase;
@@ -1295,7 +1324,14 @@ function renderFriends(s) {
     if (b.classList.contains('on') !== on) b.classList.toggle('on', on);
     const hide = !avail.includes(b.dataset.tab);
     if (b.hidden !== hide) b.hidden = hide;
+    // The Brand tab opens in the middle of Stage 5: it glows until the first brand move.
+    const glow = b.dataset.tab === 'brand' && !on && s.brandLevel === 0;
+    if (b.classList.contains('is-new') !== glow) b.classList.toggle('is-new', glow);
   });
+  if (tab === 'brand') {
+    setHTMLIfChanged(document.getElementById('friends-row'), brandHTML(s));
+    return;
+  }
   if (tab === 'stores') {
     setHTMLIfChanged(document.getElementById('friends-row'), storesHTML(s));
     return;
@@ -1365,6 +1401,9 @@ document.getElementById('friends-row').addEventListener('click', (e) => {
     if (offer && !offer.sales && !offer.days && !offer.short && engine.buyProject(offer.project.id)) kidFlash('cheer', 2000);
   } else if (btn.dataset.act === 'off') {
     engine.toggleFriendDayOff(btn.dataset.id);
+  } else if (btn.dataset.act === 'brand') {
+    const next = engine.nextBrandStep();
+    if (next && engine.state.cash.toNumber() - engine.restockCostForToday() >= next.cost && engine.buyBrandStep()) kidFlash('cheer', 2500);
   }
 });
 

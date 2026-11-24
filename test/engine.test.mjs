@@ -949,6 +949,32 @@ test('the Flavor Lab: the testers point the way, and the right mix goes to the s
   assert.ok(Math.abs(ca / cb - 1.2) < 0.01, `${ca} vs ${cb}`);
 });
 
+test('the famous brand opens with the big-box stores and grows one move a day', () => {
+  const e = new LemonadeEngine({ seed: 78 });
+  e.dadJumpToPhase(5);
+  e.state.cash = e.state.cash.add(1e9);
+  assert.equal(e.brandOpen(), false);
+  assert.equal(e.buyBrandStep(), false, 'not before the big-box stores');
+  for (const id of ['regional_supermarkets', 'automated_canning_line', 'national_bigbox']) assert.ok(e.buyProject(id));
+  assert.equal(e.state.brandMultiplier, 1, 'the factory steps no longer raise it by themselves');
+  assert.equal(e.brandOpen(), true);
+  assert.ok(e.buyBrandStep());
+  assert.equal(e.state.brandLevel, 1);
+  assert.ok(Math.abs(e.state.brandMultiplier - 1.1) < 1e-9);
+  assert.equal(e.buyBrandStep(), false, 'the next move opens tomorrow');
+  e.runDay();
+  const loaded = LemonadeEngine.fromSave(JSON.parse(JSON.stringify(e.toSave())));
+  assert.equal(loaded.state.brandLevel, 1);
+  assert.ok(loaded.buyBrandStep(), 'a new day: the next move');
+  let moves = 2;
+  while (loaded.nextBrandStep()) { loaded.state.day += 1; assert.ok(loaded.buyBrandStep()); moves++; }
+  assert.equal(moves, 7);
+  assert.ok(loaded.state.brandMultiplier > 2.8 && loaded.state.brandMultiplier < 2.9);
+  const day = loaded.runDay();
+  const raw = day.drivewayRevenue + day.franchiseGrossRevenue + day.wholesaleRevenue + day.patentRoyalties + day.copackerNet;
+  assert.ok(Math.abs(day.totalRevenue - raw * loaded.state.brandMultiplier) < 1e-6, 'it multiplies everything sold');
+});
+
 test('every flavor taste comment points toward the best mix', () => {
   for (const [dF, dS] of [[1, 0], [-2, 0], [0, 1], [0, -3], [2, -1], [-1, -1], [1, 2]]) {
     const q = sim.flavorTasteReview(dF, dS, 'mint', 'Mint Lemonade').quote;

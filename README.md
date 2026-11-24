@@ -53,6 +53,11 @@ Day Report of what customers said.
   testers say which way to go when the stand opens ("a little more strawberry and way less
   sugar"). The day they taste the exact mix, the flavor goes to the stores and the factory
   sells 20% more from then on.
+- **Famous brand.** Once the lemonade is in stores across the country, a Brand tab opens:
+  seven brand moves, one a day at most, from a Giant Billboard ($250,000) to a Big Game
+  Commercial ($75,000,000). Each makes everything sell 10% to 25% more (the Day Report's
+  "Famous brand bonus" line), so the kid weighs growing the brand against growing the
+  factory.
 - **My House.** Once the kid has sold $2,000 of lemonade in all, the next quiet day (nothing
   bought, no new shop item; any day at all once sales pass $5,000) ends with big news in the
   Day Report, and a third column shows the family's one-story house. Save up to upgrade it:
@@ -122,7 +127,7 @@ Every push to `main` builds and deploys to GitHub Pages (`.github/workflows/depl
 | `src/engine.ts` | The game engine (no DOM): state, days, buying, upgrades, save and load |
 | `src/balance.ts` | Every economy tuning number |
 | `src/simulation/` | Weather, demand, recipe taste, reviews, reputation, storage limits |
-| `src/data/` | Stand upgrades and business projects, chores, franchise stands, wholesale, flavors, trophies |
+| `src/data/` | Stand upgrades and business projects, chores, franchise stands, wholesale, flavors, the brand, trophies |
 | `src/character.ts`, `src/kid.ts` | The kid's saved look, and drawing the paper-doll kid |
 | `src/unlocks.ts` | Which looks unlock when |
 | `sim/` | The balance simulator (bot players) |

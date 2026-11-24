@@ -350,6 +350,8 @@ export interface GameState {
   // the fruit and sugar scoops in the flavor being tasted now.
   flavorsLaunched: string[];
   flavorMix: { fruit: number; sugar: number };
+  brandLevel: number;        // brand moves bought (src/data/brand.ts); 0: none
+  lastBrandDay?: number;     // the day of the last one (the next opens the day after)
   ledger?: MoneyLedger;         // today so far
   lastLedger?: MoneyLedger;     // the last finished day
   upgradeSavingsTotal: number;  // everything the stand upgrades have saved, all game

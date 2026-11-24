@@ -29,6 +29,7 @@ import { createInitialTrophies } from './data/trophies';
 import { HOUSE_STEPS, HOUSE_COLORS, FIRST_HOUSE_COLOR, HOUSE_OPENS_AT_SALES, HOUSE_OPENS_ANYWAY_AT_SALES, type HouseStep } from './data/house';
 import { otherUnlockToday } from './unlocks';
 import { FLAVORS, FLAVOR_START, FLAVOR_BOOST, FLAVOR_MAX_SCOOPS, flavorGoldenMix, type Flavor } from './data/flavors';
+import { BRAND_STEPS, BRAND_OPENS_WITH, type BrandStep } from './data/brand';
 import { rollWeatherForecast, computeIdealIce, getSeasonInfo } from './simulation/weather';
 import { iceHint, crowdLevel, type IceHint } from './simulation/hints';
 import { computeRecipeQuality, getRecipeProfile } from './simulation/recipe';
@@ -215,6 +216,7 @@ export class LemonadeEngine {
       houseColor: FIRST_HOUSE_COLOR,
       flavorsLaunched: [],
       flavorMix: { ...FLAVOR_START },
+      brandLevel: 0,
       reputationHistory: [],
       tipCounts: {},
       upgradeSavingsTotal: 0,
@@ -746,6 +748,35 @@ export class LemonadeEngine {
     }
     s.recipe.pricePerCup = keep;
     return best;
+  }
+
+  // ---- The famous brand (src/data/brand.ts) ----
+  public brandOpen(): boolean {
+    return !!this.projects.find(p => p.id === BRAND_OPENS_WITH)?.purchased;
+  }
+
+  public nextBrandStep(): BrandStep | null {
+    return BRAND_STEPS[this.state.brandLevel] ?? null;
+  }
+
+  // 1 on the day a brand move was bought (the next one opens tomorrow), else 0.
+  public brandWaitDays(): number {
+    const last = this.state.lastBrandDay;
+    return last != null && this.state.day <= last ? 1 : 0;
+  }
+
+  public buyBrandStep(): boolean {
+    const s = this.state;
+    const step = this.nextBrandStep();
+    if (!step || !this.brandOpen() || this.brandWaitDays() || s.cash.lt(step.cost)) return false;
+    s.cash = s.cash.sub(step.cost);
+    this.ledger.shop += step.cost;
+    this.ledger.shopIds.push(`brand:${step.id}`);
+    s.brandLevel += 1;
+    s.lastBrandDay = s.day;
+    s.brandMultiplier *= 1 + step.bonus;
+    this.log(`Famous brand: ${step.name}! Everything sells ${Math.round(step.bonus * 100)}% more.`);
+    return true;
   }
 
   // ---- The Flavor Lab (src/data/flavors.ts) ----

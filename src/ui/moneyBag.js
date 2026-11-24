@@ -29,8 +29,11 @@ export function mbOutRows(l, engine) {
       const p = engine.projects.find(x => x.id === k.id);
       return `<span class="mb-chip"><img src="${k.pic}" alt="" />${mbMoney(p ? p.costCash : 0)}</span>`;
     }).join('')}</span>` : 'for the stand';
-    const name = kid.length === 1 && l.shopIds.length === 1 ? kid[0].name : 'Upgrades';
-    rows += mbRow('out', kid.length ? kid[0].pic : './sprites/shop/second_stand.png', name, chips, l.shop);
+    // Brand moves (src/data/brand.ts) are not Stand Shop items: "brand:<id>".
+    const brandOnly = l.shopIds.length > 0 && l.shopIds.every(id => id.startsWith('brand:'));
+    const name = brandOnly ? 'Famous brand' : kid.length === 1 && l.shopIds.length === 1 ? kid[0].name : 'Upgrades';
+    const pic = brandOnly ? './sprites/morning_prep/mascot_lemon_head.png' : kid.length ? kid[0].pic : './sprites/shop/second_stand.png';
+    rows += mbRow('out', pic, name, brandOnly ? 'making your lemonade famous' : chips, l.shop);
   }
   if (l.treats > 0.004) rows += mbRow('out', '', 'Prizes', '', l.treats);
   if (l.hiring > 0.004) rows += mbRow('out', './sprites/franchise/ballpark.png', 'Hiring', 'new stands and deals', l.hiring);

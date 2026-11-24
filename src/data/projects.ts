@@ -290,8 +290,7 @@ export function createInitialProjects(): ProjectDef[] {
       purchased: false,
       unlocked: (s: GameState) => s.phase === 5 && s.cash.gte(200000),
       effect: (e: any) => {
-        e.copacker.casesPerDay = 6000;
-        e.state.brandMultiplier *= 1.25;
+        e.copacker.casesPerDay = 6000;   // and the Brand tab opens (src/data/brand.ts)
         e.log('Project: National Big-Box contract finalized! Shipping 6,000 cases/day across America.');
       }
     },
@@ -318,7 +317,6 @@ export function createInitialProjects(): ProjectDef[] {
       unlocked: (s: GameState) => s.phase === 5 && s.cash.gte(5000000),
       effect: (e: any) => {
         e.copacker.casesPerDay = 100000;
-        e.state.brandMultiplier *= 1.20;
         e.log('Project: Fast-casual soda fountain contract live! 100,000 cases/day globally.');
       }
     },
@@ -332,7 +330,6 @@ export function createInitialProjects(): ProjectDef[] {
       unlocked: (s: GameState) => s.phase === 5 && s.cash.gte(20000000),
       effect: (e: any) => {
         e.copacker.casesPerDay = 350000;
-        e.state.brandMultiplier *= 1.25;
         e.log('Project: International Joint Venture operational! World-wide distribution of 350,000 cases/day.');
       }
     }

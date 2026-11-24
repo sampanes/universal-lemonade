@@ -537,7 +537,7 @@ button:disabled {
 }
 .flavor-glass-fruit { position: absolute; width: 26px; height: 26px; left: 6px; bottom: 8px; filter: var(--tint, none); animation: float-gentle-1 3s ease-in-out infinite; }
 .flavor-glass-fruit.two { left: 24px; bottom: 22px; animation-name: float-gentle-2; }
-.flavor-lab .ratio-icon { filter: var(--tint, none); }
+#flavor-fruit-icon { filter: var(--tint, none); }
 .flavor-lab-progress { display: flex; gap: 4px; justify-content: center; flex-wrap: wrap; font-size: 11px; font-weight: 700; color: #6b21a8; }
 .flavor-lab-progress .dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid #c4b5fd; background: #fff; }
 .flavor-lab-progress .dot.on { border-color: #7e22ce; }
@@ -765,6 +765,12 @@ small.tile-line {
   font-weight: 800;
   color: #065f46;
 }
+/* The famous brand (Stage 5): a dot per brand move, lit once bought. The tab glows (like
+   a new house) until the first move. */
+.brand-dots { display: flex; gap: 5px; margin: 0 0 6px; }
+.brand-dots span { width: 14px; height: 14px; border-radius: 50%; border: 2px solid #fcd34d; background: #fff; }
+.brand-dots span.on { background: #facc15; border-color: #ca8a04; }
+.friends-tab.is-new { animation: kid-new-glow 0.9s ease-in-out infinite alternate; }
 /* Kid Stand Shop: one upgrade at a time under the recipe card. */
 .stand-shop {
   display: flex;
