@@ -649,8 +649,11 @@ button:disabled {
   margin-bottom: 4px;
 }
 .friends-tabs[hidden], .friends-title[hidden], .friends-tab[hidden] { display: none; }
+/* Equal tabs up to 150px wide. They grow from zero, so they wrap only when their words
+   cannot fit on one row (a 150px start wrapped three tabs that fit easily). */
 .friends-tab {
-  flex: 0 1 150px;
+  flex: 1 1 0;
+  max-width: 150px;
   min-height: 26px;
   padding: 2px 10px;
   border-radius: 999px;
