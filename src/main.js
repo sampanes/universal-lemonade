@@ -444,12 +444,12 @@ document.getElementById('btn-run-day').onclick = async () => {
     saveGame();
     await playDayScene(summary, id => sceneLocation(id, engine, kidProfile));
   } finally {
-    playingDay = false;
+    playingDay = false;   // the page catches up to the new day on the next frame (see loop)
     // The report is filled in and shown the moment the scene closes, in the same frame.
     if (summary) {
       renderReportModal(summary);
       if (summary.houseOpened && !dadModeActive) showHouseNews();
-      if (look) showMagicLook(look);
+      if (look) { showMagicLook(look); refreshKidNew(); }
       showReportModal(true);
     }
     document.getElementById('btn-report-modal-continue').focus();
@@ -513,6 +513,13 @@ function loop(now) {
     if (s.recipe.icePerCup !== ideal) {
       s.recipe.icePerCup = ideal;
     }
+  }
+  // The day is worked out when the stand opens, but while it plays the page stays as it was
+  // that morning: the cash up top, the shop and anything new change only once the scene
+  // ends (Skip, or the day goes by), with the report.
+  if (playingDay) {
+    requestAnimationFrame(loop);
+    return;
   }
   const stageNames = [
     '',
@@ -1392,14 +1399,13 @@ function profileWithLook(look) {
   return i < 0 ? null : { ...kidProfile, hairColor: i };
 }
 const MAGIC_LINES = ['Whoa! Magic in the mirror!', 'Something sparkly appeared!', 'Psst... check the mirror!'];
-// The new look the day brought (saved right away), or null. The report shows it (showMagicLook).
+// The new look the day brought (saved right away), or null. The report shows it (showMagicLook),
+// and the kid button starts to glow (refreshKidNew) only once the day scene is over.
 function checkMagicLooks(summary) {
   if (!summary || dadModeActive) return null;   // Dad's test days do not spend the kid's surprises
   const look = advanceLookUnlocks(kidUnlocks, unlockCheckFrom(engine.state, summary), otherUnlockToday(engine.state, summary));
   saveUnlocks(kidUnlocks); // also save milestones waiting for a quiet day
-  if (!look) return null;
-  refreshKidNew();
-  return look;
+  return look || null;
 }
 
 function showMagicLook(look) {
