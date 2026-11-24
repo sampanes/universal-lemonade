@@ -5,16 +5,22 @@
 // bought in order; each waits for its stage, so the big ones wait for the money the later
 // stages bring in. state.houseLevel is how many steps are bought (0: the one-story house on
 // Day 1).
+//
+// The My House column opens on its own, not with an upgrade: at the end of the first quiet
+// day (no purchase, no new shop item, no golden recipe) once the kid has sold this much in
+// all. state.houseOpen remembers it; the Day Report announces it.
+export const HOUSE_OPENS_AT_SALES = 2000;
+
 export interface HouseStep {
   id: string;
   name: string;     // the button and the build scene ("Treehouse")
   desc: string;
   cost: number;
-  phase: number;    // the stage it opens in
+  phase: number;    // the stage it opens in (and never before the house opens)
 }
 
 export const HOUSE_STEPS: readonly HouseStep[] = [
-  { id: 'paint', name: 'Fresh Paint', desc: 'Paint the house any color you like!', cost: 250, phase: 2 },
+  { id: 'paint', name: 'Fresh Paint', desc: 'Paint the house any color you like!', cost: 250, phase: 1 },
   { id: 'second_floor', name: 'Second Floor', desc: 'Build a whole new floor on top!', cost: 2500, phase: 2 },
   { id: 'treehouse', name: 'Treehouse', desc: 'A treehouse in the big backyard tree.', cost: 5000, phase: 3 },
   { id: 'hq', name: 'Lemon HQ', desc: 'Turn the garage into your lemonade headquarters.', cost: 15000, phase: 3 },

@@ -951,9 +951,11 @@ body.dad-mode .stand-shop { display: none; }
   .stand-shop-option-price { justify-self: stretch; }
 }
 
-/* My House (kid mode, from Stage 2): a third column with the family house and the next
-   upgrade to save up for. Each upgrade plays a short build scene. */
+/* My House (kid mode, once it opens: src/data/house.ts): a third column with the family
+   house and the next upgrade to save up for. Each upgrade plays a short build scene. */
 .house-col[hidden] { display: none !important; }
+/* The day it opens: glows (kid-new-glow) until the kid touches it. */
+.house-card.is-new { animation: kid-new-glow 0.9s ease-in-out infinite alternate; }
 body.dad-mode .house-col { display: none !important; }
 .house-card {
   display: flex;
@@ -2759,6 +2761,11 @@ body:not(.dad-mode) .dad-pill:hover {
     border: 3px solid #a855f7; background: radial-gradient(circle at 50% 40%, #fef9c3 0%, #fde68a 100%);
   }
   .magic-look-text { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.2; padding-left: 10px; }
+  /* The same banner the day My House opens, with the house in place of the kid. */
+  .house-news-pic {
+    flex: none; width: 84px; border-radius: 12px; overflow: hidden;
+    border: 3px solid #a855f7; background: #e0f2fe;
+  }
   .magic-look-text b { font-family: var(--font-display); font-size: 19px; color: #7c3aed; }
   .magic-look-text span { font-size: 14px; color: #6b21a8; }
   .magic-look-try {

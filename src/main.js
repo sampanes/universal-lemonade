@@ -448,6 +448,7 @@ document.getElementById('btn-run-day').onclick = async () => {
     // The report is filled in and shown the moment the scene closes, in the same frame.
     if (summary) {
       renderReportModal(summary);
+      if (summary.houseOpened && !dadModeActive) showHouseNews();
       if (look) showMagicLook(look);
       showReportModal(true);
     }
@@ -1011,7 +1012,7 @@ document.getElementById('stand-shop-choice').addEventListener('click', (e) => {
 
 function renderHouse(s) {
   const col = document.getElementById('house-col');
-  const show = s.phase >= 2;
+  const show = s.houseOpen;
   if (col.hidden === show) col.hidden = !show;
   document.body.classList.toggle('has-house', show);
   if (!show) return;
@@ -1037,6 +1038,22 @@ function renderHouse(s) {
     ${level >= 1 ? `<div class="house-swatches" role="group" aria-label="House color">${HOUSE_COLORS.map(c =>
       `<button type="button" class="house-swatch" data-act="house-color" data-id="${c.id}" style="--swatch:${c.hex}" aria-label="${c.name}" aria-pressed="${c.id === s.houseColor}"></button>`).join('')}</div>` : ''}
     <div class="house-next">${nextHTML}</div>`);
+}
+// The day My House opens (on a quiet day, src/data/house.ts), the Day Report says so at the
+// top, and the house card glows until the kid touches it.
+function showHouseNews() {
+  const content = document.getElementById('report-modal-content');
+  if (!content) return;
+  content.insertAdjacentHTML('afterbegin',
+    `<div class="magic-look house-news"><div class="house-news-pic">${housePicHTML(engine.state.houseLevel, engine.state.houseColor)}</div>` +
+    `<div class="magic-look-text"><b>Big news!</b><span>Your lemonade money can fix up your house now!</span></div>` +
+    `<button type="button" class="magic-look-try" id="btn-house-news">Let's see!</button></div>`);
+  document.getElementById('house-card').classList.add('is-new');
+  document.getElementById('btn-house-news').onclick = (e) => {
+    e.stopPropagation();
+    closeReportModal();
+    document.getElementById('house-col').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  };
 }
 // The build scene: the old house shakes in a cloud of dust, the new one pops in, confetti.
 function playHouseScene(level) {
@@ -1065,6 +1082,7 @@ document.getElementById('house-scene').addEventListener('click', (e) => {
   e.currentTarget.innerHTML = '';
 });
 document.getElementById('house-col').addEventListener('click', (e) => {
+  document.getElementById('house-card').classList.remove('is-new');
   const swatch = e.target.closest('[data-act="house-color"]');
   if (swatch) { engine.setHouseColor(swatch.dataset.id); return; }
   const btn = e.target.closest('[data-act="house-buy"]');

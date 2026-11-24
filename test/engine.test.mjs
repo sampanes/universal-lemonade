@@ -4,7 +4,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 const sim = await import(new URL('../.sim-build/index.js', import.meta.url).href);
-const { LemonadeEngine, BALANCE, BOTS, FIRST_CHOICE, runGame, runBatch, withOverrides, summarize } = sim;
+const { LemonadeEngine, BALANCE, BOTS, FIRST_CHOICE, otherUnlockToday, runGame, runBatch, withOverrides, summarize } = sim;
 
 // Plays a fixed little routine and returns a fingerprint of the whole state each day.
 function playFingerprint(engine, days = 30) {
@@ -841,30 +841,55 @@ test('kid shop opens the factory after worldwide licensing and grows it in order
 
 test('house upgrades go in order, wait for their stage, and save', () => {
   const e = new LemonadeEngine({ seed: 73 });
-  e.state.cash = e.state.cash.add(1000);
+  const cash = (n) => { e.state.cash = e.state.cash.constructor.fromNumber(n); };
+  cash(1000);
   assert.equal(e.nextHouseStep().id, 'paint');
-  assert.equal(e.buyHouseStep(), false, 'paint waits for Stage 2');
-  e.dadJumpToPhase(2);
-  e.state.cash = e.state.cash.constructor.fromNumber(2000);
-  assert.ok(e.buyHouseStep());
+  assert.equal(e.buyHouseStep(), false, 'paint waits for the house to open');
+  e.state.houseOpen = true;
+  assert.ok(e.buyHouseStep(), 'paint opens with the house, in Stage 1');
   assert.equal(e.state.houseLevel, 1);
   assert.equal(e.ledger.house, 250);
-  assert.equal(e.state.cash.toNumber(), 1750);
+  assert.equal(e.state.cash.toNumber(), 750);
+  cash(3000);
+  assert.equal(e.buyHouseStep(), false, 'the second floor waits for Stage 2');
+  e.dadJumpToPhase(2);
   assert.equal(e.state.houseColor, 'mint', 'fresh paint starts mint');
   assert.ok(e.setHouseColor('sky'));
   assert.equal(e.setHouseColor('plaid'), false);
   assert.equal(e.state.houseColor, 'sky');
-  e.state.cash = e.state.cash.constructor.fromNumber(3000);
+  cash(3000);
   assert.ok(e.buyHouseStep(), 'second floor');
   assert.equal(e.nextHouseStep().id, 'treehouse');
-  e.state.cash = e.state.cash.constructor.fromNumber(100000);
+  cash(100000);
   assert.equal(e.buyHouseStep(), false, 'the treehouse waits for Stage 3');
   const loaded = LemonadeEngine.fromSave(JSON.parse(JSON.stringify(e.toSave())));
+  assert.equal(loaded.state.houseOpen, true);
   assert.equal(loaded.state.houseLevel, 2);
   assert.equal(loaded.nextHouseStep().id, 'treehouse');
   assert.equal(loaded.state.houseColor, 'sky');
 
   assert.equal(new LemonadeEngine({ seed: 75 }).setHouseColor('sky'), false, 'no repainting before Fresh Paint');
+  const jumped = new LemonadeEngine({ seed: 76 });
+  jumped.dadJumpToPhase(2);
+  assert.equal(jumped.state.houseOpen, true, "Dad Mode's jump opens the house");
+});
+
+test('my house opens on the first quiet day after $2,000 in sales', () => {
+  const e = new LemonadeEngine({ seed: 77 });
+  const BigNum = e.state.cash.constructor;
+  e.state.cash = BigNum.fromNumber(500);
+  assert.equal(e.runDay().houseOpened, false);
+  assert.equal(e.state.houseOpen, false, 'not before $2,000 in sales');
+
+  e.state.totalRevenueEarned = BigNum.fromNumber(2000);
+  e.state.lastShopPurchaseDay = e.state.day - 1;   // bought something yesterday: today shows the next item
+  assert.equal(e.runDay().houseOpened, false, 'not on a day with other news');
+  assert.equal(e.runDay().houseOpened, false, 'not the day the next shop item shows');
+  const quiet = e.runDay();
+  assert.equal(quiet.houseOpened, true, 'the first quiet day');
+  assert.equal(e.state.houseOpen, true);
+  assert.ok(otherUnlockToday(e.state, quiet), 'a magic look waits for another day');
+  assert.equal(e.runDay().houseOpened, false, 'only once');
 });
 
 test('stores buy the forecast bottles, the forecast counts their lemons and sugar, and the labeler makes bottles cheaper', () => {

@@ -40,8 +40,10 @@ Day Report of what customers said.
 - **Lemonade Factory.** After the squeezer goes worldwide, open a factory that makes and
   ships lemonade using its own supplies. The Factory tab shows its estimated cases and
   earnings; grow from supermarkets to factories around the world in the Stand Shop.
-- **My House.** From Stage 2 a third column shows the family's one-story house. Save up to
-  upgrade it: Fresh Paint ($250; then pick the wall color any time), a Second Floor ($2,500),
+- **My House.** Once the kid has sold $2,000 of lemonade in all, the next quiet day (nothing
+  bought, no new shop item) ends with big news in the Day Report, and a third column shows the
+  family's one-story house. Save up to upgrade it: Fresh Paint ($250; then pick the wall color
+  any time), a Second Floor ($2,500, Stage 2),
   a Treehouse ($5,000, Stage 3), Lemon HQ in the garage ($15,000, Stage 3) and Pay Off the
   House ($500,000, Stage 4: bunting and balloons). Each plays a short build scene. The house also stands behind the kid's stand in
   the day scene, under the day's sky, clouds, rain or snow.

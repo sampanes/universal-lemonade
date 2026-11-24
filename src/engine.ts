@@ -26,7 +26,8 @@ import { createInitialFranchiseStands } from './data/franchise';
 import { createInitialWholesaleAccounts } from './data/wholesale';
 import { createInitialProjects } from './data/projects';
 import { createInitialTrophies } from './data/trophies';
-import { HOUSE_STEPS, HOUSE_COLORS, FIRST_HOUSE_COLOR, type HouseStep } from './data/house';
+import { HOUSE_STEPS, HOUSE_COLORS, FIRST_HOUSE_COLOR, HOUSE_OPENS_AT_SALES, type HouseStep } from './data/house';
+import { otherUnlockToday } from './unlocks';
 import { rollWeatherForecast, computeIdealIce, getSeasonInfo } from './simulation/weather';
 import { iceHint, crowdLevel, type IceHint } from './simulation/hints';
 import { computeRecipeQuality, getRecipeProfile } from './simulation/recipe';
@@ -208,6 +209,7 @@ export class LemonadeEngine {
       totalRevenueEarned: new BigNum(0, 0),
       totalBottlesSold: 0,
       totalSqueezersSold: 0,
+      houseOpen: false,
       houseLevel: 0,
       houseColor: FIRST_HOUSE_COLOR,
       reputationHistory: [],
@@ -414,7 +416,7 @@ export class LemonadeEngine {
 
   public buyHouseStep(): boolean {
     const step = this.nextHouseStep();
-    if (!step || this.state.phase < step.phase || this.state.cash.lt(step.cost)) return false;
+    if (!step || !this.state.houseOpen || this.state.phase < step.phase || this.state.cash.lt(step.cost)) return false;
     this.state.cash = this.state.cash.sub(step.cost);
     this.ledger.house += step.cost;
     this.state.houseLevel += 1;
@@ -475,6 +477,7 @@ export class LemonadeEngine {
     }
 
     const arrive = DAD_JUMP_ARRIVAL[target];
+    s.houseOpen = true;   // every later stage is well past HOUSE_OPENS_AT_SALES
     if (s.cash.lt(arrive.cash)) s.cash = BigNum.fromNumber(arrive.cash);
     if (s.totalCupsSold.lt(arrive.cups)) s.totalCupsSold = BigNum.fromNumber(arrive.cups);
     this.log(`Dad Mode: jumped ahead to Stage ${target}.`);
@@ -1055,6 +1058,7 @@ export class LemonadeEngine {
       buzzAfter: s.buzz,
       goldenStreak: s.goldenStreak,
       recipeJustLocked,
+      houseOpened: false,
       iceMadeByMachine,
       iceKeptByCooler,
       lemonsKeptByFridge,
@@ -1064,6 +1068,13 @@ export class LemonadeEngine {
       reviews,
       notes: notes.length ? notes : ['All operations ran smoothly!']
     };
+
+    // My House opens on its own, on a day with nothing else to announce (src/data/house.ts).
+    if (!s.houseOpen && s.totalRevenueEarned.gte(HOUSE_OPENS_AT_SALES) && !otherUnlockToday(s, summary)) {
+      s.houseOpen = true;
+      summary.houseOpened = true;
+      this.log('My House is open: the house can be fixed up now.');
+    }
 
     s.lastDaySummary = summary;
     s.day += 1;

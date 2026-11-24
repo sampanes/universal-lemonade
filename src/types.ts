@@ -213,6 +213,7 @@ export interface DaySummary {
   buzzAfter: number;
   goldenStreak: number;         // golden open days in a row, counting today
   recipeJustLocked: boolean;    // today the neighbors asked to keep the recipe forever
+  houseOpened: boolean;         // the My House column opened at the end of today
   // Stand upgrades.
   iceMadeByMachine: number;     // cubes the ice machine made today
   iceKeptByCooler: number;      // leftover cubes the cooler kept frozen overnight
@@ -327,6 +328,7 @@ export interface GameState {
   lastShopPurchaseDay?: number; // spaces the next kid shop item
   friendExpansion?: { day: number; cups: number };
   storeExpansion?: { day: number; bottles: number };
+  houseOpen: boolean;    // the My House column is open (HOUSE_OPENS_AT_SALES, src/data/house.ts)
   houseLevel: number;    // house steps bought (src/data/house.ts); 0: none
   houseColor: string;    // wall color id (HOUSE_COLORS), shown once Fresh Paint is bought
   ledger?: MoneyLedger;         // today so far
