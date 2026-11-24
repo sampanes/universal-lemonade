@@ -3119,6 +3119,10 @@ body:not(.dad-mode) .dad-pill:hover {
     max-width: 960px;
     margin: 0 auto;
   }
+  /* A little less padding in each column than Dad Mode's 12px: the first column stacks up
+     to four cards (Stage 5), or a recipe tip four lines long, and must still fit the kids'
+     1280x660 screen without scrolling. */
+  body:not(.dad-mode) .panel { padding-top: 9px; padding-bottom: 9px; }
   /* Too narrow for two 320px columns (phones): one column. Without this the two-column
      rules above made the page wider than the screen and it scrolled sideways. */
   @media (max-width: 680px) {
