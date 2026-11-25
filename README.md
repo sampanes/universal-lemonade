@@ -133,7 +133,7 @@ Every push to `main` builds and deploys to GitHub Pages (`.github/workflows/depl
 | `src/engine.ts` | The game engine (no DOM): state, days, buying, upgrades, save and load |
 | `src/balance.ts` | Every economy tuning number |
 | `src/simulation/` | Weather, demand, recipe taste, reviews, reputation, storage limits |
-| `src/data/` | Stand upgrades and business projects, chores, franchise stands, wholesale, flavors, the brand, trophies |
+| `src/data/` | Stand upgrades and business projects, chores, franchise stands, wholesale, flavors, the brand, the big dreams |
 | `src/character.ts`, `src/kid.ts` | The kid's saved look, and drawing the paper-doll kid |
 | `src/unlocks.ts` | Which looks unlock when |
 | `sim/` | The balance simulator (bot players) |

@@ -985,10 +985,8 @@ function renderStandShop(s) {
   const key = choices ? choices.map(c => c.item.id).join('+') : item.id;
   if (card._item !== key) {
     card._item = key;
-    card.classList.toggle('teaser', !!item.teaser);
     card.classList.toggle('choosing', !!choices);
     setHTMLIfChanged(document.getElementById('stand-shop-choice'), choices ? shopChoiceHTML(choices) : '');
-    setText(document.getElementById('stand-shop-tag'), item.teaser ? 'SOON' : 'SHOP');
     const pic = document.getElementById('stand-shop-pic');
     pic.hidden = !item.pic;
     if (item.pic) pic.src = item.pic;
@@ -998,15 +996,15 @@ function renderStandShop(s) {
   }
   // Only spare money counts: what is left after today's supplies are paid for. Buying an
   // upgrade with the lemon money left kids stuck doing chores just to reopen the stand.
-  const need = item.teaser ? 0 : engine.restockCostForToday();
+  const need = engine.restockCostForToday();
   const spare = Math.max(0, s.cash.toNumber() - need);
   if (choices) { renderShopChoice(choices, spare, need); return; }
   setText(document.getElementById('stand-shop-name'), item.name);
   setText(document.getElementById('stand-shop-desc'), item.desc);
   const cost = p.costCash;
-  const short = !item.teaser && spare < cost;
+  const short = spare < cost;
   // Enough money but not open yet (the second stand also wants a tasty recipe).
-  const notYet = !item.teaser && !short && !p.unlocked(s);
+  const notYet = !short && !p.unlocked(s);
   const save = document.getElementById('stand-shop-save');
   const showSave = short || notYet;
   if (save.hidden === showSave) save.hidden = !showSave;
@@ -1056,7 +1054,7 @@ function renderShopChoice(choices, spare, need) {
 }
 function buyShopItem(id) {
   const item = KID_SHOP.find(x => x.id === id);
-  if (!item || item.teaser) return;
+  if (!item) return;
   const p = shopEntry(engine, item);
   if (!p || engine.state.cash.toNumber() - engine.restockCostForToday() < p.costCash) return;
   if (item.treat ? engine.buyTrophy(id) : engine.buyProject(id)) {

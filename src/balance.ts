@@ -1,7 +1,7 @@
 // src/balance.ts -- Every tuning number for the economy, in one place.
 //
 // Change a value here, then run the simulator (npm run sim) to see what it does to pacing.
-// Content tables (which projects, trophies, franchise stands, wholesale accounts and chores
+// Content tables (which projects, big dreams, franchise stands, wholesale accounts and chores
 // exist, and their prices) live in src/data/. This file holds the formula constants.
 //
 // The engine takes a Balance in its constructor, so the simulator can try variations
@@ -39,7 +39,6 @@ export const BALANCE = {
     bottles: { qty: 25, cost: 32.5 },
   } as Record<'lemons' | 'sugar' | 'ice' | 'cups' | 'bottles', SupplyPack>,
   costcoPriceMult: 0.65,        // Costco upgrade: packs cost this much
-  bikePackMult: 1.25,           // Mountain bike trophy: packs hold this much more
 
   recipe: {
     // The golden ratio is picked per game (from the game seed) inside these ranges, so a kid
@@ -85,7 +84,6 @@ export const BALANCE = {
     // Franchise stand traffic reputation factor = base + perRep * reputation
     franchiseRepBase: 0.6,
     franchiseRepPerRep: 0.4,
-    ipadFranchiseMult: 1.10,
   },
 
   // Buzz: how much of the neighborhood knows the stand exists (0..1). A new stand is a
@@ -129,9 +127,6 @@ export const BALANCE = {
     offGoldenTasteMult: 0.75,
     servedBase: 0.75,
     servedPerServed: 0.25,
-    // Lasting boosts added to every day's score
-    bonusNintendoSwitch: 0.05,
-    bonusDisneyTrip: 0.15,
   },
 
   // How much the stand can hold (src/simulation/storage.ts). The ice machine and the
@@ -139,7 +134,6 @@ export const BALANCE = {
   // (a part pack costs its share), so leftovers never waste room.
   storage: {
     iceBucket: 400,             // cubes, before the ice machine (2 bags)
-    iceCooler: 1000,            // cubes, with a cooler (5 bags; the cooler is not sold now)
     lemonBowl: 24,              // lemons, before the mini-fridge (one bag)
   },
 
@@ -151,7 +145,6 @@ export const BALANCE = {
     lemonsPerBottle: 0.5,
     sugarPerBottle: 0.4,
     labelerBottleMult: 0.70,    // the labeler: bottles cost this much of the price
-    civicPackagingMult: 0.70,   // the car trophy: the same again
   },
 
   patent: {
@@ -159,8 +152,7 @@ export const BALANCE = {
     baseUnitsPerDay: 50,         // SQUEEZER_LEVELS level 1 (src/data/projects.ts)
     randomMin: 0.8,             // units = base * (randomMin + rand * randomRange) * boosts
     randomRange: 0.4,
-    teslaBonus: 0.20,
-    privateJetMult: 2.0,
+    privateJetMult: 2.0,        // the Lemonade Jet dream
   },
 
   copacker: {
@@ -168,16 +160,7 @@ export const BALANCE = {
     netPerCase: 18.0,
     randomMin: 0.85,
     randomRange: 0.3,
-    arenaMult: 2.0,
-  },
-
-  // One-time effects when a trophy is bought (lasting reputation boosts are above).
-  trophies: {
-    nintendoReputationBump: 0.05,
-    disneyReputationBump: 0.15,
-    scooterCapacityMult: 1.15,
-    arcadeBrandMult: 1.15,
-    collegeBrandMult: 1.25,
+    arenaMult: 2.0,             // the Lemonade Arena dream
   },
 
   chores: {
@@ -189,15 +172,12 @@ export const BALANCE = {
     // all day stops paying: with 1.8 the 6th chore of a day rests about 2 minutes, the 10th
     // about 25 minutes.
     cooldownGrowth: 1.8,
-    skateboardCooldownMult: 0.75,
-    skateboardMinCooldownSec: 5,
   },
 
   weather: {
     seasonLength: 5,
     minF: 32,
     maxF: 108,
-    lockedTempF: 95,            // weather control upgrade
     seasons: {
       SPRING: { tempCurve: [53, 58, 64, 69, 75], sunnyBelow: 0.55, cloudyBelow: 0.80, delta: { SUNNY: 3, CLOUDY: -2, RAINY: -6 }, jitter: 5 },
       SUMMER: { tempCurve: [82, 88, 96, 92, 85], sunnyBelow: 0.70, cloudyBelow: 0.85, delta: { SUNNY: 4, CLOUDY: -2, RAINY: -5 }, jitter: 6 },

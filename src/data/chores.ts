@@ -16,15 +16,12 @@ export const CHORE_DEFS: { name: string; min: number; max: number }[] = [
   { name: "Sweep the Deck & Porch", min: 5, max: 10 }
 ];
 
-export function rollChore(rand: () => number, hasSkateboard: boolean = false, b: Balance = BALANCE): ChoreState {
+export function rollChore(rand: () => number, b: Balance = BALANCE): ChoreState {
   const c = b.chores;
   const chore = CHORE_DEFS[Math.floor(rand() * CHORE_DEFS.length)];
   const listed = chore.min + Math.floor(rand() * (chore.max - chore.min + 1));
   const reward = Math.max(1, Math.round(listed * c.rewardMult));
-  let cooldownSec = c.cooldownMinSec + Math.floor(rand() * c.cooldownRandomSec);
-  if (hasSkateboard) {
-    cooldownSec = Math.max(c.skateboardMinCooldownSec, Math.round(cooldownSec * c.skateboardCooldownMult));
-  }
+  const cooldownSec = c.cooldownMinSec + Math.floor(rand() * c.cooldownRandomSec);
   return {
     name: chore.name,
     reward,

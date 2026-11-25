@@ -104,11 +104,11 @@ export interface ProjectDef {
   effect: (engine: any) => void;
 }
 
+// One of the big dreams at the end of the kid's Stand Shop (src/data/trophies.ts).
 export interface LifestyleTrophy {
   id: string;
   name: string;
   emoji: string;
-  category: 'kid' | 'teen' | 'mogul' | 'billionaire';
   costCash: number;
   purchased: boolean;
   desc: string;
@@ -197,7 +197,6 @@ export interface DaySummary {
   stores: StoreDayResult[];      // each signed store, in list order
   bottlesSold: number;
   wholesaleRevenue: number;
-  packagingCosts: number;         // always 0 now (caps and labels are in the bottle price)
   wholesaleNet: number;
 
   // Patent Royalties (Phase 4+)
@@ -226,7 +225,6 @@ export interface DaySummary {
   flavorTaste?: FlavorTaste | null;   // the Flavor Lab's tasting today (Stage 5)
   // Stand upgrades.
   iceMadeByMachine: number;     // cubes the ice machine made today
-  iceKeptByCooler: number;      // leftover cubes the cooler kept frozen overnight
   lemonsKeptByFridge: number;   // lemons that would have gone bad without the mini-fridge
   upgradeSavings: number;       // what those were worth at store prices
   storageShort: '' | 'ice' | 'lemons';   // sold out because the stand could not hold more
@@ -245,12 +243,11 @@ export interface MoneyLedger {
   supplies: Record<SupplyItem, number>;
   shop: number;         // stand upgrades and business projects
   shopIds: string[];    // which ones, for the picture
-  treats: number;       // trophies
+  treats: number;       // the big dreams (src/data/trophies.ts)
   hiring: number;       // franchise stand setup and wholesale sign-up
   storeUpgrades: number; // expanded store shelves
   house: number;        // house upgrades (src/data/house.ts)
   wages: number;        // franchise workers
-  packaging: number;    // wholesale bottles
 }
 
 export interface GoldenRecipe {
@@ -307,12 +304,10 @@ export interface GameState {
 
   // Upgrades & Flag States
   flags: {
-    hasCooler: boolean;
     hasMiniFridge: boolean;
     hasCostcoDiscount: boolean;
     hasCargoWagon: boolean;
     hasCommercialLabeler: boolean;
-    weatherLocked95F: boolean;
     hasAutoIce: boolean;
     autoIceEnabled: boolean;
     // Helpers that take over the small daily jobs (src/data/projects.ts, engine.runHelpers).
@@ -321,19 +316,7 @@ export interface GameState {
     hasDeliveryRoute: boolean;   // runs the stores: signing up and bigger shelves
     hasFlavorLab: boolean;       // the factory invents flavors (src/data/flavors.ts)
 
-    // Lifestyle Trophy Flags
-    hasSkateboard: boolean;
-    hasMountainBike: boolean;
-    hasNintendoSwitch: boolean;
-    hasElectricScooter: boolean;
-    hasIpadPro: boolean;
-    hasDisneyTrip: boolean;
-    hasHondaCivic: boolean;
-    hasGarageArcade: boolean;
-    hasCollegePrepaid: boolean;
-    hasPaidMortgage: boolean;
-    hasLemonGrove: boolean;
-    hasTeslaModelX: boolean;
+    // The big dreams (src/data/trophies.ts)
     hasPrivateJet: boolean;
     hasArenaNaming: boolean;
     hasPrivateIsland: boolean;

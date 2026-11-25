@@ -61,7 +61,7 @@ export function kidShopNext(engine, s) {
     const p = shopEntry(engine, item);
     if (!p || p.purchased) continue;
     if (item.id === 'copacker_deal' && !engine.projects.find(project => project.id === 'global_licensing').purchased) return null;
-    if (item.teaser || item.early) return { item, p };
+    if (item.early) return { item, p };
     // friends: N waits until that many friends are hired (the wagon only helps them).
     const hired = Object.values(engine.franchiseStands).filter(st => st.hired).length;
     if (item.friends && hired < item.friends) return null;

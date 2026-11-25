@@ -1,4 +1,5 @@
-// src/data/trophies.ts -- 15 Lifestyle Trophies across 4 Career Tiers
+// src/data/trophies.ts -- the three big dreams at the end of the kid's Stand Shop
+// (src/ui/kidShop.js). The last one, Citrus Cay, is the ending.
 import type { LifestyleTrophy } from '../types';
 
 // Citrus Cay, the ending. Played through by a careful kid (the careful bot's mornings, the
@@ -9,169 +10,33 @@ export const ISLAND_COST = 1000000000;
 export function createInitialTrophies(): LifestyleTrophy[] {
   return [
     {
-      id: 'skateboard',
-      name: 'Custom Pro Skateboard & Helmet',
-      emoji: '\u{1F6F9}',
-      category: 'kid',
-      costCash: 85,
-      purchased: false,
-      desc: 'Custom grip tape and smooth abec-9 bearings. Roll up to the stand in style.',
-      perkDesc: 'Speedy Chore Travel: reduces chore cooldown by 25%!',
-      phaseRequired: 1
-    },
-    {
-      id: 'mountain_bike',
-      name: 'Trek Mountain Bike with Front Basket',
-      emoji: '\u{1F6B2}',
-      category: 'kid',
-      costCash: 280,
-      purchased: false,
-      desc: '21-speed aluminum frame bike with a heavy-duty front rack for grocery runs.',
-      perkDesc: 'Grocery Hauler: +25% bonus supplies on all store pack purchases!',
-      phaseRequired: 1
-    },
-    {
-      id: 'nintendo_switch',
-      name: 'Nintendo Switch OLED & Mario Kart',
-      emoji: '\u{1F3AE}',
-      category: 'kid',
-      costCash: 350,
-      purchased: false,
-      desc: 'Game behind the stand on slow cloudy afternoons. Total neighborhood envy.',
-      perkDesc: 'Good Vibes: +5% customer happiness & reputation floor!',
-      phaseRequired: 1
-    },
-    {
-      id: 'electric_scooter',
-      name: 'Segway Ninebot Electric Scooter',
-      emoji: '\u{1F6F4}',
-      category: 'kid',
-      costCash: 650,
-      purchased: false,
-      desc: 'Zip between Timmy, Leo, and Sarahs stands in seconds to check stock.',
-      perkDesc: 'Manager Mobility: +15% capacity boost to all franchise stands!',
-      phaseRequired: 2
-    },
-    {
-      id: 'ipad_pro',
-      name: 'iPad Pro & Apple Pencil',
-      emoji: '\u{1F4F1}',
-      category: 'teen',
-      costCash: 900,
-      purchased: false,
-      desc: 'Design high-res glossy flyers and track real-time franchise supply spreadsheets.',
-      perkDesc: 'Digital Supply Chain: +10% sales throughput across all stands!',
-      phaseRequired: 2
-    },
-    {
-      id: 'disney_vip',
-      name: 'VIP Disney World Family Vacation',
-      emoji: '\u{1F3F0}',
-      category: 'teen',
-      costCash: 3500,
-      purchased: false,
-      desc: 'Treated the entire family to 5-star resort suites. Mom and Dad are in awe.',
-      perkDesc: 'Family Pride: Permanent +15% Neighborhood Reputation!',
-      phaseRequired: 2
-    },
-    {
-      id: 'first_car',
-      name: '2012 Honda Civic Hatchback',
-      emoji: '\u{1F697}',
-      category: 'teen',
-      costCash: 8500,
-      purchased: false,
-      desc: 'Your first car! Fold-down rear seats easily hold 25 crates of bottled lemonade.',
-      perkDesc: 'Wholesale Delivery Driver: cuts wholesale packaging delivery friction by 30%!',
-      phaseRequired: 3
-    },
-    {
-      id: 'garage_arcade',
-      name: 'Garage HQ Renovation & Arcade Cabinet',
-      emoji: '\u{1F579}\u{FE0F}',
-      category: 'teen',
-      costCash: 15000,
-      purchased: false,
-      desc: 'Epoxy floors, stainless steel juicing tables, and a Street Fighter arcade machine.',
-      perkDesc: 'Corporate Headquarters: +15% brand multiplier across all wholesale accounts!',
-      phaseRequired: 3
-    },
-    {
-      id: 'college_fund',
-      name: 'College Tuition Prepaid in Full',
-      emoji: '\u{1F393}',
-      category: 'teen',
-      costCash: 50000,
-      purchased: false,
-      desc: 'Paid 4 full years of college tuition before high school graduation. Mom cried tears of joy.',
-      perkDesc: 'Total Peace of Mind: permanent 1.25x Brand Multiplier on all sales!',
-      phaseRequired: 3
-    },
-    {
-      id: 'tesla_model_x',
-      name: 'Tesla Model X (LEM0N8 Plates)',
-      emoji: '\u{26A1}',
-      category: 'mogul',
-      costCash: 95000,
-      purchased: false,
-      desc: 'Falcon-wing doors with a custom sunshine-yellow wrap and personalized plates.',
-      perkDesc: 'Luxury Tech Flex: +20% patent licensing royalties!',
-      phaseRequired: 4
-    },
-    {
-      id: 'pay_mortgage',
-      name: 'Paid Off Mom & Dads 30-Year Mortgage',
-      emoji: '\u{1F3E1}',
-      category: 'mogul',
-      costCash: 450000,
-      purchased: false,
-      desc: 'Handed your parents the mortgage deed marked PAID IN FULL. Legend of the neighborhood.',
-      perkDesc: 'Neighborhood Saint: Locks Neighborhood Reputation permanently at 100%!',
-      phaseRequired: 4
-    },
-    {
-      id: 'lemon_grove',
-      name: '100-Acre California Lemon Grove',
-      emoji: '\u{1F34B}',
-      category: 'mogul',
-      costCash: 1200000,
-      purchased: false,
-      desc: 'Your own certified organic citrus orchards in Santa Barbara, California.',
-      perkDesc: 'Free Lemons Forever: Grove delivers 500 fresh lemons every morning for $0!',
-      phaseRequired: 4
-    },
-    {
       id: 'private_jet',
-      name: 'Gulfstream G650 Private Jet',
+      name: 'Lemonade Jet',
       emoji: '\u{2708}\u{FE0F}',
-      category: 'billionaire',
       costCash: 65000000,
       purchased: false,
-      desc: 'Yellow-trimmed private jet to negotiate international appliance rights in London and Tokyo.',
-      perkDesc: 'Global Dealmaker: Doubles all patent royalties worldwide!',
+      desc: 'A sunshine-yellow jet to sell the lemon squeezer all around the world.',
+      perkDesc: 'Squeezers sell twice as much.',
       phaseRequired: 5
     },
     {
       id: 'arena_naming',
-      name: 'Naming Rights: The Lemonade Center Arena',
+      name: 'The Lemonade Arena',
       emoji: '\u{1F3DF}\u{FE0F}',
-      category: 'billionaire',
       costCash: 80000000,
       purchased: false,
-      desc: 'Your brand name glowing across the 20,000-seat professional sports arena downtown.',
-      perkDesc: 'Worldwide Fame: Doubles all supermarket co-packer demand!',
+      desc: 'Your name in lights over a giant arena downtown.',
+      perkDesc: 'The factory sells twice as much.',
       phaseRequired: 5
     },
     {
       id: 'private_island',
-      name: 'Buy Citrus Cay Private Caribbean Island',
+      name: 'Citrus Cay',
       emoji: '\u{1F3DD}\u{FE0F}',
-      category: 'billionaire',
-      // The last dream in the kid's Stand Shop (src/ui/kidShop.js): the ending.
       costCash: ISLAND_COST,
       purchased: false,
-      desc: 'A 500-acre tropical private island with citrus orchards, white sand beaches, and an infinity pool filled with iced lemonade.',
-      perkDesc: 'THE GRAND VICTORY: You won the game! (Keep playing as long as you like.)',
+      desc: 'Your very own lemonade island, with lemon trees, white sand and a pool of iced lemonade.',
+      perkDesc: 'You won the game! (Keep playing as long as you like.)',
       phaseRequired: 5
     }
   ];

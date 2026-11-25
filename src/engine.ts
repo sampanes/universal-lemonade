@@ -58,7 +58,7 @@ export const DEFAULT_SEED = 1337;
 
 // Bump whenever the save changes shape. An older save is not upgraded: it is dropped and a new
 // game starts (src/storage.ts also clears every other stored setting when that version moves).
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 4;
 
 export interface EngineSave {
   v: number;
@@ -231,31 +231,16 @@ export class LemonadeEngine {
       recipeLocked: false,
 
       flags: {
-        hasCooler: false,
         hasMiniFridge: false,
         hasCostcoDiscount: false,
         hasCargoWagon: false,
         hasCommercialLabeler: false,
-        weatherLocked95F: false,
         hasAutoIce: false,
         autoIceEnabled: false,
         hasSupplyTruck: false,
         hasStandCaptain: false,
         hasDeliveryRoute: false,
         hasFlavorLab: false,
-
-        hasSkateboard: false,
-        hasMountainBike: false,
-        hasNintendoSwitch: false,
-        hasElectricScooter: false,
-        hasIpadPro: false,
-        hasDisneyTrip: false,
-        hasHondaCivic: false,
-        hasGarageArcade: false,
-        hasCollegePrepaid: false,
-        hasPaidMortgage: false,
-        hasLemonGrove: false,
-        hasTeslaModelX: false,
         hasPrivateJet: false,
         hasArenaNaming: false,
         hasPrivateIsland: false
@@ -287,7 +272,7 @@ export class LemonadeEngine {
 
   // Chore Actions
   public rollNextChore(): void {
-    this.state.currentChore = rollChore(() => this.rand(), this.state.flags.hasSkateboard, this.balance);
+    this.state.currentChore = rollChore(() => this.rand(), this.balance);
   }
 
   public doChore(): { name: string; reward: number } | null {
@@ -312,15 +297,10 @@ export class LemonadeEngine {
   // What one pack of an item holds and costs right now, after upgrades.
   public supplyPack(item: SupplyItem): { qty: number; cost: number } {
     const b = this.balance;
-    const discount = this.state.flags.hasCostcoDiscount ? b.costcoPriceMult : 1.0;
-    const bikeBonus = this.state.flags.hasMountainBike ? b.bikePackMult : 1.0;
     const base = b.supplies[item];
-    let mult = discount;
-    if (item === 'bottles') {
-      if (this.state.flags.hasCommercialLabeler) mult *= b.wholesale.labelerBottleMult;
-      if (this.state.flags.hasHondaCivic) mult *= b.wholesale.civicPackagingMult;
-    }
-    return { qty: Math.round(base.qty * bikeBonus), cost: +(base.cost * mult).toFixed(2) };
+    let mult = this.state.flags.hasCostcoDiscount ? b.costcoPriceMult : 1.0;
+    if (item === 'bottles' && this.state.flags.hasCommercialLabeler) mult *= b.wholesale.labelerBottleMult;
+    return { qty: base.qty, cost: +(base.cost * mult).toFixed(2) };
   }
 
   // How much the stand can hold of an item (Infinity = no limit). See src/simulation/storage.ts.
@@ -503,38 +483,6 @@ export class LemonadeEngine {
     this.state.lastShopPurchaseDay = this.state.day;   // the kid's Stand Shop sells the big dreams
     t.purchased = true;
 
-    if (id === 'skateboard') this.state.flags.hasSkateboard = true;
-    if (id === 'mountain_bike') this.state.flags.hasMountainBike = true;
-    const tb = this.balance.trophies;
-    const repMax = this.balance.reputation.max;
-    if (id === 'nintendo_switch') {
-      this.state.flags.hasNintendoSwitch = true;
-      this.state.reputation = Math.min(repMax, this.state.reputation + tb.nintendoReputationBump);
-    }
-    if (id === 'electric_scooter') {
-      this.state.flags.hasElectricScooter = true;
-      Object.values(this.franchiseStands).forEach(st => st.baseCapacity = Math.round(st.baseCapacity * tb.scooterCapacityMult));
-    }
-    if (id === 'ipad_pro') this.state.flags.hasIpadPro = true;
-    if (id === 'disney_vip') {
-      this.state.flags.hasDisneyTrip = true;
-      this.state.reputation = Math.min(repMax, this.state.reputation + tb.disneyReputationBump);
-    }
-    if (id === 'first_car') this.state.flags.hasHondaCivic = true;
-    if (id === 'garage_arcade') {
-      this.state.flags.hasGarageArcade = true;
-      this.state.brandMultiplier *= tb.arcadeBrandMult;
-    }
-    if (id === 'college_fund') {
-      this.state.flags.hasCollegePrepaid = true;
-      this.state.brandMultiplier *= tb.collegeBrandMult;
-    }
-    if (id === 'tesla_model_x') this.state.flags.hasTeslaModelX = true;
-    if (id === 'pay_mortgage') {
-      this.state.flags.hasPaidMortgage = true;
-      this.state.reputation = 1.0;
-    }
-    if (id === 'lemon_grove') this.state.flags.hasLemonGrove = true;
     if (id === 'private_jet') this.state.flags.hasPrivateJet = true;
     if (id === 'arena_naming') this.state.flags.hasArenaNaming = true;
     if (id === 'private_island') {
@@ -542,18 +490,13 @@ export class LemonadeEngine {
       this.state.gameWon = true;
     }
 
-    this.log(`TROPHY PURCHASED: ${t.emoji} ${t.name} ($${t.costCash.toLocaleString()})! ${t.perkDesc}`);
+    this.log(`Big dream: ${t.emoji} ${t.name} ($${t.costCash.toLocaleString('en-US')})! ${t.perkDesc}`);
     return true;
   }
 
   // Weather & Calculations
   public rollNextForecast(): void {
-    const { weather, tempF, seasonInfo } = rollWeatherForecast(
-      () => this.rand(),
-      this.state.flags.weatherLocked95F,
-      this.state.day,
-      this.balance
-    );
+    const { weather, tempF, seasonInfo } = rollWeatherForecast(() => this.rand(), this.state.day, this.balance);
     this.state.weather = weather;
     this.state.tempF = tempF;
     this.state.seasonInfo = seasonInfo;
@@ -866,15 +809,6 @@ export class LemonadeEngine {
       s.recipe.icePerCup = this.computeIdealIce(s.tempF);
     }
 
-    if (s.flags.hasLemonGrove) {
-      s.inv.lemons = Math.max(s.inv.lemons, 500);
-      notes.push("California Lemon Grove delivered 500 fresh organic lemons ($0)");
-    }
-
-    if (s.flags.hasPaidMortgage) {
-      s.reputation = 1.0;
-    }
-
     // A locked recipe is always golden, whatever else touched state.recipe.
     if (s.recipeLocked) {
       s.recipe.lemonsPerPitcher = s.goldenRecipe.lemons;
@@ -973,7 +907,7 @@ export class LemonadeEngine {
           (it === 'ice' ? maxByIce : maxByLemons) === maxTotalPour && had[it] >= this.storageCap(it));
         if (full) {
           storageShort = full;
-          notes.push(`Sold ${totalSold} of ${totalCupDemand} cups, then ran out of ${full}: your ${storageName(s, full)} only holds ${this.storageCap(full).toLocaleString('en-US')}. ${storageUpgradeHint(full)}`);
+          notes.push(`Sold ${totalSold} of ${totalCupDemand} cups, then ran out of ${full}: your ${storageName(full)} only holds ${this.storageCap(full).toLocaleString('en-US')}. ${storageUpgradeHint(full)}`);
         } else {
           notes.push(`Stands sold out early: out of ${bottlenecks.join(' & ') || 'supplies'}! Sold ${totalSold}/${totalCupDemand} cups. Leftover supplies could not be poured without matching ingredients.`);
         }
@@ -985,9 +919,6 @@ export class LemonadeEngine {
 
     let bottlesSold = 0;
     let wholesaleGross = 0;
-    // Caps and labels are in the bottle price now (bought in the morning), so filling a
-    // bottle costs nothing more. Kept at 0 for the Day Report fields and older saves.
-    const packagingCosts = 0;
     const storeResults: StoreDayResult[] = [];
 
     if (s.phase >= 3) {
@@ -1016,16 +947,11 @@ export class LemonadeEngine {
         }
       }
     }
-    const wholesaleNet = wholesaleGross - packagingCosts;
-
     let patentUnitsSold = 0;
     let patentRoyalties = 0;
     if (s.phase >= 4 && this.patent.licensed) {
       const p = b.patent;
-      let multiplier = 1.0;
-      if (s.flags.hasTeslaModelX) multiplier += p.teslaBonus;
-      if (s.flags.hasPrivateJet) multiplier *= p.privateJetMult;
-
+      const multiplier = s.flags.hasPrivateJet ? p.privateJetMult : 1.0;
       patentUnitsSold = Math.round(this.patent.baseUnitsPerDay * (p.randomMin + this.rand() * p.randomRange) * multiplier);
       patentRoyalties = patentUnitsSold * this.patent.royaltyPerUnit;
       s.totalSqueezersSold += patentUnitsSold;
@@ -1043,17 +969,14 @@ export class LemonadeEngine {
     // What the stand upgrades saved today, in cubes, lemons and dollars (for the Day Report).
     const perCube = this.supplyPack('ice').cost / this.supplyPack('ice').qty;
     const perLemon = this.supplyPack('lemons').cost / this.supplyPack('lemons').qty;
-    const iceKeptByCooler = s.flags.hasCooler && !s.flags.hasAutoIce ? s.inv.ice : 0;
-    const lemonsKeptByFridge = s.flags.hasMiniFridge && !s.flags.hasLemonGrove
-      ? Math.ceil(s.inv.lemons * b.spoilage.lemonRotFraction) : 0;
+    const lemonsKeptByFridge = s.flags.hasMiniFridge ? Math.ceil(s.inv.lemons * b.spoilage.lemonRotFraction) : 0;
     // Unsold drinks do not save ice: unused machine ice melts at the end of the day.
     const iceUsed = (drivewayCupsSold + franchiseCupsSold) * s.recipe.icePerCup;
     const freeIceUsed = Math.min(iceMadeByMachine, Math.max(0, iceUsed - iceAtOpening));
-    const upgradeSavings = +((freeIceUsed + iceKeptByCooler) * perCube + lemonsKeptByFridge * perLemon).toFixed(2);
+    const upgradeSavings = +(freeIceUsed * perCube + lemonsKeptByFridge * perLemon).toFixed(2);
     if (upgradeSavings >= 0.01) {
       const parts: string[] = [];
       if (freeIceUsed > 0) parts.push(`${freeIceUsed.toLocaleString('en-US')} free ice cubes`);
-      if (iceKeptByCooler > 0) parts.push(`${iceKeptByCooler.toLocaleString('en-US')} cubes kept frozen`);
       if (lemonsKeptByFridge > 0) parts.push(`${lemonsKeptByFridge} lemons kept fresh`);
       notes.push(`Your upgrades saved $${upgradeSavings.toFixed(2)} today: ${parts.join(', ')}.`);
     }
@@ -1069,14 +992,14 @@ export class LemonadeEngine {
       if (seen < TIP_FULL_TIMES) notes.push(full);
       else shortSpoil.push(short);
     };
-    if (!s.flags.hasCooler && s.inv.ice > 0) {
+    if (s.inv.ice > 0) {
       const cubes = `${s.inv.ice} ice ${s.inv.ice === 1 ? 'cube' : 'cubes'}`;
       if (!s.flags.hasAutoIce) {
         spoilNote('melt', `${cubes} melted overnight. Ice only lasts one day, so buy just what today needs (an ice machine makes fresh ice every day).`, `${cubes} melted`);
       }
       s.inv.ice = 0;
     }
-    if (!s.flags.hasMiniFridge && s.inv.lemons > 0 && !s.flags.hasLemonGrove) {
+    if (!s.flags.hasMiniFridge && s.inv.lemons > 0) {
       const rotted = Math.ceil(s.inv.lemons * b.spoilage.lemonRotFraction);
       s.inv.lemons -= rotted;
       const lemons = `${rotted} ${rotted === 1 ? 'lemon' : 'lemons'}`;
@@ -1085,7 +1008,7 @@ export class LemonadeEngine {
     if (shortSpoil.length) notes.push(`Overnight: ${shortSpoil.join(', ')}.`);
 
     const totalRevenue = (drivewayRevenue + franchiseGross + wholesaleGross + patentRoyalties + copackerNet) * s.brandMultiplier;
-    const totalExpenses = franchiseWages + packagingCosts;
+    const totalExpenses = franchiseWages;
     const netProfit = totalRevenue - totalExpenses;
 
     if (netProfit < 0) {
@@ -1105,7 +1028,6 @@ export class LemonadeEngine {
     led.sales += totalRevenue;
     led.cups += totalCupsToday;
     led.wages += franchiseWages;
-    led.packaging += packagingCosts;
     s.lastLedger = led;
     s.upgradeSavingsTotal += upgradeSavings;
     s.grossProfitTotal += ledgerGrossProfit(led);
@@ -1134,10 +1056,8 @@ export class LemonadeEngine {
       cupsWanted: totalCupDemand,
       cupsSold: drivewayCupsSold + franchiseCupsSold
     }, b);
-    if (!s.flags.hasPaidMortgage) {
-      const excessivePriceSeen = totalTraffic > 0 && s.recipe.pricePerCup >= fairPrice * b.reputation.excessivePriceRatio;
-      s.reputation = nextReputation(s, customerScore, b, excessivePriceSeen);
-    }
+    const excessivePriceSeen = totalTraffic > 0 && s.recipe.pricePerCup >= fairPrice * b.reputation.excessivePriceRatio;
+    s.reputation = nextReputation(s, customerScore, b, excessivePriceSeen);
     const recentRatings = s.reputationHistory.slice(-4);
     if (!recentRatings.length || Math.abs(recentRatings[recentRatings.length - 1] - reputationBefore) > 1e-9) {
       recentRatings.push(reputationBefore);
@@ -1193,8 +1113,7 @@ export class LemonadeEngine {
       stores: storeResults,
       bottlesSold,
       wholesaleRevenue: wholesaleGross,
-      packagingCosts,
-      wholesaleNet,
+      wholesaleNet: wholesaleGross,
       patentUnitsSold,
       patentRoyalties,
       copackerCasesSold,
@@ -1213,7 +1132,6 @@ export class LemonadeEngine {
       houseOpened: false,
       flavorTaste: this.tasteFlavor(),   // after the factory sold: a new flavor counts from tomorrow
       iceMadeByMachine,
-      iceKeptByCooler,
       lemonsKeptByFridge,
       upgradeSavings,
       storageShort,
@@ -1271,19 +1189,19 @@ function emptyLedger(day: number): MoneyLedger {
   return {
     day, sales: 0, cups: 0, chores: 0,
     supplies: { lemons: 0, sugar: 0, ice: 0, cups: 0, bottles: 0 },
-    shop: 0, shopIds: [], treats: 0, hiring: 0, storeUpgrades: 0, house: 0, wages: 0, packaging: 0,
+    shop: 0, shopIds: [], treats: 0, hiring: 0, storeUpgrades: 0, house: 0, wages: 0,
   };
 }
 
 // Money in minus money out for one ledger (what the kid really kept that day).
 export function ledgerKept(l: MoneyLedger): number {
-  const out = Object.values(l.supplies).reduce((a, b) => a + b, 0) + l.shop + l.treats + l.hiring + l.storeUpgrades + l.house + l.wages + l.packaging;
+  const out = Object.values(l.supplies).reduce((a, b) => a + b, 0) + l.shop + l.treats + l.hiring + l.storeUpgrades + l.house + l.wages;
   return l.sales + l.chores - out;
 }
 
-// Gross profit for one ledger: sales minus what making them cost (supplies, workers' pay,
-// bottles). Upgrades, hiring, prizes and chores are left out.
+// Gross profit for one ledger: sales minus what making them cost (supplies, bottles and
+// workers' pay). Upgrades, hiring, the big dreams and chores are left out.
 export function ledgerGrossProfit(l: MoneyLedger): number {
   const supplies = Object.values(l.supplies).reduce((a, b) => a + b, 0);
-  return l.sales - supplies - l.wages - l.packaging;
+  return l.sales - supplies - l.wages;
 }

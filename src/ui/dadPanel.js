@@ -2,7 +2,7 @@
 import { setHTMLIfChanged, STORE_LOCK } from './dom.js';
 
 // Dad Mode's third column and the stage sections under the pantry: every business detail
-// (hiring, store contracts, the patent, the co-packer, upgrades, trophies and the log).
+// (hiring, store contracts, the patent, the co-packer, upgrades, the big dreams and the log).
 // Hidden in kid mode, so it is only drawn while Dad Mode is on.
 // storeWait(): why the next store purchase is not open yet ('' when it is).
 export function renderDadPanel(engine, storeWait) {
@@ -92,45 +92,32 @@ export function renderDadPanel(engine, storeWait) {
     </div>`).join('');
   setHTMLIfChanged(document.getElementById('project-list'), projectHTML);
 
-  // Trophy Shelf Display (All 15 Emojis)
+  // The three big dreams (the kid's Stand Shop sells them in order after the last factory
+  // step; here Dad can buy any of them once in Stage 5, to test the ending).
   const trophyShelf = document.getElementById('trophy-shelf');
   if (trophyShelf) {
     const shelfHTML = engine.trophies.map(t => {
       const cls = t.purchased ? 'trophy-icon owned' : 'trophy-icon locked';
-      return `<div class="${cls}" title="${t.name} ($${t.costCash.toLocaleString()})">${t.emoji}</div>`;
+      return `<div class="${cls}" title="${t.name} ($${t.costCash.toLocaleString('en-US')})">${t.emoji}</div>`;
     }).join('');
     setHTMLIfChanged(trophyShelf, shelfHTML);
   }
 
-  // Trophy List (Available in current stage)
   const trophyList = document.getElementById('trophy-list');
   if (trophyList) {
-    const catLabels = {
-      kid: 'Kid Hustle',
-      teen: 'Teen Ambition',
-      mogul: 'Industry Mogul',
-      billionaire: 'Global Billionaire'
-    };
-    const availableTrophies = engine.trophies.filter(t => !t.purchased && t.phaseRequired <= s.phase);
-    let trophyListHTML = '';
-    if (availableTrophies.length === 0) {
-      const allBought = engine.trophies.every(t => t.purchased);
-      trophyListHTML = `<div style="font-size:12px; color:#888; font-style:italic; padding:4px 0;">${allBought ? '\u{2605} All 15 lifestyle trophies acquired! Complete mastery.' : 'Advance to higher business stages to unlock more lifestyle trophies.'}</div>`;
-    } else {
-      trophyListHTML = availableTrophies.map(t => `
+    const open = engine.trophies.filter(t => !t.purchased && t.phaseRequired <= s.phase);
+    const trophyListHTML = open.length === 0
+      ? `<div style="font-size:12px; color:#888; font-style:italic; padding:4px 0;">${engine.trophies.every(t => t.purchased) ? 'All three dreams bought.' : 'The big dreams open in Stage 5.'}</div>`
+      : open.map(t => `
         <div class="card">
-          <div class="stat">
-            <strong>${t.emoji} ${t.name}</strong>
-            <span class="category-badge category-${t.category}">${catLabels[t.category]}</span>
-          </div>
+          <strong>${t.emoji} ${t.name}</strong>
           <div style="font-size:12px; color:#ccc; margin:4px 0;">${t.desc}</div>
-          <div style="font-size:12px; color:#4ade80; margin-bottom:6px;">\u{2605} ${t.perkDesc}</div>
+          <div style="font-size:12px; color:#4ade80; margin-bottom:6px;">${t.perkDesc}</div>
           <button type="button" data-dad="trophy" data-id="${t.id}" ${s.cash.lt(t.costCash) ? 'disabled' : ''} style="width:100%; font-weight:bold; background:#2c2413; border-color:#ffd700; color:#ffd700;">
-            Buy Trophy ($${t.costCash.toLocaleString()})
+            Buy ($${t.costCash.toLocaleString('en-US')})
           </button>
         </div>
       `).join('');
-    }
     setHTMLIfChanged(trophyList, trophyListHTML);
   }
 

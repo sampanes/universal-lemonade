@@ -492,8 +492,6 @@ test('each upgrade lifts its limit', () => {
   const e = new LemonadeEngine({ seed: 3 });
   const s = e.state, B = e.balance.storage;
   assert.equal(e.storageCap('ice'), B.iceBucket);
-  s.flags.hasCooler = true;
-  assert.equal(e.storageCap('ice'), B.iceCooler);
   s.flags.hasAutoIce = true;
   assert.equal(e.storageCap('ice'), Infinity);
   assert.equal(e.storageCap('lemons'), B.lemonBowl);
@@ -712,7 +710,7 @@ test('profit since Day 1 is sales minus supplies and pay; upgrades and hiring do
     e.autoRestockForToday();
     e.runDay();
     const l = e.state.lastLedger;
-    expect += l.sales - Object.values(l.supplies).reduce((a, b) => a + b, 0) - l.wages - l.packaging;
+    expect += l.sales - Object.values(l.supplies).reduce((a, b) => a + b, 0) - l.wages;
   }
   assert.ok(Math.abs(e.state.grossProfitTotal - expect) < 1e-6);
   assert.ok(e.state.grossProfitTotal > 0);
@@ -1091,7 +1089,7 @@ test('stores buy the forecast bottles, the forecast counts their lemons and suga
   const st = d.stores.find(x => x.id === 'bodega');
   assert.equal(st.bottles, want);
   assert.equal(st.wanted, want);
-  assert.equal(d.packagingCosts, 0, 'caps and labels are in the bottle price');
+  assert.equal(d.totalExpenses, d.franchiseWagesPaid, 'caps and labels are in the bottle price: filling costs nothing more');
   const before = e.supplyPack('bottles').cost;
   e.state.cash = e.state.cash.add(1000);
   assert.equal(e.buyProject('commercial_labeler'), false, 'the labeler waits for 250 bottles sold');

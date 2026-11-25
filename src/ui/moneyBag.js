@@ -35,13 +35,11 @@ export function mbOutRows(l, engine) {
     const pic = brandOnly ? './sprites/morning_prep/mascot_lemon_head.png' : kid.length ? kid[0].pic : './sprites/shop/second_stand.png';
     rows += mbRow('out', pic, name, brandOnly ? 'making your lemonade famous' : chips, l.shop);
   }
-  if (l.treats > 0.004) rows += mbRow('out', '', 'Prizes', '', l.treats);
+  if (l.treats > 0.004) rows += mbRow('out', '', 'Big dream', 'a dream come true', l.treats);
   if (l.hiring > 0.004) rows += mbRow('out', './sprites/franchise/ballpark.png', 'Hiring', 'new stands and deals', l.hiring);
   if (l.storeUpgrades > 0.004) rows += mbRow('out', './sprites/shop/bottles.png', 'Store shelves', 'bigger store orders', l.storeUpgrades);
   if (l.house > 0.004) rows += mbRow('out', HOUSE_PIC, 'House', 'a new look for home', l.house);
-  if (l.wages > 0.004) rows += mbRow('out', './sprites/franchise/elm.png', "Helpers' pay", 'your stand workers', l.wages);
-  if (l.packaging > 0.004) rows += mbRow('out', '', 'Bottles and labels', '', l.packaging);
-  return rows;
+  if (l.wages > 0.004) rows += mbRow('out', './sprites/franchise/elm.png', "Helpers' pay", 'your stand workers', l.wages);  return rows;
 }
 export function moneyBagHTML(engine) {
   const s = engine.state;

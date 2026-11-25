@@ -71,7 +71,6 @@ export function renderFullDayReportHTML(d, s, isModal = false, hero = () => '') 
   } else if (s.phase >= 3) {
     rows += row(`Wholesale (${count(d.bottlesSold)} bottles)`, `+${money(d.wholesaleRevenue)}`);
   }
-  if (d.packagingCosts > 0.004) rows += row('Bottle packaging', `-${money(d.packagingCosts)}`, 'cost');
   if (s.phase >= 4) rows += row(`Your Lemon Squeezer (${count(d.patentUnitsSold)} sold)`, `+${money(d.patentRoyalties)}`);
   if (s.phase >= 5) rows += row(`Lemonade factory (${count(d.copackerCasesSold)} cases)`, `+${money(d.copackerNet)}`);
   if (brandBonus > 0.005) rows += row('Famous brand bonus', `+${money(brandBonus)}`);

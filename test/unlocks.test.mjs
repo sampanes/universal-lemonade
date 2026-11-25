@@ -7,7 +7,7 @@ const { LemonadeEngine, MILESTONES, SECRET_LOOKS, newUnlocks, unlockCheckFrom, l
 
 const check = (summary, extra = {}) => ({
   summary: { day: 1, tempF: 70, weather: 'SUNNY', netProfit: 5, soldOut: false, reviews: [], notes: [], ...summary },
-  totalCupsSold: 0, cash: 0, reputation: 0.5, phase: 1, hasTreat: false, ...extra,
+  totalCupsSold: 0, cash: 0, reputation: 0.5, phase: 1, houseLevel: 0, ...extra,
 });
 
 test('every secret look has one milestone, and the natural looks are free', () => {
@@ -100,7 +100,8 @@ test('the check is built from a real game state', () => {
   assert.equal(c.summary, sum);
   assert.equal(c.totalCupsSold, e.state.totalCupsSold.toNumber());
   assert.equal(c.phase, e.state.phase);
-  assert.equal(c.hasTreat, false);
-  e.state.flags.hasSkateboard = true;
-  assert.equal(unlockCheckFrom(e.state, sum).hasTreat, true);
+  assert.equal(c.houseLevel, 0);
+  e.state.houseLevel = 1;
+  assert.equal(unlockCheckFrom(e.state, sum).houseLevel, 1);
+  assert.deepEqual(newUnlocks(new Set(['color:grape']), check({}, { houseLevel: 1 })), ['hair:shaggy'], 'the first house step');
 });

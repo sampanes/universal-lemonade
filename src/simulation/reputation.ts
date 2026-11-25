@@ -47,16 +47,6 @@ export function nextBuzz(buzz: number, happyCustomers: number, b: Balance = BALA
   return Math.max(0, Math.min(1, (buzz + spread) * (1 - z.forget)));
 }
 
-// Lasting reputation boosts from upgrades and trophies. Under an EWMA a one-time bump
-// fades within a week, so these are added to every day's score instead.
-export function reputationBonus(s: GameState, b: Balance = BALANCE): number {
-  const r = b.reputation;
-  let bonus = 0;
-  if (s.flags.hasNintendoSwitch) bonus += r.bonusNintendoSwitch;
-  if (s.flags.hasDisneyTrip) bonus += r.bonusDisneyTrip;
-  return bonus;
-}
-
 export interface DayCustomerOutcome {
   quality: number;       // recipe quality, 0..1
   exactGolden: boolean;  // lemons and sugar exactly on this game's golden recipe
@@ -98,7 +88,7 @@ export function nextReputation(
   s: GameState, todayScore: number | null, b: Balance = BALANCE, excessivePriceSeen = false
 ): number {
   const r = b.reputation;
-  const target = todayScore === null ? s.reputation : Math.min(r.max, todayScore + reputationBonus(s, b));
+  const target = todayScore === null ? s.reputation : Math.min(r.max, todayScore);
   let next = ewma(s.reputation, target, r.alpha);
   // A very high price can turn people away even when nobody buys a cup.
   if (excessivePriceSeen) next = Math.min(next, s.reputation - r.excessivePriceDrop);

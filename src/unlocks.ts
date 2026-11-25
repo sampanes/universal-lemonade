@@ -13,7 +13,7 @@ export interface UnlockCheck {
   cash: number;
   reputation: number;      // 0..1
   phase: number;           // 1 = driveway stand ... 5 = the last phase
-  hasTreat: boolean;       // bought any trophy (skateboard, bike, ...)
+  houseLevel: number;      // house steps bought (src/data/house.ts)
 }
 
 /**
@@ -35,17 +35,12 @@ export const MILESTONES: { look: string; earned: (c: UnlockCheck) => boolean }[]
   { look: 'hair:mohawk', earned: c => c.totalCupsSold >= 1000 },                          // about day 20
   { look: 'color:snow', earned: c => c.summary.day >= 20 },
   { look: 'hair:crownbraid', earned: c => c.cash >= 500 },
-  { look: 'hair:shaggy', earned: c => c.hasTreat },
+  { look: 'hair:shaggy', earned: c => c.houseLevel >= 1 },                                // Fresh Paint
   { look: 'color:candy', earned: c => c.phase >= 3 },                                     // about day 28
   { look: 'color:glitter', earned: c => c.phase >= 4 },                                   // about day 46
   { look: 'color:rainbow', earned: c => c.phase >= 5 },                                   // about day 68
   { look: 'color:galaxy', earned: c => c.summary.day >= 100 },
 ];
-
-const TREAT_FLAGS = ['hasSkateboard', 'hasMountainBike', 'hasNintendoSwitch', 'hasElectricScooter',
-  'hasIpadPro', 'hasDisneyTrip', 'hasHondaCivic', 'hasGarageArcade', 'hasCollegePrepaid',
-  'hasPaidMortgage', 'hasLemonGrove', 'hasTeslaModelX', 'hasPrivateJet', 'hasArenaNaming',
-  'hasPrivateIsland'] as const;
 
 /** The check for the day that just ended. */
 export function unlockCheckFrom(s: GameState, summary: DaySummary): UnlockCheck {
@@ -55,7 +50,7 @@ export function unlockCheckFrom(s: GameState, summary: DaySummary): UnlockCheck 
     cash: s.cash.toNumber(),
     reputation: s.reputation,
     phase: s.phase,
-    hasTreat: TREAT_FLAGS.some(f => s.flags[f]),
+    houseLevel: s.houseLevel,
   };
 }
 

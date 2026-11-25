@@ -32,7 +32,6 @@ export function getSeasonInfo(day: number, b: Balance = BALANCE): SeasonInfo {
 
 export function rollWeatherForecast(
   rand: () => number,
-  weatherLocked95F: boolean = false,
   day: number = 1,
   b: Balance = BALANCE
 ): {
@@ -41,10 +40,6 @@ export function rollWeatherForecast(
   seasonInfo: SeasonInfo;
 } {
   const seasonInfo = getSeasonInfo(day, b);
-
-  if (weatherLocked95F) {
-    return { weather: 'SUNNY', tempF: b.weather.lockedTempF, seasonInfo };
-  }
 
   // Spring warms up, summer peaks, fall cools down, winter bottoms out (curves in balance.ts).
   const sw = b.weather.seasons[seasonInfo.season];

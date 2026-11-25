@@ -48,14 +48,13 @@ export function computeDayDemand(
   ];
 
   if (s.phase >= 2) {
-    const efficiencyBonus = s.flags.hasIpadPro ? d.ipadFranchiseMult : 1.0;
     for (const stand of Object.values(franchiseStands)) {
       if (!stand.hired || stand.dayOff) continue;
       const standTraffic = Math.floor(
         stand.baseCapacity *
         Math.pow(weatherMult * tempFactor, stand.weatherSens) *
         (d.franchiseRepBase + s.reputation * d.franchiseRepPerRep) *
-        fridgeTraffic * efficiencyBonus
+        fridgeTraffic
       );
       totalTraffic += standTraffic;
       stands.push({
@@ -184,7 +183,7 @@ export function getKidDemandAdvice(
     return {
       // Short enough for one line in the tip row (the Day Report spells it out).
       phrase: item === 'ice'
-        ? (s.flags.hasCooler ? "Cooler full! An ice machine makes all you need!" : "Ice bucket full! An ice machine makes all you need!")
+        ? "Ice bucket full! An ice machine makes all you need!"
         : "Fruit bowl full! A mini-fridge holds all you want!",
       emoji: "",
       lowItems,

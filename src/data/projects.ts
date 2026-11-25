@@ -53,8 +53,7 @@ function squeezerStep(level: number): ProjectDef {
 // (src/simulation/storage.ts): a busy summer day needs more ice than the 400-cube bucket
 // holds, and a second stand more lemons than the 24-lemon bowl. There is no cooler step any
 // more (the ice machine made it useless a few days later); the kid gets by with the bucket
-// and runs short of ice a couple of times first. (The engine still knows hasCooler, so it
-// can come back.) The kid shop only spends money left over after today's supplies
+// and runs short of ice a couple of times first. The kid shop only spends money left over after today's supplies
 // (engine.restockCostForToday), so buying one never leaves the stand without lemons.
 export const FIRST_CHOICE = ['auto_ice_dispenser', 'fridge'] as const;
 const FIRST_CHOICE_COST = 400;
