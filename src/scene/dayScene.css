@@ -19,15 +19,21 @@
 .scene-speed[aria-pressed=true] span:first-child, .scene-speed[aria-pressed=false] span:last-child { visibility:hidden; }
 .day-scene button { border:2px solid #674298; background:white; color:#553086; padding:7px 14px; border-radius:14px; font:inherit; cursor:pointer; }
 .day-scene button[aria-pressed=true] { background:#65349a; color:white; }
-.scene-stage { position:relative; isolation:isolate; height:min(260px,42dvh); overflow:hidden; background:linear-gradient(#94dafa,#e1f6ff 64%,#95cf72 64%,#a0d77e 83%,#e0c39c 83%,#efd7ae); }
-.day-scene:not([data-weather=SUNNY]) .scene-stage { background:linear-gradient(#aebfd6,#dce7e9 64%,#95bc80 64%,#a4c88b 83%,#cbb69c 83%,#e0cdae); }
+/* The sky (grayer on a gray day). Behind the house it meets the yard's grass and the sidewalk;
+   behind a friend's backdrop (its own sky cut out) it is all sky. */
+.day-scene { --sky:#94dafa,#e1f6ff 64%; --ground:#95cf72 64%,#a0d77e 83%,#e0c39c 83%,#efd7ae; }
+.day-scene:not([data-weather=SUNNY]) { --sky:#aebfd6,#dce7e9 64%; --ground:#95bc80 64%,#a4c88b 83%,#cbb69c 83%,#e0cdae; }
+.scene-stage { position:relative; isolation:isolate; height:min(260px,42dvh); overflow:hidden; background:linear-gradient(var(--sky),var(--ground)); }
+.scene-stage.sky-only { background:linear-gradient(var(--sky)); }
 .scene-backdrop { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:center bottom; }
-.scene-clouds { position:absolute; inset:0 0 auto; height:25%; pointer-events:none; }
-.scene-clouds img { position:absolute; left:24%; top:8%; width:19%; height:74%; object-fit:contain; }
-.scene-clouds img:nth-child(2) { left:53%; top:31%; width:13%; height:52%; transform:scaleX(-1); }
-.scene-clouds img:nth-child(3) { left:3%; top:27%; width:17%; height:66%; }
-.scene-clouds img:nth-child(4) { left:42%; top:3%; width:10%; height:40%; }
-.scene-clouds img:nth-child(5) { left:69%; top:0; width:17%; height:56%; transform:scaleX(-1); }
+/* The clouds drift left to right behind everything (playDayScene.ts sets each one's width,
+   top and timing). Each span is as wide as the stage, so 100% is once across. */
+.scene-clouds { position:absolute; inset:0; pointer-events:none; }
+.scene-clouds span { position:absolute; inset:0; animation:scene-cloud linear infinite; }
+.scene-clouds img { position:absolute; left:0; top:var(--y); width:var(--w); }
+.scene-clouds img.flip { transform:scaleX(-1); }
+@keyframes scene-cloud { from { translate:calc(-1 * var(--w)) 0; } to { translate:100% 0; } }
+@media (prefers-reduced-motion:reduce) { .scene-clouds span { animation-play-state:paused; } }
 .day-scene[data-heat=cold] { --temp-wash:#86abf539; }
 .day-scene[data-heat=cool] { --temp-wash:#96cced1c; }
 .day-scene[data-heat=warm] { --temp-wash:#ffe1a512; }

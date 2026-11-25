@@ -5,15 +5,22 @@ import { preloadImages, whenIdle } from '../preload';
 import type { DaySummary, WeatherCondition } from '../types';
 import './dayScene.css';
 
-// house: the kid's own stand stands in front of the family house (its HTML, whose pictures are
-// houseImages), with the house's driveway stand at standX (0 to 1 across the picture) under
-// the booth.
+// What is behind a stand: a friend's neighborhood (backdrop, its sky cut out), or for the
+// kid's own stand the family house (its HTML, whose pictures are houseImages), with the
+// house's driveway stand at standX (0 to 1 across the picture) under the booth.
 interface LocationArt {
-  name: string; host: string | null; sellerX: number; table: string; backdrop: string;
-  house?: string | null; houseImages?: string[]; standX?: number;
+  name: string; host: string | null; sellerX: number; table: string;
+  backdrop?: string; house?: string; houseImages?: string[]; standX?: number;
 }
 
+// The clouds drift across the sky behind the backdrop and the house: a few on a sunny day, a
+// sky full on a gray one. Every other one is farther away (smaller, lower and slower).
 const CLOUD = './sprites/morning_prep/cloud_puff.png';
+const CLOUDS: Record<ReturnType<typeof skyCondition>, number> = { SUNNY: 3, CLOUDY: 9, RAINY: 10, SNOWY: 8 };
+const CLOUD_S = 90;            // seconds for a near cloud to cross the sky
+const FAR_CLOUD_S = 150;       // ...and a far one
+const NEAR_CLOUDS = [[15, 1], [18, 9], [13, 4], [17, 13], [14, 0]];      // [width, top], % of the stage
+const FAR_CLOUDS = [[10, 21], [8, 15], [11, 25], [9, 18], [10, 23]];
 const OPEN_WAIT_MS = 4000;     // the scene opens by then even if its first pictures are not in
 const HOLD_MS = 3000;          // longest pause between stands while the next one's pictures load
 const SIGN_MS = 1900;          // a closed stand, or one nobody came to
@@ -128,8 +135,7 @@ async function runScene(summary: SceneDay, location: (id: string) => LocationArt
   let loading: Promise<void> = Promise.resolve();
   let firstLoaded: Promise<void> | null = null;
   for (const [id, art] of arts) {
-    const pictures = [art.host, art.table, ...(art.house ? art.houseImages ?? [] : [art.backdrop])];
-    if (sky !== 'SUNNY') pictures.push(CLOUD);
+    const pictures = [art.host, art.table, art.backdrop, ...(art.houseImages ?? []), CLOUD];
     loading = loading.then(() => preloadImages(pictures, Infinity, 'high')).then(() => { ready.add(id); });
     firstLoaded ??= loading;
   }
@@ -150,8 +156,8 @@ async function runScene(summary: SceneDay, location: (id: string) => LocationArt
   dialog.className = 'day-scene';
   dialog.setAttribute('aria-labelledby', 'scene-title');
   dialog.innerHTML = `<header><span>Day ${summary.day}</span><strong id="scene-title"></strong></header>
-    <div class="scene-stage"><img class="scene-backdrop" alt="">
-    <div class="scene-clouds" aria-hidden="true"></div>
+    <div class="scene-stage"><div class="scene-clouds" aria-hidden="true"></div>
+    <img class="scene-backdrop" alt="" hidden>
     <div class="scene-house" hidden></div>
     <img class="scene-host" alt="">
     <div class="scene-booth"><img class="scene-table" alt=""><strong class="scene-sold-out"></strong></div>
@@ -177,15 +183,25 @@ async function runScene(summary: SceneDay, location: (id: string) => LocationArt
   const speed = find<HTMLButtonElement>('[data-speed]');
   dialog.dataset.weather = sky;
   dialog.dataset.heat = temperatureBand(summary.tempF);
-  if (sky !== 'SUNNY') {
-    const clouds = find<HTMLElement>('.scene-clouds');
-    const count = sky === 'CLOUDY' ? 5 : 2;
-    for (let i = 0; i < count; i++) {
-      const puff = new Image();
-      puff.alt = '';
-      puff.src = CLOUD;
-      clouds.append(puff);
-    }
+  // Each cloud starts partway across (spread evenly), so the sky is already full, and some
+  // face the other way.
+  const clouds = find<HTMLElement>('.scene-clouds');
+  const cloudCount = CLOUDS[sky];
+  for (let i = 0; i < cloudCount; i++) {
+    const far = i % 2 === 1;
+    const crossing = far ? FAR_CLOUD_S : CLOUD_S;
+    const [width, top] = (far ? FAR_CLOUDS : NEAR_CLOUDS)[(i >> 1) % NEAR_CLOUDS.length];
+    const drift = document.createElement('span');
+    drift.style.setProperty('--w', `${width}%`);
+    drift.style.setProperty('--y', `${top}%`);
+    drift.style.animationDuration = `${crossing}s`;
+    drift.style.animationDelay = `${-crossing * i / cloudCount}s`;
+    const puff = new Image();
+    puff.alt = '';
+    puff.src = CLOUD;
+    puff.classList.toggle('flip', i % 3 === 1);
+    drift.append(puff);
+    clouds.append(drift);
   }
   if (sky === 'RAINY' || sky === 'SNOWY') {
     const layer = find<HTMLElement>('.scene-precipitation');
@@ -237,14 +253,14 @@ async function runScene(summary: SceneDay, location: (id: string) => LocationArt
     title.textContent = art.name;
     host.hidden = crowd.closed || !art.host;
     if (art.host) host.src = art.host;
+    backdrop.hidden = !art.backdrop;
+    if (art.backdrop) backdrop.src = art.backdrop;
     house.hidden = !art.house;
-    backdrop.hidden = !!art.house;
     if (art.house) {
       if (house.dataset.html !== art.house) { house.innerHTML = art.house; house.dataset.html = art.house; }
       dialog.style.setProperty('--stand-x', String(art.standX ?? 0.5));
-    } else {
-      backdrop.src = art.backdrop;
     }
+    stage.classList.toggle('sky-only', !!art.backdrop);
     booth.dataset.stand = crowd.stand;
     table.src = art.table;
     // The line forms on the open side of the counter and walks up to it from that edge.
