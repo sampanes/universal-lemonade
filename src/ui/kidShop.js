@@ -46,6 +46,10 @@ export const KID_SHOP = [
   { id: 'private_island', pic: './sprites/shop/citrus_cay.png', early: true, cheer: true },
 ];
 
+// The Invention card's squeezer picture (Stage 4); once it sells worldwide, the globe of
+// squeezers (also its picture on My Shelf).
+export const INVENTION = { name: 'Lemon Squeezer', pic: './sprites/shop/squeezer.png', worldPic: './sprites/shop/worldwide.png' };
+
 // Returns { item, p } for the next project (p from engine.projects), or, while neither of the
 // first choice is bought, { item, p, choices: [{ item, p }, { item, p }] } (item and p are then
 // the first of them).

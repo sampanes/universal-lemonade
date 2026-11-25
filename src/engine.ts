@@ -56,7 +56,7 @@ export const DEFAULT_SEED = 1337;
 
 // Bump whenever the save changes shape. An older save is not upgraded: it is dropped and a new
 // game starts (src/storage.ts also clears every other stored setting when that version moves).
-const SAVE_VERSION = 5;
+const SAVE_VERSION = 6;
 
 interface EngineSave {
   v: number;
@@ -203,6 +203,7 @@ export class LemonadeEngine {
       totalRevenueEarned: new BigNum(0, 0),
       totalBottlesSold: 0,
       totalSqueezersSold: 0,
+      boughtOn: {},
       houseOpen: false,
       houseLevel: 0,
       houseColor: FIRST_HOUSE_COLOR,
@@ -418,6 +419,7 @@ export class LemonadeEngine {
     this.ledger.shop += p.costCash;
     this.ledger.shopIds.push(p.id);
     this.state.lastShopPurchaseDay = this.state.day;
+    this.state.boughtOn[p.id] = this.state.day;
     p.purchased = true;
     p.effect(this);
     this.log(`Bought: ${p.name} ($${p.costCash.toLocaleString('en-US')}).`);

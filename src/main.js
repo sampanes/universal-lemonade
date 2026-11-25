@@ -23,7 +23,8 @@ import { setText, setFitText, setHTMLIfChanged, STORE_LOCK } from './ui/dom.js';
 import { housePicHTML, ALL_HOUSE_IMAGES } from './ui/houseArt.js';
 import { STORE_PICS, FRIENDS, ALL_PLACE_IMAGES, friendPortrait, sceneLocation } from './ui/places.js';
 import { reportCatMood, renderFullDayReportHTML, renderDayReport } from './ui/dayReport.js';
-import { KID_SHOP, kidShopNext } from './ui/kidShop.js';
+import { KID_SHOP, INVENTION, kidShopNext } from './ui/kidShop.js';
+import { shelfItems, shelfCardHTML, shelfRoomHTML, shelfCaptionHTML } from './ui/shelf.js';
 import { moneyBagHTML, SUPPLY_PICS } from './ui/moneyBag.js';
 import { renderDadPanel, initDadPanel } from './ui/dadPanel.js';
 import { initResetCard } from './ui/resetCard.js';
@@ -960,6 +961,7 @@ function loop(now) {
   renderFriends(s);
   renderMoneyBag(s);
   renderHouse(s);
+  renderShelf(s);
 
   // The ending plays once, the moment Citrus Cay is bought (or on the next visit if the page
   // closed first).
@@ -1175,6 +1177,7 @@ document.getElementById('house-col').addEventListener('click', (e) => {
   document.getElementById('house-card').classList.remove('is-new');
   const swatch = e.target.closest('[data-act="house-color"]');
   if (swatch) { engine.setHouseColor(swatch.dataset.id); return; }
+  if (e.target.closest('[data-act="shelf-open"]')) { openShelfRoom(); return; }
   const btn = e.target.closest('[data-act="house-buy"]');
   if (!btn || btn.disabled) return;
   const next = engine.nextHouseStep();
@@ -1185,14 +1188,49 @@ document.getElementById('house-col').addEventListener('click', (e) => {
   }
 });
 
+// My Shelf (src/ui/shelf.js): the card under My House once something is bought, and the
+// whole shelf (the shelf room) when it is tapped. Tapping a thing there says what it is and
+// gives it a little wiggle.
+let shelfList = [];
+function renderShelf(s) {
+  shelfList = shelfItems(engine);
+  const card = document.getElementById('shelf-card');
+  const show = s.houseOpen && shelfList.length > 0;
+  if (card.hidden === show) card.hidden = !show;
+  if (show) setHTMLIfChanged(card, shelfCardHTML(shelfList, s.day));
+}
+const shelfRoom = document.getElementById('shelf-room');
+function openShelfRoom() {
+  shelfRoom.innerHTML = shelfRoomHTML(shelfList);
+  shelfRoom.hidden = false;
+  shelfRoom.querySelector('[data-act="shelf-close"]').focus({ preventScroll: true });
+}
+function closeShelfRoom() {
+  if (shelfRoom.hidden) return;
+  shelfRoom.hidden = true;
+  shelfRoom.innerHTML = '';
+  document.querySelector('[data-act="shelf-open"]')?.focus({ preventScroll: true });
+}
+shelfRoom.addEventListener('click', (e) => {
+  const item = e.target.closest('.shelf-room-item');
+  if (item) {
+    shelfRoom.querySelector('.shelf-room-caption').innerHTML = shelfCaptionHTML(shelfList[+item.dataset.i]);
+    shelfRoom.querySelector('.shelf-room-item.picked')?.classList.remove('picked');
+    void item.offsetWidth;   // restart the wiggle on a second tap
+    item.classList.add('picked');
+    return;
+  }
+  // Done, or a tap outside the card.
+  if (e.target.closest('[data-act="shelf-close"]') || e.target === shelfRoom) closeShelfRoom();
+});
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeShelfRoom(); });
+
 // Not hired: "Hire $45". Hired: "Working" with today's forecast and pay; tapping gives
 // the friend the day off (no sales, no pay), and tapping again calls them back in.
 // Stage 3 adds a Stores tab: sign a store up once, then it buys bottles every day.
 // Stage 4 adds an Invention tab: the patented lemon squeezer that stores sell for you.
 let partnersTab = 'friends';
 let partnersPhase = null;     // the stage the tabs last saw (a new stage opens its tab)
-// The squeezer picture; once it sells worldwide, the globe of squeezers.
-const INVENTION = { name: 'Lemon Squeezer', pic: './sprites/shop/squeezer.png', worldPic: './sprites/shop/worldwide.png' };
 // The button for each squeezer step after the first (SQUEEZER_LEVELS), with its picture.
 const SQUEEZER_BUTTONS = {
   2: { label: 'Put It on TV', pic: null },

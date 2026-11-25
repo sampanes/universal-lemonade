@@ -965,6 +965,111 @@ body.dad-mode .house-col { display: none !important; }
 .house-next .stand-shop-buy { width: 100%; font-size: 16px; padding: 8px 10px; }
 .house-save { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: #6b7280; text-align: left; }
 .house-later { font-size: 12px; font-weight: 700; color: #6b7280; }
+
+/* My Shelf (src/ui/shelf.js): a card under My House with the newest things standing on a
+   wooden shelf. Tapped, the whole shelf opens (the shelf room). */
+.shelf-card { margin-top: 10px; }
+.shelf-card[hidden] { display: none; }
+.shelf-card-btn {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  min-height: 0;
+  margin: 0;
+  padding: 10px 12px 12px;
+  background: #ffffff;
+  border: 3px solid #c4b5fd;
+  border-radius: 18px;
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2);
+  color: #3b0764;
+  font: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+@media (hover: hover) {
+  :where(html:not(.touch-input)) .shelf-card-btn:hover { background: #faf5ff; border-color: #a78bfa; }
+}
+.shelf-card-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.shelf-card-title { font-family: var(--font-display); font-size: 18px; letter-spacing: 0.5px; }
+.shelf-card-count { padding: 2px 9px; border-radius: 999px; background: #ede9fe; color: #6d28d9; font-size: 12px; font-weight: 700; white-space: nowrap; }
+/* A wooden board; the things stand on it (each picture's bottom edge rests on the board). */
+.shelf-plank { position: relative; display: flex; justify-content: center; align-items: flex-end; gap: 4px; padding: 0 6px 10px; }
+.shelf-plank::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 12px;
+  border: 2px solid #5b2a3c;
+  border-radius: 5px;
+  background: linear-gradient(#f2c27f 0 45%, #d08f4e 45%);
+}
+.shelf-plank img { position: relative; z-index: 1; width: 42px; height: 42px; object-fit: contain; object-position: center bottom; }
+/* Bought today: it drops onto the shelf. */
+.shelf-plank img.is-new { animation: shelf-drop 0.6s cubic-bezier(0.3, 1.6, 0.6, 1) 0.2s backwards; }
+@keyframes shelf-drop { from { transform: translateY(-26px) scale(0.4); opacity: 0; } }
+.shelf-room {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(30, 12, 52, 0.62);
+  animation: house-fade-in 0.25s ease-out;
+}
+.shelf-room[hidden] { display: none; }
+.shelf-room-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: min(600px, 100%);
+  max-height: 100%;
+  padding: 14px 16px 16px;
+  border-radius: 22px;
+  background: #fffbeb;
+  border: 4px solid #facc15;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  color: #3b0764;
+  text-align: center;
+}
+.shelf-room-title { font-family: var(--font-display); font-size: 24px; letter-spacing: 0.5px; }
+/* The wall: lemon-dot wallpaper, the shelves top to bottom (it scrolls if a phone runs out
+   of room). */
+.shelf-room-wall {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 14px 12px;
+  border: 2px solid #f3dfa2;
+  border-radius: 14px;
+  background: radial-gradient(circle at 30% 30%, #fde68a 0 3px, transparent 4px) 0 0 / 34px 34px, #fff7d6;
+}
+.shelf-room-row { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; align-items: end; }
+.shelf-room-item, .shelf-room-slot { position: relative; z-index: 1; display: block; height: 64px; }
+.shelf-room-item { min-height: 0; margin: 0; padding: 0; border: 0; border-radius: 0; background: none; cursor: pointer; transform-origin: center bottom; }
+@media (hover: hover) {
+  :where(html:not(.touch-input)) .shelf-room-item:hover { background: none; transform: translateY(-2px); }
+}
+.shelf-room-item img { display: block; width: 100%; height: 100%; object-fit: contain; object-position: center bottom; }
+.shelf-room-item.picked { animation: shelf-wiggle 0.5s ease-in-out; }
+@keyframes shelf-wiggle {
+  25% { transform: rotate(-7deg) scale(1.12); }
+  50% { transform: rotate(6deg) scale(1.12); }
+  75% { transform: rotate(-3deg) scale(1.05); }
+}
+.shelf-room-caption { display: flex; flex-direction: column; justify-content: center; min-height: 40px; font-size: 13px; font-weight: 700; color: #6b7280; }
+.shelf-room-caption b { font-family: var(--font-display); font-weight: 400; font-size: 18px; color: #3b0764; }
+.shelf-room-caption span { color: #5b21b6; }
+.shelf-room-card > .stand-shop-buy { align-self: center; min-width: 140px; }
+@media (prefers-reduced-motion: reduce) {
+  .shelf-plank img.is-new, .shelf-room-item.picked { animation: none; }
+}
 .house-scene {
   position: fixed;
   inset: 0;

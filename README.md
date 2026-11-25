@@ -72,6 +72,10 @@ Day Report of what customers said.
   House ($500,000, Stage 4: bunting and balloons). Each plays a short build scene. The house
   also stands behind the kid's stand in the day scene, under the day's sky, clouds, rain or
   snow.
+- **My Shelf.** Under My House, everything bought from the Stand Shop (and the squeezer going
+  worldwide) stands on a shelf, the newest few on the card; one bought today drops onto it.
+  Tapping the card opens the whole shelf, and tapping a thing there tells the day it was
+  bought and what it cost, from the $400 ice machine to the $1,000,000,000 island.
 - **Chores.** A broke kid can always do chores for a few dollars.
 - **The kid.** The stand is run by a paper-doll kid with picked skin, hair, hair color and
   shirt. The mirror changes the look any time. New hair styles and colors unlock as the
@@ -129,7 +133,7 @@ Every push to `main` builds and deploys to GitHub Pages (`.github/workflows/depl
 | `index.html` | The page markup |
 | `src/styles/game.css` | The page's styles (the day scene has `src/scene/dayScene.css`) |
 | `src/main.js` | The page script: wires the engine to the page, the frame loop, saving, the mirror |
-| `src/ui/` | Page pieces split out of `main.js`: number formats, the Day Report, the Money Bag, the Stand Shop list, house pictures, friends and stores, Dad Mode's panels, the Reset card |
+| `src/ui/` | Page pieces split out of `main.js`: number formats, the Day Report, the Money Bag, the Stand Shop list, house pictures, My Shelf, friends and stores, Dad Mode's panels, the Reset card |
 | `src/scene/` | The day scene: who walks by, the customers' art, the forecast art |
 | `src/preload.ts` | Loads pictures ahead of time so nothing pops in |
 | `src/storage.ts` | Everything kept in the browser, and the save version |
@@ -147,8 +151,9 @@ Every push to `main` builds and deploys to GitHub Pages (`.github/workflows/depl
 
 ## Art
 
-Source art lives in `art_src/` and is never served. Python scripts (Pillow and numpy; run from
-the repo root) turn it into the small files in `public/sprites/`:
+Source art lives in `art_src/` and is never served. The prompts for pictures still to make
+are in `art_src/prompts/README.md`. Python scripts (Pillow and numpy; run from the repo root)
+turn it into the small files in `public/sprites/`:
 
 - `art_src/build_kid_art.py` - the paper-doll kid (body, 21 hair styles, faces) and `kid.json`
 - `art_src/cut_sheets.py` - cuts the sticker sheets (Stand Shop pictures, Flavor Lab fruits)

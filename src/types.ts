@@ -299,6 +299,7 @@ export interface GameState {
   currentChore: ChoreState;
   lastDaySummary: DaySummary | null;
   lastShopPurchaseDay?: number; // spaces the next kid shop item
+  boughtOn: Record<string, number>;   // project id -> the day it was bought (My Shelf, src/ui/shelf.js)
   friendExpansion?: { day: number; cups: number };
   storeExpansion?: { day: number; bottles: number };
   houseOpen: boolean;    // the My House column is open (HOUSE_OPENS_AT_SALES, src/data/house.ts)

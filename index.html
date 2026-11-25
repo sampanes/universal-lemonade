@@ -490,9 +490,11 @@
 
     </div>
 
-    <!-- MY HOUSE (kid mode, once it opens: src/data/house.ts): the family house and its next upgrade. -->
+    <!-- MY HOUSE (kid mode, once it opens: src/data/house.ts): the family house and its next
+         upgrade, and My Shelf under it (src/ui/shelf.js): everything bought so far. -->
     <div class="panel house-col" id="house-col" hidden>
       <div class="house-card" id="house-card"></div>
+      <div class="shelf-card" id="shelf-card" hidden></div>
     </div>
 
     <!-- COLUMN 3 (Dad Mode): the day's money, the Stand Shop in any order, the log -->
@@ -510,6 +512,9 @@
 
   <!-- MY HOUSE build scene (src/main.js playHouseScene) -->
   <div class="house-scene" id="house-scene" hidden role="dialog" aria-modal="true" aria-labelledby="house-scene-title"></div>
+
+  <!-- MY SHELF, all of it (src/main.js openShelfRoom) -->
+  <div class="shelf-room" id="shelf-room" hidden role="dialog" aria-modal="true" aria-labelledby="shelf-room-title"></div>
 
   <!-- THE ENDING: Citrus Cay, the last dream in the Stand Shop. Plays once (state.endingSeen),
        then the game goes on. Filled by showEnding() in src/main.js. -->

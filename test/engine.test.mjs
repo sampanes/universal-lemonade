@@ -602,6 +602,21 @@ test('the ice machine and the fridge are a choice', () => {
   assert.ok(e.buyProject(a.id));
 });
 
+test('My Shelf remembers the day each thing was bought, across saves', () => {
+  const e = new LemonadeEngine({ seed: 21 });
+  const [a, b] = FIRST_CHOICE;
+  e.state.cash = e.state.cash.add(2000);
+  e.state.day = 3;
+  assert.ok(e.buyProject(a));
+  e.state.day = 9;
+  assert.ok(e.buyProject(b));
+  assert.ok(!e.buyProject(b), 'buying it again does nothing');
+  assert.deepEqual(e.state.boughtOn, { [a]: 3, [b]: 9 });
+  const loaded = LemonadeEngine.fromSave(JSON.parse(JSON.stringify(e.toSave())));
+  assert.deepEqual(loaded.state.boughtOn, { [a]: 3, [b]: 9 });
+  assert.deepEqual(new LemonadeEngine({ seed: 21 }).state.boughtOn, {}, 'a new game starts with an empty shelf');
+});
+
 // ---- Slow start: buzz ----
 
 test('a new stand starts slow and grows as the word spreads', () => {
