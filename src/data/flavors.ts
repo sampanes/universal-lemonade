@@ -6,21 +6,20 @@
 // little more strawberry and way less sugar"). The day they taste the exact mix, the flavor
 // goes to the stores and the factory sells FLAVOR_BOOST more cases from then on.
 export interface Flavor {
-  id: string;
+  id: string;        // also the fruit's picture: public/sprites/flavors/<id>.png
   name: string;      // "Strawberry Lemonade"
   fruit: string;     // the ingredient row's label ("Strawberries")
   word: string;      // in the testers' comments ("a little more strawberry")
   color: string;     // the drink's color in the pitcher
-  tint: string;      // CSS filter that turns the lemon slice art into this fruit (placeholder art)
 }
 
 export const FLAVORS: readonly Flavor[] = [
-  { id: 'strawberry', name: 'Strawberry Lemonade', fruit: 'Strawberries', word: 'strawberry', color: '#fb7185', tint: 'hue-rotate(-55deg) saturate(1.6)' },
-  { id: 'peach', name: 'Peach Lemonade', fruit: 'Peaches', word: 'peach', color: '#fdba74', tint: 'hue-rotate(-20deg) saturate(1.2)' },
-  { id: 'mint', name: 'Mint Lemonade', fruit: 'Mint', word: 'mint', color: '#86efac', tint: 'hue-rotate(60deg) saturate(1.3)' },
-  { id: 'blueberry', name: 'Blueberry Lemonade', fruit: 'Blueberries', word: 'blueberry', color: '#a5b4fc', tint: 'hue-rotate(190deg) saturate(1.4)' },
-  { id: 'watermelon', name: 'Watermelon Lemonade', fruit: 'Watermelon', word: 'watermelon', color: '#f472b6', tint: 'hue-rotate(-80deg) saturate(1.5)' },
-  { id: 'mango', name: 'Mango Lemonade', fruit: 'Mango', word: 'mango', color: '#fbbf24', tint: 'hue-rotate(-10deg) saturate(1.8)' },
+  { id: 'strawberry', name: 'Strawberry Lemonade', fruit: 'Strawberries', word: 'strawberry', color: '#fb7185' },
+  { id: 'peach', name: 'Peach Lemonade', fruit: 'Peaches', word: 'peach', color: '#fdba74' },
+  { id: 'mint', name: 'Mint Lemonade', fruit: 'Mint', word: 'mint', color: '#86efac' },
+  { id: 'blueberry', name: 'Blueberry Lemonade', fruit: 'Blueberries', word: 'blueberry', color: '#a5b4fc' },
+  { id: 'watermelon', name: 'Watermelon Lemonade', fruit: 'Watermelon', word: 'watermelon', color: '#f472b6' },
+  { id: 'mango', name: 'Mango Lemonade', fruit: 'Mango', word: 'mango', color: '#fbbf24' },
 ];
 
 // Every new flavor starts here; the best mix is never exactly this, so it takes some tasting.

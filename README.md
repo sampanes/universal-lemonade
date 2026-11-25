@@ -151,8 +151,9 @@ Source art lives in `art_src/` and is never served. Python scripts (Pillow and n
 the repo root) turn it into the small files in `public/sprites/`:
 
 - `art_src/build_kid_art.py` - the paper-doll kid (body, 21 hair styles, faces) and `kid.json`
-- `art_src/build_shop_art.py` - Stand Shop pictures
-- `art_src/cut_shop_sheet.py` - cuts the wagon, club card and bottles sheet into shop sources
+- `art_src/cut_sheets.py` - cuts the sticker sheets (Stand Shop pictures, Flavor Lab fruits)
+  into full-size sources
+- `art_src/build_sticker_art.py` - the game-size Stand Shop pictures and Flavor Lab fruits
 - `art_src/build_frame_art.py` - the stand's ribbon, awning and tablecloth
 - `art_src/build_franchise_art.py` - the three friend stands (Elm Street, Ballpark, Pool)
 - `art_src/build_store_art.py` - the three bottle stores and the labeler

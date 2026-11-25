@@ -32,6 +32,9 @@ import { prepareCustomers } from './scene/customerArt.ts';
 import { STORAGE_KEYS, clearOutdatedStorage, readStored, writeStored } from './storage.ts';
 import { loadUnlocks, saveUnlocks, clearUnlocks, advanceLookUnlocks, unlockCheckFrom, otherUnlockToday, shopDaysRemaining, lookOpen } from './unlocks.ts';
 
+// A Flavor Lab fruit's picture (art_src/cut_sheets.py, build_sticker_art.py).
+const fruitPic = (flavor) => `./sprites/flavors/${flavor.id}.png`;
+
 clearOutdatedStorage();   // first, before any save or look is read
 
 // Track which input is in use so mouse-only hover styles switch off after a finger tap.
@@ -304,8 +307,8 @@ document.addEventListener('dadmodechange', () => {
 });
 
 // THE ENDING: buying Citrus Cay (the last dream in the Stand Shop) wins the game. The island
-// with the kid on it, the stand, a palm and confetti, then what the business did since Day
-// 1. It plays once (state.endingSeen); "Keep playing!" goes back to the game.
+// (the shop's Citrus Cay picture) with the kid and the stand on its beach, confetti, then
+// what the business did since Day 1. It plays once (state.endingSeen); "Keep playing!" goes back to the game.
 function showEnding() {
   const s = engine.state;
   const scene = document.getElementById('ending-scene');
@@ -317,8 +320,7 @@ function showEnding() {
       <img class="ending-sun" src="./sprites/morning_prep/sun_happy.png" alt="" />
       <img class="ending-cloud" src="./sprites/morning_prep/cloud_puff.png" alt="" />
       <div class="ending-sea"></div>
-      <div class="ending-island"></div>
-      <div class="ending-palm"><span class="ending-trunk"></span><span class="ending-leaf a"></span><span class="ending-leaf b"></span><span class="ending-leaf c"></span><span class="ending-leaf d"></span></div>
+      <img class="ending-island" src="./sprites/shop/citrus_cay.png" alt="" />
       <img class="ending-stand" src="./sprites/franchise/pool.png" alt="" />
       <span class="ending-kid">${kidPicHTML(kidProfile, 'cheer', false)}</span>
     </div>
@@ -1065,10 +1067,12 @@ function renderFlavorLab(s) {
   const mix = s.flavorMix;
   if (card.dataset.flavor !== flavor.id) {
     card.dataset.flavor = flavor.id;
-    card.style.setProperty('--tint', flavor.tint);
     card.style.setProperty('--drink', flavor.color);
     setText(document.getElementById('flavor-lab-name'), flavor.name);
-    document.getElementById('flavor-fruit-icon').alt = flavor.fruit;
+    const icon = document.getElementById('flavor-fruit-icon');
+    icon.src = fruitPic(flavor);
+    icon.alt = flavor.fruit;
+    card.querySelectorAll('.flavor-glass-fruit').forEach(img => { img.src = fruitPic(flavor); });
   }
   setText(document.getElementById('lbl-fruit'), String(mix.fruit));
   setText(document.getElementById('lbl-fsugar'), String(mix.sugar));
@@ -1361,7 +1365,7 @@ function renderFriends(s) {
     const flavors = s.flags.hasFlavorLab
       ? `<span>Flavors in stores: ${s.flavorsLaunched.length} of ${FLAVORS.length} (+${Math.round(s.flavorsLaunched.length * FLAVOR_BOOST * 100)}% cases)</span>` : '';
     setHTMLIfChanged(document.getElementById('friends-row'), `<div class="invention-panel">
-      <img src="./sprites/shop/bottles.png" alt="" />
+      <img src="./sprites/shop/lemonade_factory.png" alt="" />
       <div><div class="invention-name">My Lemonade Factory</div>
       <div class="invention-desc">The factory uses its own supplies to make and ship your lemonade.</div>
       <div class="invention-stats"><span>About ${Math.round(factory.casesPerDay * engine.flavorMult()).toLocaleString('en-US')} cases a day</span><span>$${fmtDollars(factory.netPerCase, true)} per case after factory costs</span>${flavors}${yesterday}</div>
@@ -1648,11 +1652,11 @@ function resetKid() {
 initResetCard({ onOpen: () => setMoneyBag(false), onConfirm: startOver });
 
 // Pictures that only show up later (the next shop item, stores, friends' stands, every house,
-// the day scene's clouds and customers): loaded while the page is idle, so they never pop in.
+// the Flavor Lab's fruits, the day scene's clouds and customers): loaded while the page is idle, so they never pop in.
 whenIdle(() => {
   void preloadInBackground([
     ...ALL_HOUSE_IMAGES, ...ALL_PLACE_IMAGES, './sprites/morning_prep/cloud_puff.png',
-    ...KID_SHOP.map(item => item.pic), INVENTION.pic, INVENTION.worldPic,
+    ...KID_SHOP.map(item => item.pic), INVENTION.pic, INVENTION.worldPic, ...FLAVORS.map(fruitPic),
   ]).then(prepareCustomers);
 });
 initDadPanel(() => engine);

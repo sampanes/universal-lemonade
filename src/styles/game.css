@@ -418,8 +418,8 @@ button:disabled {
 .ratio-card.helper-done { display: none !important; }
 /* The Flavor Lab (Stage 5, src/data/flavors.ts): looks like the recipe card. The name and the
    fruit and sugar rows on the left, a glass of the drink and the flavors in stores so far on
-   the right, the taste testers' comment under both. The fruit art is the lemon slice tinted
-   (placeholder until real fruit art). */
+   the right, the taste testers' comment under both. The fruit pictures are
+   public/sprites/flavors/<flavor id>.png. */
 .flavor-lab[hidden] { display: none; }
 .flavor-lab-body { padding: 8px 10px; row-gap: 4px; }
 .flavor-lab-name { font-family: var(--font-display); font-size: 16px; color: #4a044e; text-align: center; line-height: 1.1; }
@@ -442,9 +442,8 @@ button:disabled {
   opacity: 0.9;
   transition: height 0.3s, background-color 0.3s;
 }
-.flavor-glass-fruit { position: absolute; width: 26px; height: 26px; left: 6px; bottom: 8px; filter: var(--tint, none); animation: float-gentle-1 3s ease-in-out infinite; }
+.flavor-glass-fruit { position: absolute; width: 26px; height: 26px; left: 6px; bottom: 8px; object-fit: contain; animation: float-gentle-1 3s ease-in-out infinite; }
 .flavor-glass-fruit.two { left: 24px; bottom: 22px; animation-name: float-gentle-2; }
-#flavor-fruit-icon { filter: var(--tint, none); }
 .flavor-lab-progress { display: flex; gap: 4px; justify-content: center; flex-wrap: wrap; font-size: 11px; font-weight: 700; color: #6b21a8; }
 .flavor-lab-progress .dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid #c4b5fd; background: #fff; }
 .flavor-lab-progress .dot.on { border-color: #7e22ce; }
@@ -1041,9 +1040,9 @@ body.dad-mode .house-col { display: none !important; }
   0% { opacity: 1; transform: translateY(0) rotate(0); }
   100% { opacity: 1; transform: translateY(380px) rotate(540deg); }
 }
-/* THE ENDING (Citrus Cay): the house scene's card and confetti around a code-drawn island
-   (placeholder until real island art): sky, sun and a cloud, the sea, a sand island with a
-   palm, the pool stand and the cheering kid. The stage pops in, then the words. */
+/* THE ENDING (Citrus Cay): the house scene's card and confetti around the island: sky, sun
+   and a cloud, the sea, the island picture (the Stand Shop's Citrus Cay), and the pool stand
+   and the cheering kid on its beach. The stage pops in, then the words. */
 .ending-card { width: min(460px, 100%); }
 /* The card is taller than the house scene's: the confetti falls all the way out of it. */
 .ending-card .house-confetti { animation-name: ending-confetti; animation-duration: 2.2s; }
@@ -1055,41 +1054,22 @@ body.dad-mode .house-col { display: none !important; }
 .ending-stage {
   position: relative;
   width: 100%;
-  aspect-ratio: 16 / 10;
+  aspect-ratio: 16 / 11;
   border-radius: 16px;
   overflow: hidden;
   background: linear-gradient(180deg, #7dd3fc 0%, #bae6fd 58%, #e0f2fe 64%);
   animation: house-pop 0.5s cubic-bezier(0.3, 1.6, 0.6, 1) both;
 }
-.ending-sun { position: absolute; width: 21%; right: 5%; top: 5%; animation: float-gentle-1 4s ease-in-out infinite; }
-.ending-cloud { position: absolute; width: 26%; left: 6%; top: 9%; opacity: 0.95; animation: float-gentle-2 5s ease-in-out infinite; }
+.ending-sun { position: absolute; width: 18%; right: 4%; top: 4%; animation: float-gentle-1 4s ease-in-out infinite; }
+.ending-cloud { position: absolute; width: 24%; left: 4%; top: 5%; opacity: 0.95; animation: float-gentle-2 5s ease-in-out infinite; }
 .ending-sea {
   position: absolute; left: 0; right: 0; bottom: 0; height: 38%;
   background: repeating-linear-gradient(180deg, #38bdf8 0 9px, #0ea5e9 9px 12px);
 }
-.ending-island {
-  position: absolute; left: 14%; right: 14%; bottom: 13%; height: 26%;
-  border-radius: 50% 50% 46% 46% / 72% 72% 28% 28%;
-  background: radial-gradient(ellipse at 50% 30%, #fef3c7, #fcd34d 70%, #f59e0b);
-  box-shadow: 0 4px 0 rgba(3, 105, 161, 0.35);
-}
-.ending-palm { position: absolute; left: 20%; bottom: 30%; width: 24%; height: 56%; }
-.ending-trunk {
-  position: absolute; left: 44%; bottom: 0; width: 10%; height: 78%;
-  border-radius: 6px; background: repeating-linear-gradient(180deg, #a16207 0 7px, #854d0e 7px 9px);
-  transform: rotate(6deg); transform-origin: bottom center;
-}
-.ending-leaf {
-  position: absolute; top: 4%; left: 48%; width: 62%; height: 20%;
-  border-radius: 100% 0; background: #22c55e; border: 2px solid #15803d;
-  transform-origin: left center;
-}
-.ending-leaf.a { transform: rotate(-20deg); }
-.ending-leaf.b { transform: rotate(25deg); }
-.ending-leaf.c { transform: scaleX(-1) rotate(-20deg); }
-.ending-leaf.d { transform: scaleX(-1) rotate(25deg); }
-.ending-stand { position: absolute; right: 19%; bottom: 27%; width: 24%; }
-.ending-kid { position: absolute; left: 41%; bottom: 25%; height: 50%; }
+/* The kid and the stand stand on the beach between the palm and the lemon tree. */
+.ending-island { position: absolute; left: 11%; width: 78%; bottom: 0; }
+.ending-stand { position: absolute; left: 55%; bottom: 19%; width: 17%; }
+.ending-kid { position: absolute; left: 35%; bottom: 18%; height: 44%; }
 .ending-kid .kid-pic { height: 100%; }
 .ending-kid .kid-pic > img { width: auto; height: 100%; }
 .ending-text { margin: 4px 0 0; font-weight: 700; font-size: 14px; line-height: 1.3; color: #5b21b6; opacity: 0; animation: house-fade-in 0.3s ease-out 1.5s forwards; }

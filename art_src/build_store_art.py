@@ -5,12 +5,12 @@ Source: art_src/stores/stores_sheet.png, four stickers in a row on a transparent
 background. Each is found by its empty columns and cropped to itself.
   - The three stores are shrunk by ONE shared scale (so they stay the same size as each
     other) until the biggest is SIZE px on its longer side, into public/sprites/stores/.
-  - The labeler goes to art_src/shop/labeler.png; build_shop_art.py makes its game size.
+  - The labeler goes to art_src/shop/labeler.png; build_sticker_art.py makes its game size.
 Premultiplied while shrinking so the transparent edge does not darken.
 
 Run from the repo root:
     py -3.11 -I art_src/build_store_art.py
-    py -3.11 -I art_src/build_shop_art.py
+    py -3.11 -I art_src/build_sticker_art.py
 """
 import os
 
