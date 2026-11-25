@@ -55,9 +55,9 @@ Day Report of what customers said.
   sells 20% more from then on.
 - **Famous brand.** Once the lemonade is in stores across the country, a Brand tab opens:
   seven brand moves, one a day at most, from a Giant Billboard ($250,000) to a Big Game
-  Commercial ($75,000,000). Each makes everything sell 10% to 25% more (the Day Report's
-  "Famous brand bonus" line), so the kid weighs growing the brand against growing the
-  factory.
+  Commercial ($75,000,000), each with its own picture. Each makes everything sell 10% to 25%
+  more (the Day Report's "Famous brand bonus" line), so the kid weighs growing the brand
+  against growing the factory.
 - **The big dreams and the ending.** After the last factory step the Stand Shop offers three
   dreams, one at a time: the Lemonade Jet ($65,000,000; squeezers sell twice as much), the
   Lemonade Arena ($80,000,000; the factory sells twice as much) and Citrus Cay, the kid's own
@@ -72,10 +72,24 @@ Day Report of what customers said.
   House ($500,000, Stage 4: bunting and balloons). Each plays a short build scene. The house
   also stands behind the kid's stand in the day scene, under the day's sky, clouds, rain or
   snow.
+- **The yard.** Once the house is paid off, My House sells rich-kid things for the yard, one
+  at a time, each a few days after the last: first a pick between a puppy and a kitten (the
+  other one comes later), then a trampoline, a go-kart, the other pet, a bouncy castle, a
+  robot helper and a lemon hot-air balloon, from $50,000 to $5,000,000. Each pops onto a
+  strip of grass under the house. (The simulator's homeowner bot buys the house and the yard
+  as soon as it can and gets to the island around day 150; the house steps cost most of
+  those extra days, the yard about one.)
 - **My Shelf.** Under My House, everything bought from the Stand Shop (and the squeezer going
-  worldwide) stands on a shelf, the newest few on the card; one bought today drops onto it.
-  Tapping the card opens the whole shelf, and tapping a thing there tells the day it was
-  bought and what it cost, from the $400 ice machine to the $1,000,000,000 island.
+  worldwide), the brand moves and the yard things stand on a shelf, the newest few on the
+  card; one bought today drops onto it. Tapping the card opens the whole shelf, and tapping a
+  thing there tells the day it was bought and what it cost, from the $400 ice machine to the
+  $1,000,000,000 island.
+- **Money trophies.** The first time sales since Day 1 pass $1,000, $10,000, $100,000,
+  $1,000,000 and $1,000,000,000, a trophy lands on My Shelf's own trophy shelf and the Day
+  Report says so (never before My House opens, and one a day at most; about days 36, 47,
+  75, 97 and 134 for a careful player). The trophies still to win stand there as shadows.
+  The last three each bring a wallpaper (Lemons, Fruit Party, Gold Stars), picked in the
+  shelf room, that goes up behind the whole page.
 - **Chores.** A broke kid can always do chores for a few dollars.
 - **The kid.** The stand is run by a paper-doll kid with picked skin, hair, hair color and
   shirt. The mirror changes the look any time. New hair styles and colors unlock as the
@@ -133,14 +147,14 @@ Every push to `main` builds and deploys to GitHub Pages (`.github/workflows/depl
 | `index.html` | The page markup |
 | `src/styles/game.css` | The page's styles (the day scene has `src/scene/dayScene.css`) |
 | `src/main.js` | The page script: wires the engine to the page, the frame loop, saving, the mirror |
-| `src/ui/` | Page pieces split out of `main.js`: number formats, the Day Report, the Money Bag, the Stand Shop list, house pictures, My Shelf, friends and stores, Dad Mode's panels, the Reset card |
+| `src/ui/` | Page pieces split out of `main.js`: number formats, the Day Report, the Money Bag, the Stand Shop list, house pictures, the yard, My Shelf (with the trophies and wallpapers), friends and stores, Dad Mode's panels, the Reset card |
 | `src/scene/` | The day scene: who walks by, the customers' art, the forecast art |
 | `src/preload.ts` | Loads pictures ahead of time so nothing pops in |
 | `src/storage.ts` | Everything kept in the browser, and the save version |
 | `src/engine.ts` | The game engine (no DOM): state, days, buying, upgrades, save and load |
 | `src/balance.ts` | Every economy tuning number |
 | `src/simulation/` | Weather, demand, recipe taste, reviews, reputation, storage limits |
-| `src/data/` | Everything the Stand Shop sells (to the big dreams), chores, friends' stands, stores, flavors, the brand, the house |
+| `src/data/` | Everything the Stand Shop sells (to the big dreams), chores, friends' stands, stores, flavors, the brand, the house, the yard, the trophies and wallpapers |
 | `src/character.ts`, `src/kid.ts` | The kid's saved look, and drawing the paper-doll kid |
 | `src/unlocks.ts` | Which looks unlock when |
 | `sim/` | The balance simulator (bot players) |
@@ -156,9 +170,11 @@ are in `art_src/prompts/README.md`. Python scripts (Pillow and numpy; run from t
 turn it into the small files in `public/sprites/`:
 
 - `art_src/build_kid_art.py` - the paper-doll kid (body, 21 hair styles, faces) and `kid.json`
-- `art_src/cut_sheets.py` - cuts the sticker sheets (Stand Shop pictures, Flavor Lab fruits)
-  into full-size sources
-- `art_src/build_sticker_art.py` - the game-size Stand Shop pictures and Flavor Lab fruits
+- `art_src/cut_sheets.py` - cuts the sticker sheets (Stand Shop pictures, Flavor Lab fruits,
+  trophies, yard things, brand moves) into full-size sources
+- `art_src/build_sticker_art.py` - the game-size Stand Shop pictures, Flavor Lab fruits,
+  trophies, yard things and brand moves
+- `art_src/build_wallpaper_art.py` - the page wallpapers, made from the game's own stickers
 - `art_src/build_frame_art.py` - the stand's ribbon, awning and tablecloth
 - `art_src/build_franchise_art.py` - the three friend stands (Elm Street, Ballpark, Pool)
 - `art_src/build_backdrop_art.py` - the neighborhoods behind the friends' stands, with the sky
@@ -182,6 +198,7 @@ p10 / median / p90 across games.
 ```bash
 npm run sim                                          # 1,000 games per bot, 60 days
 npm run sim -- --days 220 --bots careful,perfect     # the whole game, to the ending
+npm run sim -- --days 220 --bots careful,homeowner   # what the house and yard cost the game
 npm run sim -- --games 100000 --bots careful,sloppy  # more games, chosen bots
 npm run sim -- --vs buzz.wordOfMouth=0.4             # current vs a changed setting
 npm run sim -- --help                                # all options and bot descriptions

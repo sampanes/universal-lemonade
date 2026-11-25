@@ -1,9 +1,13 @@
 // sim/index.ts -- Entry point bundled to .sim-build/index.js for the CLI, workers and tests.
 export { LemonadeEngine, BALANCE, DEFAULT_SEED, ledgerKept } from '../src/engine';
 export { FIRST_CHOICE } from '../src/data/projects';
-// The UI is plain JavaScript; Vite bundles it here for the shop progression test.
+export { TROPHIES, WALLPAPERS } from '../src/data/trophies';
+export { YARD_STEPS, YARD_DAYS_BETWEEN } from '../src/data/yard';
+// The UI is plain JavaScript; Vite bundles it here for the shop progression and shelf tests.
 // @ts-expect-error The JavaScript UI has no TypeScript declarations.
 export { kidShopNext } from '../src/ui/kidShop.js';
+// @ts-expect-error The JavaScript UI has no TypeScript declarations.
+export { shelfItems, shelfTrophies } from '../src/ui/shelf.js';
 export { generateDailyReviews, flavorTasteReview } from '../src/simulation/reviews';
 export { reputationTrend, nextReputation } from '../src/simulation/reputation';
 export { allocateStandSales } from '../src/simulation/demand';

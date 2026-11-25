@@ -1086,6 +1086,86 @@ test('my house opens on the first quiet day after $2,000 in sales', () => {
   assert.equal(busy.runDay().houseOpened, true, 'a busy day at $5,000 opens it');
 });
 
+test('money trophies wait for the shelf, come one a day in order, and bring wallpapers', () => {
+  const { TROPHIES } = sim;
+  const e = new LemonadeEngine({ seed: 79 });
+  const BigNum = e.state.cash.constructor;
+  e.state.cash = BigNum.fromNumber(500);
+  e.state.totalRevenueEarned = BigNum.fromNumber(TROPHIES[0].sales);
+  e.state.lastShopPurchaseDay = e.state.day - 1;   // a busy day: the house waits
+  assert.equal(e.runDay().trophyWon, null, 'no trophy before My House opens');
+  e.state.lastShopPurchaseDay = undefined;
+  e.state.totalRevenueEarned = BigNum.fromNumber(2000);
+  const opening = e.runDay();
+  assert.equal(opening.houseOpened, true);
+  assert.equal(opening.trophyWon, null, 'not on the day the house opens');
+  const first = e.runDay();
+  assert.equal(first.trophyWon, 'bronze', 'the day after');
+  assert.deepEqual(e.state.trophyDays, [first.day]);
+  assert.ok(otherUnlockToday(e.state, first), 'a magic look waits for another day');
+  assert.equal(e.runDay().trophyWon, null, 'each trophy once');
+
+  // Way past three amounts at once: still one a day, in order.
+  e.state.totalRevenueEarned = BigNum.fromNumber(TROPHIES[3].sales);
+  assert.deepEqual([e.runDay().trophyWon, e.runDay().trophyWon, e.runDay().trophyWon, e.runDay().trophyWon],
+    ['silver', 'gold', 'millionaire', null]);
+  assert.deepEqual(e.wallpapersOpen(), ['plain', 'lemons', 'fruit'], 'the gold and millionaire trophies bring wallpapers');
+  assert.equal(e.setWallpaper('stars'), false, 'not before the billionaire trophy');
+  assert.ok(e.setWallpaper('fruit'));
+  const loaded = LemonadeEngine.fromSave(JSON.parse(JSON.stringify(e.toSave())));
+  assert.deepEqual(loaded.state.trophyDays, e.state.trophyDays);
+  assert.equal(loaded.state.wallpaper, 'fruit');
+  assert.deepEqual(sim.shelfTrophies(loaded).map(t => t.day != null), [true, true, true, true, false]);
+  assert.equal(new LemonadeEngine({ seed: 79 }).state.wallpaper, 'plain');
+});
+
+test('the yard opens once the house is paid off: a pet to pick, a wait between things, the other pet later', () => {
+  const { YARD_STEPS, YARD_DAYS_BETWEEN } = sim;
+  const e = new LemonadeEngine({ seed: 80 });
+  e.dadJumpToPhase(4);
+  e.state.cash = e.state.cash.constructor.fromNumber(1e9);
+  assert.equal(e.nextYardStep(), null, 'not before the house is paid off');
+  assert.equal(e.buyYardThing('puppy'), false);
+  while (e.nextHouseStep()) assert.ok(e.buyHouseStep());
+  const first = e.nextYardStep();
+  assert.deepEqual(first.things.map(t => t.id), ['puppy', 'kitten'], 'the first step is the pet choice');
+  assert.equal(first.cost, YARD_STEPS[0].cost);
+  const spent = e.ledger.house;
+  assert.ok(e.buyYardThing('kitten'));
+  assert.equal(e.ledger.house - spent, YARD_STEPS[0].cost, 'paid from the house money');
+  assert.equal(e.nextYardStep().waitDays, YARD_DAYS_BETWEEN, 'the next one opens a few days later');
+  assert.equal(e.buyYardThing('trampoline'), false);
+  e.state.day += YARD_DAYS_BETWEEN;
+  assert.equal(e.buyYardThing('puppy'), false, 'only what the step offers');
+  assert.ok(e.buyYardThing('trampoline'));
+  for (let i = 2; i < YARD_STEPS.length; i++) {
+    e.state.day += YARD_DAYS_BETWEEN;
+    const step = e.nextYardStep();
+    if (i === 3) assert.deepEqual(step.things.map(t => t.id), ['puppy'], 'the pet not picked comes later');
+    assert.ok(e.buyYardThing(step.things[0].id));
+  }
+  assert.equal(e.nextYardStep(), null, 'all done');
+  assert.equal(e.state.yard.length, YARD_STEPS.length);
+  const loaded = LemonadeEngine.fromSave(JSON.parse(JSON.stringify(e.toSave())));
+  assert.deepEqual(loaded.state.yard, e.state.yard);
+  assert.equal(loaded.state.boughtOn['yard:kitten'], e.state.boughtOn['yard:kitten']);
+  const shelf = sim.shelfItems(loaded);
+  assert.equal(shelf.filter(x => x.pic.includes('/yard/')).length, YARD_STEPS.length, 'every yard thing is on the shelf');
+  assert.equal(shelf.find(x => x.name === 'Puppy').cost, YARD_STEPS[3].cost, 'at the price of its step');
+});
+
+test('brand moves land on My Shelf on the day they are bought', () => {
+  const e = new LemonadeEngine({ seed: 81 });
+  e.dadJumpToPhase(5);
+  e.state.cash = e.state.cash.add(1e9);
+  for (const id of ['regional_supermarkets', 'automated_canning_line', 'national_bigbox']) assert.ok(e.buyProject(id));
+  const day = e.state.day;
+  assert.ok(e.buyBrandStep());
+  assert.equal(e.state.boughtOn['brand:billboard'], day);
+  const billboard = sim.shelfItems(e).find(x => x.name === 'Giant Billboard');
+  assert.deepEqual([billboard.day, billboard.cost, billboard.pic], [day, 250000, './sprites/brand/billboard.png']);
+});
+
 test('stores buy the forecast bottles, the forecast counts their lemons and sugar, and the labeler makes bottles cheaper', () => {
   const e = new LemonadeEngine({ seed: 52 });
   e.dadJumpToPhase(3);

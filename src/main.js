@@ -5,6 +5,7 @@ import { SQUEEZER_LEVELS } from './data/projects.ts';
 import { FLAVORS, FLAVOR_BOOST } from './data/flavors.ts';
 import { BRAND_STEPS } from './data/brand.ts';
 import { HOUSE_STEPS, HOUSE_COLORS } from './data/house.ts';
+import { TROPHIES, WALLPAPERS } from './data/trophies.ts';
 import {
   loadCharacterProfile,
   saveCharacterProfile,
@@ -24,7 +25,8 @@ import { housePicHTML, ALL_HOUSE_IMAGES } from './ui/houseArt.js';
 import { STORE_PICS, FRIENDS, ALL_PLACE_IMAGES, friendPortrait, sceneLocation } from './ui/places.js';
 import { reportCatMood, renderFullDayReportHTML, renderDayReport } from './ui/dayReport.js';
 import { KID_SHOP, INVENTION, kidShopNext } from './ui/kidShop.js';
-import { shelfItems, shelfCardHTML, shelfRoomHTML, shelfCaptionHTML } from './ui/shelf.js';
+import { shelfItems, shelfTrophies, shelfCardHTML, shelfRoomHTML, shelfCaptionHTML, trophyCaptionHTML, brandPic, trophyPic, ALL_SHELF_IMAGES } from './ui/shelf.js';
+import { yardStripHTML, yardNextHTML, yardSceneHTML } from './ui/yard.js';
 import { moneyBagHTML, SUPPLY_PICS } from './ui/moneyBag.js';
 import { renderDadPanel, initDadPanel } from './ui/dadPanel.js';
 import { initResetCard } from './ui/resetCard.js';
@@ -488,10 +490,15 @@ document.getElementById('btn-run-day').onclick = async () => {
     if (summary) {
       renderReportModal(summary);
       if (summary.houseOpened && !dadModeActive) showHouseNews();
+      if (summary.trophyWon && !dadModeActive) showTrophyNews(summary.trophyWon);
       if (look) { showMagicLook(look); refreshKidNew(); }
       showReportModal(true);
     }
-    document.getElementById('btn-report-modal-continue').focus();
+    // A day with news (a banner at the top of the report) opens at the top, so focusing the
+    // button at the bottom does not scroll the news out of sight.
+    const news = !!document.querySelector('#report-modal-content .magic-look');
+    document.getElementById('btn-report-modal-continue').focus({ preventScroll: news });
+    if (news) document.getElementById('report-modal-dialog').scrollTop = 0;
   }
 };
 
@@ -962,6 +969,7 @@ function loop(now) {
   renderMoneyBag(s);
   renderHouse(s);
   renderShelf(s);
+  if (document.body.dataset.wallpaper !== s.wallpaper) document.body.dataset.wallpaper = s.wallpaper;
 
   // The ending plays once, the moment Citrus Cay is bought (or on the next visit if the page
   // closed first).
@@ -1110,23 +1118,29 @@ function renderHouse(s) {
   if (!show) return;
   const level = s.houseLevel;
   const next = engine.nextHouseStep();
-  const dots = HOUSE_STEPS.map((_, i) => `<span${i < level ? ' class="on"' : ''}></span>`).join('');
+  const yard = engine.nextYardStep();
+  // Like the Stand Shop, only money left after today's supplies counts.
+  const spare = Math.max(0, s.cash.toNumber() - engine.restockCostForToday());
   let nextHTML;
-  if (!next) {
-    nextHTML = '<div class="house-later">All done! The house is paid off!</div>';
+  if (yard) {
+    nextHTML = yardNextHTML(yard, spare);
+  } else if (!next) {
+    nextHTML = '<div class="house-later">All done! The house is paid off and the yard is full of fun!</div>';
   } else if (s.phase < next.phase) {
     nextHTML = `<div class="house-next-name">Next: ${next.name}</div><div class="house-later">Opens when your business grows!</div>`;
   } else {
-    // Like the Stand Shop, only money left after today's supplies counts.
-    const spare = Math.max(0, s.cash.toNumber() - engine.restockCostForToday());
     const short = Math.max(0, next.cost - spare);
     nextHTML = `<div class="house-next-name">${next.name}</div><div class="house-next-desc">${next.desc}</div>
       <button type="button" class="stand-shop-buy" data-act="house-buy"${short ? ' disabled' : ''}>$${fmtWhole(next.cost)}</button>
       ${short ? `<div class="house-save"><span class="stand-shop-bar"><span style="width:${Math.min(100, (spare / next.cost) * 100).toFixed(1)}%"></span></span>Save $${fmtWhole(Math.ceil(short))} more</div>` : ''}`;
   }
+  // Once the house is paid off, the yard's grass takes the house steps' dots' place.
+  const progress = next
+    ? `<div class="house-dots" aria-label="${level} of ${HOUSE_STEPS.length} house upgrades">${HOUSE_STEPS.map((_, i) => `<span${i < level ? ' class="on"' : ''}></span>`).join('')}</div>`
+    : yardStripHTML(s);
   setHTMLIfChanged(document.getElementById('house-card'), `<div class="house-title">My House</div>
     <div class="house-pic">${housePicHTML(level, s.houseColor)}</div>
-    <div class="house-dots" aria-label="${level} of ${HOUSE_STEPS.length} house upgrades">${dots}</div>
+    ${progress}
     ${level >= 1 ? `<div class="house-swatches" role="group" aria-label="House color">${HOUSE_COLORS.map(c =>
       `<button type="button" class="house-swatch" data-act="house-color" data-id="${c.id}" style="--swatch:${c.hex}" aria-label="${c.name}" aria-pressed="${c.id === s.houseColor}"></button>`).join('')}</div>` : ''}
     <div class="house-next">${nextHTML}</div>`);
@@ -1145,6 +1159,23 @@ function showHouseNews() {
     e.stopPropagation();
     closeReportModal();
     document.getElementById('house-col').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  };
+}
+// The day a money trophy is won (src/data/trophies.ts), the Day Report says so at the top;
+// the button opens the shelf with the new trophy picked (and a wallpaper it brought glowing).
+function showTrophyNews(id) {
+  const content = document.getElementById('report-modal-content');
+  const t = TROPHIES.find(x => x.id === id);
+  if (!content || !t) return;
+  const wall = t.wallpaper ? ` And a new ${WALLPAPERS.find(w => w.id === t.wallpaper).name} wallpaper!` : '';
+  content.insertAdjacentHTML('afterbegin',
+    `<div class="magic-look trophy-news"><div class="trophy-news-pic"><img src="${trophyPic(id)}" alt="" /></div>` +
+    `<div class="magic-look-text"><b>${t.name}!</b><span>You sold $${fmtWhole(t.sales)} since Day 1!${wall}</span></div>` +
+    `<button type="button" class="magic-look-try" id="btn-trophy-news">See it!</button></div>`);
+  document.getElementById('btn-trophy-news').onclick = (e) => {
+    e.stopPropagation();
+    closeReportModal();
+    openShelfRoom({ trophy: TROPHIES.indexOf(t), wallpaper: t.wallpaper });
   };
 }
 // The build scene: the old house shakes in a cloud of dust, the new one pops in, confetti.
@@ -1173,11 +1204,29 @@ document.getElementById('house-scene').addEventListener('click', (e) => {
   e.currentTarget.hidden = true;
   e.currentTarget.innerHTML = '';
 });
+// A yard thing (src/data/yard.ts) arrives: it pops onto the grass, with confetti.
+function playYardScene(thing) {
+  const scene = document.getElementById('house-scene');
+  scene.innerHTML = yardSceneHTML(thing);
+  scene.hidden = false;
+  scene.querySelector('[data-act="house-scene-close"]').focus({ preventScroll: true });
+}
 document.getElementById('house-col').addEventListener('click', (e) => {
   document.getElementById('house-card').classList.remove('is-new');
   const swatch = e.target.closest('[data-act="house-color"]');
   if (swatch) { engine.setHouseColor(swatch.dataset.id); return; }
   if (e.target.closest('[data-act="shelf-open"]')) { openShelfRoom(); return; }
+  const yardBtn = e.target.closest('[data-act="yard-buy"]');
+  if (yardBtn) {
+    const step = engine.nextYardStep();
+    const thing = step?.things.find(t => t.id === yardBtn.dataset.id);
+    if (yardBtn.disabled || !thing || engine.state.cash.toNumber() - engine.restockCostForToday() < step.cost) return;
+    if (engine.buyYardThing(thing.id)) {
+      kidFlash('cheer', 3500);
+      playYardScene(thing);
+    }
+    return;
+  }
   const btn = e.target.closest('[data-act="house-buy"]');
   if (!btn || btn.disabled) return;
   const next = engine.nextHouseStep();
@@ -1188,22 +1237,26 @@ document.getElementById('house-col').addEventListener('click', (e) => {
   }
 });
 
-// My Shelf (src/ui/shelf.js): the card under My House once something is bought, and the
-// whole shelf (the shelf room) when it is tapped. Tapping a thing there says what it is and
-// gives it a little wiggle.
+// My Shelf (src/ui/shelf.js): the card under My House once something is bought or won, and
+// the whole shelf (the shelf room) when it is tapped. Tapping a thing or a trophy there says
+// what it is and gives it a little wiggle; tapping a wallpaper puts it up behind the page.
 let shelfList = [];
+let trophyList = [];
 function renderShelf(s) {
   shelfList = shelfItems(engine);
+  trophyList = shelfTrophies(engine);
   const card = document.getElementById('shelf-card');
-  const show = s.houseOpen && shelfList.length > 0;
+  const show = s.houseOpen && (shelfList.length > 0 || s.trophyDays.length > 0);
   if (card.hidden === show) card.hidden = !show;
-  if (show) setHTMLIfChanged(card, shelfCardHTML(shelfList, s.day));
+  if (show) setHTMLIfChanged(card, shelfCardHTML(shelfList, trophyList, s.day));
 }
 const shelfRoom = document.getElementById('shelf-room');
-function openShelfRoom() {
-  shelfRoom.innerHTML = shelfRoomHTML(shelfList);
+// pick: { trophy: index to show (the Day Report's trophy news), wallpaper: one to make glow }.
+function openShelfRoom(pick = {}) {
+  shelfRoom.innerHTML = shelfRoomHTML(shelfList, trophyList, engine.wallpapersOpen(), engine.state.wallpaper, pick.wallpaper);
   shelfRoom.hidden = false;
   shelfRoom.querySelector('[data-act="shelf-close"]').focus({ preventScroll: true });
+  if (pick.trophy != null) pickShelfThing(shelfRoom.querySelector(`[data-trophy="${pick.trophy}"]`));
 }
 function closeShelfRoom() {
   if (shelfRoom.hidden) return;
@@ -1211,13 +1264,23 @@ function closeShelfRoom() {
   shelfRoom.innerHTML = '';
   document.querySelector('[data-act="shelf-open"]')?.focus({ preventScroll: true });
 }
+function pickShelfThing(item) {
+  const caption = item.dataset.trophy != null ? trophyCaptionHTML(trophyList[+item.dataset.trophy]) : shelfCaptionHTML(shelfList[+item.dataset.i]);
+  shelfRoom.querySelector('.shelf-room-caption').innerHTML = caption;
+  shelfRoom.querySelector('.shelf-room-item.picked')?.classList.remove('picked');
+  void item.offsetWidth;   // restart the wiggle on a second tap
+  item.classList.add('picked');
+}
 shelfRoom.addEventListener('click', (e) => {
   const item = e.target.closest('.shelf-room-item');
-  if (item) {
-    shelfRoom.querySelector('.shelf-room-caption').innerHTML = shelfCaptionHTML(shelfList[+item.dataset.i]);
-    shelfRoom.querySelector('.shelf-room-item.picked')?.classList.remove('picked');
-    void item.offsetWidth;   // restart the wiggle on a second tap
-    item.classList.add('picked');
+  if (item) { pickShelfThing(item); return; }
+  const wall = e.target.closest('.shelf-wallpaper');
+  if (wall) {
+    if (engine.setWallpaper(wall.dataset.wallpaper)) {
+      for (const b of shelfRoom.querySelectorAll('.shelf-wallpaper')) b.setAttribute('aria-pressed', String(b === wall));
+      wall.classList.remove('is-new');
+      document.body.dataset.wallpaper = engine.state.wallpaper;
+    }
     return;
   }
   // Done, or a tap outside the card.
@@ -1295,8 +1358,10 @@ function brandHTML(s) {
   } else {
     move = '<small>Your lemonade is the most famous in the whole world!</small>';
   }
+  // The picture: the next move, or the last one once they are all done.
+  const pic = brandPic((next ?? BRAND_STEPS[BRAND_STEPS.length - 1]).id);
   return `<div class="invention-panel">
-    <img src="./sprites/morning_prep/mascot_lemon_head.png" alt="" />
+    <img src="${pic}" alt="" />
     <div>
       <div class="invention-name">My Famous Brand</div>
       <div class="invention-desc">Brand bonus: +${pct}% on everything you sell</div>
@@ -1690,11 +1755,12 @@ function resetKid() {
 initResetCard({ onOpen: () => setMoneyBag(false), onConfirm: startOver });
 
 // Pictures that only show up later (the next shop item, stores, friends' stands, every house,
-// the Flavor Lab's fruits, the day scene's clouds and customers): loaded while the page is idle, so they never pop in.
+// the Flavor Lab's fruits, the brand moves, the yard, the trophies and wallpapers, the day
+// scene's clouds and customers): loaded while the page is idle, so they never pop in.
 whenIdle(() => {
   void preloadInBackground([
     ...ALL_HOUSE_IMAGES, ...ALL_PLACE_IMAGES, './sprites/morning_prep/cloud_puff.png',
-    ...KID_SHOP.map(item => item.pic), INVENTION.pic, INVENTION.worldPic, ...FLAVORS.map(fruitPic),
+    ...KID_SHOP.map(item => item.pic), INVENTION.pic, INVENTION.worldPic, ...FLAVORS.map(fruitPic), ...ALL_SHELF_IMAGES,
   ]).then(prepareCustomers);
 });
 initDadPanel(() => engine);

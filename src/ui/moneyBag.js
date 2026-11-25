@@ -2,7 +2,9 @@
 import { ledgerKept } from '../engine.ts';
 import { fmtDollars, tileMoney } from './format.js';
 import { KID_SHOP } from './kidShop.js';
+import { BRAND_STEPS } from '../data/brand.ts';
 import { HOUSE_PIC } from './houseArt.js';
+import { brandPic } from './shelf.js';
 import { repStars } from './dayReport.js';
 
 // Money Bag: tap the cash pill. Shows the last finished day as money in, money out and
@@ -28,15 +30,16 @@ function mbOutRows(l, engine) {
       .filter(b => b.item && b.p);
     const chips = bought.length > 1 ? `<span class="mb-chips">${bought.map(b =>
       `<span class="mb-chip"><img src="${b.item.pic}" alt="" />${mbMoney(b.p.costCash)}</span>`).join('')}</span>` : 'for the stand';
-    // Brand moves (src/data/brand.ts) are not Stand Shop items: "brand:<id>".
-    const brandOnly = l.shopIds.length > 0 && l.shopIds.every(id => id.startsWith('brand:'));
-    const name = brandOnly ? 'Famous brand' : bought.length === 1 && l.shopIds.length === 1 ? bought[0].p.name : 'Upgrades';
-    const pic = brandOnly ? './sprites/morning_prep/mascot_lemon_head.png' : bought.length ? bought[0].item.pic : './sprites/shop/second_stand.png';
-    rows += mbRow('out', pic, name, brandOnly ? 'making your lemonade famous' : chips, l.shop);
+    // Brand moves (src/data/brand.ts) are not Stand Shop items: "brand:<id>" (one a day at most).
+    const brand = l.shopIds.length > 0 && l.shopIds.every(id => id.startsWith('brand:'))
+      ? BRAND_STEPS.find(b => `brand:${b.id}` === l.shopIds[0]) : null;
+    const name = brand ? brand.name : bought.length === 1 && l.shopIds.length === 1 ? bought[0].p.name : 'Upgrades';
+    const pic = brand ? brandPic(brand.id) : bought.length ? bought[0].item.pic : './sprites/shop/second_stand.png';
+    rows += mbRow('out', pic, name, brand ? 'making your lemonade famous' : chips, l.shop);
   }
   if (l.hiring > 0.004) rows += mbRow('out', './sprites/franchise/ballpark.png', 'Hiring', 'new stands and deals', l.hiring);
   if (l.storeUpgrades > 0.004) rows += mbRow('out', './sprites/shop/bottles.png', 'Store shelves', 'bigger store orders', l.storeUpgrades);
-  if (l.house > 0.004) rows += mbRow('out', HOUSE_PIC, 'House', 'a new look for home', l.house);
+  if (l.house > 0.004) rows += mbRow('out', HOUSE_PIC, 'House', 'your house and yard', l.house);
   if (l.wages > 0.004) rows += mbRow('out', './sprites/franchise/elm.png', "Helpers' pay", 'your stand workers', l.wages);
   return rows;
 }

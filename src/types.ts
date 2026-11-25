@@ -201,6 +201,7 @@ export interface DaySummary {
   goldenStreak: number;         // golden open days in a row, counting today
   recipeJustLocked: boolean;    // today the neighbors asked to keep the recipe forever
   houseOpened: boolean;         // the My House column opened at the end of today
+  trophyWon: string | null;     // the money trophy won today (src/data/trophies.ts)
   flavorTaste?: FlavorTaste | null;   // the Flavor Lab's tasting today (Stage 5)
   // Stand upgrades.
   iceMadeByMachine: number;     // cubes the ice machine made today
@@ -223,7 +224,7 @@ export interface MoneyLedger {
   shopIds: string[];    // which ones, for the picture ("brand:<id>" for a brand move)
   hiring: number;       // franchise stand setup and wholesale sign-up
   storeUpgrades: number; // expanded store shelves
-  house: number;        // house upgrades (src/data/house.ts)
+  house: number;        // house upgrades and yard things (src/data/house.ts, src/data/yard.ts)
   wages: number;        // franchise workers
 }
 
@@ -299,12 +300,17 @@ export interface GameState {
   currentChore: ChoreState;
   lastDaySummary: DaySummary | null;
   lastShopPurchaseDay?: number; // spaces the next kid shop item
-  boughtOn: Record<string, number>;   // project id -> the day it was bought (My Shelf, src/ui/shelf.js)
+  // The day each thing on My Shelf (src/ui/shelf.js) was bought: a project id, "brand:<id>"
+  // for a brand move, "yard:<id>" for a yard thing.
+  boughtOn: Record<string, number>;
+  trophyDays: number[];  // the day each money trophy was won, in TROPHIES order (src/data/trophies.ts)
+  wallpaper: string;     // the page's wallpaper (WALLPAPERS); 'plain' until a trophy brings one
   friendExpansion?: { day: number; cups: number };
   storeExpansion?: { day: number; bottles: number };
   houseOpen: boolean;    // the My House column is open (HOUSE_OPENS_AT_SALES, src/data/house.ts)
   houseLevel: number;    // house steps bought (src/data/house.ts); 0: none
   houseColor: string;    // wall color id (HOUSE_COLORS), shown once Fresh Paint is bought
+  yard: string[];        // yard things bought, in YARD_STEPS order (src/data/yard.ts)
   // The Flavor Lab (src/data/flavors.ts): the flavors in stores so far (FLAVORS order), and
   // the fruit and sugar scoops in the flavor being tasted now.
   flavorsLaunched: string[];

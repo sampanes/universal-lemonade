@@ -98,6 +98,17 @@ function lateGame(e: LemonadeEngine): void {
   if (step && e.brandOpen() && !e.brandWaitDays() && s.cash.toNumber() - e.restockCostForToday() >= step.cost) e.buyBrandStep();
 }
 
+// My House (src/data/house.ts) and then the yard (src/data/yard.ts): the next step as soon as
+// the money is spare after today's supplies. The yard's first step is the pet choice; games
+// with an odd seed pick the second pet first.
+function fixUpHome(e: LemonadeEngine): void {
+  const spare = () => e.state.cash.toNumber() - e.restockCostForToday();
+  const step = e.nextHouseStep();
+  if (step && e.state.houseOpen && e.state.phase >= step.phase && spare() >= step.cost) e.buyHouseStep();
+  const yard = e.nextYardStep();
+  if (yard && !yard.waitDays && spare() >= yard.cost) e.buyYardThing(yard.things[yard.things.length > 1 ? e.seed & 1 : 0].id);
+}
+
 function hireAndSign(e: LemonadeEngine, wageDaysReserve: number, chance: number, rand: () => number): void {
   const s = e.state;
   if (s.phase >= 2) {
@@ -151,6 +162,15 @@ export const BOTS: Record<string, Bot> = {
       buyUpgrades(e, 20, 1, ctx.rand);
       hireAndSign(e, 3, 1, ctx.rand);
       lateGame(e);
+    }
+  },
+
+  homeowner: {
+    name: 'homeowner',
+    description: 'Like careful, and also buys each house step and yard thing as soon as the money is spare (what fixing up the home costs the rest of the game).',
+    morning(e, ctx) {
+      BOTS.careful.morning(e, ctx);
+      fixUpHome(e);
     }
   },
 

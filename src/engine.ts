@@ -28,6 +28,8 @@ import { HOUSE_STEPS, HOUSE_COLORS, FIRST_HOUSE_COLOR, HOUSE_OPENS_AT_SALES, HOU
 import { otherUnlockToday } from './unlocks';
 import { FLAVORS, FLAVOR_START, FLAVOR_BOOST, FLAVOR_MAX_SCOOPS, flavorGoldenMix, type Flavor } from './data/flavors';
 import { BRAND_STEPS, BRAND_OPENS_WITH, type BrandStep } from './data/brand';
+import { TROPHIES, WALLPAPERS } from './data/trophies';
+import { YARD_THINGS, YARD_STEPS, YARD_DAYS_BETWEEN, type YardThing } from './data/yard';
 import { rollWeatherForecast, computeIdealIce, getSeasonInfo } from './simulation/weather';
 import { iceHint, crowdLevel, type IceHint } from './simulation/hints';
 import { computeRecipeQuality, getRecipeProfile } from './simulation/recipe';
@@ -56,7 +58,7 @@ export const DEFAULT_SEED = 1337;
 
 // Bump whenever the save changes shape. An older save is not upgraded: it is dropped and a new
 // game starts (src/storage.ts also clears every other stored setting when that version moves).
-const SAVE_VERSION = 6;
+const SAVE_VERSION = 7;
 
 interface EngineSave {
   v: number;
@@ -204,9 +206,12 @@ export class LemonadeEngine {
       totalBottlesSold: 0,
       totalSqueezersSold: 0,
       boughtOn: {},
+      trophyDays: [],
+      wallpaper: 'plain',
       houseOpen: false,
       houseLevel: 0,
       houseColor: FIRST_HOUSE_COLOR,
+      yard: [],
       flavorsLaunched: [],
       flavorMix: { ...FLAVOR_START },
       brandLevel: 0,
@@ -408,6 +413,46 @@ export class LemonadeEngine {
   public setHouseColor(id: string): boolean {
     if (this.state.houseLevel < 1 || !HOUSE_COLORS.some(c => c.id === id)) return false;
     this.state.houseColor = id;
+    return true;
+  }
+
+  // The yard (src/data/yard.ts): once the house is paid off, the next step's price, what it
+  // offers (two things for a choice, else one) and the days until it opens; null before the
+  // house is paid off and after the last step.
+  public nextYardStep(): { cost: number; things: YardThing[]; waitDays: number } | null {
+    const s = this.state;
+    const step = YARD_STEPS[s.yard.length];
+    if (!step || s.houseLevel < HOUSE_STEPS.length) return null;
+    const last = s.yard.length ? s.boughtOn[`yard:${s.yard[s.yard.length - 1]}`] : null;
+    return {
+      cost: step.cost,
+      things: step.pick.filter(id => !s.yard.includes(id)).map(id => YARD_THINGS[id]),
+      waitDays: last == null ? 0 : Math.max(0, last + YARD_DAYS_BETWEEN - s.day),
+    };
+  }
+
+  public buyYardThing(id: string): boolean {
+    const s = this.state;
+    const step = this.nextYardStep();
+    const thing = step?.things.find(t => t.id === id);
+    if (!step || !thing || step.waitDays || s.cash.lt(step.cost)) return false;
+    s.cash = s.cash.sub(step.cost);
+    this.ledger.house += step.cost;
+    s.yard.push(id);
+    s.boughtOn[`yard:${id}`] = s.day;
+    this.log(`Yard: ${thing.name}!`);
+    return true;
+  }
+
+  // The wallpapers open so far: Plain, and each one a trophy won brought (src/data/trophies.ts).
+  public wallpapersOpen(): string[] {
+    const won = TROPHIES.slice(0, this.state.trophyDays.length);
+    return WALLPAPERS.filter(w => w.id === 'plain' || won.some(t => t.wallpaper === w.id)).map(w => w.id);
+  }
+
+  public setWallpaper(id: string): boolean {
+    if (!this.wallpapersOpen().includes(id)) return false;
+    this.state.wallpaper = id;
     return true;
   }
 
@@ -696,6 +741,7 @@ export class LemonadeEngine {
     this.ledger.shopIds.push(`brand:${step.id}`);
     s.brandLevel += 1;
     s.lastBrandDay = s.day;
+    s.boughtOn[`brand:${step.id}`] = s.day;
     this.log(`Famous brand: ${step.name}! Everything sells ${Math.round(step.bonus * 100)}% more.`);
     return true;
   }
@@ -1099,6 +1145,7 @@ export class LemonadeEngine {
       goldenStreak: s.goldenStreak,
       recipeJustLocked,
       houseOpened: false,
+      trophyWon: null,
       flavorTaste: this.tasteFlavor(),   // after the factory sold: a new flavor counts from tomorrow
       iceMadeByMachine,
       upgradeSavings,
@@ -1107,6 +1154,15 @@ export class LemonadeEngine {
       reviews,
       notes: notes.length ? notes : ['All operations ran smoothly!']
     };
+
+    // The next money trophy (src/data/trophies.ts), once My Shelf is there to hold it: never on
+    // the day the house opens (that is checked after this), and one a day at most.
+    const trophy = TROPHIES[s.trophyDays.length];
+    if (trophy && s.houseOpen && s.totalRevenueEarned.gte(trophy.sales)) {
+      s.trophyDays.push(s.day);
+      summary.trophyWon = trophy.id;
+      this.log(`Trophy: ${trophy.name}! Sales since Day 1 passed $${trophy.sales.toLocaleString('en-US')}.`);
+    }
 
     // My House opens on its own, on a day with nothing else to announce, or on any day once
     // sales pass the cap (src/data/house.ts).

@@ -11,6 +11,14 @@ Each sheet is one row of stickers on a transparent background.
     dreams_sheet.png    - Lemonade Jet, The Lemonade Arena, Citrus Cay (also the ending's island)
   art_src/flavors/sheets/ -> art_src/flavors/ (the Flavor Lab's fruits, named by flavor id)
     fruits_sheet.png    - strawberry, peach, mint, blueberry, watermelon, mango
+  art_src/trophies/sheets/ -> art_src/trophies/ (the money trophies, src/data/trophies.ts)
+    trophies_sheet.png  - bronze, silver, gold, millionaire, billionaire
+  art_src/yard/sheets/ -> art_src/yard/ (the yard things, src/data/yard.ts)
+    yard_sheet_a.png    - trampoline, go-kart, bouncy castle
+    yard_sheet_b.png    - robot helper, lemon hot-air balloon, puppy, kitten
+  art_src/brand/sheets/ -> art_src/brand/ (the brand moves, src/data/brand.ts)
+    brand_sheet_a.png   - billboard, radio jingle, TV commercial, ballpark team
+    brand_sheet_b.png   - parade float, blimp, big game commercial
 Each sticker is found by its empty columns and cropped to itself, and its inside is made
 fully solid (the image tool leaves it at about 99%). Then run build_sticker_art.py to make
 the game-size files.
@@ -26,6 +34,9 @@ from PIL import Image
 
 SHOP = os.path.join('art_src', 'shop')
 FLAVORS = os.path.join('art_src', 'flavors')
+TROPHIES = os.path.join('art_src', 'trophies')
+YARD = os.path.join('art_src', 'yard')
+BRAND = os.path.join('art_src', 'brand')
 # (folder, sheet file, sticker names from left to right). The sheet is in folder/sheets/.
 SHEETS = [
     (SHOP, 'supplies_sheet.png', ['big_wagon', 'club_card', 'bottles']),
@@ -36,6 +47,11 @@ SHEETS = [
                                   'factories_around_the_world']),
     (SHOP, 'dreams_sheet.png', ['lemonade_jet', 'lemonade_arena', 'citrus_cay']),
     (FLAVORS, 'fruits_sheet.png', ['strawberry', 'peach', 'mint', 'blueberry', 'watermelon', 'mango']),
+    (TROPHIES, 'trophies_sheet.png', ['bronze', 'silver', 'gold', 'millionaire', 'billionaire']),
+    (YARD, 'yard_sheet_a.png', ['trampoline', 'go_kart', 'bouncy_castle']),
+    (YARD, 'yard_sheet_b.png', ['robot', 'balloon', 'puppy', 'kitten']),
+    (BRAND, 'brand_sheet_a.png', ['billboard', 'jingle', 'tv', 'team']),
+    (BRAND, 'brand_sheet_b.png', ['parade', 'blimp', 'big_game']),
 ]
 SOLID = 16      # alpha above this counts as part of a sticker
 OPAQUE = 240    # alpha at or above this is the sticker's inside: made 255

@@ -1,8 +1,10 @@
-"""Make the game-size Stand Shop pictures and Flavor Lab fruits from the big sources.
+"""Make the game-size sticker pictures from the big sources.
 
-Sources are the full-size pictures in art_src/shop/ and art_src/flavors/ (transparent
-background, cleaned: inside alpha made fully solid, stray specks removed, cropped to the
-picture; cut_sheets.py makes most of them). Each is shrunk so its longer side is the
+Sources are the full-size pictures in art_src/shop/ (the Stand Shop), art_src/flavors/ (the
+Flavor Lab's fruits), art_src/trophies/ (the money trophies), art_src/yard/ (the yard things)
+and art_src/brand/ (the brand moves), each with a transparent background, cleaned (inside
+alpha made fully solid, stray specks removed) and cropped to the picture; cut_sheets.py
+makes most of them. Each is shrunk so its longer side is the
 folder's size (about 2x what the MSI shows), premultiplied so the transparent edge does not
 turn dark.
 
@@ -18,6 +20,9 @@ from PIL import Image
 FOLDERS = [
     (os.path.join('art_src', 'shop'), os.path.join('public', 'sprites', 'shop'), 320),
     (os.path.join('art_src', 'flavors'), os.path.join('public', 'sprites', 'flavors'), 160),
+    (os.path.join('art_src', 'trophies'), os.path.join('public', 'sprites', 'trophies'), 200),
+    (os.path.join('art_src', 'yard'), os.path.join('public', 'sprites', 'yard'), 320),
+    (os.path.join('art_src', 'brand'), os.path.join('public', 'sprites', 'brand'), 240),
 ]
 
 
