@@ -23,15 +23,11 @@
     <div class="header-money-wrap">
     <button type="button" id="btn-header-kid" class="kid-avatar-btn header-kid-btn" title="Change your look!" aria-label="Change your look"><img id="header-kid-img" alt="" /><span class="kid-fx"></span></button>
     <div class="header-cash-pill" id="header-cash-pill" title="Tap to see where your money went" role="button" tabindex="0" aria-expanded="false" aria-controls="money-bag">
-      <div class="header-cat-slot" id="header-cat-slot">
-        <img src="./sprites/kawaii_cat/cat1.png" id="header-cat-img" alt="Cat" />
-      </div>
       <div class="header-cash-val-wrap">
         <span class="header-coin-symbol">$</span>
         <span class="header-cash-num" id="header-cash-num">60.00</span>
       </div>
       <span class="header-cash-caret" aria-hidden="true"></span>
-      <div class="header-cash-float" id="header-cash-float" aria-hidden="true"></div>
       <div class="money-bag" id="money-bag" hidden>
         <div class="money-bag-banner">MONEY BAG</div>
         <div class="money-bag-body" id="money-bag-body"></div>
@@ -105,7 +101,7 @@
           <img src="./sprites/kawaii_cat/sparkle_big.png" class="bank-twinkle bank-twinkle-a" alt="" />
           <img src="./sprites/kawaii_cat/sparkle_small.png" class="bank-twinkle bank-twinkle-b" alt="" />
 
-          <div class="bank-stage-pill" id="bank-stage">Stage 1: Driveway Hustle</div>
+          <div class="bank-stage-pill" id="bank-stage">Stage 1: Driveway Stand</div>
 
           <div class="bank-counter">
             <div class="bank-counter-inner">
@@ -306,7 +302,7 @@
         <div class="stand-shop-choice" id="stand-shop-choice"></div>
         <img class="stand-shop-pic" id="stand-shop-pic" src="./sprites/shop/ice_dispenser.png" alt="" />
         <div class="stand-shop-info">
-          <div class="stand-shop-title"><span class="stand-shop-tag" id="stand-shop-tag">SHOP</span><span id="stand-shop-name">Ice Machine</span></div>
+          <div class="stand-shop-title"><span class="stand-shop-tag">SHOP</span><span id="stand-shop-name">Ice Machine</span></div>
           <div class="stand-shop-desc" id="stand-shop-desc"></div>
           <div class="stand-shop-save" id="stand-shop-save">
             <div class="stand-shop-bar"><span id="stand-shop-fill"></span></div>
@@ -499,19 +495,15 @@
       <div class="house-card" id="house-card"></div>
     </div>
 
-    <!-- COLUMN 3: P&L STATEMENT, INVESTMENTS & LOGS -->
+    <!-- COLUMN 3 (Dad Mode): the day's money, the Stand Shop in any order, the log -->
     <div class="panel" id="panel-column-3">
-      <h3>3. Financial P&L & Upgrades</h3>
+      <h3>3. Money & Stand Shop</h3>
       <div id="readout-pnl"></div>
 
-      <div style="font-weight: bold; margin: 10px 0 4px 0;">Available Business Investments:</div>
+      <div style="font-weight: bold; margin: 10px 0 4px 0;">Stand Shop (any order):</div>
       <div id="project-list"></div>
 
-      <div style="font-weight: bold; margin: 14px 0 4px 0; color: #ffd700;">&#x1F3C6; The Big Dreams:</div>
-      <div id="trophy-shelf" class="trophy-shelf"></div>
-      <div id="trophy-list"></div>
-
-      <div style="font-weight: bold; margin: 14px 0 4px 0;">Executive Activity Log:</div>
+      <div style="font-weight: bold; margin: 14px 0 4px 0;">Log:</div>
       <div id="log-box" class="log"></div>
     </div>
   </div>

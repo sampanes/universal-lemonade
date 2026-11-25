@@ -30,13 +30,13 @@ export function shares(total: number, parts: number): number[] {
   return Array.from({ length: parts }, (_, i) => Math.floor(total * (i + 1) / parts) - Math.floor(total * i / parts));
 }
 
-export const CROWD = {
+const CROWD = {
   buyers: { perDoubling: 0.85, cap: 8 },    // 1 cup: 1, 10: 3, 40: 5, 100: 6, 500+: 8
   passers: { perDoubling: 0.7, cap: 6 },    // 1: 1, 10: 3, 30: 4, 100: 5, 300+: 6
   missed: { perDoubling: 0.6, cap: 4 },     // 1 or 2: 1, 3: 2, 10: 3, 100+: 4
 };
 
-export function standCrowd({ id, traffic, wanted, sold }: StandVisits): StandCrowd {
+function standCrowd({ id, traffic, wanted, sold }: StandVisits): StandCrowd {
   const missed = Math.max(0, wanted - sold);
   const passing = Math.max(0, traffic - wanted);
   const group = (count: number, size: { perDoubling: number; cap: number }) =>

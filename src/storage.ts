@@ -13,7 +13,7 @@ export const STORAGE_KEYS = {
   dadMode: 'universal_lemonade_dad_mode',       // 'true' / 'false'
 } as const;
 
-export const STORAGE_VERSION = '4';
+const STORAGE_VERSION = '4';
 const VERSION_KEY = 'universal_lemonade_storage_version';
 const PREFIX = 'universal_lemonade_';
 

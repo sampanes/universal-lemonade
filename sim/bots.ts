@@ -5,7 +5,9 @@
 // the customer estimate) unless they are explicitly "perfect" players.
 
 import type { LemonadeEngine } from '../src/engine';
-import { FIRST_CHOICE } from '../src/data/projects';
+import { SQUEEZER_LEVELS } from '../src/data/projects';
+// @ts-expect-error The JavaScript UI has no TypeScript declarations.
+import { kidShopNext } from '../src/ui/kidShop.js';
 
 export interface BotContext {
   rand: () => number;          // the bot's own random numbers (separate from the game's)
@@ -21,7 +23,7 @@ export interface Bot {
 
 const PRICE_STEPS = [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 2.75, 3, 3.5, 4, 5];
 
-export function goldenOf(e: LemonadeEngine): { lemons: number; sugar: number } {
+function goldenOf(e: LemonadeEngine): { lemons: number; sugar: number } {
   return e.getGoldenRecipe();
 }
 
@@ -60,19 +62,40 @@ function nudgeFromCustomers(e: LemonadeEngine): void {
   }
 }
 
-// Follow the kid shop's order and its day between purchases. The shop starts with a choice
-// (FIRST_CHOICE); games with an odd seed pick the second one first, so a run covers both.
+// What the kid's page offers: the squeezer's next step on the Invention card, then the Stand
+// Shop in its own order (kidShopNext: one item at a time, a day between buys, all the way to
+// Citrus Cay). The shop starts with a choice (FIRST_CHOICE); games with an odd seed pick the
+// second one first, so a run covers both. reserve: cash kept back besides today's supplies.
 function buyUpgrades(e: LemonadeEngine, reserve: number, chance: number, rand: () => number): void {
   const s = e.state;
-  if (s.lastShopPurchaseDay != null && s.day - s.lastShopPurchaseDay < 2) return;
-  const first = e.seed & 1 ? [...FIRST_CHOICE].reverse() : [...FIRST_CHOICE];
-  const order = [...first, 'franchise_license', 'costco_card',
-    'cargo_wagon', 'bottling_rig', 'commercial_labeler', 'patent_filing', 'supply_truck', 'stand_captain',
-    'squeezer_tv', 'squeezer_states', 'global_licensing'];
-  const p = order.map(id => e.projects.find(project => project.id === id)).find(project => project && !project.purchased);
-  if (!p || !p.unlocked(s)) return;
-  if (p.id === 'cargo_wagon' && Object.values(e.franchiseStands).filter(st => st.hired).length < 2) return;
-  if (s.cash.toNumber() >= p.costCash + Math.max(reserve, e.restockCostForToday()) && rand() < chance) e.buyProject(p.id);
+  const affordable = (cost: number) => s.cash.toNumber() >= cost + Math.max(reserve, e.restockCostForToday());
+  const stepId = SQUEEZER_LEVELS[e.patent.level]?.project;
+  const squeezer = stepId ? e.projects.find(p => p.id === stepId) : undefined;
+  if (squeezer && !squeezer.purchased && squeezer.unlocked(s) && affordable(squeezer.costCash) && rand() < chance) {
+    e.buyProject(squeezer.id);
+    return;
+  }
+  const next = kidShopNext(e, s);
+  if (!next) return;
+  const p = next.choices ? next.choices[e.seed & 1].p : next.p;
+  if (p.unlocked(s) && affordable(p.costCash) && rand() < chance) e.buyProject(p.id);
+}
+
+// Stage 5: the Flavor Lab's next try from yesterday's taste testers ("a little more
+// strawberry and way less sugar"; "way" is two or more scoops off), and a brand move
+// whenever the money is there.
+function lateGame(e: LemonadeEngine): void {
+  const s = e.state;
+  const tasted = s.lastDaySummary?.flavorTaste;
+  if (tasted && !tasted.launched && e.currentFlavor()?.id === tasted.id) {
+    for (const item of ['fruit', 'sugar'] as const) {
+      const re = item === 'sugar' ? /(a little|way) (more|less) sugar/ : /(a little|way) (more|less) (?!sugar)\w+/;
+      const m = tasted.review.quote.match(re);
+      if (m) e.adjustFlavor(item, (m[2] === 'more' ? 1 : -1) * (m[1] === 'way' ? 2 : 1));
+    }
+  }
+  const step = e.nextBrandStep();
+  if (step && e.brandOpen() && !e.brandWaitDays() && s.cash.toNumber() - e.restockCostForToday() >= step.cost) e.buyBrandStep();
 }
 
 function hireAndSign(e: LemonadeEngine, wageDaysReserve: number, chance: number, rand: () => number): void {
@@ -97,17 +120,10 @@ function hireAndSign(e: LemonadeEngine, wageDaysReserve: number, chance: number,
   }
 }
 
-function buyTrophies(e: LemonadeEngine, cashMultiple: number): void {
-  const s = e.state;
-  for (const t of e.trophies) {
-    if (!t.purchased && t.phaseRequired <= s.phase && s.cash.toNumber() >= t.costCash * cashMultiple) e.buyTrophy(t.id);
-  }
-}
-
 export const BOTS: Record<string, Bot> = {
   perfect: {
     name: 'perfect',
-    description: 'Knows the golden recipe, ideal ice, best price; restocks to the forecast; upgrades early.',
+    description: 'Knows the golden recipe, ideal ice, best price; restocks to the forecast; buys each upgrade as soon as it can.',
     morning(e) {
       const s = e.state, g = goldenOf(e);
       s.recipe.lemonsPerPitcher = g.lemons;
@@ -118,13 +134,13 @@ export const BOTS: Record<string, Bot> = {
       e.autoRestockForToday();
       buyUpgrades(e, 25, 1, () => 0);
       hireAndSign(e, 3, 1, () => 0);
-      buyTrophies(e, 3);
+      lateGame(e);
     }
   },
 
   careful: {
     name: 'careful',
-    description: "Taps lemon and sugar once each as yesterday's customers suggest, uses the ice hint, charges $1.50, restocks to the forecast.",
+    description: "Taps lemon and sugar once each as yesterday's customers suggest (the flavors too), uses the ice hint, charges $1.50, restocks to the forecast, buys the brand moves.",
     morning(e, ctx) {
       const s = e.state;
       nudgeFromCustomers(e);
@@ -134,7 +150,7 @@ export const BOTS: Record<string, Bot> = {
       e.autoRestockForToday();
       buyUpgrades(e, 20, 1, ctx.rand);
       hireAndSign(e, 3, 1, ctx.rand);
-      buyTrophies(e, 4);
+      lateGame(e);
     }
   },
 
@@ -151,7 +167,7 @@ export const BOTS: Record<string, Bot> = {
       e.autoRestockForToday();
       buyUpgrades(e, 20, 1, ctx.rand);
       hireAndSign(e, 3, 1, ctx.rand);
-      buyTrophies(e, 4);
+      lateGame(e);
     }
   },
 
@@ -168,7 +184,7 @@ export const BOTS: Record<string, Bot> = {
       e.autoRestockForToday();
       buyUpgrades(e, 20, 1, ctx.rand);
       hireAndSign(e, 3, 1, ctx.rand);
-      buyTrophies(e, 4);
+      lateGame(e);
     }
   },
 
@@ -225,7 +241,6 @@ export const BOTS: Record<string, Bot> = {
       }
       buyUpgrades(e, 5, 0.3, r);
       hireAndSign(e, 1, 0.3, r);
-      buyTrophies(e, 1.2);
     }
   },
 };

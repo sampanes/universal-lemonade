@@ -19,7 +19,6 @@ export type SupplyItem = 'lemons' | 'sugar' | 'ice' | 'cups' | 'bottles';
 export interface CharacterProfile {
   hat?: string;
   sunglasses?: boolean;
-  name: string;
   hairStyle: number; // index into the hair art (wraps around)
   skinTone: number;  // 0..4
   hairColor: number; // 0..4
@@ -28,9 +27,8 @@ export interface CharacterProfile {
 
 export interface FranchiseStand {
   id: string;
-  name: string;
+  name: string;          // the place ("Elm Street")
   workerName: string;
-  location: string;
   hired: boolean;
   setupCost: number;
   dailyWage: number;
@@ -44,7 +42,6 @@ export interface FranchiseStand {
 export interface FriendDayResult {
   id: string;
   workerName: string;
-  standName: string;
   cups: number;
   revenue: number;
   wage: number;
@@ -93,27 +90,16 @@ export interface ChoreState {
   remainingSec: number;
 }
 
+// Something the Stand Shop sells (src/data/projects.ts).
 export interface ProjectDef {
   id: string;
   name: string;
   desc: string;
-  phase: GamePhase;
+  phase: GamePhase;      // the stage it is bought in (Dad Mode's stage jump buys earlier ones)
   costCash: number;
   purchased: boolean;
   unlocked: (state: GameState) => boolean;
   effect: (engine: any) => void;
-}
-
-// One of the big dreams at the end of the kid's Stand Shop (src/data/trophies.ts).
-export interface LifestyleTrophy {
-  id: string;
-  name: string;
-  emoji: string;
-  costCash: number;
-  purchased: boolean;
-  desc: string;
-  perkDesc: string;
-  phaseRequired: GamePhase;
 }
 
 export interface CustomerReview {
@@ -180,53 +166,45 @@ export interface DaySummary {
   tempF: number;
   weather: WeatherCondition;
   seasonInfo: SeasonInfo;
-  seasonBadge: string;
 
-  // Driveway Stand
+  // The kid's own stand
   drivewayCupsSold: number;
   drivewayRevenue: number;
 
-  // Franchise Stands (Phase 2+)
+  // Friends' stands (Stage 2+)
   franchiseCupsSold: number;
   franchiseGrossRevenue: number;
   franchiseWagesPaid: number;
-  franchiseNet: number;
   friends: FriendDayResult[];    // each hired friend, in hiring-list order
 
-  // Wholesale Bottling (Phase 3+)
+  // Stores (Stage 3+)
   stores: StoreDayResult[];      // each signed store, in list order
   bottlesSold: number;
   wholesaleRevenue: number;
-  wholesaleNet: number;
 
-  // Patent Royalties (Phase 4+)
+  // The lemon squeezer (Stage 4+)
   patentUnitsSold: number;
   patentRoyalties: number;
 
-  // Industrial Co-Packing (Phase 5)
+  // The lemonade factory (Stage 5)
   copackerCasesSold: number;
   copackerNet: number;
 
-  // P&L Statement totals
+  // The day's totals
   totalRevenue: number;
   totalExpenses: number;
   netProfit: number;
 
   recipeQuality: number;
-  // Reputation and buzz at the start and end of the day (0..1).
-  reputationBefore: number;
-  reputationAfter: number;
+  reputationAfter: number;      // what the neighbors say at the end of the day (0..1)
   reputationTrend: 'up' | 'down' | 'steady';
-  buzzBefore: number;
-  buzzAfter: number;
   goldenStreak: number;         // golden open days in a row, counting today
   recipeJustLocked: boolean;    // today the neighbors asked to keep the recipe forever
   houseOpened: boolean;         // the My House column opened at the end of today
   flavorTaste?: FlavorTaste | null;   // the Flavor Lab's tasting today (Stage 5)
   // Stand upgrades.
   iceMadeByMachine: number;     // cubes the ice machine made today
-  lemonsKeptByFridge: number;   // lemons that would have gone bad without the mini-fridge
-  upgradeSavings: number;       // what those were worth at store prices
+  upgradeSavings: number;       // free ice used and lemons the fridge kept, at store prices
   storageShort: '' | 'ice' | 'lemons';   // sold out because the stand could not hold more
   soldOut: boolean;             // some stand ran out before every customer got a cup
   reviews: CustomerReview[];
@@ -241,9 +219,8 @@ export interface MoneyLedger {
   cups: number;         // drinks sold
   chores: number;
   supplies: Record<SupplyItem, number>;
-  shop: number;         // stand upgrades and business projects
-  shopIds: string[];    // which ones, for the picture
-  treats: number;       // the big dreams (src/data/trophies.ts)
+  shop: number;         // the Stand Shop (src/data/projects.ts) and brand moves
+  shopIds: string[];    // which ones, for the picture ("brand:<id>" for a brand move)
   hiring: number;       // franchise stand setup and wholesale sign-up
   storeUpgrades: number; // expanded store shelves
   house: number;        // house upgrades (src/data/house.ts)
@@ -269,8 +246,7 @@ export interface GameState {
   avgRecipeQuality: number;
   totalQualityDays: number;
   totalQualitySum: number;
-  brandMultiplier: number;
-  gameWon: boolean;
+  gameWon: boolean;      // Citrus Cay was bought
   endingSeen: boolean;   // the Citrus Cay ending was shown (it plays once; then the game goes on)
 
   // Working Capital & Inventory
@@ -302,11 +278,10 @@ export interface GameState {
   tipCounts: Record<string, number>;
   recipeLocked: boolean;     // neighbors asked to keep it: lemons:sugar stay golden for good
 
-  // Upgrades & Flag States
+  // What the Stand Shop's upgrades turned on (src/data/projects.ts)
   flags: {
     hasMiniFridge: boolean;
-    hasCostcoDiscount: boolean;
-    hasCargoWagon: boolean;
+    hasClubCard: boolean;
     hasCommercialLabeler: boolean;
     hasAutoIce: boolean;
     autoIceEnabled: boolean;
@@ -316,10 +291,9 @@ export interface GameState {
     hasDeliveryRoute: boolean;   // runs the stores: signing up and bigger shelves
     hasFlavorLab: boolean;       // the factory invents flavors (src/data/flavors.ts)
 
-    // The big dreams (src/data/trophies.ts)
+    // Two of the big dreams (the third, Citrus Cay, sets gameWon)
     hasPrivateJet: boolean;
     hasArenaNaming: boolean;
-    hasPrivateIsland: boolean;
   };
 
   currentChore: ChoreState;

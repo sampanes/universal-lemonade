@@ -38,7 +38,7 @@ export const BALANCE = {
     // bottle plus the old separate packing charge came to).
     bottles: { qty: 25, cost: 32.5 },
   } as Record<'lemons' | 'sugar' | 'ice' | 'cups' | 'bottles', SupplyPack>,
-  costcoPriceMult: 0.65,        // Costco upgrade: packs cost this much
+  clubCardPriceMult: 0.65,      // the Supply Club Card: packs cost this much
 
   recipe: {
     // The golden ratio is picked per game (from the game seed) inside these ranges, so a kid

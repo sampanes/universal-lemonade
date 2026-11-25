@@ -21,9 +21,9 @@ import { loadKidArt, kidImageURL, kidHairCount, kidHairIds, kidFx } from './kid.
 import { fmtWhole, fmtDollars, fmtMoney, fmtCount, fmtSigned, fmtRest } from './ui/format.js';
 import { setText, setFitText, setHTMLIfChanged, STORE_LOCK } from './ui/dom.js';
 import { housePicHTML, ALL_HOUSE_IMAGES } from './ui/houseArt.js';
-import { STORES, FRIENDS, ALL_PLACE_IMAGES, friendPortrait, sceneLocation } from './ui/places.js';
+import { STORE_PICS, FRIENDS, ALL_PLACE_IMAGES, friendPortrait, sceneLocation } from './ui/places.js';
 import { reportCatMood, renderFullDayReportHTML, renderDayReport } from './ui/dayReport.js';
-import { KID_SHOP, kidShopNext, shopEntry } from './ui/kidShop.js';
+import { KID_SHOP, kidShopNext } from './ui/kidShop.js';
 import { moneyBagHTML, SUPPLY_PICS } from './ui/moneyBag.js';
 import { renderDadPanel, initDadPanel } from './ui/dadPanel.js';
 import { initResetCard } from './ui/resetCard.js';
@@ -559,11 +559,11 @@ function loop(now) {
   }
   const stageNames = [
     '',
-    'Stage 1: Driveway Hustle',
-    'Stage 2: Neighborhood Franchise',
-    'Stage 3: Bottled Brand & Wholesale',
-    'Stage 4: Patent Licensing & Direct Sales',
-    'Stage 5: Industrial Beverage Empire'
+    'Stage 1: Driveway Stand',
+    "Stage 2: Friends' Stands",
+    'Stage 3: Bottles & Stores',
+    'Stage 4: The Invention',
+    'Stage 5: Lemonade Factory'
   ];
 
   // 1. Money Box: cat cash counter, stats chips
@@ -581,17 +581,8 @@ function loop(now) {
   }
   prevCashNum = cashNum;
 
-  // Compact header cash counter and cat (needs cashNum, so it must come after it)
+  // The header's cash pill (needs cashNum, so it must come after it)
   setText(document.getElementById('header-cash-num'), fmtDollars(cashNum, true));
-  const headerCatImg = document.getElementById('header-cat-img');
-  const headerCatSlot = document.getElementById('header-cat-slot');
-  if (headerCatImg) {
-    const catSrc = `./sprites/kawaii_cat/cat${now < catCheerUntil ? 4 : baseCatMood(s)}.png`;
-    if (headerCatImg.getAttribute('src') !== catSrc) headerCatImg.setAttribute('src', catSrc);
-  }
-  if (headerCatSlot) {
-    headerCatSlot.classList.toggle('cheer', now < catCheerUntil);
-  }
 
   const bankCat = document.getElementById('bank-cat');
   const catMood = now < catCheerUntil ? 4 : baseCatMood(s);
@@ -999,8 +990,8 @@ function renderStandShop(s) {
   const need = engine.restockCostForToday();
   const spare = Math.max(0, s.cash.toNumber() - need);
   if (choices) { renderShopChoice(choices, spare, need); return; }
-  setText(document.getElementById('stand-shop-name'), item.name);
-  setText(document.getElementById('stand-shop-desc'), item.desc);
+  setText(document.getElementById('stand-shop-name'), p.name);
+  setText(document.getElementById('stand-shop-desc'), p.desc);
   const cost = p.costCash;
   const short = spare < cost;
   // Enough money but not open yet (the second stand also wants a tasty recipe).
@@ -1013,7 +1004,7 @@ function renderStandShop(s) {
     const bottlesPending = item.id === 'patent_filing' && !p.unlocked(s);
     setText(document.getElementById('stand-shop-save-text'), bottlesPending && short
       ? `${item.notYet(s)} | $${Math.floor(spare).toLocaleString('en-US')}/$${cost.toLocaleString('en-US')}`
-      : notYet ? (item.notYet ? item.notYet(s) : 'Make your recipe tastier first!')
+      : notYet ? (item.notYet ? item.notYet(s) : 'Not open yet!')
       // The big dreams' numbers are long: the bar alone says "saving up".
       : `${cost >= 1e8 ? '' : 'Saving up: '}$${Math.floor(spare).toLocaleString('en-US')} of $${cost.toLocaleString('en-US')}${need > 0 && cost < 1e8 ? ' after supplies' : ''}`);
   }
@@ -1027,9 +1018,9 @@ function renderStandShop(s) {
 // the kids' screen without scrolling. Built once; renderShopChoice keeps the money current.
 function shopChoiceHTML(choices) {
   return `<div class="stand-shop-ask">Pick one!</div>
-    <div class="stand-shop-options">${choices.map(({ item }) => `<button type="button" class="stand-shop-option" data-id="${item.id}">
+    <div class="stand-shop-options">${choices.map(({ item, p }) => `<button type="button" class="stand-shop-option" data-id="${item.id}">
       <img class="stand-shop-option-pic" src="${item.pic}" alt="" />
-      <span class="stand-shop-option-name">${item.name}</span>
+      <span class="stand-shop-option-name">${p.name}</span>
       <span class="stand-shop-option-desc">${item.pick}</span>
       <span class="stand-shop-option-price"></span>
     </button>`).join('<span class="stand-shop-or" aria-hidden="true">OR</span>')}</div>
@@ -1054,12 +1045,9 @@ function renderShopChoice(choices, spare, need) {
 }
 function buyShopItem(id) {
   const item = KID_SHOP.find(x => x.id === id);
-  if (!item) return;
-  const p = shopEntry(engine, item);
-  if (!p || engine.state.cash.toNumber() - engine.restockCostForToday() < p.costCash) return;
-  if (item.treat ? engine.buyTrophy(id) : engine.buyProject(id)) {
-    kidFlash(item.treat ? 'cheer' : 'determined', 2500);      // new gear: let's do this
-  }
+  const p = engine.projects.find(x => x.id === id);
+  if (!item || !p || engine.state.cash.toNumber() - engine.restockCostForToday() < p.costCash) return;
+  if (engine.buyProject(id)) kidFlash(item.cheer ? 'cheer' : 'determined', 2500);   // new gear: let's do this
 }
 document.getElementById('btn-stand-shop-buy').onclick = (e) => buyShopItem(e.currentTarget.dataset.id);
 document.getElementById('stand-shop-choice').addEventListener('click', (e) => {
@@ -1250,7 +1238,7 @@ function inventionHTML(s) {
 // The famous brand (Stage 5, src/data/brand.ts): the bonus so far, a dot per move, and the
 // next move with what is still missing (a day's wait, money left after today's supplies).
 function brandHTML(s) {
-  const pct = Math.round((s.brandMultiplier - 1) * 100);
+  const pct = Math.round((engine.brandMultiplier() - 1) * 100);
   const dots = BRAND_STEPS.map((_, i) => `<span${i < s.brandLevel ? ' class="on"' : ''}></span>`).join('');
   const next = engine.nextBrandStep();
   let move;
@@ -1301,7 +1289,7 @@ function storesHTML(s) {
     ? `<p class="store-unlock-hint" id="store-unlock-hint">${wait}</p>` : '';
   const est = engine.getDailyDemandEstimate().storeEstimates;
   return hint + accounts.map(acc => {
-    const info = STORES[acc.id] || { name: acc.name, pic: './sprites/shop/bottles.png' };
+    const pic = STORE_PICS[acc.id] || './sprites/shop/bottles.png';
     const cls = acc.active ? 'working' : 'open';
     const next = acc.levels[acc.level];
     let btn;
@@ -1315,8 +1303,8 @@ function storesHTML(s) {
       btn = `<button type="button" class="friend-btn" data-act="${acc.active ? 'expand' : 'sign'}" data-id="${acc.id}"${state}>${tileLine(`${wait ? STORE_LOCK : ''}${acc.active ? 'Shelf' : 'Sign up'} $${cost}`)}${tileLine(orders, 'small')}</button>`;
     }
     return `<div class="friend-tile ${cls}">
-      <div class="friend-pic"><img class="store-pic" src="${info.pic}" alt="" /></div>
-      <div class="friend-name">${info.name}</div>
+      <div class="friend-pic"><img class="store-pic" src="${pic}" alt="" /></div>
+      <div class="friend-name">${acc.name}</div>
       <div class="friend-where">${acc.active ? `Lv ${acc.level}/3 | $${acc.wholesalePrice.toFixed(2)} each` : `pays $${acc.wholesalePrice.toFixed(2)} a bottle`}</div>
       ${btn}
     </div>`;
@@ -1383,7 +1371,7 @@ function renderFriends(s) {
   const est = engine.getDailyDemandEstimate().franchiseEstimates;
   const wait = expansionMessage(engine.friendExpansionGoal(), 'cups');
   const html = Object.values(engine.franchiseStands).map(st => {
-    const f = FRIENDS[st.id] || { place: st.location, pic: 'elm' };
+    const f = FRIENDS[st.id] || { pic: 'elm' };
     let cls, mood, btn;
     if (!st.hired) {
       cls = 'open'; mood = 'wink';
@@ -1400,7 +1388,7 @@ function renderFriends(s) {
     return `<div class="friend-tile ${cls}">
       <div class="friend-pic">${kid ? `<img class="friend-kid" src="${kid}" alt="" />` : ''}<img class="friend-stand" src="./sprites/franchise/${f.pic}.png" alt="" /></div>
       <div class="friend-name">${st.workerName}</div>
-      <div class="friend-where">${f.place}</div>
+      <div class="friend-where">${st.name}</div>
       ${btn}
     </div>`;
   }).join('');

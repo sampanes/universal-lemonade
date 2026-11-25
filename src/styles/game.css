@@ -42,16 +42,6 @@ body {
   line-height: 1.4;
   -webkit-text-size-adjust: 100%;
 }
-.header-bar {
-  margin-bottom: 12px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid #333;
-  padding-bottom: 8px;
-}
 .header-title {
   font-family: var(--font-display);
   font-weight: 400;
@@ -195,39 +185,6 @@ button:disabled {
   -webkit-overflow-scrolling: touch;
 }
 
-.trophy-shelf {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  padding: 8px;
-  background: #141414;
-  border: 1px solid #333;
-  border-radius: 4px;
-  margin-bottom: 8px;
-}
-.trophy-icon {
-  font-size: 20px;
-  width: 34px;
-  height: 34px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 4px;
-  background: #1f1f1f;
-  border: 1px solid #444;
-  transition: all 0.2s;
-  user-select: none;
-}
-.trophy-icon.owned {
-  background: #2a2200;
-  border-color: #ffd700;
-  box-shadow: 0 0 6px rgba(255, 215, 0, 0.4);
-  filter: none;
-}
-.trophy-icon.locked {
-  filter: grayscale(100%);
-  opacity: 0.25;
-}
 /* Recipe Ratio Workbench Card */
 .ratio-card {
   background: #fbf7ee;
@@ -338,7 +295,6 @@ button:disabled {
   70% { transform: scale(0.95); opacity: 1; }
   100% { transform: scale(1); }
 }
-.ratio-card.golden-locked .golden-badge-row { display: flex; }
 .ratio-card.golden-locked .ratio-row-lemons,
 .ratio-card.golden-locked .ratio-row-sugar,
 .ratio-card.golden-locked .recipe-taste-bubble { display: none; }
@@ -354,6 +310,9 @@ button:disabled {
   border-bottom: none;
   -webkit-text-stroke-color: #581c87;
   animation: golden-stamp 0.5s ease-out;
+  container-type: inline-size;
+  grid-column: 1;
+  grid-row: 1;
 }
 .ratio-card.golden-locked .ratio-banner .ribbon-sparkle { display: none; }
 .ratio-card.golden-locked #ratio-banner-text {
@@ -366,9 +325,8 @@ button:disabled {
   align-items: center;
   justify-content: center;
   white-space: nowrap;
+  font-size: min(21px, 7.4cqw);
 }
-.ratio-card.golden-locked .ratio-banner { container-type: inline-size; }
-.ratio-card.golden-locked #ratio-banner-text { font-size: min(21px, 7.4cqw); }
 /* One background for the whole card, so the ribbon area and the body do not meet in a seam.
    Locked layout: the gold ribbon and a small pitcher share the top row; the seal, ice and
    price sit on one line under them (they wrap on narrow screens). The body box steps aside
@@ -380,7 +338,6 @@ button:disabled {
   grid-template-columns: 1fr auto;
   align-items: center;
 }
-.ratio-card.golden-locked .ratio-banner { grid-column: 1; grid-row: 1; }
 .ratio-card.golden-locked .ratio-body { display: contents; }
 .ratio-card.golden-locked .pitcher-col {
   grid-column: 2;
@@ -403,6 +360,7 @@ button:disabled {
 }
 .ratio-card.golden-locked .ratio-controls > .ratio-row { flex: 1 1 150px; max-width: 200px; margin: 0 !important; }
 .ratio-card.golden-locked .golden-badge-row {
+  display: flex;
   padding: 0;
   margin: 0;
   background: none;
@@ -569,6 +527,7 @@ button:disabled {
   white-space: nowrap;
 }
 .store-status {
+  align-self: stretch;
   margin-top: 4px;
   color: #047857;
   font-family: var(--font-display);
@@ -673,7 +632,6 @@ div.friend-btn { display: flex; flex-direction: column; justify-content: center;
    long for the button shrinks to fit instead; --chars comes from tileLine() in main.js, and
    0.52em (0.5em small) a character is a little over these words' average width. */
 .friend-tile .friend-btn, .store-status { container-type: inline-size; }
-.store-status { align-self: stretch; }
 .tile-line {
   display: block;
   white-space: nowrap;
@@ -1288,19 +1246,6 @@ body.dad-mode .house-col { display: none !important; }
 }
 
 /* Morning Prep & Operations Kawaii Styles */
-.weather-card {
-  margin: 0 auto 8px auto;
-  filter: drop-shadow(0 3px 6px rgba(0,0,0,0.22));
-}
-.weather-panel-inner {
-  min-height: 104px;
-  padding: 10px 14px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  box-sizing: border-box;
-}
 .weather-art-slot {
   width: 82px;
   height: 78px;
@@ -1641,6 +1586,7 @@ body:not(.dad-mode):not(.low-cash) .prep-stand-card.has-truck .emergency-chore-p
   display: flex;
   align-items: center;
   gap: 3px;
+  position: relative;
 }
 .inv-number-pill {
   background: url('/sprites/morning_prep/inventory_number_pill_bg.png') no-repeat center / 100% 100%;
@@ -1658,7 +1604,6 @@ body:not(.dad-mode):not(.low-cash) .prep-stand-card.has-truck .emergency-chore-p
 }
 /* An upgrade just lifted this item's storage limit ("38/48" becomes "38"): a tag pops
    out of the pill for a few seconds so the shorter number reads as a win, not a loss. */
-.supply-stock-row { position: relative; }
 .supply-stock-row.cap-lifted::after {
   content: 'No limit!';
   position: absolute;
@@ -2775,10 +2720,10 @@ body:not(.dad-mode):not(.low-cash) .prep-stand-card.has-truck .emergency-chore-p
     box-shadow: 0 3px 8px rgba(0, 0, 0, 0.28);
     animation: kid-ticket-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
     transition: transform 0.12s ease;
+    position: relative;
   }
   .kid-avatar-btn img { width: 100%; height: 100%; display: block; }
   .kid-avatar-btn:active { transform: scale(0.94); }
-  .kid-avatar-btn { position: relative; }
 
   /* Kid picture with its special-hair layer (rainbow colors flowing, or twinkles). */
   .kid-pic { position: relative; display: inline-block; line-height: 0; }
@@ -2869,38 +2814,13 @@ body:not(.dad-mode):not(.low-cash) .prep-stand-card.has-truck .emergency-chore-p
     padding: 7px 14px;
     box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35), 0 0 10px rgba(250, 204, 21, 0.25);
     position: relative;
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
   }
   /* The kid's head beside the cash pill; it shows from Day 1 (tap: the mirror). */
   .header-money-wrap { display: flex; align-items: center; gap: 10px; }
   .header-kid-btn { width: 52px; height: 52px; animation: none; }
-  /* The cat is resting for now (the kid took its spot); the markup and art stay. */
-  .header-cat-slot { display: none !important; }
-  .header-cat-slot {
-    width: 36px;
-    height: 36px;
-    background: #fef08a;
-    border: 1.5px solid #ca8a04;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-    flex-shrink: 0;
-    transition: transform 0.2s ease;
-  }
-  .header-cat-slot img {
-    width: 32px;
-    height: 32px;
-    object-fit: contain;
-    transform: translateY(2px);
-  }
-  .header-cat-slot.cheer {
-    animation: cat-cheer-hop 0.4s ease-out 2;
-  }
-  @keyframes cat-cheer-hop {
-    0%, 100% { transform: translateY(0) scale(1); }
-    50% { transform: translateY(-4px) scale(1.15); }
-  }
   .header-cash-val-wrap {
     display: flex;
     align-items: baseline;
@@ -2920,19 +2840,9 @@ body:not(.dad-mode):not(.low-cash) .prep-stand-card.has-truck .emergency-chore-p
     letter-spacing: 0.5px;
     text-shadow: 0 1px 3px rgba(0,0,0,0.5);
   }
-  .header-cash-float {
-    position: absolute;
-    right: 12px;
-    top: -16px;
-    pointer-events: none;
-    font-family: var(--font-display);
-    font-weight: 700;
-    font-size: 14px;
-  }
 
   /* Money Bag: tap the cash pill to see where the money came from and went. Floats over
      the page, so it never changes the layout. */
-  .header-cash-pill { cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent; }
   .header-cash-pill:focus-visible { outline: 3px solid #fef08a; outline-offset: 3px; }
   .header-cash-caret {
     width: 0; height: 0; margin-left: 2px;
@@ -3055,7 +2965,9 @@ body:not(.dad-mode):not(.low-cash) .prep-stand-card.has-truck .emergency-chore-p
     padding: 8px 14px;
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 12px;
+    box-sizing: border-box;
   }
   .weather-top-row {
     display: flex;
@@ -3095,8 +3007,6 @@ body:not(.dad-mode):not(.low-cash) .prep-stand-card.has-truck .emergency-chore-p
     font-weight: 700;
     color: #4338ca;
     margin-bottom: 3px;
-  }
-  .weather-mid-row {
     flex-wrap: wrap;
     justify-content: center;
   }

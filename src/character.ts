@@ -61,8 +61,7 @@ export const UNIFORM_PALETTES = [
 // wraps around in src/kid.ts, so a style removed later never breaks an old save.
 const MAX_HAIR_STYLE = 63;
 
-export const DEFAULT_CHARACTER: CharacterProfile = {
-  name: 'Lemonade Kid',
+const DEFAULT_CHARACTER: CharacterProfile = {
   hairStyle: 0,
   skinTone: 1,      // Warm Peach
   hairColor: 1,     // Milk Chocolate Brown
@@ -81,7 +80,6 @@ export function loadCharacterProfile(dad = false): CharacterProfile {
       return {
         hat: HATS.find(h => h.id === parsed.hat)?.id,
         sunglasses: parsed.sunglasses === true,
-        name: parsed.name || DEFAULT_CHARACTER.name,
         hairStyle: Math.min(Math.max(parsed.hairStyle ?? 0, 0), MAX_HAIR_STYLE),
         skinTone: Math.min(Math.max(parsed.skinTone ?? 1, 0), SKIN_PALETTES.length - 1),
         hairColor: Math.min(Math.max(parsed.hairColor ?? 1, 0), HAIR_PALETTES.length - 1),

@@ -3,7 +3,7 @@
 import type { ChoreState } from '../types';
 import { BALANCE, type Balance } from '../balance';
 
-export const CHORE_DEFS: { name: string; min: number; max: number }[] = [
+const CHORE_DEFS: { name: string; min: number; max: number }[] = [
   { name: "Mow Neighbor's Lawn", min: 15, max: 25 },
   { name: "Rake Autumn Leaves", min: 10, max: 18 },
   { name: "Wash Dad's SUV", min: 12, max: 20 },

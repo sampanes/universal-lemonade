@@ -62,8 +62,8 @@ Day Report of what customers said.
   dreams, one at a time: the Lemonade Jet ($65,000,000; squeezers sell twice as much), the
   Lemonade Arena ($80,000,000; the factory sells twice as much) and Citrus Cay, the kid's own
   lemonade island ($1,000,000,000). Buying the island plays the ending once (the kid on the
-  island, the days, drinks and sales since Day 1), then the game goes on. A careful player
-  gets there around day 140.
+  island, the days, drinks and sales since Day 1), then the game goes on. The simulator's
+  careful player gets there around day 139.
 - **My House.** Once the kid has sold $2,000 of lemonade in all, the next quiet day (nothing
   bought, no new shop item; any day at all once sales pass $5,000) ends with big news in the
   Day Report, and a third column shows the family's one-story house. Save up to upgrade it:
@@ -78,9 +78,11 @@ Day Report of what customers said.
   business grows; the fanciest ones take a long time.
 
 The game saves itself in the browser (about once a second) and picks up where it left off.
-Reset starts a new game. Saves are not carried over between versions: when the save changes
-shape, `STORAGE_VERSION` in `src/storage.ts` goes up and every saved game, look and secret
-look is cleared on the next visit (only the Dad Mode switch is kept).
+Reset starts a new game. Saves are not carried over between versions. When the game save
+changes shape, `SAVE_VERSION` in `src/engine.ts` goes up and saved games start over on the
+next visit (looks are kept). When anything else kept in the browser changes shape,
+`STORAGE_VERSION` in `src/storage.ts` goes up and every saved game, look and secret look is
+cleared (only the Dad Mode switch is kept).
 
 ## Later stages
 
@@ -96,7 +98,8 @@ Kid mode and Dad Mode cover all five stages:
 
 ## Dad Mode
 
-Dad Mode shows the full business panels for the later stages, test controls (game speed,
+Dad Mode shows the full business panels for the later stages (with the whole Stand Shop, to
+buy in any order, the big dreams included), test controls (game speed,
 Auto-Day, the game's seed, and "Jump to..." to skip ahead to the start of a later stage, as
 if the stages before it had been played) and a mirror with every look unlocked. Dad Mode
 plays its own game and keeps its own look, both saved separately, so testing never changes
@@ -133,7 +136,7 @@ Every push to `main` builds and deploys to GitHub Pages (`.github/workflows/depl
 | `src/engine.ts` | The game engine (no DOM): state, days, buying, upgrades, save and load |
 | `src/balance.ts` | Every economy tuning number |
 | `src/simulation/` | Weather, demand, recipe taste, reviews, reputation, storage limits |
-| `src/data/` | Stand upgrades and business projects, chores, franchise stands, wholesale, flavors, the brand, the big dreams |
+| `src/data/` | Everything the Stand Shop sells (to the big dreams), chores, friends' stands, stores, flavors, the brand, the house |
 | `src/character.ts`, `src/kid.ts` | The kid's saved look, and drawing the paper-doll kid |
 | `src/unlocks.ts` | Which looks unlock when |
 | `sim/` | The balance simulator (bot players) |
@@ -170,6 +173,7 @@ p10 / median / p90 across games.
 
 ```bash
 npm run sim                                          # 1,000 games per bot, 60 days
+npm run sim -- --days 220 --bots careful,perfect     # the whole game, to the ending
 npm run sim -- --games 100000 --bots careful,sloppy  # more games, chosen bots
 npm run sim -- --vs buzz.wordOfMouth=0.4             # current vs a changed setting
 npm run sim -- --help                                # all options and bot descriptions

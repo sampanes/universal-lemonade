@@ -25,8 +25,8 @@ export const FLAVORS: readonly Flavor[] = [
 
 // Every new flavor starts here; the best mix is never exactly this, so it takes some tasting.
 export const FLAVOR_START = { fruit: 3, sugar: 3 } as const;
-export const FLAVOR_FRUIT = { min: 1, max: 6 } as const;
-export const FLAVOR_SUGAR = { min: 1, max: 5 } as const;
+const FLAVOR_FRUIT = { min: 1, max: 6 } as const;
+const FLAVOR_SUGAR = { min: 1, max: 5 } as const;
 export const FLAVOR_MAX_SCOOPS = 8;   // the + buttons stop here
 export const FLAVOR_BOOST = 0.2;      // each flavor in stores: the factory sells 20% more
 

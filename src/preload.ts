@@ -10,7 +10,7 @@ export type LoadPriority = 'high' | 'low' | 'auto';
 const ready = new Map<string, Promise<void>>();
 const keep: HTMLImageElement[] = [];   // holds the decoded pictures
 
-export function preloadImage(url: string | null | undefined, priority: LoadPriority = 'auto'): Promise<void> {
+function preloadImage(url: string | null | undefined, priority: LoadPriority = 'auto'): Promise<void> {
   if (!url) return Promise.resolve();
   let pending = ready.get(url);
   if (!pending) {

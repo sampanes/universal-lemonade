@@ -4,7 +4,7 @@ import { HOUSE_STEPS, HOUSE_COLORS } from '../data/house.ts';
 // My House (src/data/house.ts). Four pictures (art_src/build_house_art.py), each with a
 // walls mask for the paint color; standX is where the stand on the driveway is (0 to 1 across
 // the picture), so the day scene can put the kid's booth right over it.
-export const HOUSE_ART = {
+const HOUSE_ART = {
   onestory: { pic: './sprites/house/house_onestory.webp', walls: './sprites/house/walls_onestory.png', standX: 0.76 },
   base: { pic: './sprites/house/house_base.webp', walls: './sprites/house/walls_base.png', standX: 0.76 },
   treehouse: { pic: './sprites/house/house_treehouse.webp', walls: './sprites/house/walls_treehouse.png', standX: 0.77 },
@@ -16,7 +16,7 @@ export function houseArtFor(level) {
 }
 // Bunting along the roof and balloons by the fence, in the pictures' own coordinates
 // (1448 x 1086 source canvas).
-export function housePartySVG() {
+function housePartySVG() {
   const ink = '#4a2040';
   const colors = ['#f472b6', '#facc15', '#a78bfa', '#34d399', '#60a5fa'];
   const strings = [[[95, 470], [300, 330], [455, 110]], [[490, 110], [690, 290], [880, 405]]];

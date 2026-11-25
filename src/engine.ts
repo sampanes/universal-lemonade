@@ -1,4 +1,4 @@
-// src/engine.ts -- Lemonade Business Simulation Engine Facade & API
+// src/engine.ts -- the game engine: state, days, buying, helpers, saving. No DOM.
 import { BigNum } from './bignum';
 import type {
   GameState,
@@ -8,7 +8,6 @@ import type {
   PatentSystem,
   CoPackerSystem,
   ProjectDef,
-  LifestyleTrophy,
   CustomerReview,
   DailyDemandEstimate,
   KidDemandAdvice,
@@ -25,7 +24,6 @@ import { rollChore } from './data/chores';
 import { createInitialFranchiseStands } from './data/franchise';
 import { createInitialWholesaleAccounts } from './data/wholesale';
 import { createInitialProjects } from './data/projects';
-import { createInitialTrophies } from './data/trophies';
 import { HOUSE_STEPS, HOUSE_COLORS, FIRST_HOUSE_COLOR, HOUSE_OPENS_AT_SALES, HOUSE_OPENS_ANYWAY_AT_SALES, type HouseStep } from './data/house';
 import { otherUnlockToday } from './unlocks';
 import { FLAVORS, FLAVOR_START, FLAVOR_BOOST, FLAVOR_MAX_SCOOPS, flavorGoldenMix, type Flavor } from './data/flavors';
@@ -58,15 +56,14 @@ export const DEFAULT_SEED = 1337;
 
 // Bump whenever the save changes shape. An older save is not upgraded: it is dropped and a new
 // game starts (src/storage.ts also clears every other stored setting when that version moves).
-export const SAVE_VERSION = 4;
+const SAVE_VERSION = 5;
 
-export interface EngineSave {
+interface EngineSave {
   v: number;
   seed: number;
   rngSeed: number;
   state: GameState;
   projects: string[];
-  trophies: string[];
   franchiseStands: Record<string, FranchiseStand>;
   wholesaleAccounts: Record<string, WholesaleAccount>;
   patent: PatentSystem;
@@ -94,7 +91,6 @@ const DAD_JUMP_ARRIVAL: Record<number, { cash: number; cups: number }> = {
 export class LemonadeEngine {
   public state: GameState;
   public projects: ProjectDef[];
-  public trophies: LifestyleTrophy[];
   public franchiseStands: Record<string, FranchiseStand>;
   public wholesaleAccounts: Record<string, WholesaleAccount>;
   public patent: PatentSystem;
@@ -114,14 +110,13 @@ export class LemonadeEngine {
     this.patent = { licensed: false, royaltyPerUnit: b.patent.royaltyPerUnit, baseUnitsPerDay: b.patent.baseUnitsPerDay, level: 1 };
     this.copacker = { active: false, casesPerDay: b.copacker.casesPerDay, netPerCase: b.copacker.netPerCase };
     this.projects = createInitialProjects();
-    this.trophies = createInitialTrophies();
     this.state = this.createInitialState();
     this.rollNextForecast();
     this.rollNextChore();
   }
 
   // ---- Saving ----
-  // A save is plain JSON: the game state, which upgrades and treats were bought, and the
+  // A save is plain JSON: the game state, which projects were bought, and the
   // franchise, wholesale, patent and co-packer details (upgrades change those in place, so
   // they are saved as they are rather than replayed). Loading starts from a fresh engine and
   // lays the save on top. Only saves of this SAVE_VERSION load.
@@ -132,7 +127,6 @@ export class LemonadeEngine {
       rngSeed: this.rngSeed,
       state: this.state,
       projects: this.projects.filter(p => p.purchased).map(p => p.id),
-      trophies: this.trophies.filter(t => t.purchased).map(t => t.id),
       franchiseStands: this.franchiseStands,
       wholesaleAccounts: this.wholesaleAccounts,
       patent: this.patent,
@@ -163,8 +157,6 @@ export class LemonadeEngine {
     e.rngSeed = (d.rngSeed | 0) || e.seed;
     const bought = new Set(d.projects || []);
     e.projects.forEach(p => { p.purchased = bought.has(p.id); });
-    const treats = new Set(d.trophies || []);
-    e.trophies.forEach(t => { t.purchased = treats.has(t.id); });
     for (const [id, st] of Object.entries(d.franchiseStands || {})) {
       if (e.franchiseStands[id]) Object.assign(e.franchiseStands[id], st);
     }
@@ -203,7 +195,6 @@ export class LemonadeEngine {
       avgRecipeQuality: 0,
       totalQualityDays: 0,
       totalQualitySum: 0,
-      brandMultiplier: 1.0,
       gameWon: false,
       endingSeen: false,
 
@@ -232,8 +223,7 @@ export class LemonadeEngine {
 
       flags: {
         hasMiniFridge: false,
-        hasCostcoDiscount: false,
-        hasCargoWagon: false,
+        hasClubCard: false,
         hasCommercialLabeler: false,
         hasAutoIce: false,
         autoIceEnabled: false,
@@ -242,8 +232,7 @@ export class LemonadeEngine {
         hasDeliveryRoute: false,
         hasFlavorLab: false,
         hasPrivateJet: false,
-        hasArenaNaming: false,
-        hasPrivateIsland: false
+        hasArenaNaming: false
       },
 
       currentChore: {
@@ -271,7 +260,7 @@ export class LemonadeEngine {
   }
 
   // Chore Actions
-  public rollNextChore(): void {
+  private rollNextChore(): void {
     this.state.currentChore = rollChore(() => this.rand(), this.balance);
   }
 
@@ -298,7 +287,7 @@ export class LemonadeEngine {
   public supplyPack(item: SupplyItem): { qty: number; cost: number } {
     const b = this.balance;
     const base = b.supplies[item];
-    let mult = this.state.flags.hasCostcoDiscount ? b.costcoPriceMult : 1.0;
+    let mult = this.state.flags.hasClubCard ? b.clubCardPriceMult : 1.0;
     if (item === 'bottles' && this.state.flags.hasCommercialLabeler) mult *= b.wholesale.labelerBottleMult;
     return { qty: base.qty, cost: +(base.cost * mult).toFixed(2) };
   }
@@ -431,6 +420,7 @@ export class LemonadeEngine {
     this.state.lastShopPurchaseDay = this.state.day;
     p.purchased = true;
     p.effect(this);
+    this.log(`Bought: ${p.name} ($${p.costCash.toLocaleString('en-US')}).`);
     return true;
   }
 
@@ -474,28 +464,8 @@ export class LemonadeEngine {
     return true;
   }
 
-  public buyTrophy(id: string): boolean {
-    const t = this.trophies.find(x => x.id === id);
-    if (!t || t.purchased || this.state.cash.lt(t.costCash)) return false;
-
-    this.state.cash = this.state.cash.sub(t.costCash);
-    this.ledger.treats += t.costCash;
-    this.state.lastShopPurchaseDay = this.state.day;   // the kid's Stand Shop sells the big dreams
-    t.purchased = true;
-
-    if (id === 'private_jet') this.state.flags.hasPrivateJet = true;
-    if (id === 'arena_naming') this.state.flags.hasArenaNaming = true;
-    if (id === 'private_island') {
-      this.state.flags.hasPrivateIsland = true;
-      this.state.gameWon = true;
-    }
-
-    this.log(`Big dream: ${t.emoji} ${t.name} ($${t.costCash.toLocaleString('en-US')})! ${t.perkDesc}`);
-    return true;
-  }
-
   // Weather & Calculations
-  public rollNextForecast(): void {
+  private rollNextForecast(): void {
     const { weather, tempF, seasonInfo } = rollWeatherForecast(() => this.rand(), this.state.day, this.balance);
     this.state.weather = weather;
     this.state.tempF = tempF;
@@ -539,7 +509,7 @@ export class LemonadeEngine {
     return { ...this.state.goldenRecipe };
   }
 
-  public isExactGolden(): boolean {
+  private isExactGolden(): boolean {
     const r = this.state.recipe, g = this.state.goldenRecipe;
     return r.lemonsPerPitcher === g.lemons && r.sugarPerPitcher === g.sugar;
   }
@@ -704,6 +674,11 @@ export class LemonadeEngine {
     return BRAND_STEPS[this.state.brandLevel] ?? null;
   }
 
+  // What the brand moves bought so far multiply all sales by.
+  public brandMultiplier(): number {
+    return BRAND_STEPS.slice(0, this.state.brandLevel).reduce((m, step) => m * (1 + step.bonus), 1);
+  }
+
   // 1 on the day a brand move was bought (the next one opens tomorrow), else 0.
   public brandWaitDays(): number {
     const last = this.state.lastBrandDay;
@@ -719,7 +694,6 @@ export class LemonadeEngine {
     this.ledger.shopIds.push(`brand:${step.id}`);
     s.brandLevel += 1;
     s.lastBrandDay = s.day;
-    s.brandMultiplier *= 1 + step.bonus;
     this.log(`Famous brand: ${step.name}! Everything sells ${Math.round(step.bonus * 100)}% more.`);
     return true;
   }
@@ -768,7 +742,7 @@ export class LemonadeEngine {
     return { id: flavor.id, fruit, sugar, review, launched };
   }
 
-  public generateCustomerReviews(info: {
+  private generateCustomerReviews(info: {
     tempF: number;
     quality: number;
     pricePerCup: number;
@@ -915,7 +889,6 @@ export class LemonadeEngine {
     }
 
     const drivewayRevenue = drivewayCupsSold * s.recipe.pricePerCup;
-    const franchiseNet = franchiseGross - franchiseWages;
 
     let bottlesSold = 0;
     let wholesaleGross = 0;
@@ -1007,7 +980,7 @@ export class LemonadeEngine {
     }
     if (shortSpoil.length) notes.push(`Overnight: ${shortSpoil.join(', ')}.`);
 
-    const totalRevenue = (drivewayRevenue + franchiseGross + wholesaleGross + patentRoyalties + copackerNet) * s.brandMultiplier;
+    const totalRevenue = (drivewayRevenue + franchiseGross + wholesaleGross + patentRoyalties + copackerNet) * this.brandMultiplier();
     const totalExpenses = franchiseWages;
     const netProfit = totalRevenue - totalExpenses;
 
@@ -1094,17 +1067,15 @@ export class LemonadeEngine {
       tempF: s.tempF,
       weather: s.weather,
       seasonInfo,
-      seasonBadge: seasonInfo.badge,
       drivewayCupsSold,
       drivewayRevenue,
       franchiseCupsSold,
       franchiseGrossRevenue: franchiseGross,
       franchiseWagesPaid: franchiseWages,
-      franchiseNet,
       friends: Object.values(this.franchiseStands).filter(st => st.hired).map(st => {
         const cups = soldByStand[st.id] ?? 0;
         return {
-          id: st.id, workerName: st.workerName, standName: st.name, cups,
+          id: st.id, workerName: st.workerName, cups,
           revenue: cups * s.recipe.pricePerCup,
           wage: st.dayOff ? 0 : st.dailyWage,
           dayOff: !!st.dayOff,
@@ -1113,7 +1084,6 @@ export class LemonadeEngine {
       stores: storeResults,
       bottlesSold,
       wholesaleRevenue: wholesaleGross,
-      wholesaleNet: wholesaleGross,
       patentUnitsSold,
       patentRoyalties,
       copackerCasesSold,
@@ -1122,17 +1092,13 @@ export class LemonadeEngine {
       totalExpenses,
       netProfit,
       recipeQuality: quality,
-      reputationBefore,
       reputationAfter: s.reputation,
       reputationTrend: ratingTrend,
-      buzzBefore,
-      buzzAfter: s.buzz,
       goldenStreak: s.goldenStreak,
       recipeJustLocked,
       houseOpened: false,
       flavorTaste: this.tasteFlavor(),   // after the factory sold: a new flavor counts from tomorrow
       iceMadeByMachine,
-      lemonsKeptByFridge,
       upgradeSavings,
       storageShort,
       soldOut: totalCupDemand > 0 && soldOutStands.length > 0,
@@ -1179,29 +1145,25 @@ export class LemonadeEngine {
       this.state.currentChore.remainingSec = Math.max(0, this.state.currentChore.remainingSec - dt);
     }
   }
-
-  public manualAction(): void {
-    this.doChore();
-  }
 }
 
 function emptyLedger(day: number): MoneyLedger {
   return {
     day, sales: 0, cups: 0, chores: 0,
     supplies: { lemons: 0, sugar: 0, ice: 0, cups: 0, bottles: 0 },
-    shop: 0, shopIds: [], treats: 0, hiring: 0, storeUpgrades: 0, house: 0, wages: 0,
+    shop: 0, shopIds: [], hiring: 0, storeUpgrades: 0, house: 0, wages: 0,
   };
 }
 
 // Money in minus money out for one ledger (what the kid really kept that day).
 export function ledgerKept(l: MoneyLedger): number {
-  const out = Object.values(l.supplies).reduce((a, b) => a + b, 0) + l.shop + l.treats + l.hiring + l.storeUpgrades + l.house + l.wages;
+  const out = Object.values(l.supplies).reduce((a, b) => a + b, 0) + l.shop + l.hiring + l.storeUpgrades + l.house + l.wages;
   return l.sales + l.chores - out;
 }
 
 // Gross profit for one ledger: sales minus what making them cost (supplies, bottles and
-// workers' pay). Upgrades, hiring, the big dreams and chores are left out.
-export function ledgerGrossProfit(l: MoneyLedger): number {
+// workers' pay). The shop, hiring and chores are left out.
+function ledgerGrossProfit(l: MoneyLedger): number {
   const supplies = Object.values(l.supplies).reduce((a, b) => a + b, 0);
   return l.sales - supplies - l.wages;
 }

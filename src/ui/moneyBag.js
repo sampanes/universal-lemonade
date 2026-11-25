@@ -9,37 +9,36 @@ import { repStars } from './dayReport.js';
 // what the kid really kept (the Day Report's "You made" leaves out the morning shopping),
 // then what today has cost so far.
 export const SUPPLY_PICS = { lemons: 'lemon', sugar: 'sugar_scoop', ice: 'ice_cubes', cups: 'lemonade_cup', bottles: 'shop/bottles' };
-export const mbMoney = (n) => `$${fmtDollars(Math.abs(n), true)}`;
-export const mbRow = (kind, pic, what, sub, amount) =>
+const mbMoney = (n) => `$${fmtDollars(Math.abs(n), true)}`;
+const mbRow = (kind, pic, what, sub, amount) =>
   `<div class="mb-row ${kind}">${pic ? `<img src="${pic}" alt="" />` : ''}` +
   `<div class="mb-what">${what}${sub ? `<small>${sub}</small>` : ''}</div>` +
   `<span class="mb-amt">${kind === 'in' ? '+' : '-'}${mbMoney(amount)}</span></div>`;
-export function mbSupplyChips(l) {
+function mbSupplyChips(l) {
   return Object.entries(SUPPLY_PICS).filter(([k]) => l.supplies[k] > 0.004)
     .map(([k, pic]) => `<span class="mb-chip"><img src="./sprites/${pic}.png" alt="${k}" />${mbMoney(l.supplies[k])}</span>`).join('');
 }
-export function mbOutRows(l, engine) {
+function mbOutRows(l, engine) {
   let rows = '';
   const supplies = Object.values(l.supplies).reduce((a, b) => a + b, 0);
   if (supplies > 0.004) rows += mbRow('out', './sprites/supplies.png', 'Supplies', `<span class="mb-chips">${mbSupplyChips(l)}</span>`, supplies);
   if (l.shop > 0.004) {
-    // One upgrade: its picture and name. Several: a chip for each with its price.
-    const kid = l.shopIds.map(id => KID_SHOP.find(x => x.id === id)).filter(x => x && x.pic);
-    const chips = kid.length > 1 ? `<span class="mb-chips">${kid.map(k => {
-      const p = engine.projects.find(x => x.id === k.id);
-      return `<span class="mb-chip"><img src="${k.pic}" alt="" />${mbMoney(p ? p.costCash : 0)}</span>`;
-    }).join('')}</span>` : 'for the stand';
+    // One Stand Shop buy: its picture and name. Several: a chip for each with its price.
+    const bought = l.shopIds.map(id => ({ item: KID_SHOP.find(x => x.id === id), p: engine.projects.find(x => x.id === id) }))
+      .filter(b => b.item && b.p);
+    const chips = bought.length > 1 ? `<span class="mb-chips">${bought.map(b =>
+      `<span class="mb-chip"><img src="${b.item.pic}" alt="" />${mbMoney(b.p.costCash)}</span>`).join('')}</span>` : 'for the stand';
     // Brand moves (src/data/brand.ts) are not Stand Shop items: "brand:<id>".
     const brandOnly = l.shopIds.length > 0 && l.shopIds.every(id => id.startsWith('brand:'));
-    const name = brandOnly ? 'Famous brand' : kid.length === 1 && l.shopIds.length === 1 ? kid[0].name : 'Upgrades';
-    const pic = brandOnly ? './sprites/morning_prep/mascot_lemon_head.png' : kid.length ? kid[0].pic : './sprites/shop/second_stand.png';
+    const name = brandOnly ? 'Famous brand' : bought.length === 1 && l.shopIds.length === 1 ? bought[0].p.name : 'Upgrades';
+    const pic = brandOnly ? './sprites/morning_prep/mascot_lemon_head.png' : bought.length ? bought[0].item.pic : './sprites/shop/second_stand.png';
     rows += mbRow('out', pic, name, brandOnly ? 'making your lemonade famous' : chips, l.shop);
   }
-  if (l.treats > 0.004) rows += mbRow('out', '', 'Big dream', 'a dream come true', l.treats);
   if (l.hiring > 0.004) rows += mbRow('out', './sprites/franchise/ballpark.png', 'Hiring', 'new stands and deals', l.hiring);
   if (l.storeUpgrades > 0.004) rows += mbRow('out', './sprites/shop/bottles.png', 'Store shelves', 'bigger store orders', l.storeUpgrades);
   if (l.house > 0.004) rows += mbRow('out', HOUSE_PIC, 'House', 'a new look for home', l.house);
-  if (l.wages > 0.004) rows += mbRow('out', './sprites/franchise/elm.png', "Helpers' pay", 'your stand workers', l.wages);  return rows;
+  if (l.wages > 0.004) rows += mbRow('out', './sprites/franchise/elm.png', "Helpers' pay", 'your stand workers', l.wages);
+  return rows;
 }
 export function moneyBagHTML(engine) {
   const s = engine.state;
@@ -73,7 +72,7 @@ export function moneyBagHTML(engine) {
   }
   // Today so far (the morning's shopping and chores, before the stand opens).
   const today = engine.ledger;
-  const spent = Object.values(today.supplies).reduce((a, b) => a + b, 0) + today.shop + today.treats + today.hiring + today.storeUpgrades + today.house;
+  const spent = Object.values(today.supplies).reduce((a, b) => a + b, 0) + today.shop + today.hiring + today.storeUpgrades + today.house;
   const bits = [];
   if (spent > 0.004) bits.push(`spent <b>${mbMoney(spent)}</b>`);
   if (today.chores > 0.004) bits.push(`earned <b>${mbMoney(today.chores)}</b> from chores`);

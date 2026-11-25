@@ -2,24 +2,24 @@
 import { kidHairIds, kidImageURL } from '../kid.ts';
 import { housePicHTML, houseImageURLs, houseArtFor } from './houseArt.js';
 
-// The stores that buy bottles (Stage 3): kid names and pictures for the engine's accounts.
-export const STORES = {
-  bodega: { name: 'Corner Store', pic: './sprites/stores/bodega.png' },
-  market: { name: 'Farmers Market', pic: './sprites/stores/market.png' },
-  sports: { name: 'Ballfield', pic: './sprites/stores/sports.png' },
+// The pictures of the stores that buy bottles (Stage 3; src/data/wholesale.ts).
+export const STORE_PICS = {
+  bodega: './sprites/stores/bodega.png',
+  market: './sprites/stores/market.png',
+  sports: './sprites/stores/sports.png',
 };
 
-// Friends' stands (Stage 2). Each friend is a paper-doll kid with a look of their own,
-// standing behind their stand sticker (public/sprites/franchise/).
+// Friends' stands (Stage 2; src/data/franchise.ts). Each friend is a paper-doll kid with a
+// look of their own, standing behind their stand sticker (public/sprites/franchise/).
 export const FRIENDS = {
-  timmy: { place: 'Elm Street', pic: 'elm', backdrop: 'elm-stoop', sellerX: 38, hair: 'sidepart', skinTone: 1, hairColor: 1, uniformColor: 2 },
-  leo: { place: 'Ballpark', pic: 'ballpark', sellerX: 70, hair: 'curly', skinTone: 3, hairColor: 0, uniformColor: 4 },
-  sarah: { place: 'Pool', pic: 'pool', sellerX: 26, hair: 'ponytail', skinTone: 0, hairColor: 3, uniformColor: 1 },
+  timmy: { pic: 'elm', backdrop: 'elm-stoop', sellerX: 38, hair: 'sidepart', skinTone: 1, hairColor: 1, uniformColor: 2 },
+  leo: { pic: 'ballpark', sellerX: 70, hair: 'curly', skinTone: 3, hairColor: 0, uniformColor: 4 },
+  sarah: { pic: 'pool', sellerX: 26, hair: 'ponytail', skinTone: 0, hairColor: 3, uniformColor: 1 },
 };
 export function friendPortrait(id, mood, view = false) {
   const f = FRIENDS[id];
   if (!f) return null;
-  const profile = { name: id, hairStyle: kidHairIds().indexOf(f.hair), skinTone: f.skinTone, hairColor: f.hairColor, uniformColor: f.uniformColor };
+  const profile = { hairStyle: kidHairIds().indexOf(f.hair), skinTone: f.skinTone, hairColor: f.hairColor, uniformColor: f.uniformColor };
   return profile.hairStyle >= 0 ? kidImageURL(profile, mood, view) : null;
 }
 
@@ -27,7 +27,7 @@ export function friendPortrait(id, mood, view = false) {
 export const ALL_PLACE_IMAGES = [
   './sprites/franchise/elm.png',
   ...Object.values(FRIENDS).flatMap(f => [`./sprites/franchise/${f.pic}.png`, `./sprites/backdrops/${f.backdrop ?? f.pic}-clear.webp`]),
-  ...Object.values(STORES).map(store => store.pic),
+  ...Object.values(STORE_PICS),
 ];
 
 // The day scene's picture of a stand: who sells there, the table, and what is behind it (the
@@ -36,7 +36,7 @@ export function sceneLocation(id, engine, kidProfile) {
   const friend = FRIENDS[id];
   const level = engine.state.houseLevel;
   return {
-    name: friend ? `${engine.franchiseStands[id].workerName} \u00b7 ${friend.place}` : id === 'driveway' ? 'My driveway' : 'Neighborhood stand',
+    name: friend ? `${engine.franchiseStands[id].workerName} \u00b7 ${engine.franchiseStands[id].name}` : id === 'driveway' ? 'My driveway' : 'Neighborhood stand',
     host: id === 'driveway' ? kidImageURL(kidProfile, 'happy', 'stand') : friendPortrait(id, 'happy', 'stand'),
     sellerX: friend?.sellerX ?? 64,
     backdrop: './sprites/backdrops/' + (friend?.backdrop ?? friend?.pic ?? 'elm') + '-clear.webp',

@@ -4,13 +4,13 @@ import { BigNum } from '../bignum.ts';
 // Number style: millions and billions are written out in full, never as "30.00 M", so a
 // kid can see that $30,000,000 plus an $11 chore is $30,000,011: more, but not by much.
 // Only from a trillion up do numbers switch to the short "1.23 T" style.
-export const FULL_DIGITS_BELOW = 1e12;
-export const CENTS_BELOW = 100000;
-export const fmt2 = (n) => n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const FULL_DIGITS_BELOW = 1e12;
+const CENTS_BELOW = 100000;
+const fmt2 = (n) => n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 // Whole dollars, cents cut off. +0.005: BigNum hands back mantissa * 10^e, which can land a
 // hair under the true value (123456789 came out as 123456788.99999999 and floored to ...788).
 export const fmtWhole = (n) => Math.floor(n + 0.005).toLocaleString('en-US');
-export const fmtShort = (n) => BigNum.fromNumber(n).format(2);
+const fmtShort = (n) => BigNum.fromNumber(n).format(2);
 // Dollar text for a plain number >= 0: cents while small, then whole dollars in full digits.
 // exact = keep the cents all the way up (Day Report rows, so they still add up).
 export function fmtDollars(n, exact = false) {

@@ -1,43 +1,41 @@
-// src/data/franchise.ts -- Neighborhood Franchise Stands (Phase 2+)
+// src/data/franchise.ts -- the friends' stands (Stage 2+). Their pictures and looks are in
+// src/ui/places.js.
 import type { FranchiseStand } from '../types';
 
 export function createInitialFranchiseStands(): Record<string, FranchiseStand> {
   return {
     timmy: {
       id: 'timmy',
-      name: 'Elm Street Stand',
+      name: 'Elm Street',
       workerName: 'Timmy',
-      location: 'Elm St & 4th Ave',
       hired: false,
       setupCost: 150.00,
       dailyWage: 12.00,
       baseCapacity: 35,
       weatherSens: 0.8,
-      desc: 'Steady residential traffic. Timmy is reliable and easygoing.'
+      desc: 'Steady traffic on a quiet street. Timmy is reliable and easygoing.'
     },
     leo: {
       id: 'leo',
-      name: 'Ballpark Stand',
+      name: 'Ballpark',
       workerName: 'Leo',
-      location: 'Little League Park',
       hired: false,
       setupCost: 300.00,
       dailyWage: 16.00,
       baseCapacity: 70,
       weatherSens: 1.2,
-      desc: 'Crushes weekend games and sunny tournaments! Huge crowds.'
+      desc: 'Big crowds at weekend games and sunny tournaments.'
     },
     sarah: {
       id: 'sarah',
-      name: 'Poolside Stand',
+      name: 'Pool',
       workerName: 'Sarah',
-      location: 'Community Pool Entrance',
       hired: false,
       setupCost: 600.00,
       dailyWage: 20.00,
       baseCapacity: 100,
       weatherSens: 1.8,
-      desc: 'Insane volume on scorchers above 80\u{B0}F! Slow when cloudy.'
+      desc: 'Sells the most on scorching days. Slow when it is cloudy.'
     }
   };
 }

@@ -1,17 +1,16 @@
 // src/ui/dayReport.js -- the Day Report: the docked ticket and the full report.
 import { fmtDollars, fmtSigned } from './format.js';
 import { skyCondition } from '../scene/forecastArt.ts';
-import { STORES } from './places.js';
 import { FLAVORS, FLAVOR_BOOST } from '../data/flavors.ts';
 
 const SPRITE_DIR = './sprites/kawaii_cat/';
 
 // Five smiling stars with the first `frac` of the row lit (same markup as the reputation meter).
-export const STAR5 = `<img src="${SPRITE_DIR}star_small.png" alt="" />`.repeat(5);
-export const starMeter = (frac, label) => `<span class="star-meter" role="img" aria-label="${label}">` +
+const STAR5 = `<img src="${SPRITE_DIR}star_small.png" alt="" />`.repeat(5);
+const starMeter = (frac, label) => `<span class="star-meter" role="img" aria-label="${label}">` +
   `<span class="star-meter-row dim">${STAR5}</span>` +
   `<span class="star-meter-row lit" style="width:${Math.round(frac * 100)}%">${STAR5}</span></span>`;
-export const isTeamNote = (r) => r.reviewer.includes('(');   // "Timmy (Park Stand)" style team chatter
+const isTeamNote = (r) => r.reviewer.includes('(');   // "Timmy (Elm Street)": a friend talking
 
 // Day Report cat: 1 star = calm (0) ... 5 stars = cheering (4); a losing day is always calm.
 export function reportCatMood(d) {
@@ -64,9 +63,8 @@ export function renderFullDayReportHTML(d, s, isModal = false, hero = () => '') 
   } else if (d.stores && d.stores.length) {
     // One row per store; "12 of 25" when the bottles, lemons or sugar ran out first.
     d.stores.forEach(st => {
-      const name = (STORES[st.id] || { name: st.name }).name;
       const n = st.bottles < st.wanted ? `${count(st.bottles)} of ${count(st.wanted)}` : count(st.bottles);
-      rows += row(`${name} (${n} bottles)`, `+${money(st.revenue)}`);
+      rows += row(`${st.name} (${n} bottles)`, `+${money(st.revenue)}`);
     });
   } else if (s.phase >= 3) {
     rows += row(`Wholesale (${count(d.bottlesSold)} bottles)`, `+${money(d.wholesaleRevenue)}`);

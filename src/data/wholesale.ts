@@ -1,4 +1,5 @@
-// src/data/wholesale.ts -- Wholesale Bottling Retail Accounts (Phase 3+)
+// src/data/wholesale.ts -- the stores that buy bottles (Stage 3+). Their pictures are in
+// src/ui/places.js.
 import type { WholesaleAccount } from '../types';
 
 export const BOTTLES_FOR_INVENTION = 1500;
@@ -10,7 +11,7 @@ export function createInitialWholesaleAccounts(): Record<string, WholesaleAccoun
   return {
     bodega: {
       id: 'bodega',
-      name: 'Corner Bodega & Deli',
+      name: 'Corner Store',
       active: false,
       setupCost: 150,
       bottlesPerDay: 20,
@@ -22,7 +23,7 @@ export function createInitialWholesaleAccounts(): Record<string, WholesaleAccoun
     },
     market: {
       id: 'market',
-      name: 'Saturday Farmers Market',
+      name: 'Farmers Market',
       active: false,
       setupCost: 250,
       bottlesPerDay: 20,
@@ -30,11 +31,11 @@ export function createInitialWholesaleAccounts(): Record<string, WholesaleAccoun
       levels: [{ cost: 250, bottlesPerDay: 20 }, { cost: 750, bottlesPerDay: 80 }, { cost: 2250, bottlesPerDay: 280 }],
       wholesalePrice: 3.50,
       weatherSens: 1.5,
-      desc: 'Weekend organic craft stall. Sells out premium bottles on sunny days!'
+      desc: 'Pays the most for a bottle, and sells out on sunny days.'
     },
     sports: {
       id: 'sports',
-      name: 'Youth Sports Complex Concession',
+      name: 'Ballfield',
       active: false,
       setupCost: 350,
       bottlesPerDay: 45,
@@ -42,7 +43,7 @@ export function createInitialWholesaleAccounts(): Record<string, WholesaleAccoun
       levels: [{ cost: 350, bottlesPerDay: 45 }, { cost: 1050, bottlesPerDay: 180 }, { cost: 3150, bottlesPerDay: 600 }],
       wholesalePrice: 2.20,
       weatherSens: 1.3,
-      desc: 'Supplies bottled sports drinks to concession stands across 4 fields.'
+      desc: 'The snack bar at the ballfield: big orders on game days.'
     }
   };
 }

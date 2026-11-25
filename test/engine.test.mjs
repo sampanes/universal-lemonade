@@ -674,7 +674,7 @@ test('lifetime sales add business revenue across stages and survive saving', () 
     const s = e.runDay();
     const components = s.drivewayRevenue + s.franchiseGrossRevenue + s.wholesaleRevenue
       + s.patentRoyalties + s.copackerNet;
-    expected += components * e.state.brandMultiplier;
+    expected += components * e.brandMultiplier();
     assert.ok(Math.abs(e.state.totalRevenueEarned.toNumber() - expected) < 1e-6);
     return s;
   };
@@ -706,7 +706,7 @@ test('profit since Day 1 is sales minus supplies and pay; upgrades and hiring do
       e.dadJumpToPhase(2);
       e.hireFranchiseStand('timmy');
     }
-    if (i === 15) e.buyProject('costco_card');
+    if (i === 15) e.buyProject('club_card');
     e.autoRestockForToday();
     e.runDay();
     const l = e.state.lastLedger;
@@ -846,18 +846,19 @@ test('after the factory the Stand Shop offers the big dreams, and the island is 
   const e = new LemonadeEngine({ seed: 79 });
   e.dadJumpToPhase(5);
   e.state.cash = e.state.cash.add(5e9);
-  for (const p of e.projects.filter(p => p.phase === 5)) { p.purchased = true; }
+  const dreams = ['private_jet', 'arena_naming', 'private_island'];
+  for (const p of e.projects.filter(p => p.phase === 5 && !dreams.includes(p.id))) { p.purchased = true; }
   e.state.day += 2;
-  for (const id of ['private_jet', 'arena_naming', 'private_island']) {
+  for (const id of dreams) {
     const next = sim.kidShopNext(e, e.state);
     assert.equal(next.item.id, id);
-    assert.ok(next.item.treat && next.p.unlocked(e.state));
+    assert.ok(next.item.cheer && next.p.unlocked(e.state));
     assert.equal(e.state.gameWon, false);
-    assert.ok(e.buyTrophy(id));
+    assert.ok(e.buyProject(id));
     assert.equal(sim.kidShopNext(e, e.state), null, 'one dream a day');
     e.state.day += 2;
   }
-  assert.equal(e.trophies.find(t => t.id === 'private_island').costCash, 1000000000);
+  assert.equal(e.projects.find(p => p.id === 'private_island').costCash, 1000000000);
   assert.equal(e.state.gameWon, true);
   assert.equal(e.state.endingSeen, false, 'the page plays the ending once');
   assert.equal(sim.kidShopNext(e, e.state), null, 'nothing after the island');
@@ -978,11 +979,11 @@ test('the famous brand opens with the big-box stores and grows one move a day', 
   assert.equal(e.brandOpen(), false);
   assert.equal(e.buyBrandStep(), false, 'not before the big-box stores');
   for (const id of ['regional_supermarkets', 'automated_canning_line', 'national_bigbox']) assert.ok(e.buyProject(id));
-  assert.equal(e.state.brandMultiplier, 1, 'the factory steps no longer raise it by themselves');
+  assert.equal(e.brandMultiplier(), 1, 'the factory steps do not raise it');
   assert.equal(e.brandOpen(), true);
   assert.ok(e.buyBrandStep());
   assert.equal(e.state.brandLevel, 1);
-  assert.ok(Math.abs(e.state.brandMultiplier - 1.1) < 1e-9);
+  assert.ok(Math.abs(e.brandMultiplier() - 1.1) < 1e-9);
   assert.equal(e.buyBrandStep(), false, 'the next move opens tomorrow');
   e.runDay();
   const loaded = LemonadeEngine.fromSave(JSON.parse(JSON.stringify(e.toSave())));
@@ -991,10 +992,11 @@ test('the famous brand opens with the big-box stores and grows one move a day', 
   let moves = 2;
   while (loaded.nextBrandStep()) { loaded.state.day += 1; assert.ok(loaded.buyBrandStep()); moves++; }
   assert.equal(moves, 7);
-  assert.ok(loaded.state.brandMultiplier > 2.8 && loaded.state.brandMultiplier < 2.9);
+  const mult = loaded.brandMultiplier();
+  assert.ok(mult > 2.8 && mult < 2.9);
   const day = loaded.runDay();
   const raw = day.drivewayRevenue + day.franchiseGrossRevenue + day.wholesaleRevenue + day.patentRoyalties + day.copackerNet;
-  assert.ok(Math.abs(day.totalRevenue - raw * loaded.state.brandMultiplier) < 1e-6, 'it multiplies everything sold');
+  assert.ok(Math.abs(day.totalRevenue - raw * mult) < 1e-6, 'it multiplies everything sold');
 });
 
 test('every flavor taste comment points toward the best mix', () => {
