@@ -21,7 +21,10 @@ export const BALANCE = {
   start: {
     cash: 60.0,
     inventory: { lemons: 24, sugar: 20, ice: 200, cups: 50, bottles: 0 },
-    recipe: { lemonsPerPitcher: 1, sugarPerPitcher: 1, icePerCup: 1, pricePerCup: 1.0 },
+    // Below every golden recipe (goldenLemons / goldenSugar start at 3), so the first comments
+    // always say "more", but close enough that Day 1 sells a few cups (about 6 at $1.00 for a
+    // kid who has not tasted yet; 1 and 1 sold about 2).
+    recipe: { lemonsPerPitcher: 2, sugarPerPitcher: 2, icePerCup: 1, pricePerCup: 1.0 },
     reputation: 0.5,
   },
 
