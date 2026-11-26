@@ -1,5 +1,5 @@
 // src/simulation/demand.ts -- How many cups people want, for the forecast and the real day.
-import type { GameState, FranchiseStand, WholesaleAccount, DailyDemandEstimate, KidDemandAdvice, PourableCapacity } from '../types';
+import type { GameState, FranchiseStand, WholesaleAccount, DailyDemandEstimate, KidDemandAdvice } from '../types';
 import { computeRecipeQuality, cupsPerPitcher as pitcherCups } from './recipe';
 import { buyProbability, drivewayPeople, fairPriceFor } from './reputation';
 import { BALANCE, type Balance } from '../balance';
@@ -41,7 +41,7 @@ export function computeDayDemand(
   const buyProb = buyProbability(quality, s.tempF, s.recipe.pricePerCup, s.reputation, b);
 
   const fridgeTraffic = s.flags.hasMiniFridge ? d.fridgeTrafficMult : 1;
-  const drivewayTraffic = Math.floor(drivewayPeople(s.buzz ?? 0, s.reputation, b) * weatherMult * tempFactor * fridgeTraffic);
+  const drivewayTraffic = Math.floor(drivewayPeople(s.buzz, s.reputation, b) * weatherMult * tempFactor * fridgeTraffic);
   let totalTraffic = drivewayTraffic;
   const stands: StandDemand[] = [
     { id: 'driveway', name: 'Driveway Stand', workerName: 'You', traffic: drivewayTraffic, demand: Math.floor(drivewayTraffic * buyProb), wage: 0, isDriveway: true }
@@ -166,144 +166,30 @@ export function getKidDemandAdvice(
   if (s.inv.bottles < est.neededBottles) lowItems.push('bottles');
   // Low, but the stand cannot hold any more: only an upgrade fixes it.
   const fullItems = lowItems.filter(i => s.inv[i] >= storageCap(s, i, b)) as ('lemons' | 'ice')[];
-
-  if (lowItems.length === 0) {
-    return {
-      phrase: "Pantry is fully stocked and ready to pour!",
-      emoji: "\u{2728}",
-      lowItems: [],
-      fullItems: [],
-      isFullyStocked: true,
-      estTotalCups: est.totalEstCups
-    };
-  }
-
-  if (fullItems.length === lowItems.length) {
-    const item = fullItems[0];
-    return {
-      // Short enough for one line in the tip row (the Day Report spells it out).
-      phrase: item === 'ice'
-        ? "Ice bucket full! An ice machine makes all you need!"
-        : "Fruit bowl full! A mini-fridge holds all you want!",
-      emoji: "",
-      lowItems,
-      fullItems,
-      isFullyStocked: false,
-      estTotalCups: est.totalEstCups
-    };
-  }
-
   const buyable = lowItems.filter(i => !(fullItems as string[]).includes(i));
-
-  if (buyable.length >= 4) {
-    return {
-      phrase: "You need more of everything today!",
-      emoji: "\u{1F4E6}",
-      lowItems,
-      fullItems,
-      isFullyStocked: false,
-      estTotalCups: est.totalEstCups
-    };
-  }
-
-  if (buyable.length === 1) {
-    const single = buyable[0];
-    if (single === 'ice') {
-      return {
-        phrase: s.tempF >= 80 ? "You'll need a lot more ice for today's heat!" : "Running low on ice cubes!",
-        emoji: "\u{1F9CA}",
-        lowItems,
-        fullItems,
-        isFullyStocked: false,
-        estTotalCups: est.totalEstCups
-      };
-    }
-    if (single === 'lemons') {
-      return {
-        phrase: "Almost out of lemons! Grab another bag!",
-        emoji: "\u{1F34B}",
-        lowItems,
-        fullItems,
-        isFullyStocked: false,
-        estTotalCups: est.totalEstCups
-      };
-    }
-    if (single === 'sugar') {
-      return {
-        phrase: "Need more sugar to keep it sweet!",
-        emoji: "\u{1F36C}",
-        lowItems,
-        fullItems,
-        isFullyStocked: false,
-        estTotalCups: est.totalEstCups
-      };
-    }
-    if (single === 'bottles') {
-      return {
-        phrase: "The stores need more bottles today!",
-        emoji: "",
-        lowItems,
-        fullItems,
-        isFullyStocked: false,
-        estTotalCups: est.totalEstCups
-      };
-    }
-    if (single === 'cups') {
-      return {
-        phrase: "Running low on paper cups! Grab another pack!",
-        emoji: "\u{1F964}",
-        lowItems,
-        fullItems,
-        isFullyStocked: false,
-        estTotalCups: est.totalEstCups
-      };
-    }
-  }
-
-  // 2 or 3 items low
-  const itemNames = buyable.map(i => {
-    if (i === 'lemons') return 'lemons';
-    if (i === 'sugar') return 'sugar';
-    if (i === 'ice') return 'ice';
-    if (i === 'bottles') return 'bottles';
-    return 'cups';
-  });
-
-  const readable = itemNames.length === 2
-    ? `${itemNames[0]} and ${itemNames[1]}`
-    : `${itemNames[0]}, ${itemNames[1]}, and ${itemNames[2]}`;
-
-  return {
-    phrase: itemNames.length === 2 ? `Stock up on ${readable} before opening!` : `Stock up on ${readable}!`,
-    emoji: "\u{1F6D2}",
-    lowItems,
-    fullItems,
-    isFullyStocked: false,
-    estTotalCups: est.totalEstCups
-  };
+  return { phrase: advicePhrase(buyable, fullItems, s.tempF), lowItems, fullItems, isFullyStocked: lowItems.length === 0 };
 }
 
-export function getMaxPourableCups(state: GameState, b: Balance = BALANCE): PourableCapacity {
-  const s = state;
-  const cupsPerPitcher = pitcherCups(s.recipe.icePerCup, b);
-  const byCups = s.inv.cups;
-  const byIce = s.recipe.icePerCup > 0 && !s.flags.hasAutoIce ? Math.floor(s.inv.ice / s.recipe.icePerCup) : 999999;
-  const byLemons = Math.floor(s.inv.lemons / Math.max(1, s.recipe.lemonsPerPitcher)) * cupsPerPitcher;
-  const bySugar = Math.floor(s.inv.sugar / Math.max(1, s.recipe.sugarPerPitcher)) * cupsPerPitcher;
-  const maxCups = Math.min(byCups, byIce, byLemons, bySugar);
-
-  const bottlenecks: string[] = [];
-  if (byCups === maxCups) bottlenecks.push('Cups');
-  if (byIce === maxCups) bottlenecks.push(`Ice (${s.recipe.icePerCup} cubes/cup)`);
-  if (byLemons === maxCups) bottlenecks.push('Lemons');
-  if (bySugar === maxCups) bottlenecks.push('Sugar');
-
-  return {
-    maxCups,
-    bottleneck: bottlenecks.join(' & '),
-    byCups,
-    byIce,
-    byLemons,
-    bySugar
-  };
+// What the lemon in the weather card says about the supplies still to buy (buyable) and
+// those the stand is too small for (full). Short enough for one line in the tip row.
+const ONE_LOW: Record<string, string> = {
+  lemons: 'Almost out of lemons! Grab another bag!',
+  sugar: 'Need more sugar to keep it sweet!',
+  cups: 'Running low on paper cups! Grab another pack!',
+  bottles: 'The stores need more bottles today!',
+};
+function advicePhrase(buyable: KidDemandAdvice['lowItems'], full: KidDemandAdvice['fullItems'], tempF: number): string {
+  if (buyable.length === 0) {
+    if (full.length === 0) return 'Pantry is fully stocked and ready to pour!';
+    // (The Day Report spells this one out.)
+    return full[0] === 'ice' ? 'Ice bucket full! An ice machine makes all you need!' : 'Fruit bowl full! A mini-fridge holds all you want!';
+  }
+  if (buyable.length >= 4) return 'You need more of everything today!';
+  if (buyable.length === 1) {
+    if (buyable[0] === 'ice') return tempF >= 80 ? "You'll need a lot more ice for today's heat!" : 'Running low on ice cubes!';
+    return ONE_LOW[buyable[0]];
+  }
+  return buyable.length === 2
+    ? `Stock up on ${buyable[0]} and ${buyable[1]} before opening!`
+    : `Stock up on ${buyable[0]}, ${buyable[1]}, and ${buyable[2]}!`;
 }

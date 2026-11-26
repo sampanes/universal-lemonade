@@ -100,11 +100,9 @@ Reset starts a new game. Saves are not carried over between versions. When the g
 changes shape, `SAVE_VERSION` in `src/engine.ts` goes up and saved games start over on the
 next visit (looks are kept). When anything else kept in the browser changes shape,
 `STORAGE_VERSION` in `src/storage.ts` goes up and every saved game, look and secret look is
-cleared (only the Dad Mode switch is kept).
+cleared.
 
-## Later stages
-
-Kid mode and Dad Mode cover all five stages:
+## The stages
 
 1. **Driveway stand** - recipe, weather, supplies, chores, Stand Shop.
 2. **Neighborhood franchise** - hire neighborhood kids to run stands at Elm Street, the
@@ -113,19 +111,6 @@ Kid mode and Dad Mode cover all five stages:
    and sports concessions.
 4. **Patent** - invent a citrus press and earn royalties on every one sold.
 5. **Beverage company** - a co-packer, supermarket chains, big-box stores and beyond.
-
-## Dad Mode
-
-Dad Mode shows the full business panels for the later stages (with the whole Stand Shop, to
-buy in any order, the big dreams included), test controls (game speed,
-Auto-Day, the game's seed, and "Jump to..." to skip ahead to the start of a later stage, as
-if the stages before it had been played) and a mirror with every look unlocked. Dad Mode
-plays its own game and keeps its own look, both saved separately, so testing never changes
-the kid's game or look (Reset in Dad Mode only starts Dad's game over).
-
-- Tap the game title three times to switch it on or off, or
-- open the page with `?dad=1` (on) or `?dad=0` (off). The choice is remembered.
-- `?seed=NUMBER` replays an exact game (it starts that game fresh, over the saved one).
 
 ## Running it
 
@@ -146,18 +131,20 @@ Every push to `main` builds and deploys to GitHub Pages (`.github/workflows/depl
 | --- | --- |
 | `index.html` | The page markup |
 | `src/styles/game.css` | The page's styles (the day scene has `src/scene/dayScene.css`) |
-| `src/main.js` | The page script: wires the engine to the page, the frame loop, saving, the mirror |
-| `src/ui/` | Page pieces split out of `main.js`: number formats, the Day Report, the Money Bag, the Stand Shop list, house pictures, the yard, My Shelf (with the trophies and wallpapers), friends and stores, Dad Mode's panels, the Reset card |
+| `src/main.js` | The page script: starts the game, wires each part of the page, opens the stand each day, redraws every frame |
+| `src/ui/` | One file per part of the page: the game being played and its save (`session.js`), Morning Prep and the weather, the recipe card, the Stand Shop, the Flavor Lab, the friends' and business tabs (`partners.js`), My House and the yard, My Shelf, the Money Bag, the Day Report and its popup, the mirror, the ending, the Reset card, and the shared helpers (`dom.js`, `format.js`, `celebration.js`) |
 | `src/scene/` | The day scene: who walks by, the customers' art, the forecast art |
 | `src/preload.ts` | Loads pictures ahead of time so nothing pops in |
 | `src/storage.ts` | Everything kept in the browser, and the save version |
 | `src/engine.ts` | The game engine (no DOM): state, days, buying, upgrades, save and load |
+| `src/shop.ts`, `src/shelf.ts` | The Stand Shop's order and pacing, and what stands on My Shelf (shared by the page and the simulator) |
+| `src/pictures.ts` | Where each game picture is served from |
 | `src/balance.ts` | Every economy tuning number |
 | `src/simulation/` | Weather, demand, recipe taste, reviews, reputation, storage limits |
 | `src/data/` | Everything the Stand Shop sells (to the big dreams), chores, friends' stands, stores, flavors, the brand, the house, the yard, the trophies and wallpapers |
 | `src/character.ts`, `src/kid.ts` | The kid's saved look, and drawing the paper-doll kid |
 | `src/unlocks.ts` | Which looks unlock when |
-| `sim/` | The balance simulator (bot players) |
+| `sim/` | The balance simulator (bot players), and `sim/jump.ts`, which skips a game ahead to a later stage for the tests |
 | `test/` | Node tests, run on the simulator build |
 | `public/` | Game-size sprites and fonts, served as-is |
 | `art_src/`, `tools/` | Full-size source art and the Python scripts that make the game-size sprites |
@@ -182,7 +169,7 @@ turn it into the small files in `public/sprites/`:
 - `art_src/build_store_art.py` - the three bottle stores and the labeler
 - `art_src/build_house_art.py` - the family house pictures and their wall masks (for the paint color)
 - `art_src/clean_edges.py` - edge cleanup for small UI sprites
-- `tools/prep_kawaii_cat.py` - the cat, counter digits, stars and sparkles
+- `tools/prep_kawaii_cat.py` - the cat, the stars and sparkles
 - `tools/make_pitcher_glass.py` - the see-through pitcher glass
 
 Recolorable layers (skin, hair, shirt) are drawn in gray, so the game can tint them.

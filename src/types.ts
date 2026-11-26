@@ -1,4 +1,6 @@
 import type { BigNum } from './bignum';
+import type { LemonadeEngine } from './engine';
+import type { StandVisits } from './scene/dayScene';
 
 export type WeatherCondition = 'SUNNY' | 'CLOUDY' | 'RAINY';
 export type SeasonName = 'SPRING' | 'SUMMER' | 'FALL' | 'WINTER';
@@ -95,11 +97,11 @@ export interface ProjectDef {
   id: string;
   name: string;
   desc: string;
-  phase: GamePhase;      // the stage it is bought in (Dad Mode's stage jump buys earlier ones)
+  phase: GamePhase;      // the stage it is bought in (sim/jump.ts buys the earlier ones)
   costCash: number;
   purchased: boolean;
   unlocked: (state: GameState) => boolean;
-  effect: (engine: any) => void;
+  effect: (engine: LemonadeEngine) => void;
 }
 
 export interface CustomerReview {
@@ -126,22 +128,11 @@ export interface DailyDemandEstimate {
   neededBottles: number;
 }
 
-export interface PourableCapacity {
-  maxCups: number;
-  bottleneck: string;
-  byCups: number;
-  byIce: number;
-  byLemons: number;
-  bySugar: number;
-}
-
 export interface KidDemandAdvice {
   phrase: string;
-  emoji: string;
-  lowItems: ('lemons' | 'sugar' | 'ice' | 'cups' | 'bottles')[];
+  lowItems: SupplyItem[];
   fullItems: ('lemons' | 'ice')[];   // low, but storage is full (only an upgrade helps)
   isFullyStocked: boolean;
-  estTotalCups: number;
 }
 
 export interface RecipeProfile {
@@ -161,7 +152,7 @@ export interface FlavorTaste {
 
 export interface DaySummary {
   soldOutItem?: string;
-  standVisits: import('./scene/dayScene').StandVisits[];
+  standVisits: StandVisits[];
   day: number;
   tempF: number;
   weather: WeatherCondition;
@@ -190,9 +181,8 @@ export interface DaySummary {
   copackerCasesSold: number;
   copackerNet: number;
 
-  // The day's totals
+  // The day's totals (the friends' wages are the only cost the day itself has)
   totalRevenue: number;
-  totalExpenses: number;
   netProfit: number;
 
   recipeQuality: number;
@@ -203,11 +193,8 @@ export interface DaySummary {
   houseOpened: boolean;         // the My House column opened at the end of today
   trophyWon: string | null;     // the money trophy won today (src/data/trophies.ts)
   flavorTaste?: FlavorTaste | null;   // the Flavor Lab's tasting today (Stage 5)
-  // Stand upgrades.
-  iceMadeByMachine: number;     // cubes the ice machine made today
   upgradeSavings: number;       // free ice used and lemons the fridge kept, at store prices
-  storageShort: '' | 'ice' | 'lemons';   // sold out because the stand could not hold more
-  soldOut: boolean;             // some stand ran out before every customer got a cup
+  soldOut: boolean;            // some stand ran out before every customer got a cup
   reviews: CustomerReview[];
   notes: string[];
 }
@@ -235,18 +222,16 @@ export interface GoldenRecipe {
 
 export interface GameState {
   phase: GamePhase;
-  elapsedSec: number;
   day: number;
   tempF: number;
   weather: WeatherCondition;
-  seasonInfo?: SeasonInfo;
   reputation: number;        // [0.1, 1.0] what neighbors say about the lemonade
   buzz: number;              // [0, 1] share of the neighborhood that knows the stand exists
   choresToday: number;       // chores done since the day started; each makes the next rest longer
+  // How good the recipe has tasted: the best day, and recent days (an EWMA). A tasty recipe
+  // opens the second stand (src/data/projects.ts).
   bestRecipeQuality: number;
   avgRecipeQuality: number;
-  totalQualityDays: number;
-  totalQualitySum: number;
   gameWon: boolean;      // Citrus Cay was bought
   endingSeen: boolean;   // the Citrus Cay ending was shown (it plays once; then the game goes on)
 
@@ -284,8 +269,7 @@ export interface GameState {
     hasMiniFridge: boolean;
     hasClubCard: boolean;
     hasCommercialLabeler: boolean;
-    hasAutoIce: boolean;
-    autoIceEnabled: boolean;
+    hasAutoIce: boolean;         // the ice machine: makes the ice and picks how much per cup
     // Helpers that take over the small daily jobs (src/data/projects.ts, engine.runHelpers).
     hasSupplyTruck: boolean;     // buys each morning's supplies
     hasStandCaptain: boolean;    // runs the stands: the price, who works, hiring
@@ -320,6 +304,4 @@ export interface GameState {
   ledger?: MoneyLedger;         // today so far
   lastLedger?: MoneyLedger;     // the last finished day
   upgradeSavingsTotal: number;  // everything the stand upgrades have saved, all game
-  grossProfitTotal: number;     // sales minus supplies, wages and bottles, all game
-  logs: string[];
 }

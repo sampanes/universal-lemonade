@@ -21,7 +21,7 @@ export interface ReviewGenerationParams {
 
 // What one customer says about the taste. dL / dS = lemons / sugar minus golden (+ = too many);
 // streak = golden open days in a row, counting today.
-export function tasteReview(dL: number, dS: number, streak: number, justLocked: boolean, rand: () => number): CustomerReview {
+function tasteReview(dL: number, dS: number, streak: number, justLocked: boolean, rand: () => number): CustomerReview {
   // Face: watery when both are short, sour when it leans lemony (more lemon or less sugar,
   // which also covers "super strong"), sweet otherwise, happy at golden.
   const face: CustomerReview['face'] =
@@ -131,7 +131,7 @@ export function generateDailyReviews(params: ReviewGenerationParams): CustomerRe
     // Once the recipe is locked the kid already knows it is golden: no more taste comments
     // (the lock day itself still gets its announcement).
     if (!s.recipeLocked || params.recipeJustLocked) {
-      reviews.push(tasteReview(dL, dS, s.goldenStreak ?? 0, !!params.recipeJustLocked, rand));
+      reviews.push(tasteReview(dL, dS, s.goldenStreak, !!params.recipeJustLocked, rand));
     }
 
     if (idealI - I >= 2) {

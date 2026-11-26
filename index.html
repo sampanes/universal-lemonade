@@ -16,7 +16,7 @@
 <body>
   <div class="header-bar">
     <div class="header-brand-wrap">
-      <div class="header-title" id="header-title" style="cursor: pointer;" title="Triple-click to toggle Dad Mode"><img src="./sprites/lemon.png" class="header-title-lemon" alt="" /> UNIVERSAL LEMONADE</div>
+      <div class="header-title"><img src="./sprites/lemon.png" class="header-title-lemon" alt="" /> UNIVERSAL LEMONADE</div>
     </div>
 
     <!-- COMPACT HEADER CASH COUNTER, with the player's kid beside it (tap: the mirror) -->
@@ -36,141 +36,43 @@
     </div>
 
     <div class="header-controls">
-      <span id="dad-seed-info" class="dad-test-only dad-seed-info" title="Replay this exact game by adding ?seed=NUMBER to the address"></span>
-      <button id="btn-dad-toggle" class="dad-pill">DAD MODE: ON</button>
-      <button id="btn-speed-1" class="dad-test-only">1x</button>
-      <button id="btn-speed-10" class="dad-test-only">10x</button>
-      <button id="btn-speed-50" class="dad-test-only">50x</button>
-      <button id="btn-autoday" class="dad-test-only">Auto-Day: OFF</button>
-      <select id="dad-jump" class="dad-test-only dad-jump" title="Skip ahead to a later stage (this game only; Reset starts over)">
-        <option value="">Jump to...</option>
-        <option value="2">Stage 2: Franchise</option>
-        <option value="3">Stage 3: Bottling</option>
-        <option value="4">Stage 4: Patent</option>
-        <option value="5">Stage 5: Beverage Co.</option>
-      </select>
-      <button id="btn-reset" style="border-color:#e11d48; color:#f87171;">Reset</button>
+      <button type="button" id="btn-reset" class="reset-btn">Reset</button>
     </div>
   </div>
 
   <div class="grid">
-    <!-- COLUMN 1: WEATHER & RECIPE MIXING -->
+    <!-- COLUMN 1: THE WEATHER, THE RECIPE, THE STAND SHOP, THE FRIENDS' STANDS -->
     <div class="panel">
-      <h3 class="panel-exec-heading">1. Executive Office</h3>
-
-      <!-- STEP 1: UNIFIED WEATHER WINDOW (Check weather first!) -->
-      <div class="weather-card" id="unified-weather-card">
+      <!-- THE WEATHER CARD (check the weather first!), src/ui/morningPrep.js -->
+      <div class="weather-card">
         <div class="weather-panel-inner">
           <div class="weather-art-slot">
             <img id="weather-sun-sprite" src="./sprites/morning_prep/sun_happy.png" class="weather-sun floating-bob-1" alt="Sunny" />
-            <div id="weather-cloud-rain-wrap" class="weather-cloud-rain" style="display:none;">
+            <div id="weather-cloud-rain-wrap" class="weather-cloud-rain" hidden>
               <img src="./sprites/morning_prep/cloud_puff.png" class="weather-cloud floating-bob-2" alt="Cloud" />
-              <img id="weather-rain-sprite" src="./sprites/morning_prep/rain_drops.png" class="weather-rain" alt="Rain" style="display:none;" />
+              <img id="weather-rain-sprite" src="./sprites/morning_prep/rain_drops.png" class="weather-rain" alt="Rain" hidden />
             </div>
           </div>
           <div class="weather-details">
             <div class="weather-top-row">
-              <span id="weather-condition-label" class="weather-bold-cond" data-heat="warm"><span id="weather-temperature" class="weather-temp">89&#xB0;F</span> <span id="weather-condition">SUNNY</span></span>
-              <span id="weather-season-badge" class="weather-season-pill">&#x1F338; Spring &#xB7; Day 1 of 5</span>
+              <span id="weather-condition-label" class="weather-bold-cond"><span id="weather-temperature" class="weather-temp"></span> <span id="weather-condition"></span></span>
+              <span id="weather-season-badge" class="weather-season-pill"></span>
             </div>
             <div class="weather-mid-row">
-              <span class="weather-crowd-meter" id="weather-crowd-meter" data-level="2" title="How busy today looks. Glowing cups: neighbors who know your stand." aria-label="How busy today looks">
+              <span class="weather-crowd-meter" id="weather-crowd-meter" title="How busy today looks. Glowing cups: neighbors who know your stand." aria-label="How busy today looks">
                 <img src="./sprites/lemonade_cup.png" alt="" /><img src="./sprites/lemonade_cup.png" alt="" /><img src="./sprites/lemonade_cup.png" alt="" /><img src="./sprites/lemonade_cup.png" alt="" />
               </span>
-              <span class="weather-ice-hint" id="weather-ice-hint" data-mood="more"><img src="./sprites/ice_cubes.png" class="weather-ice-icon" alt="" /> <span id="weather-ice-hint-text">More ice</span></span>
+              <span class="weather-ice-hint" id="weather-ice-hint"><img src="./sprites/ice_cubes.png" class="weather-ice-icon" alt="" /> <span id="weather-ice-hint-text"></span></span>
             </div>
-            <div class="weather-tip-row" id="weather-tip-row">
+            <div class="weather-tip-row">
               <img src="./sprites/morning_prep/mascot_lemon_head.png" alt="Tip" class="weather-tip-lemon" />
-              <span id="mascot-bubble-phrase">A mild spring day! A small batch should be great!</span>
-              <span id="mascot-bubble-sub" style="display:none;">Driveway stand</span>
+              <span id="mascot-bubble-phrase"></span>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- MONEY BOX: CAT CASH COUNTER, STATS & CHORES (FOLDABLE) -->
-      <div class="bank-card foldable-card" id="bank-card">
-        <div class="ratio-banner">
-          <img src="./sprites/kawaii_cat/sparkle_small.png" class="ribbon-sparkle" alt="" />
-          <span>MY MONEY BOX</span>
-          <img src="./sprites/kawaii_cat/sparkle_small.png" class="ribbon-sparkle" alt="" />
-        </div>
-        <div class="bank-body">
-          <img src="./sprites/kawaii_cat/cloud_big.png" class="bank-cloud bank-cloud-a" alt="" />
-          <img src="./sprites/kawaii_cat/cloud_small.png" class="bank-cloud bank-cloud-b" alt="" />
-          <img src="./sprites/kawaii_cat/sparkle_big.png" class="bank-twinkle bank-twinkle-a" alt="" />
-          <img src="./sprites/kawaii_cat/sparkle_small.png" class="bank-twinkle bank-twinkle-b" alt="" />
-
-          <div class="bank-stage-pill" id="bank-stage">Stage 1: Driveway Stand</div>
-
-          <div class="bank-counter">
-            <div class="bank-counter-inner">
-              <!-- Cat mood 0..4 (calm .. cheering); all five stay loaded so swaps never flicker -->
-              <div class="bank-cat" id="bank-cat">
-                <img src="./sprites/kawaii_cat/cat0.png" style="--w:184" alt="" />
-                <img src="./sprites/kawaii_cat/cat1.png" style="--w:182" class="on" alt="" />
-                <img src="./sprites/kawaii_cat/cat2.png" style="--w:183" alt="" />
-                <img src="./sprites/kawaii_cat/cat3.png" style="--w:185" alt="" />
-                <img src="./sprites/kawaii_cat/cat4.png" style="--w:217" alt="" />
-              </div>
-              <div class="bank-pill">
-                <span class="bank-coin" aria-hidden="true">$</span>
-                <div class="sprite-num" id="bank-cash" role="img" aria-label="60.00 dollars"></div>
-              </div>
-              <div class="bank-floaters" id="bank-floaters" aria-hidden="true"></div>
-            </div>
-          </div>
-          <div class="bank-caption-wrap">
-            <span class="bank-caption">Cash you can spend</span>
-            <button type="button" class="fold-pill-btn" id="btn-toggle-bank-stats" aria-expanded="false" title="Click to view total earned, ratings & stats">
-              <span id="bank-toggle-text">Stats & Ratings</span>
-              <span class="fold-arrow" id="bank-toggle-arrow">&#x25BE;</span>
-            </button>
-          </div>
-
-          <!-- Chores: Emergency bankruptcy recovery & quick cash (ALWAYS VISIBLE!) -->
-          <div class="chore-wrap" id="bank-chore-wrap">
-            <div class="chore-title">Need cash fast? Do a chore!</div>
-            <button id="btn-chore" class="chore-btn">
-              <span class="chore-fill" id="chore-fill"></span>
-              <span class="chore-name" id="chore-name">Chore</span>
-              <span class="chore-reward" id="chore-reward">+$0.00</span>
-            </button>
-          </div>
-
-          <div class="foldable-drawer" id="bank-stats-drawer">
-            <div class="bank-stats">
-              <div class="bank-chip">
-                <span class="bank-chip-label">Drinks sold</span>
-                <span class="bank-chip-value fit-text" id="bank-units">0</span>
-              </div>
-              <div class="bank-chip">
-                <span class="bank-chip-label">Total earned</span>
-                <span class="bank-chip-value fit-text" id="bank-revenue">$0.00</span>
-              </div>
-              <div class="bank-chip">
-                <span class="bank-chip-label">Reputation</span>
-                <span class="bank-chip-value">
-                  <span class="star-meter" id="bank-rep-stars" title="Neighborhood reputation">
-                    <span class="star-meter-row dim"><img src="./sprites/kawaii_cat/star_small.png" alt="" /><img src="./sprites/kawaii_cat/star_small.png" alt="" /><img src="./sprites/kawaii_cat/star_small.png" alt="" /><img src="./sprites/kawaii_cat/star_small.png" alt="" /><img src="./sprites/kawaii_cat/star_small.png" alt="" /></span>
-                    <span class="star-meter-row lit" id="bank-rep-lit" style="width:50%"><img src="./sprites/kawaii_cat/star_small.png" alt="" /><img src="./sprites/kawaii_cat/star_small.png" alt="" /><img src="./sprites/kawaii_cat/star_small.png" alt="" /><img src="./sprites/kawaii_cat/star_small.png" alt="" /><img src="./sprites/kawaii_cat/star_small.png" alt="" /></span>
-                  </span>
-                  <span id="bank-rep">50%</span>
-                </span>
-              </div>
-              <div class="bank-chip">
-                <span class="bank-chip-label">Recipe rating</span>
-                <span class="bank-chip-value">
-                  <span id="bank-quality">62%</span>
-                  <span class="bank-chip-sub" id="bank-quality-avg">avg 62%</span>
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- RECIPE RATIO WORKBENCH CARD -->
+      <!-- THE RECIPE CARD, src/ui/recipeCard.js -->
       <div class="ratio-card" id="ratio-card">
         <div class="ratio-banner">
           <img src="./sprites/lemon.png" class="ribbon-sparkle" alt="" />
@@ -223,28 +125,24 @@
             </div>
 
             <!-- PRICE ROW (the Stand Captain picks the price once hired) -->
-            <div class="ratio-row ratio-row-price" style="margin-top: 6px; background: rgba(254, 240, 138, 0.6); border-color: #facc15;">
-              <span class="price-label" style="font-weight:bold; font-size:12px; color:#713f12; margin-left:4px;">Price:</span>
-              <button id="btn-price-down" class="ratio-btn" title="Decrease Price" style="width:28px; height:28px;">
+            <div class="ratio-row ratio-row-price">
+              <span class="price-label">Price:</span>
+              <button id="btn-price-down" class="ratio-btn" title="Decrease Price">
                 <img src="./sprites/btn_minus.png" alt="-" />
               </button>
-              <div class="ratio-pill" style="min-width:44px; border-color:#eab308; color:#713f12; font-size:13px;">
-                $<span id="lbl-price">2.00</span>
+              <div class="ratio-pill price-pill">
+                $<span id="lbl-price"></span>
               </div>
-              <button id="btn-price-up" class="ratio-btn" title="Increase Price" style="width:28px; height:28px;">
+              <button id="btn-price-up" class="ratio-btn" title="Increase Price">
                 <img src="./sprites/btn_plus.png" alt="+" />
               </button>
             </div>
-
-            <div id="autoice-container" style="margin-top: 4px; text-align: center;">
-              <button id="btn-autoice" class="autoice-btn" style="display:none;" title="Match ice to the weather automatically each day">Auto ice: OFF</button>
-            </div>
           </div>
 
-          <!-- RIGHT COLUMN: THE DYNAMIC PITCHER -->
-          <div class="pitcher-col" style="text-align: center;">
-            <div class="pitcher-container" style="position: relative; width: 100%; max-width: 170px; height: 170px; margin: 0 auto;">
-              <svg viewBox="0 0 1024 1024" style="width: 100%; height: 100%; position: absolute; top:0; left:0; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.12));">
+          <!-- RIGHT COLUMN: THE PITCHER, filled to match the recipe -->
+          <div class="pitcher-col">
+            <div class="pitcher-container">
+              <svg class="pitcher-svg" viewBox="0 0 1024 1024">
                 <defs>
                   <clipPath id="pitcher-belly-clip">
                     <path d="M 254,320 L 251,336 L 247,352 L 242,368 L 235,384 L 227,400 L 218,416 L 208,432 L 199,448 L 189,464 L 181,480 L 173,496 L 165,512 L 160,528 L 160,544 L 160,560 L 160,576 L 160,592 L 160,608 L 160,624 L 160,640 L 160,656 L 160,672 L 160,688 L 160,704 L 160,720 L 160,736 L 160,752 L 164,768 L 172,784 L 182,800 L 194,816 L 208,832 L 224,848 L 226,864 L 693,864 L 700,848 L 717,832 L 730,816 L 741,800 L 749,784 L 757,768 L 763,752 L 768,736 L 769,720 L 769,704 L 769,688 L 769,672 L 769,656 L 769,640 L 769,624 L 769,608 L 769,592 L 769,576 L 769,560 L 769,544 L 765,528 L 759,512 L 753,496 L 745,480 L 737,464 L 728,448 L 719,432 L 709,416 L 700,400 L 692,384 L 699,368 L 708,352 L 723,336 L 751,320 Z" />
@@ -273,16 +171,16 @@
             </div>
 
             <!-- What a customer said about the taste yesterday (no score on screen) -->
-            <div id="recipe-taste-bubble" class="recipe-taste-bubble" data-mood="none">
-              <img id="recipe-taste-face" class="recipe-taste-face" src="./sprites/faces/taste_happy.png" alt="" />
-              <span id="recipe-taste-text">Open the stand to hear what neighbors think!</span>
+            <div id="recipe-taste-bubble" class="recipe-taste-bubble">
+              <img id="recipe-taste-face" class="recipe-taste-face" alt="" hidden />
+              <span id="recipe-taste-text"></span>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- FRIENDS' STANDS (Stage 2): hire a friend, then tap a hired friend to give them the
-           day off (no sales, no pay). Filled by renderFriends(). -->
+      <!-- THE FRIENDS' STANDS (Stage 2), then tabs for the stores, the invention, the factory
+           and the brand: src/ui/partners.js -->
       <div class="friends-card" id="friends-card" hidden>
         <div class="friends-title" id="friends-title">My friends' stands</div>
         <div class="friends-tabs" id="friends-tabs" hidden>
@@ -295,124 +193,33 @@
         <div class="friends-row" id="friends-row"></div>
       </div>
 
-      <!-- KID STAND SHOP: one upgrade at a time (first a pick between the ice machine and the
-           mini-fridge, then the other one, the second stand, then Stage 2 upgrades). Filled by
-           renderStandShop(); the pick goes in #stand-shop-choice. -->
+      <!-- THE STAND SHOP: one upgrade at a time (first a pick between the ice machine and the
+           mini-fridge, in #stand-shop-choice): src/ui/standShop.js -->
       <div class="stand-shop" id="stand-shop" hidden>
         <div class="stand-shop-choice" id="stand-shop-choice"></div>
-        <img class="stand-shop-pic" id="stand-shop-pic" src="./sprites/shop/ice_dispenser.png" alt="" />
+        <img class="stand-shop-pic" id="stand-shop-pic" alt="" />
         <div class="stand-shop-info">
-          <div class="stand-shop-title"><span class="stand-shop-tag">SHOP</span><span id="stand-shop-name">Ice Machine</span></div>
+          <div class="stand-shop-title"><span class="stand-shop-tag">SHOP</span><span id="stand-shop-name"></span></div>
           <div class="stand-shop-desc" id="stand-shop-desc"></div>
           <div class="stand-shop-save" id="stand-shop-save">
             <div class="stand-shop-bar"><span id="stand-shop-fill"></span></div>
             <span id="stand-shop-save-text"></span>
           </div>
         </div>
-        <button class="stand-shop-buy" id="btn-stand-shop-buy">$125</button>
+        <button type="button" class="stand-shop-buy" id="btn-stand-shop-buy"></button>
       </div>
     </div>
 
-    <!-- COLUMN 2: PANTRY & OPEN FOR BUSINESS -->
+    <!-- COLUMN 2: MORNING PREP, THE FLAVOR LAB, OPEN FOR BUSINESS -->
     <div class="panel">
-      <h3 id="panel2-title" class="panel-exec-heading">&#x1F34B; 2. Operations & Expansion</h3>
-
-      <!-- 3. MORNING PREP & SUPPLIES STAND -->
+      <!-- MORNING PREP: the supplies (built by src/ui/morningPrep.js), the Supply Truck, chores -->
       <div class="prep-stand-card stand-frame">
         <div class="stand-ribbon"><span class="stand-ribbon-title">MORNING PREP</span></div>
         <div class="stand-frame-inner">
         <div class="stand-awning"></div>
 
         <div class="prep-stand-body">
-          <!-- Multiplier Packs Bar -->
-          <div class="prep-mult-bar">
-            <span class="prep-mult-label">Packs per tap:</span>
-            <div id="pack-mult-controls" class="prep-mult-pills">
-              <button id="btn-mult-1" class="step-btn active" title="Buy 1 pack per tap"><img src="./sprites/kawaii_cat/step1.png" alt="+1" /></button>
-              <button id="btn-mult-10" class="step-btn" title="Buy 10 packs per tap"><img src="./sprites/kawaii_cat/step10.png" alt="+10" /></button>
-              <button id="btn-mult-100" class="step-btn" title="Buy 100 packs per tap"><img src="./sprites/kawaii_cat/step100.png" alt="+100" /></button>
-            </div>
-          </div>
-
-          <!-- Supplies Pantry Grid -->
-          <div class="prep-items-grid">
-            <!-- LEMONS -->
-            <div class="supply-item-box" id="box-lemons">
-              <div class="supply-item-header">
-                <img src="./sprites/lemon.png" class="supply-item-icon" alt="Lemons" />
-                <div class="supply-item-meta">
-                  <span class="supply-item-title">Lemons</span>
-                  <div class="supply-stock-row">
-                    <div class="inv-number-pill" id="lbl-inv-lemons">24</div>
-                    <span class="supply-alert" id="alert-lemons" style="display:none;" title="Stock is low!">&#x26A0;&#xFE0F;</span>
-                  </div>
-                </div>
-              </div>
-              <button id="btn-buy-lemons" class="kawaii-buy-btn">+24 ($8.00)</button>
-            </div>
-
-            <!-- SUGAR -->
-            <div class="supply-item-box" id="box-sugar">
-              <div class="supply-item-header">
-                <img src="./sprites/sugar_scoop.png" class="supply-item-icon" alt="Sugar" />
-                <div class="supply-item-meta">
-                  <span class="supply-item-title">Sugar</span>
-                  <div class="supply-stock-row">
-                    <div class="inv-number-pill" id="lbl-inv-sugar">20</div>
-                    <span class="supply-alert" id="alert-sugar" style="display:none;" title="Stock is low!">&#x26A0;&#xFE0F;</span>
-                  </div>
-                </div>
-              </div>
-              <button id="btn-buy-sugar" class="kawaii-buy-btn">+20 ($6.00)</button>
-            </div>
-
-            <!-- ICE -->
-            <div class="supply-item-box" id="box-ice">
-              <div class="supply-item-header">
-                <img src="./sprites/ice_cubes.png" class="supply-item-icon" alt="Ice" />
-                <div class="supply-item-meta">
-                  <span class="supply-item-title">Ice Cubes</span>
-                  <div class="supply-stock-row">
-                    <div class="inv-number-pill" id="lbl-inv-ice">200</div>
-                    <span class="supply-alert" id="alert-ice" style="display:none;" title="Stock is low!">&#x26A0;&#xFE0F;</span>
-                  </div>
-                </div>
-              </div>
-              <button id="btn-buy-ice" class="kawaii-buy-btn">+200 ($4.00)</button>
-            </div>
-
-            <!-- CUPS -->
-            <div class="supply-item-box" id="box-cups">
-              <div class="supply-item-header">
-                <img src="./sprites/lemonade_cup.png" class="supply-item-icon" alt="Cups" />
-                <div class="supply-item-meta">
-                  <span class="supply-item-title">Cups</span>
-                  <div class="supply-stock-row">
-                    <div class="inv-number-pill" id="lbl-inv-cups">50</div>
-                    <span class="supply-alert" id="alert-cups" style="display:none;" title="Stock is low!">&#x26A0;&#xFE0F;</span>
-                  </div>
-                </div>
-              </div>
-              <button id="btn-buy-cups" class="kawaii-buy-btn">+50 ($4.00)</button>
-            </div>
-
-            <!-- BOTTLES (Phase 3+) -->
-            <!-- 1 / -1 spans every column; "span 2" forced a second column into the 1-column phone grid -->
-            <!-- Once the ice machine is in, the ice box hides and bottles take its place. -->
-            <div class="supply-item-box" id="box-bottles" style="grid-column: 1 / -1; display:none;">
-              <div class="supply-item-header">
-                <img src="./sprites/shop/bottles.png" class="supply-item-icon" alt="Bottles" />
-                <div class="supply-item-meta">
-                  <span class="supply-item-title">Bottles</span>
-                  <div class="supply-stock-row">
-                    <div class="inv-number-pill" id="lbl-inv-bottles">0</div>
-                    <span class="supply-alert" id="alert-bottles" style="display:none;" title="Stock is low!">&#x26A0;&#xFE0F;</span>
-                  </div>
-                </div>
-              </div>
-              <button id="btn-buy-bottles" class="kawaii-buy-btn">+25 ($10.00)</button>
-            </div>
-          </div>
+          <div class="prep-items-grid" id="prep-items-grid"></div>
 
           <!-- SUPPLY TRUCK (a Stage 4 helper, engine.runHelpers): it does the shopping every
                morning, so this one tile takes the place of the supply tiles. -->
@@ -425,16 +232,16 @@
             </div>
           </div>
 
-          <!-- KID MODE CHORE TILE: always there (chores are how a kid catches up after a slow
-               day); it sits inside the stand like the supply tiles, and turns yellow and pulses
-               when cash is under $5. Dad Mode uses the money box instead. -->
-          <div class="supply-item-box emergency-chore-pill" id="emergency-chore-banner">
+          <!-- THE CHORE TILE: always there (chores are how a kid catches up after a slow day);
+               it sits inside the stand like the supply tiles, and turns yellow and pulses when
+               cash is under $5. -->
+          <div class="supply-item-box chore-tile">
             <img src="./sprites/morning_prep/coin_jar.png" class="supply-item-icon" alt="" />
-            <span id="emergency-chore-text" class="supply-item-title emergency-chore-text">Need cash?</span>
-            <button id="btn-chore-emergency" class="chore-btn">
-              <span class="chore-fill" id="chore-fill-em"></span>
-              <span class="chore-name" id="chore-name-em">Chore</span>
-              <span class="chore-reward" id="chore-reward-em">+$0.00</span>
+            <span id="chore-tile-text" class="supply-item-title chore-tile-text"></span>
+            <button type="button" id="btn-chore" class="chore-btn">
+              <span class="chore-fill" id="chore-fill"></span>
+              <span class="chore-name" id="chore-name"></span>
+              <span class="chore-reward" id="chore-reward"></span>
             </button>
           </div>
         </div>
@@ -443,84 +250,68 @@
         </div>
       </div>
 
-      <!-- FLAVOR LAB (Stage 5, src/data/flavors.ts): the fruit and sugar for the factory's next
-           flavor; the taste testers try it when the stand opens. Filled by renderFlavorLab(). -->
+      <!-- THE FLAVOR LAB (Stage 5): the fruit and sugar for the factory's next flavor; the
+           taste testers try it when the stand opens. src/ui/flavorLab.js -->
       <div class="ratio-card flavor-lab" id="flavor-lab" hidden>
         <div class="ratio-banner"><span>FLAVOR LAB</span></div>
         <div class="ratio-body flavor-lab-body">
           <div class="flavor-lab-controls">
             <div class="flavor-lab-name" id="flavor-lab-name"></div>
             <div class="ratio-row">
-              <img id="flavor-fruit-icon" src="./sprites/flavors/strawberry.png" class="ratio-icon" alt="Strawberries" />
+              <img id="flavor-fruit-icon" class="ratio-icon" alt="" />
               <button type="button" id="btn-fruit-down" class="ratio-btn" title="Less fruit"><img src="./sprites/btn_minus.png" alt="-" /></button>
-              <div class="ratio-pill" id="lbl-fruit">3</div>
+              <div class="ratio-pill" id="lbl-fruit"></div>
               <button type="button" id="btn-fruit-up" class="ratio-btn" title="More fruit"><img src="./sprites/btn_plus.png" alt="+" /></button>
             </div>
             <div class="ratio-row">
               <img src="./sprites/sugar_scoop.png" class="ratio-icon" alt="Sugar" />
               <button type="button" id="btn-fsugar-down" class="ratio-btn" title="Less sugar"><img src="./sprites/btn_minus.png" alt="-" /></button>
-              <div class="ratio-pill" id="lbl-fsugar">3</div>
+              <div class="ratio-pill" id="lbl-fsugar"></div>
               <button type="button" id="btn-fsugar-up" class="ratio-btn" title="More sugar"><img src="./sprites/btn_plus.png" alt="+" /></button>
             </div>
           </div>
           <div class="flavor-lab-side">
-            <div class="flavor-glass" id="flavor-glass">
+            <div class="flavor-glass">
               <div class="flavor-glass-liquid"></div>
-              <img class="flavor-glass-fruit" src="./sprites/flavors/strawberry.png" alt="" />
-              <img class="flavor-glass-fruit two" src="./sprites/flavors/strawberry.png" alt="" />
+              <img class="flavor-glass-fruit" alt="" />
+              <img class="flavor-glass-fruit two" alt="" />
             </div>
             <div class="flavor-lab-progress" id="flavor-lab-progress"></div>
           </div>
-          <div class="recipe-taste-bubble flavor-lab-bubble" id="flavor-lab-bubble" data-mood="none">
-            <img id="flavor-lab-face" class="recipe-taste-face" src="./sprites/faces/taste_happy.png" alt="" />
+          <div class="recipe-taste-bubble flavor-lab-bubble" id="flavor-lab-bubble">
+            <img id="flavor-lab-face" class="recipe-taste-face" alt="" hidden />
             <span id="flavor-lab-say"></span>
           </div>
         </div>
       </div>
 
-      <!-- 4. BIG ACTION BUTTON: OPEN FOR BUSINESS -->
-      <button id="btn-run-day" class="kawaii-run-day-btn">
+      <!-- THE BIG BUTTON: OPEN FOR BUSINESS -->
+      <button type="button" id="btn-run-day" class="kawaii-run-day-btn">
         <img src="./sprites/morning_prep/sparkle_small.png" class="btn-sparkle floating-bob-1" alt="" />
         <img src="./sprites/morning_prep/sun_happy.png" class="btn-sun" alt="" />
-        <span id="btn-run-day-text">OPEN FOR BUSINESS! (Day 1)</span>
+        <span id="btn-run-day-text"></span>
         <img src="./sprites/morning_prep/sparkle_small.png" class="btn-sparkle floating-bob-2" alt="" />
       </button>
-
-      <div id="expansion-sections" style="margin-top: 10px;"></div>
-
     </div>
 
-    <!-- MY HOUSE (kid mode, once it opens: src/data/house.ts): the family house and its next
-         upgrade, and My Shelf under it (src/ui/shelf.js): everything bought so far. -->
+    <!-- MY HOUSE (once it opens: src/ui/house.js): the family house and its next upgrade, and
+         My Shelf under it (src/ui/shelf.js): everything bought so far. -->
     <div class="panel house-col" id="house-col" hidden>
       <div class="house-card" id="house-card"></div>
       <div class="shelf-card" id="shelf-card" hidden></div>
     </div>
-
-    <!-- COLUMN 3 (Dad Mode): the day's money, the Stand Shop in any order, the log -->
-    <div class="panel" id="panel-column-3">
-      <h3>3. Money & Stand Shop</h3>
-      <div id="readout-pnl"></div>
-
-      <div style="font-weight: bold; margin: 10px 0 4px 0;">Stand Shop (any order):</div>
-      <div id="project-list"></div>
-
-      <div style="font-weight: bold; margin: 14px 0 4px 0;">Log:</div>
-      <div id="log-box" class="log"></div>
-    </div>
   </div>
 
-  <!-- MY HOUSE build scene (src/main.js playHouseScene) -->
+  <!-- The popup the house build scene and a yard thing arriving play in (src/ui/house.js) -->
   <div class="house-scene" id="house-scene" hidden role="dialog" aria-modal="true" aria-labelledby="house-scene-title"></div>
 
-  <!-- MY SHELF, all of it (src/main.js openShelfRoom) -->
+  <!-- MY SHELF, all of it (src/ui/shelf.js) -->
   <div class="shelf-room" id="shelf-room" hidden role="dialog" aria-modal="true" aria-labelledby="shelf-room-title"></div>
 
-  <!-- THE ENDING: Citrus Cay, the last dream in the Stand Shop. Plays once (state.endingSeen),
-       then the game goes on. Filled by showEnding() in src/main.js. -->
+  <!-- THE ENDING: Citrus Cay, the last dream in the Stand Shop (src/ui/ending.js) -->
   <div class="house-scene ending-scene" id="ending-scene" hidden role="dialog" aria-modal="true" aria-labelledby="ending-title"></div>
 
-  <!-- DAY REPORT CELEBRATION MODAL (Morphs/Docks to Column 3) -->
+  <!-- THE DAY REPORT (src/ui/reportModal.js) -->
   <div id="report-modal-backdrop" class="report-modal-backdrop" aria-hidden="true">
     <div class="report-modal-dialog" id="report-modal-dialog">
       <button type="button" id="btn-report-modal-x" class="report-modal-close-x" aria-label="Close report">&times;</button>

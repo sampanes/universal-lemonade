@@ -82,7 +82,6 @@ test('rating remembers a little more history and persists its trend', () => {
   assert.ok(sim.nextReputation(e.state, 1, e.balance, true) <= 0.97 + 1e-9,
     'excessive pricing still lowers reputation');
   e.state.avgRecipeQuality = 0.5;
-  e.state.totalQualityDays = 1;
   const day = e.runDay();
   assert.ok(Math.abs(e.state.avgRecipeQuality - (0.5 * 0.7 + day.recipeQuality * 0.3)) < 1e-9,
     'recipe quality keeps its previous smoothing');
@@ -143,7 +142,7 @@ test('limited sales never exceed demand or the available cups', () => {
       }
     }
   const e = new LemonadeEngine({ seed: 1 });
-  e.dadJumpToPhase(2);
+  sim.jumpToPhase(e, 2);
   Object.values(e.franchiseStands).forEach(st => { st.hired = true; });
   Object.assign(e.state, { buzz: 0.7, reputation: 0.8, weather: 'RAINY', tempF: 45 });
   e.state.recipe.pricePerCup = 0.5; e.state.recipe.icePerCup = e.computeIdealIce();
@@ -159,7 +158,7 @@ test('limited sales never exceed demand or the available cups', () => {
 
 test('stock and team comments match what happened', () => {
   const e = new LemonadeEngine({ seed: 1 });
-  e.dadJumpToPhase(2);
+  sim.jumpToPhase(e, 2);
   Object.values(e.franchiseStands).forEach(st => { st.hired = true; });
   const params = { state: e.state, franchiseStands: e.franchiseStands, tempF: 70,
     pricePerCup: 1, fairPrice: 2, totalTraffic: 10, drivewayCupsSold: 2,
@@ -510,7 +509,8 @@ test('the ice machine makes the ice a day needs, free', () => {
   const sum = e.runDay();
   assert.ok(want > 0);
   assert.equal(sum.drivewayCupsSold, want, 'ice never runs out');
-  assert.ok(sum.iceMadeByMachine > 0 && sum.upgradeSavings > 0);
+  assert.ok(sum.upgradeSavings > 0);
+  assert.ok(sum.notes.some(n => /free ice cubes/.test(n)));
 });
 
 test('ice machine savings count only ice used in sold drinks', () => {
@@ -518,7 +518,7 @@ test('ice machine savings count only ice used in sold drinks', () => {
     const e = new LemonadeEngine({ seed: 3 });
     const s = e.state;
     s.buzz = 1; s.reputation = 1; s.tempF = 90; s.weather = 'SUNNY';
-    s.flags.hasAutoIce = true; s.flags.autoIceEnabled = true;
+    s.flags.hasAutoIce = true;
     s.recipe.lemonsPerPitcher = s.goldenRecipe.lemons;
     s.recipe.sugarPerPitcher = s.goldenRecipe.sugar;
     s.recipe.pricePerCup = 0.5;
@@ -526,15 +526,13 @@ test('ice machine savings count only ice used in sold drinks', () => {
     return e;
   };
   const empty = make(0), emptyDay = empty.runDay();
-  assert.ok(emptyDay.iceMadeByMachine > 0, 'machine prepared for demand');
   assert.equal(emptyDay.upgradeSavings, 0, 'unused ice does not count as money saved');
   assert.ok(!emptyDay.notes.some(n => /free ice cubes/.test(n)));
 
   const partial = make(5), idealIce = partial.computeIdealIce(), day = partial.runDay();
   const freeIceUsed = day.drivewayCupsSold * idealIce;
   const icePrice = partial.supplyPack('ice').cost / partial.supplyPack('ice').qty;
-  assert.equal(day.upgradeSavings, +(freeIceUsed * icePrice).toFixed(2));
-  assert.ok(day.iceMadeByMachine > freeIceUsed, 'forecast exceeded actual sales');
+  assert.equal(day.upgradeSavings, +(freeIceUsed * icePrice).toFixed(2), 'only the ice in sold drinks, though the machine made more');
 });
 
 test('a full ice bucket on a big day says the ice machine would help', () => {
@@ -547,7 +545,7 @@ test('a full ice bucket on a big day says the ice machine would help', () => {
   s.inv.ice = e.storageCap('ice'); s.inv.lemons = 48; s.inv.sugar = 200; s.inv.cups = 500;
   assert.ok(e.getKidDemandAdvice().fullItems.includes('ice'));
   const sum = e.runDay();
-  assert.equal(sum.storageShort, 'ice');
+  assert.equal(sum.soldOutItem, 'ice');
   assert.equal(sum.soldOut, true, 'a sold-out day is flagged (the kid makes the sold-out face)');
   assert.ok(sum.notes.some(n => n.includes('An ice machine makes all the ice')));
 });
@@ -641,20 +639,20 @@ test('always selling at 50 cents does worse than a fair price', () => {
     `cheap sales ${cheap.totalEarned.p50} vs fair ${fair.totalEarned.p50}`);
 });
 
-test('Dad Mode stage jump sets up a played-looking game for each stage', () => {
+test('the stage jump sets up a played-looking game for each stage', () => {
   const e = new LemonadeEngine({ seed: 99 });
   const owned = (id) => e.projects.find(p => p.id === id).purchased;
-  assert.equal(e.dadJumpToPhase(2), true);
+  assert.equal(sim.jumpToPhase(e, 2), true);
   assert.equal(e.state.phase, 2);
   assert.ok(owned('auto_ice_dispenser') && owned('fridge') && owned('franchise_license'));
   assert.equal(e.state.recipeLocked, true);
   assert.equal(e.state.recipe.lemonsPerPitcher, e.state.goldenRecipe.lemons);
   assert.ok(Object.values(e.franchiseStands).every(st => !st.hired), 'the target stage starts fresh');
   assert.equal(e.ledger.shop, 0, 'nothing charged');
-  assert.equal(e.dadJumpToPhase(2), false, 'no jumping to the stage you are in');
+  assert.equal(sim.jumpToPhase(e, 2), false, 'no jumping to the stage you are in');
 
   const f = new LemonadeEngine({ seed: 99 });
-  assert.equal(f.dadJumpToPhase(5), true);
+  assert.equal(sim.jumpToPhase(f, 5), true);
   assert.equal(f.state.phase, 5);
   assert.ok(Object.values(f.franchiseStands).every(st => st.hired));
   assert.ok(Object.values(f.wholesaleAccounts).every(w => w.active));
@@ -668,7 +666,7 @@ test('Dad Mode stage jump sets up a played-looking game for each stage', () => {
 test('a saved game loads back and plays on exactly the same', () => {
   const a = new LemonadeEngine({ seed: 777 });
   playFingerprint(a, 12);
-  a.dadJumpToPhase(3);
+  sim.jumpToPhase(a, 3);
   a.hireFranchiseStand('timmy');
   const json = JSON.stringify(a.toSave());
   const b = LemonadeEngine.fromSave(JSON.parse(json));
@@ -694,7 +692,7 @@ test('lifetime sales add business revenue across stages and survive saving', () 
     return s;
   };
   play();
-  e.dadJumpToPhase(5);
+  sim.jumpToPhase(e, 5);
   e.patent.licensed = true;
   e.copacker.active = true;
   Object.assign(e.state.inv, { lemons: 100000, sugar: 100000, ice: 100000, cups: 100000, bottles: 100000 });
@@ -713,34 +711,9 @@ test('lifetime sales add business revenue across stages and survive saving', () 
   assert.ok(Math.abs(loaded.state.totalRevenueEarned.toNumber() - (before + next.totalRevenue)) < 1e-6);
 });
 
-test('profit since Day 1 is sales minus supplies and pay; upgrades and hiring do not lower it', () => {
-  const e = new LemonadeEngine({ seed: 41 });
-  let expect = 0;
-  for (let i = 0; i < 25; i++) {
-    if (i === 12) {
-      e.dadJumpToPhase(2);
-      e.hireFranchiseStand('timmy');
-    }
-    if (i === 15) e.buyProject('club_card');
-    e.autoRestockForToday();
-    e.runDay();
-    const l = e.state.lastLedger;
-    expect += l.sales - Object.values(l.supplies).reduce((a, b) => a + b, 0) - l.wages;
-  }
-  assert.ok(Math.abs(e.state.grossProfitTotal - expect) < 1e-6);
-  assert.ok(e.state.grossProfitTotal > 0);
-  const before = e.state.grossProfitTotal;
-  e.state.cash = e.state.cash.add(1000);
-  e.buyProject('cargo_wagon');
-  e.hireFranchiseStand('leo');
-  assert.equal(e.state.grossProfitTotal, before);
-  const save = JSON.parse(JSON.stringify(e.toSave()));
-  assert.equal(LemonadeEngine.fromSave(save).state.grossProfitTotal, before);
-});
-
 test('store shelves cost money, grow orders, and survive save and load', () => {
   const e = new LemonadeEngine({ seed: 22 });
-  e.dadJumpToPhase(3);
+  sim.jumpToPhase(e, 3);
   e.state.cash = e.state.cash.add(10000);
   const store = e.wholesaleAccounts.bodega;
   assert.equal(e.upgradeWholesaleAccount(store.id), false, 'unsigned stores cannot be upgraded');
@@ -775,7 +748,7 @@ test('store shelves cost money, grow orders, and survive save and load', () => {
 
 test('invention counts actual bottle sales and saves progress', () => {
   const e = new LemonadeEngine({ seed: 23 });
-  e.dadJumpToPhase(3);
+  sim.jumpToPhase(e, 3);
   e.state.cash = e.state.cash.add(10000);
   const patent = e.projects.find(p => p.id === 'patent_filing');
   assert.equal(patent.unlocked(e.state), false);
@@ -798,7 +771,7 @@ test('invention counts actual bottle sales and saves progress', () => {
 
 test('the squeezer grows in four steps, each opened by lifetime squeezer sales', () => {
   const e = new LemonadeEngine({ seed: 71 });
-  e.dadJumpToPhase(4);
+  sim.jumpToPhase(e, 4);
   e.state.cash = e.state.cash.add(100000);
   assert.deepEqual([e.patent.level, e.patent.baseUnitsPerDay, e.patent.royaltyPerUnit], [1, 50, 2.5]);
   assert.equal(e.buyProject('squeezer_tv'), false, 'needs 300 squeezers sold');
@@ -825,18 +798,18 @@ test('the squeezer grows in four steps, each opened by lifetime squeezer sales',
 
 test('kid shop offers the helpers in Stage 4, opens the factory after worldwide licensing and grows it in order across saves', () => {
   let e = new LemonadeEngine({ seed: 72 });
-  e.dadJumpToPhase(4);
+  sim.jumpToPhase(e, 4);
   e.state.cash = e.state.cash.add(100000000);
   for (const id of ['supply_truck', 'stand_captain']) {
-    assert.equal(sim.kidShopNext(e, e.state).item.id, id);
+    assert.equal(sim.nextShopOffer(e).item.id, id);
     assert.ok(e.buyProject(id));
-    assert.equal(sim.kidShopNext(e, e.state), null, 'shop waits after a purchase');
+    assert.equal(sim.nextShopOffer(e), null, 'shop waits after a purchase');
     e.state.day += 2;
   }
-  assert.equal(sim.kidShopNext(e, e.state), null, 'factory waits for worldwide licensing');
+  assert.equal(sim.nextShopOffer(e), null, 'factory waits for worldwide licensing');
   e.state.totalSqueezersSold = 8000;
   assert.ok(e.buyProject('global_licensing'));
-  assert.equal(sim.kidShopNext(e, e.state), null, 'shop waits after a purchase');
+  assert.equal(sim.nextShopOffer(e), null, 'shop waits after a purchase');
   e.state.day += 2;
   const stages = [
     ['copacker_deal', 40], ['regional_supermarkets', 300], ['delivery_route', 300], ['automated_canning_line', 1500], ['flavor_lab', 1500],
@@ -844,10 +817,10 @@ test('kid shop offers the helpers in Stage 4, opens the factory after worldwide 
     ['qsr_fountain_licensing', 100000], ['global_beverage_jv', 350000],
   ];
   for (const [id, cases] of stages) {
-    assert.equal(sim.kidShopNext(e, e.state).item.id, id);
+    assert.equal(sim.nextShopOffer(e).item.id, id);
     assert.ok(e.buyProject(id));
     assert.equal(e.copacker.casesPerDay, cases);
-    assert.equal(sim.kidShopNext(e, e.state), null);
+    assert.equal(sim.nextShopOffer(e), null);
     e.state.day += 2;
     e = LemonadeEngine.fromSave(JSON.parse(JSON.stringify(e.toSave())));
     assert.equal(e.copacker.casesPerDay, cases);
@@ -859,24 +832,24 @@ test('kid shop offers the helpers in Stage 4, opens the factory after worldwide 
 
 test('after the factory the Stand Shop offers the big dreams, and the island is the ending', () => {
   const e = new LemonadeEngine({ seed: 79 });
-  e.dadJumpToPhase(5);
+  sim.jumpToPhase(e, 5);
   e.state.cash = e.state.cash.add(5e9);
   const dreams = ['private_jet', 'arena_naming', 'private_island'];
   for (const p of e.projects.filter(p => p.phase === 5 && !dreams.includes(p.id))) { p.purchased = true; }
   e.state.day += 2;
   for (const id of dreams) {
-    const next = sim.kidShopNext(e, e.state);
+    const next = sim.nextShopOffer(e);
     assert.equal(next.item.id, id);
     assert.ok(next.item.cheer && next.p.unlocked(e.state));
     assert.equal(e.state.gameWon, false);
     assert.ok(e.buyProject(id));
-    assert.equal(sim.kidShopNext(e, e.state), null, 'one dream a day');
+    assert.equal(sim.nextShopOffer(e), null, 'one dream a day');
     e.state.day += 2;
   }
   assert.equal(e.projects.find(p => p.id === 'private_island').costCash, 1000000000);
   assert.equal(e.state.gameWon, true);
   assert.equal(e.state.endingSeen, false, 'the page plays the ending once');
-  assert.equal(sim.kidShopNext(e, e.state), null, 'nothing after the island');
+  assert.equal(sim.nextShopOffer(e), null, 'nothing after the island');
   e.state.endingSeen = true;
   const loaded = LemonadeEngine.fromSave(JSON.parse(JSON.stringify(e.toSave())));
   assert.ok(loaded.state.gameWon && loaded.state.endingSeen);
@@ -885,7 +858,7 @@ test('after the factory the Stand Shop offers the big dreams, and the island is 
 
 test('the Supply Truck shops for the forecast the moment it comes and every morning after', () => {
   const e = new LemonadeEngine({ seed: 74 });
-  e.dadJumpToPhase(4);
+  sim.jumpToPhase(e, 4);
   e.state.cash = e.state.cash.add(50000);
   Object.assign(e.state.inv, { lemons: 0, sugar: 0, cups: 0, bottles: 0 });
   assert.equal(e.getKidDemandAdvice().isFullyStocked, false);
@@ -904,7 +877,7 @@ test('the Supply Truck shops for the forecast the moment it comes and every morn
 
 test('the Stand Captain hires the friends, prices at most fair, and sends a friend home on a losing day', () => {
   const e = new LemonadeEngine({ seed: 75 });
-  e.dadJumpToPhase(4);
+  sim.jumpToPhase(e, 4);
   e.state.cash = e.state.cash.add(50000);
   Object.values(e.franchiseStands).forEach(st => { st.hired = false; });
   e.state.friendExpansion = undefined;
@@ -938,7 +911,7 @@ test('the Stand Captain hires the friends, prices at most fair, and sends a frie
 
 test('the Delivery Route signs up and grows the stores when the store rules allow', () => {
   const e = new LemonadeEngine({ seed: 76 });
-  e.dadJumpToPhase(5);
+  sim.jumpToPhase(e, 5);
   e.state.cash = e.state.cash.add(10000000);
   const accounts = Object.values(e.wholesaleAccounts);
   accounts[2].active = false; accounts[2].level = 0;
@@ -955,7 +928,7 @@ test('the Delivery Route signs up and grows the stores when the store rules allo
 
 test('the Flavor Lab: the testers point the way, and the right mix goes to the stores', () => {
   const e = new LemonadeEngine({ seed: 77 });
-  e.dadJumpToPhase(5);
+  sim.jumpToPhase(e, 5);
   e.state.cash = e.state.cash.add(1000000);
   assert.equal(e.currentFlavor(), null, 'no lab yet');
   assert.equal(e.runDay().flavorTaste, null);
@@ -989,7 +962,7 @@ test('the Flavor Lab: the testers point the way, and the right mix goes to the s
 
 test('the famous brand opens with the big-box stores and grows one move a day', () => {
   const e = new LemonadeEngine({ seed: 78 });
-  e.dadJumpToPhase(5);
+  sim.jumpToPhase(e, 5);
   e.state.cash = e.state.cash.add(1e9);
   assert.equal(e.brandOpen(), false);
   assert.equal(e.buyBrandStep(), false, 'not before the big-box stores');
@@ -1037,7 +1010,7 @@ test('house upgrades go in order, wait for their stage, and save', () => {
   assert.equal(e.state.cash.toNumber(), 750);
   cash(3000);
   assert.equal(e.buyHouseStep(), false, 'the second floor waits for Stage 2');
-  e.dadJumpToPhase(2);
+  sim.jumpToPhase(e, 2);
   assert.equal(e.state.houseColor, 'mint', 'fresh paint starts mint');
   assert.ok(e.setHouseColor('sky'));
   assert.equal(e.setHouseColor('plaid'), false);
@@ -1055,8 +1028,8 @@ test('house upgrades go in order, wait for their stage, and save', () => {
 
   assert.equal(new LemonadeEngine({ seed: 75 }).setHouseColor('sky'), false, 'no repainting before Fresh Paint');
   const jumped = new LemonadeEngine({ seed: 76 });
-  jumped.dadJumpToPhase(2);
-  assert.equal(jumped.state.houseOpen, true, "Dad Mode's jump opens the house");
+  sim.jumpToPhase(jumped, 2);
+  assert.equal(jumped.state.houseOpen, true, 'the stage jump opens the house');
 });
 
 test('my house opens on the first quiet day after $2,000 in sales', () => {
@@ -1122,7 +1095,7 @@ test('money trophies wait for the shelf, come one a day in order, and bring wall
 test('the yard opens once the house is paid off: a pet to pick, a wait between things, the other pet later', () => {
   const { YARD_STEPS, YARD_DAYS_BETWEEN } = sim;
   const e = new LemonadeEngine({ seed: 80 });
-  e.dadJumpToPhase(4);
+  sim.jumpToPhase(e, 4);
   e.state.cash = e.state.cash.constructor.fromNumber(1e9);
   assert.equal(e.nextYardStep(), null, 'not before the house is paid off');
   assert.equal(e.buyYardThing('puppy'), false);
@@ -1156,7 +1129,7 @@ test('the yard opens once the house is paid off: a pet to pick, a wait between t
 
 test('brand moves land on My Shelf on the day they are bought', () => {
   const e = new LemonadeEngine({ seed: 81 });
-  e.dadJumpToPhase(5);
+  sim.jumpToPhase(e, 5);
   e.state.cash = e.state.cash.add(1e9);
   for (const id of ['regional_supermarkets', 'automated_canning_line', 'national_bigbox']) assert.ok(e.buyProject(id));
   const day = e.state.day;
@@ -1168,7 +1141,7 @@ test('brand moves land on My Shelf on the day they are bought', () => {
 
 test('stores buy the forecast bottles, the forecast counts their lemons and sugar, and the labeler makes bottles cheaper', () => {
   const e = new LemonadeEngine({ seed: 52 });
-  e.dadJumpToPhase(3);
+  sim.jumpToPhase(e, 3);
   assert.equal(e.getDailyDemandEstimate().neededBottles, 0, 'no store signed, no bottles needed');
   const lemonsBefore = e.getDailyDemandEstimate().neededLemons;
   assert.ok(e.signWholesaleAccount('bodega'));
@@ -1179,14 +1152,14 @@ test('stores buy the forecast bottles, the forecast counts their lemons and suga
   assert.ok(est.neededLemons > lemonsBefore, 'bottles use lemons too');
   e.state.inv.bottles = 0;
   assert.ok(e.getKidDemandAdvice().lowItems.includes('bottles'));
-  assert.ok(e.autoRestockForToday().success);
+  assert.ok(e.autoRestockForToday());
   assert.ok(e.state.inv.bottles >= want);
   assert.equal(e.getKidDemandAdvice().lowItems.length, 0, 'restock covers stands and stores');
   const d = e.runDay();
   const st = d.stores.find(x => x.id === 'bodega');
   assert.equal(st.bottles, want);
   assert.equal(st.wanted, want);
-  assert.equal(d.totalExpenses, d.franchiseWagesPaid, 'caps and labels are in the bottle price: filling costs nothing more');
+  assert.equal(d.netProfit, d.totalRevenue - d.franchiseWagesPaid, 'caps and labels are in the bottle price: filling costs nothing more');
   const before = e.supplyPack('bottles').cost;
   e.state.cash = e.state.cash.add(1000);
   assert.equal(e.buyProject('commercial_labeler'), false, 'the labeler waits for 250 bottles sold');
@@ -1203,7 +1176,7 @@ test('a broken or unknown save gives no game (a new one starts instead)', () => 
 
 test('friends keep their work or day-off state across days and reloads', () => {
   let e = new LemonadeEngine({ seed: 31 });
-  e.dadJumpToPhase(2);
+  sim.jumpToPhase(e, 2);
   e.state.cash = e.state.cash.add(500);
   assert.equal(e.toggleFriendDayOff('sarah'), false, 'not hired');
   Object.values(e.franchiseStands).forEach(st => { st.hired = true; });
@@ -1239,7 +1212,7 @@ test('friends keep their work or day-off state across days and reloads', () => {
 test('a friend with the day off says nothing in the report', () => {
   for (let seed = 1; seed <= 20; seed++) {
     const e = new LemonadeEngine({ seed });
-    e.dadJumpToPhase(2);
+    sim.jumpToPhase(e, 2);
     e.state.cash = e.state.cash.add(500);
     e.franchiseStands.timmy.hired = true; e.franchiseStands.leo.hired = true;
     e.toggleFriendDayOff('leo');
@@ -1252,7 +1225,7 @@ test('a friend with the day off says nothing in the report', () => {
 
 test('friend and store expansions require sales, time, and cash across saves', () => {
   let e = new LemonadeEngine({ seed: 301 });
-  e.dadJumpToPhase(2);
+  sim.jumpToPhase(e, 2);
   e.state.cash = e.state.cash.add(10000);
   assert.ok(e.hireFranchiseStand('sarah'), 'any friend can be first');
   assert.equal(e.hireFranchiseStand('timmy'), false);

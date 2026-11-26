@@ -1,22 +1,20 @@
 // src/ui/shelf.js -- My Shelf: everything the kid buys stays on a shelf instead of just
-// leaving the Stand Shop, and the money trophies stand on a shelf of their own. A small card
-// under My House shows the newest few standing on one shelf; tapping it opens the whole shelf
-// (the shelf room), where tapping a thing tells what it is, the day it was bought
-// (state.boughtOn) or won (state.trophyDays) and what it cost, so the shelf reads like the
-// story of getting rich. The room also holds the wallpaper picker once a trophy has brought
-// one (src/data/trophies.ts). Like My House it waits for the house to open, so the early
-// days stay plain.
-import { KID_SHOP, INVENTION } from './kidShop.js';
+// leaving the Stand Shop, and the money trophies stand on a shelf of their own (what stands
+// there: src/shelf.ts). A small card under My House shows the newest few standing on one
+// shelf; tapping it opens the whole shelf (the shelf room), where tapping a thing tells what
+// it is, the day it was bought or won and what it cost, so the shelf reads like the story of
+// getting rich. The room also holds the wallpaper picker once a trophy has brought one
+// (src/data/trophies.ts). Like My House it waits for the house to open, so the early days
+// stay plain.
+import { session } from './session.js';
+import { setHTMLIfChanged, setHidden } from './dom.js';
+import { fmtWhole } from './format.js';
+import { shelfItems, shelfTrophies } from '../shelf.ts';
 import { BRAND_STEPS } from '../data/brand.ts';
 import { TROPHIES, WALLPAPERS } from '../data/trophies.ts';
-import { YARD_THINGS, YARD_STEPS } from '../data/yard.ts';
-import { fmtWhole } from './format.js';
+import { YARD_THINGS } from '../data/yard.ts';
+import { brandPic, yardPic, trophyPic, wallpaperPic } from '../pictures.ts';
 
-// Pictures (art_src/cut_sheets.py, build_sticker_art.py, build_wallpaper_art.py).
-export const brandPic = (id) => `./sprites/brand/${id}.png`;
-export const yardPic = (id) => `./sprites/yard/${id}.png`;
-export const trophyPic = (id) => `./sprites/trophies/${id}.png`;
-export const wallpaperPic = (id) => `./sprites/wallpapers/${id}.webp`;
 // How tall each trophy stands next to the biggest, so the row grows from a little cup to the
 // gem statue (each picture is cropped to itself).
 const TROPHY_HEIGHT = { bronze: 0.6, silver: 0.68, gold: 0.86, millionaire: 0.9, billionaire: 1 };
@@ -27,33 +25,11 @@ export const ALL_SHELF_IMAGES = [
 
 const PEEK = 5;          // things on the card's shelf (the newest)
 const PER_SHELF = 6;     // things on each shelf in the shelf room
-
-// The things bought so far, oldest first: { pic, name, cost, day } (day: null when a Dad Mode
-// jump handed it over). The Stand Shop's things and the squeezer going worldwide (bought on
-// the Invention card), the brand moves and the yard things.
-export function shelfItems(engine) {
-  const s = engine.state;
-  const project = (id, pic) => {
-    const p = engine.projects.find(x => x.id === id);
-    return p?.purchased ? { pic, name: p.name, cost: p.costCash, day: s.boughtOn[id] ?? null } : null;
-  };
-  const items = [
-    ...KID_SHOP.map(({ id, pic }) => project(id, pic)),
-    project('global_licensing', INVENTION.worldPic),
-    ...BRAND_STEPS.slice(0, s.brandLevel).map(b => ({ pic: brandPic(b.id), name: b.name, cost: b.cost, day: s.boughtOn[`brand:${b.id}`] ?? null })),
-    ...s.yard.map((id, i) => ({ pic: yardPic(id), name: YARD_THINGS[id].name, cost: YARD_STEPS[i].cost, day: s.boughtOn[`yard:${id}`] ?? null })),
-  ].filter(Boolean);
-  return items.sort((a, b) => (a.day ?? 0) - (b.day ?? 0));   // a stable sort: the same day keeps this order
-}
-
-// Every trophy, won or not: { id, pic, name, sales, wallpaper, day } (day: null until won).
-export function shelfTrophies(engine) {
-  return TROPHIES.map((t, i) => ({ ...t, pic: trophyPic(t.id), day: engine.state.trophyDays[i] ?? null }));
-}
+const $ = (id) => document.getElementById(id);
 
 // The card: the newest few, trophies too (a thing bought today, or a trophy won yesterday,
 // drops onto the shelf), and how many in all.
-export function shelfCardHTML(items, trophies, today) {
+function shelfCardHTML(items, trophies, today) {
   const all = [
     ...items.map(x => ({ pic: x.pic, day: x.day ?? 0, fresh: x.day === today })),
     // A trophy is won at the end of its day, after that day's buys.
@@ -70,7 +46,7 @@ export function shelfCardHTML(items, trophies, today) {
 // thing bought in the order it was bought, a shelf at a time with a little empty room left to
 // fill, and the wallpapers once there is more than one. newWallpaper: the one a trophy just
 // brought (it glows).
-export function shelfRoomHTML(items, trophies, wallpapers, current, newWallpaper) {
+function shelfRoomHTML(items, trophies, wallpapers, current, newWallpaper) {
   const trophySlots = trophies.map((t, i) =>
     `<button type="button" class="shelf-room-item shelf-trophy${t.day == null ? ' not-yet' : ''}" data-trophy="${i}" style="--h:${TROPHY_HEIGHT[t.id]}" aria-label="${t.day == null ? 'A trophy still to win' : t.name}"><img src="${t.pic}" alt="" /></button>`).join('');
   const shelves = Math.max(2, Math.ceil((items.length + 1) / PER_SHELF));
@@ -98,15 +74,87 @@ export function shelfRoomHTML(items, trophies, wallpapers, current, newWallpaper
 }
 
 // What the shelf room says about a thing once it is tapped.
-export function shelfCaptionHTML(x) {
+function itemCaptionHTML(x) {
   const when = x.day ? `Bought on Day ${x.day} for $${fmtWhole(x.cost)}` : `$${fmtWhole(x.cost)}`;
   return `<b>${x.name}</b><span>${when}</span>`;
 }
 
 // ...and about a trophy: when it was won, or how to win it.
-export function trophyCaptionHTML(t) {
+function trophyCaptionHTML(t) {
   const sales = `$${fmtWhole(t.sales)}`;
   return t.day == null
     ? `<b>A trophy still to win!</b><span>Sell ${sales} since Day 1 to win it.</span>`
     : `<b>${t.name}</b><span>Won on Day ${t.day}: ${sales} sold since Day 1!</span>`;
+}
+
+let items = [];
+let trophies = [];
+
+export function renderShelf(s) {
+  items = shelfItems(session.engine);
+  trophies = shelfTrophies(session.engine);
+  const show = s.houseOpen && (items.length > 0 || s.trophyDays.length > 0);
+  setHidden($('shelf-card'), !show);
+  if (show) setHTMLIfChanged($('shelf-card'), shelfCardHTML(items, trophies, s.day));
+  if (document.body.dataset.wallpaper !== s.wallpaper) document.body.dataset.wallpaper = s.wallpaper;
+}
+
+const room = () => $('shelf-room');
+
+// pick: { trophy: index to show (the Day Report's trophy news), wallpaper: one to make glow }.
+export function openShelfRoom(pick = {}) {
+  const engine = session.engine;
+  room().innerHTML = shelfRoomHTML(items, trophies, engine.wallpapersOpen(), engine.state.wallpaper, pick.wallpaper);
+  room().hidden = false;
+  room().querySelector('[data-act="shelf-close"]').focus({ preventScroll: true });
+  if (pick.trophy != null) pickThing(room().querySelector(`[data-trophy="${pick.trophy}"]`));
+}
+
+function closeShelfRoom() {
+  if (room().hidden) return;
+  room().hidden = true;
+  room().innerHTML = '';
+  document.querySelector('[data-act="shelf-open"]')?.focus({ preventScroll: true });
+}
+
+function pickThing(item) {
+  room().querySelector('.shelf-room-caption').innerHTML = item.dataset.trophy != null
+    ? trophyCaptionHTML(trophies[+item.dataset.trophy]) : itemCaptionHTML(items[+item.dataset.i]);
+  room().querySelector('.shelf-room-item.picked')?.classList.remove('picked');
+  void item.offsetWidth;   // restart the wiggle on a second tap
+  item.classList.add('picked');
+}
+
+// The Day Report banner the day a money trophy is won (src/ui/reportModal.js); its button
+// opens the shelf with the new trophy picked (and a wallpaper it brought glowing).
+export function trophyNews(id) {
+  const t = TROPHIES.find(x => x.id === id);
+  const wall = t.wallpaper ? ` And a new ${WALLPAPERS.find(w => w.id === t.wallpaper).name} wallpaper!` : '';
+  return {
+    cls: 'trophy-news',
+    pic: `<div class="trophy-news-pic"><img src="${trophyPic(id)}" alt="" /></div>`,
+    title: `${t.name}!`,
+    text: `You sold $${fmtWhole(t.sales)} since Day 1!${wall}`,
+    button: 'See it!',
+    onPress: () => openShelfRoom({ trophy: TROPHIES.indexOf(t), wallpaper: t.wallpaper }),
+  };
+}
+
+export function initShelf() {
+  room().addEventListener('click', (e) => {
+    const item = e.target.closest('.shelf-room-item');
+    if (item) { pickThing(item); return; }
+    const wall = e.target.closest('.shelf-wallpaper');
+    if (wall) {
+      if (session.engine.setWallpaper(wall.dataset.wallpaper)) {
+        for (const b of room().querySelectorAll('.shelf-wallpaper')) b.setAttribute('aria-pressed', String(b === wall));
+        wall.classList.remove('is-new');
+        document.body.dataset.wallpaper = session.engine.state.wallpaper;
+      }
+      return;
+    }
+    // Done, or a tap outside the card.
+    if (e.target.closest('[data-act="shelf-close"]') || e.target === room()) closeShelfRoom();
+  });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeShelfRoom(); });
 }

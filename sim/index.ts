@@ -3,16 +3,14 @@ export { LemonadeEngine, BALANCE, DEFAULT_SEED, ledgerKept } from '../src/engine
 export { FIRST_CHOICE } from '../src/data/projects';
 export { TROPHIES, WALLPAPERS } from '../src/data/trophies';
 export { YARD_STEPS, YARD_DAYS_BETWEEN } from '../src/data/yard';
-// The UI is plain JavaScript; Vite bundles it here for the shop progression and shelf tests.
-// @ts-expect-error The JavaScript UI has no TypeScript declarations.
-export { kidShopNext } from '../src/ui/kidShop.js';
-// @ts-expect-error The JavaScript UI has no TypeScript declarations.
-export { shelfItems, shelfTrophies } from '../src/ui/shelf.js';
+export { nextShopOffer } from '../src/shop';
+export { shelfItems, shelfTrophies } from '../src/shelf';
 export { generateDailyReviews, flavorTasteReview } from '../src/simulation/reviews';
 export { reputationTrend, nextReputation } from '../src/simulation/reputation';
 export { allocateStandSales } from '../src/simulation/demand';
 export { dayCrowds, crowdSize, shares } from '../src/scene/dayScene';
 export { BOTS } from './bots';
+export { jumpToPhase } from './jump';
 export { runGame, runBatch, withOverrides, seedForGame, mulberry32, METRICS } from './run';
 export { summarize, concatColumns, formatTable } from './report';
 export { MILESTONES, SECRET_LOOKS, newUnlocks, unlockCheckFrom, lookOpen, advanceLookUnlocks, otherUnlockToday, shopReady, loadUnlocks, saveUnlocks } from '../src/unlocks';

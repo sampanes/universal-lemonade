@@ -31,6 +31,8 @@
   --font-display: 'Lilita One', 'Fredoka', 'Trebuchet MS', sans-serif;
 }
 * { box-sizing: border-box; }
+/* [hidden] always hides, even on an element whose rule gives it a display. */
+[hidden] { display: none !important; }
 body {
   font-family: var(--font-ui);
   font-weight: 500;
@@ -55,18 +57,34 @@ body {
   flex-wrap: wrap;
   gap: 4px;
 }
+.reset-btn { border-color: #e11d48; color: #f87171; }
+/* The page: two columns, and My House as a third once it opens (body.has-house). */
 .grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, minmax(320px, 460px));
+  justify-content: center;
+  max-width: 960px;
+  margin: 0 auto;
   gap: 12px;
 }
+body.has-house .grid {
+  grid-template-columns: repeat(2, minmax(320px, 460px)) minmax(240px, 290px);
+  max-width: 1250px;
+}
+@media (max-width: 1100px) {
+  body.has-house .grid {
+    grid-template-columns: repeat(2, minmax(320px, 460px));
+    max-width: 960px;
+  }
+  body.has-house .house-col { grid-column: 1 / -1; }
+  .house-card { max-width: 420px; margin: 0 auto; }
+}
 @media (max-width: 900px) {
-  .grid {
-    grid-template-columns: 1fr;
-  }
-  body {
-    padding: 8px;
-  }
+  body { padding: 8px; }
+}
+/* Too narrow for two 320px columns (phones): one column. */
+@media (max-width: 680px) {
+  .grid, body.has-house .grid { grid-template-columns: minmax(0, 1fr); }
 }
 /* Big screens (this is played on a 1080p touchscreen all-in-one): everything is scaled
    up, so text reads from a step back and buttons are finger-sized. The tests are the
@@ -89,33 +107,9 @@ body {
 }
 .panel {
   border: 1px solid #444;
-  padding: 12px;
+  padding: 9px 12px;
   background: #1a1a1a;
   border-radius: 4px;
-}
-h3 {
-  margin: 0 0 8px 0;
-  color: #ffd700;
-  border-bottom: 1px solid #333;
-  padding-bottom: 6px;
-  font-family: var(--font-display);
-  font-weight: 400;
-  letter-spacing: 0.4px;
-  font-size: 16px;
-  line-height: 1.2;
-}
-select.dad-jump {
-  background: #2b2b2b;
-  color: #fff;
-  border: 1px solid #666;
-  border-radius: 4px;
-  margin: 2px;
-  padding: 0 8px;
-  min-height: 38px;
-  font-family: var(--font-ui);
-  font-weight: 600;
-  font-size: 13px;
-  cursor: pointer;
 }
 button {
   background: #2b2b2b;
@@ -147,44 +141,6 @@ button:disabled {
   opacity: 0.35;
   cursor: not-allowed;
 }
-.stat {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin: 4px 0;
-  padding: 2px 0;
-}
-.badge {
-  display: inline-block;
-  padding: 2px 6px;
-  border-radius: 3px;
-  font-size: 11px;
-  font-weight: bold;
-  background: #2e442e;
-  color: #4ade80;
-  border: 1px solid #4ade80;
-}
-.card {
-  border: 1px solid #444;
-  background: #222;
-  padding: 8px;
-  margin-top: 6px;
-  border-radius: 4px;
-}
-
-.log {
-  height: 140px;
-  overflow-y: auto;
-  background: #080808;
-  padding: 6px;
-  border: 1px solid #333;
-  font-family: Consolas, 'Courier New', monospace; /* the activity log keeps its terminal look */
-  font-weight: 400;
-  font-size: 12px;
-  border-radius: 3px;
-  -webkit-overflow-scrolling: touch;
-}
-
 /* Recipe Ratio Workbench Card */
 .ratio-card {
   background: #fbf7ee;
@@ -345,8 +301,8 @@ button:disabled {
   padding: 6px 14px 0 0;
 }
 .ratio-card.golden-locked .pitcher-container {
-  width: 96px !important;
-  height: 96px !important;
+  width: 96px;
+  height: 96px;
 }
 .ratio-card.golden-locked .ratio-controls {
   grid-column: 1 / -1;
@@ -368,11 +324,9 @@ button:disabled {
 }
 .ratio-card.golden-locked .golden-badge-row span { display: none; }
 .ratio-card.golden-locked .golden-badge-row .golden-seal { width: 52px; height: 52px; }
-.ratio-card.golden-locked #autoice-container { flex-basis: 100%; margin-top: 0 !important; }
-/* The ice machine picks the ice every day, so the ice buttons and its on/off switch go
-   away; with a golden recipe too, price is the only thing left to set. */
-.ratio-card.auto-ice .ratio-row-ice,
-.ratio-card.auto-ice #autoice-container { display: none; }
+/* The ice machine picks the ice every day, so the ice buttons go away; with a golden
+   recipe too, price is the only thing left to set. */
+.ratio-card.auto-ice .ratio-row-ice { display: none; }
 /* Golden recipe AND the ice machine: price is the only choice left, so the card shrinks
    to one short strip: a small floating pitcher, then the title over the price buttons.
    The gold ribbon and seal step aside (the recipe was celebrated days ago). */
@@ -382,7 +336,7 @@ button:disabled {
   column-gap: 10px;
 }
 .ratio-card.price-only .pitcher-col { grid-column: 1; grid-row: 1 / span 2; padding: 0; }
-.ratio-card.price-only .pitcher-container { width: 74px !important; height: 74px !important; }
+.ratio-card.price-only .pitcher-container { width: 74px; height: 74px; }
 .ratio-card.price-only .golden-badge-row { display: none; }
 .ratio-card.price-only .ratio-banner {
   grid-column: 2;
@@ -420,7 +374,6 @@ button:disabled {
    fruit and sugar rows on the left, a glass of the drink and the flavors in stores so far on
    the right, the taste testers' comment under both. The fruit pictures are
    public/sprites/flavors/<flavor id>.png. */
-.flavor-lab[hidden] { display: none; }
 .flavor-lab-body { padding: 8px 10px; row-gap: 4px; }
 .flavor-lab-name { font-family: var(--font-display); font-size: 16px; color: #4a044e; text-align: center; line-height: 1.1; }
 .flavor-lab-side { display: flex; flex-direction: column; align-items: center; gap: 6px; }
@@ -461,7 +414,6 @@ button:disabled {
   box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2);
   color: #3b0764;
 }
-.friends-card[hidden] { display: none; }
 .friends-title {
   font-family: var(--font-display);
   font-size: 15px;
@@ -594,7 +546,6 @@ button:disabled {
   gap: 6px;
   margin-bottom: 4px;
 }
-.friends-tabs[hidden], .friends-title[hidden], .friends-tab[hidden] { display: none; }
 /* Equal tabs up to 150px wide. They grow from zero, so they wrap only when their words
    cannot fit on one row (a 150px start wrapped three tabs that fit easily). */
 .friends-tab {
@@ -628,7 +579,7 @@ button:disabled {
 div.friend-btn { display: flex; flex-direction: column; justify-content: center; cursor: default; }
 /* Each line of a friend or store button stays one line, since a wrap would make that button
    taller and shift the whole row (it did as "~10 cups" and "~11 cups" took turns). A line too
-   long for the button shrinks to fit instead; --chars comes from tileLine() in main.js, and
+   long for the button shrinks to fit instead; --chars comes from tileLine() in src/ui/partners.js, and
    0.52em (0.5em small) a character is a little over these words' average width. */
 .friend-tile .friend-btn, .store-status { container-type: inline-size; }
 .tile-line {
@@ -658,7 +609,7 @@ small.tile-line {
 .invention-panel > img { width: 96px; height: 96px; object-fit: contain; flex-shrink: 0; }
 .invention-name { font-family: var(--font-display); font-size: 18px; color: #3b0764; line-height: 1.1; }
 .invention-panel small { display: block; margin-top: 3px; font-size: 12px; line-height: 1.25; color: #514965; }
-#license-needs { font-weight: 700; color: #663a15; }
+.invention-panel .panel-needs { font-weight: 700; color: #663a15; }   /* what a step still needs */
 .license-pic { width: 24px; height: 24px; object-fit: contain; vertical-align: middle; margin: -4px 4px -4px 0; }
 .invention-desc { font-size: 12.5px; font-weight: 700; color: #6b7280; margin: 2px 0 6px; line-height: 1.25; }
 .invention-stats { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -691,8 +642,6 @@ small.tile-line {
   color: #3b0764;
   animation: golden-stamp 0.45s ease-out;
 }
-.stand-shop[hidden] { display: none; }
-body.dad-mode .stand-shop { display: none; }
 .stand-shop-pic {
   flex: 0 0 auto;
   width: 64px;
@@ -733,7 +682,6 @@ body.dad-mode .stand-shop { display: none; }
   font-weight: 700;
   color: #6b7280;
 }
-.stand-shop-save[hidden] { display: none; }
 .stand-shop-bar {
   flex: 1 1 auto;
   min-width: 36px;   /* stays visible next to a long "Saving up: $467,844,932 of $1,000,000,000" */
@@ -774,12 +722,11 @@ body.dad-mode .stand-shop { display: none; }
   cursor: not-allowed;
 }
 
-/* The first choice (renderStandShop): two tiles side by side with an OR between them, each
+/* The first choice (src/ui/standShop.js): two tiles side by side with an OR between them, each
    tile the buy button, over one savings line. While it shows, the one-item parts of the card
    hide. Kept under about 116px tall, so the page still fits 1280x660 without scrolling. */
 .stand-shop-choice { display: none; }
 .stand-shop.choosing { display: block; position: relative; padding: 13px 8px 6px; }
-.stand-shop.choosing[hidden] { display: none; }
 .stand-shop.choosing > :not(.stand-shop-choice) { display: none; }
 .stand-shop.choosing .stand-shop-choice { display: block; }
 /* "Pick one!" sits on the card's top edge, like a ribbon. */
@@ -892,7 +839,6 @@ body.dad-mode .stand-shop { display: none; }
   -webkit-text-stroke-color: #6b7280;
 }
 .stand-shop-choice .stand-shop-save { margin-top: 4px; line-height: 1.2; }
-.stand-shop-bar[hidden] { display: none; }
 @media (hover: hover) {
   .stand-shop-option:not(:disabled):hover { transform: translateY(-1px); box-shadow: 0 3px 8px rgba(16, 185, 129, 0.25); }
 }
@@ -905,12 +851,10 @@ body.dad-mode .stand-shop { display: none; }
   .stand-shop-option-price { justify-self: stretch; }
 }
 
-/* My House (kid mode, once it opens: src/data/house.ts): a third column with the family
+/* My House (once it opens: src/data/house.ts): a third column with the family
    house and the next upgrade to save up for. Each upgrade plays a short build scene. */
-.house-col[hidden] { display: none !important; }
 /* The day it opens: glows (kid-new-glow) until the kid touches it. */
 .house-card.is-new { animation: kid-new-glow 0.9s ease-in-out infinite alternate; }
-body.dad-mode .house-col { display: none !important; }
 .house-card {
   display: flex;
   flex-direction: column;
@@ -1033,7 +977,6 @@ body.dad-mode .house-col { display: none !important; }
 /* My Shelf (src/ui/shelf.js): a card under My House with the newest things standing on a
    wooden shelf. Tapped, the whole shelf opens (the shelf room). */
 .shelf-card { margin-top: 10px; }
-.shelf-card[hidden] { display: none; }
 .shelf-card-btn {
   display: flex;
   flex-direction: column;
@@ -1085,7 +1028,6 @@ body.dad-mode .house-col { display: none !important; }
   background: rgba(30, 12, 52, 0.62);
   animation: house-fade-in 0.25s ease-out;
 }
-.shelf-room[hidden] { display: none; }
 .shelf-room-card {
   display: flex;
   flex-direction: column;
@@ -1165,7 +1107,7 @@ body[data-wallpaper="lemons"] { background: #2c1338 url('/sprites/wallpapers/lem
 body[data-wallpaper="fruit"] { background: #0f2f38 url('/sprites/wallpapers/fruit.webp') 0 0 / 160px 160px; }
 body[data-wallpaper="stars"] { background: #16123f url('/sprites/wallpapers/stars.webp') 0 0 / 160px 160px; }
 body:not([data-wallpaper="plain"]) .panel { background: rgba(14, 10, 22, 0.5); border-color: rgba(255, 255, 255, 0.16); }
-/* The yard scene (playYardScene): the new thing pops onto a round of grass. */
+/* The yard scene (src/ui/yard.js): the new thing pops onto a round of grass. */
 .yard-scene-stage { position: relative; display: flex; justify-content: center; align-items: flex-end; height: 230px; padding-bottom: 18px; }
 .yard-scene-stage::before {
   content: "";
@@ -1181,7 +1123,7 @@ body:not([data-wallpaper="plain"]) .panel { background: rgba(14, 10, 22, 0.5); b
 .yard-scene-stage img { position: relative; height: 200px; max-width: 80%; object-fit: contain; object-position: center bottom; opacity: 0; transform: scale(0.6); transform-origin: center bottom; animation: house-pop 0.45s cubic-bezier(0.3, 1.6, 0.6, 1) 0.2s forwards; }
 .yard-scene .house-scene-title { animation-delay: 0.5s; }
 .yard-scene .stand-shop-buy { animation-delay: 0.7s; }
-/* The Day Report banner the day a money trophy is won (showTrophyNews). */
+/* The Day Report banner the day a money trophy is won (trophyNews in src/ui/shelf.js). */
 .trophy-news-pic { flex: none; display: grid; place-items: center; width: 70px; height: 70px; border-radius: 14px; border: 3px solid #facc15; background: radial-gradient(circle at 50% 40%, #fffbeb, #fde68a); }
 .trophy-news-pic img { width: 58px; height: 58px; object-fit: contain; }
 @media (prefers-reduced-motion: reduce) {
@@ -1198,7 +1140,6 @@ body:not([data-wallpaper="plain"]) .panel { background: rgba(14, 10, 22, 0.5); b
   background: rgba(30, 12, 52, 0.62);
   animation: house-fade-in 0.25s ease-out;
 }
-.house-scene[hidden] { display: none; }
 .house-scene-card {
   position: relative;
   width: min(420px, 100%);
@@ -1337,6 +1278,39 @@ body:not([data-wallpaper="plain"]) .panel { background: rgba(14, 10, 22, 0.5); b
   padding: 3px 6px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.03);
 }
+.pitcher-col { text-align: center; }
+.pitcher-container {
+  position: relative;
+  width: 100%;
+  max-width: 170px;
+  height: 170px;
+  margin: 0 auto;
+}
+.pitcher-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.12));
+}
+.ratio-row-price {
+  margin-top: 6px;
+  background: rgba(254, 240, 138, 0.6);
+  border-color: #facc15;
+}
+.price-label {
+  margin-left: 4px;
+  font-weight: bold;
+  font-size: 12px;
+  color: #713f12;
+}
+.ratio-pill.price-pill {
+  min-width: 44px;
+  border-color: #eab308;
+  color: #713f12;
+  font-size: 13px;
+}
 .ratio-icon {
   width: 34px;
   height: 34px;
@@ -1357,6 +1331,7 @@ body:not([data-wallpaper="plain"]) .panel { background: rgba(14, 10, 22, 0.5); b
   min-height: auto;
   transition: transform 0.1s;
 }
+.ratio-row-price .ratio-btn { width: 28px; height: 28px; }
 /* Invisible finger margin: the + and - art stays 30 px, the tappable area is 42 px.
    On the 21-inch 1080p touchscreen this is played on, 30 px is under 9 mm even after
    the big-screen scale-up, which is small for a kid's finger. Rows are 44 px apart, so
@@ -1426,27 +1401,6 @@ body:not([data-wallpaper="plain"]) .panel { background: rgba(14, 10, 22, 0.5); b
   0%, 100% { transform: translateY(0) rotate(0deg); }
   50% { transform: translateY(-22px) rotate(-6deg); }
 }
-.autoice-btn {
-  min-height: 30px;
-  margin: 2px 0 0 0;
-  padding: 3px 12px;
-  background: #ffffff;
-  border: 2px solid #c084fc;
-  border-radius: 15px;
-  color: #6b21a8;
-  font-weight: 800;
-  font-size: 11px;
-}
-.autoice-btn.on {
-  background: #dbeafe;
-  border-color: #3b82f6;
-  color: #1d4ed8;
-}
-@media (hover: hover) {
-  html:not(.touch-input) .autoice-btn:hover:not(:disabled) { background: #f5f3ff; border-color: #a855f7; }
-  html:not(.touch-input) .autoice-btn.on:hover:not(:disabled) { background: #bfdbfe; border-color: #2563eb; }
-}
-
 /* Morning Prep & Operations Kawaii Styles */
 .weather-art-slot {
   width: 82px;
@@ -1578,54 +1532,6 @@ body:not([data-wallpaper="plain"]) .panel { background: rgba(14, 10, 22, 0.5); b
   white-space: nowrap;
 }
 
-/* Dad Mode Test Controls */
-body:not(.dad-mode) .dad-test-only {
-  display: none !important;
-}
-.dad-seed-info {
-  font-family: var(--font-ui);
-  font-size: 11px;
-  font-weight: 600;
-  color: #fef08a;
-  opacity: 0.85;
-  white-space: nowrap;
-  align-self: center;
-}
-.dad-pill {
-  font-family: var(--font-ui);
-  font-size: 11px;
-  font-weight: 700;
-  padding: 4px 10px;
-  border-radius: 14px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  letter-spacing: 0.3px;
-}
-body.dad-mode .dad-pill {
-  background: #3b2800;
-  color: #fef08a;
-  border: 1.5px solid #eab308;
-  box-shadow: 0 0 8px rgba(234, 179, 8, 0.4);
-}
-body.dad-mode .dad-pill:hover {
-  background: #451a03;
-  transform: scale(1.04);
-}
-body:not(.dad-mode) .dad-pill {
-  background: #1e1e24;
-  color: #94a3b8;
-  border: 1.5px solid #475569;
-  opacity: 0.85;
-}
-body:not(.dad-mode) .dad-pill:hover {
-  opacity: 1;
-  border-color: #cbd5e1;
-  color: #f8fafc;
-  transform: scale(1.04);
-}
-
-/* Mascot & Demand Advice */
-
 /* Stand frame: the border is drawn in CSS so it stays sharp at any size. Only the
    pictures are images (sprites/frame, made by art_src/build_frame_art.py): the ribbon
    on the top edge, the awning repeated across the top and the tablecloth across the
@@ -1707,25 +1613,6 @@ body:not(.dad-mode) .dad-pill:hover {
 .prep-stand-body {
   padding: 12px 10px 6px;
 }
-.prep-mult-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 8px;
-  padding: 4px 8px;
-  background: rgba(255, 255, 255, 0.9);
-  border: 2px solid #e9d5ff;
-  border-radius: 20px;
-}
-.prep-mult-label {
-  font-weight: 700;
-  font-size: 11px;
-  color: #581c87;
-}
-.prep-mult-pills {
-  display: flex;
-  gap: 4px;
-}
 .prep-items-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1736,13 +1623,14 @@ body:not(.dad-mode) .dad-pill:hover {
     grid-template-columns: 1fr;
   }
 }
+/* Bottles before the ice machine: a full-width row, after the cups (src/ui/morningPrep.js). */
+.supply-item-box.wide { grid-column: 1 / -1; order: 1; }
 /* The Supply Truck (a Stage 4 helper) shops every morning: one tile says what it brought,
-   in place of the supply tiles (src/main.js). The chore tile hides too unless cash is low. */
-.prep-stand-card.has-truck .prep-items-grid,
-.prep-stand-card.has-truck .prep-mult-bar { display: none !important; }
-body:not(.dad-mode):not(.low-cash) .prep-stand-card.has-truck .emergency-chore-pill { display: none !important; }
+   in place of the supply tiles (src/ui/morningPrep.js). The chore tile hides too unless cash
+   is low. */
+.prep-stand-card.has-truck .prep-items-grid { display: none; }
+body:not(.low-cash) .prep-stand-card.has-truck .chore-tile { display: none; }
 .supply-item-box.prep-truck { flex-direction: row; align-items: center; justify-content: flex-start; gap: 10px; }
-.prep-truck[hidden] { display: none; }
 .prep-truck-pic { width: 54px; height: 54px; object-fit: contain; flex: none; }
 .prep-truck-info { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .prep-truck-title { font-family: 'Lilita One', 'Fredoka', sans-serif; font-size: 15px; color: #4a044e; }
@@ -1942,320 +1830,6 @@ body:not(.dad-mode):not(.low-cash) .prep-stand-card.has-truck .emergency-chore-p
   object-fit: contain;
 }
 
-/* ==================================================================
-   Money Box: cat cash counter (sprites/kawaii_cat)
-   ================================================================== */
-.bank-card {
-  background: #fdf4ff;
-  border: 3px solid #8b5cf6;
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.25);
-  color: #1e1b4b;
-}
-.bank-body {
-  position: relative;
-  container: bank / inline-size; /* lets the stat chips react to the box width, see below */
-  padding: 10px 10px 12px 10px;
-  background: linear-gradient(180deg, #fef6ff 0%, #f6eaff 55%, #ecdcff 100%);
-  overflow: hidden;
-}
-.bank-cloud,
-.bank-twinkle {
-  position: absolute;
-  pointer-events: none;
-  user-select: none;
-}
-.bank-cloud-a { width: 104px; left: -30px; top: 96px; opacity: 0.7; animation: bank-drift 9s ease-in-out infinite; }
-.bank-cloud-b { width: 78px; right: -20px; top: 44px; opacity: 0.6; animation: bank-drift 11s ease-in-out infinite reverse; }
-.bank-twinkle-a { width: 20px; left: 16px; top: 46px; animation: bank-twinkle 2.6s ease-in-out infinite; }
-.bank-twinkle-b { width: 13px; right: 30px; top: 110px; animation: bank-twinkle 3.1s ease-in-out 0.8s infinite; }
-@keyframes bank-drift {
-  0%, 100% { transform: translateX(0); }
-  50% { transform: translateX(10px); }
-}
-@keyframes bank-twinkle {
-  0%, 100% { transform: scale(0.7) rotate(0deg); opacity: 0.45; }
-  50% { transform: scale(1.1) rotate(12deg); opacity: 1; }
-}
-.bank-stage-pill {
-  position: relative;
-  display: table;
-  margin: 0 auto;
-  padding: 3px 12px;
-  background: #ffffff;
-  border: 2px solid #c084fc;
-  border-radius: 14px;
-  font-size: 11px;
-  font-weight: 800;
-  color: #6b21a8;
-  text-align: center;
-  box-shadow: 0 1px 3px rgba(124, 58, 237, 0.15);
-}
-
-/* Counter geometry is expressed in fractions of the base pill width (--bw) so the whole
-   cat + pill + digits group scales with the column. Sprite sheet scale: pill = 376 px.
-   --cw is the room the column offers: a long number (millions, billions) first widens
-   the pill up to --cw and only then shrinks its digits. */
-.bank-counter {
-  position: relative;
-  margin: 4px 0 0 0;
-  container-type: inline-size;
-}
-.bank-counter-inner {
-  --cw: 100cqw;
-  --bw: min(100cqw, 330px);
-  position: relative;
-  width: var(--bw);
-  margin: 0 auto;
-  padding-top: calc(var(--bw) * 0.51); /* headroom for the tallest (cheering) cat */
-}
-@supports not (width: 1cqw) {
-  .bank-counter { width: 240px; margin: 4px auto 0 auto; }
-  .bank-counter-inner { --cw: 240px; --bw: 240px; }
-}
-.bank-cat {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
-  height: calc(var(--bw) * 0.545); /* paws overlap the pill rim */
-  z-index: 2;
-  pointer-events: none;
-  animation: bank-cat-peek 3.4s ease-in-out infinite;
-}
-.bank-cat img {
-  position: absolute;
-  left: 50%;
-  bottom: 0;
-  width: calc(var(--bw) * var(--w) / 376);
-  transform: translateX(-50%);
-  opacity: 0;
-}
-.bank-cat img.on { opacity: 1; }
-.bank-cat.cheer img.on { animation: bank-cat-hop 0.42s ease-out 2; }
-@keyframes bank-cat-peek {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(calc(var(--bw) * -0.008)); }
-}
-@keyframes bank-cat-hop {
-  0%, 100% { transform: translateX(-50%) translateY(0); }
-  45% { transform: translateX(-50%) translateY(calc(var(--bw) * -0.035)); }
-}
-.bank-pill {
-  position: relative;
-  z-index: 1;
-  /* at least the base width, centered under the cat, growing with the number */
-  left: 50%;
-  transform: translateX(-50%);
-  width: max-content;
-  min-width: 100%;
-  max-width: var(--cw);
-  height: calc(var(--bw) * 0.34);
-  border: calc(var(--bw) * 0.024) solid #dba6f5;
-  border-radius: calc(var(--bw) * 0.17);
-  background: linear-gradient(180deg, #ffffff 0%, #fffafd 60%, #fbf0ff 100%);
-  box-shadow:
-    0 0 0 calc(var(--bw) * 0.006) #c992ea,
-    inset 0 calc(var(--bw) * -0.012) calc(var(--bw) * 0.02) rgba(216, 180, 254, 0.35),
-    0 3px 8px rgba(124, 58, 237, 0.22);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: calc(var(--bw) * 0.028);
-  padding: 0 calc(var(--bw) * 0.04);
-}
-.bank-coin {
-  flex: none;
-  width: calc(var(--bw) * 0.15);
-  height: calc(var(--bw) * 0.15);
-  border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #fff6b8 0%, #fcd34d 48%, #f59e0b 100%);
-  border: calc(var(--bw) * 0.009) solid #c2780a;
-  box-shadow: inset 0 calc(var(--bw) * -0.008) 0 rgba(180, 100, 0, 0.3), 0 1px 2px rgba(120, 60, 0, 0.3);
-  color: #8a4b06;
-  font-family: var(--font-display);
-  font-weight: 400;
-  font-size: calc(var(--bw) * 0.105);
-  line-height: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-/* A number drawn with the n0..n9 / nc digit sprites (68 px tall on a shared baseline).
-   --units = the number's width in glyph-heights, set from JS. Every digit gets the same
-   cell, so the size depends only on how many digits there are, and a small gain on a big
-   number changes the last digits without moving or resizing the rest.
-   0.36 = the pill's border, padding, coin and gap, in fractions of --bw. */
-.sprite-num {
-  --units: 4;
-  --h: min(calc(var(--bw) * 0.165), calc((var(--cw) - var(--bw) * 0.36) / var(--units)));
-  height: var(--h);
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  flex: none;
-}
-.sprite-num img {
-  height: 100%;
-  width: auto;
-  display: block;
-}
-.sprite-num img.sn-d {
-  width: calc(var(--h) * 54 / 68); /* widest digit ("4"); narrower ones sit centered */
-  object-fit: contain;
-  object-position: center bottom;
-}
-.sprite-num .sn-dot {
-  width: calc(var(--h) * 0.24);
-  height: calc(var(--h) * 0.24);
-  margin: 0 calc(var(--h) * 0.055) calc(var(--h) * 0.074) calc(var(--h) * 0.055);
-  border-radius: 50%;
-  background: #541e60;
-}
-.sprite-num .sn-gap { width: calc(var(--h) * 0.18); }
-.sprite-num .sn-txt {
-  align-self: center;
-  margin-left: calc(var(--h) * 0.06);
-  font-family: var(--font-display);
-  font-size: calc(var(--h) * 0.8);
-  font-weight: 400;
-  line-height: 1;
-  color: #541e60;
-}
-.bank-floaters {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: calc(var(--bw) * 0.48);
-  height: 0;
-  z-index: 3;
-  pointer-events: none;
-}
-.bank-float {
-  position: absolute;
-  top: 0;
-  font-family: var(--font-display);
-  font-size: 18px;
-  font-weight: 400;
-  letter-spacing: 0.3px;
-  white-space: nowrap;
-  text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff, 0 2px 4px rgba(88, 28, 135, 0.25);
-  animation: bank-float-up 1.25s ease-out forwards;
-}
-.bank-float.gain { right: 2%; color: #059669; }
-.bank-float.spend { left: 2%; color: #e11d74; }
-@keyframes bank-float-up {
-  0% { opacity: 0; transform: translateY(8px) scale(0.8); }
-  15% { opacity: 1; transform: translateY(0) scale(1.12); }
-  70% { opacity: 1; }
-  100% { opacity: 0; transform: translateY(-34px) scale(1); }
-}
-.bank-caption-wrap {
-  position: relative;
-  margin-top: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 6px;
-  padding: 0 4px;
-}
-.bank-caption {
-  font-size: 11px;
-  font-weight: 700;
-  color: #7e22ce;
-}
-.fold-pill-btn {
-  font-family: var(--font-ui);
-  font-size: 11px;
-  font-weight: 700;
-  color: #6b21a8;
-  background: rgba(255, 255, 255, 0.88);
-  border: 1.5px solid #c084fc;
-  border-radius: 12px;
-  padding: 2px 8px;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  box-shadow: 0 1px 2px rgba(107, 33, 168, 0.1);
-  transition: transform 0.12s ease, background 0.12s ease;
-  white-space: nowrap;
-}
-.fold-pill-btn:hover {
-  background: #ffffff;
-  transform: scale(1.03);
-}
-.fold-arrow {
-  display: inline-block;
-  font-size: 10px;
-  transition: transform 0.25s ease;
-}
-.fold-pill-btn.open .fold-arrow,
-.foldable-card.is-expanded .fold-arrow {
-  transform: rotate(180deg);
-}
-
-/* Generalizable Foldable Drawer */
-.foldable-drawer {
-  overflow: hidden;
-  max-height: 0;
-  opacity: 0;
-  transform: translateY(-4px);
-  transition: max-height 0.32s cubic-bezier(0.4, 0, 0.2, 1),
-              opacity 0.24s ease,
-              transform 0.24s ease,
-              margin 0.24s ease;
-  pointer-events: none;
-  margin-top: 0;
-}
-.foldable-drawer.is-open {
-  max-height: 500px;
-  opacity: 1;
-  transform: translateY(0);
-  pointer-events: auto;
-  margin-top: 8px;
-}
-
-.bank-stats {
-  position: relative;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 6px;
-}
-.bank-chip {
-  min-width: 0;
-  container-type: inline-size;
-  padding: 4px 8px 5px 8px;
-  background: rgba(255, 255, 255, 0.92);
-  border: 2px solid #e9d5ff;
-  border-radius: 12px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
-}
-.bank-chip-label {
-  display: block;
-  font-size: 10px;
-  font-weight: 700;
-  color: #7e22ce;
-}
-.bank-chip-value {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 2px 5px;
-  font-size: 13px;
-  font-weight: 800;
-  color: #4a044e;
-}
-.bank-chip-sub {
-  font-size: 10px;
-  font-weight: 700;
-  color: #86198f;
-}
-/* Full-digit totals ("$123,456,789,012") shrink to the chip instead of spilling out of it.
-   --chars comes from JS. 0.54em per character: a long number in Fredoka bold averages
-   0.50em even when every digit is the widest one (digits 0.57em, commas 0.22em). */
-.bank-chip-value.fit-text { font-size: min(13px, calc(100cqw / (var(--chars, 6) * 0.54))); }
 /* Five smiling stars; the lit row is clipped to a percentage. */
 .star-meter {
   position: relative;
@@ -2283,17 +1857,6 @@ body:not(.dad-mode):not(.low-cash) .prep-stand-card.has-truck .emergency-chore-p
 .star-meter-row.dim img { filter: grayscale(1) brightness(1.25); opacity: 0.38; }
 
 /* Chore: glossy candy button with a rest timer */
-.chore-wrap {
-  position: relative;
-  margin-top: 10px;
-}
-.chore-title {
-  margin-bottom: 4px;
-  font-size: 12px;
-  font-weight: 700;
-  color: #6b21a8;
-  text-align: center;
-}
 .chore-btn {
   position: relative;
   width: 100%;
@@ -2371,33 +1934,6 @@ body:not(.dad-mode):not(.low-cash) .prep-stand-card.has-truck .emergency-chore-p
 }
 .chore-btn.is-busy .chore-reward { color: #6b21a8; box-shadow: inset 0 -2px 0 rgba(107, 33, 168, 0.14); }
 
-/* Packs-per-tap candy step buttons (+1 / +10 / +100 sprites) */
-.step-btn {
-  width: 58px;
-  height: 34px;
-  min-height: auto;
-  margin: 0;
-  padding: 2px 0;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  opacity: 0.55;
-  filter: saturate(0.55);
-  transition: transform 0.12s, opacity 0.12s, filter 0.12s;
-}
-.step-btn img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  display: block;
-}
-.step-btn.active {
-  opacity: 1;
-  transform: scale(1.1);
-  filter: saturate(1) drop-shadow(0 0 3px rgba(250, 204, 21, 1)) drop-shadow(0 2px 2px rgba(0, 0, 0, 0.2));
-}
-.step-btn:active { transform: scale(0.96); }
-
 /* ==================================================================
    Day Report: cat mood + smiling-star customer reviews
    ================================================================== */
@@ -2415,7 +1951,7 @@ body:not(.dad-mode):not(.low-cash) .prep-stand-card.has-truck .emergency-chore-p
   padding: 6px 12px;
 }
 /* Leave room for the popup's round close button so it does not sit on the weather pill. */
-.report-card.in-modal .report-banner { padding-right: 44px; }
+.report-card .report-banner { padding-right: 44px; }
 .report-weather {
   padding: 1px 8px;
   background: rgba(255, 255, 255, 0.22);
@@ -2593,74 +2129,6 @@ body:not(.dad-mode):not(.low-cash) .prep-stand-card.has-truck .emergency-chore-p
 }
 .report-notes li + li { margin-top: 3px; }
 
-/* ==================================================================
-   Day Report Dock & Modal Architecture
-   ================================================================== */
-.report-dock-ticket {
-  margin-bottom: 10px;
-  background: linear-gradient(180deg, #2a1538 0%, #1c0e27 100%);
-  border: 2.5px solid #a855f7;
-  border-radius: 14px;
-  padding: 7px 11px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  cursor: pointer;
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.28);
-  transition: transform 0.12s ease, border-color 0.12s ease, background 0.12s ease;
-  user-select: none;
-}
-.report-dock-ticket:hover {
-  border-color: #c084fc;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);
-}
-.report-dock-ticket.placeholder {
-  opacity: 0.85;
-  cursor: default;
-}
-.report-dock-ticket.placeholder:hover {
-  transform: none;
-}
-.report-dock-cat {
-  width: 40px;
-  height: 40px;
-  object-fit: contain;
-  flex-shrink: 0;
-}
-.report-dock-info {
-  flex: 1;
-  min-width: 0;
-}
-.report-dock-top {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.report-dock-title {
-  font-family: var(--font-display);
-  font-size: 13.5px;
-  color: #ffd700;
-  letter-spacing: 0.4px;
-}
-.report-dock-profit {
-  font-family: var(--font-ui);
-  font-size: 13px;
-  font-weight: 800;
-}
-.report-dock-profit.pos { color: #4ade80; }
-.report-dock-profit.neg { color: #f87171; }
-.report-dock-sub {
-  font-family: var(--font-ui);
-  font-size: 11px;
-  color: #cbd5e1;
-  margin-top: 1px;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
 /* A little pop-in for the kid's picture and the magic-look banner. */
 @keyframes kid-ticket-pop {
   from { opacity: 0; transform: translateY(-8px) scale(0.92); }
@@ -2770,24 +2238,12 @@ body:not(.dad-mode):not(.low-cash) .prep-stand-card.has-truck .emergency-chore-p
     filter: brightness(1.07);
     transform: translateY(-1px);
   }
-  html:not(.touch-input) .step-btn:hover:not(:disabled) {
-    background: transparent;
-    opacity: 1;
-  }
 }
-
-  /* --- DRIVEWAY HERO STAND & CHARACTER CUSTOMIZER --- */
-
-  /* --- PHASE 1: DRIVEWAY-ONLY VIEW (REST BLANK / LOCKED) --- */
-
-  /* Milestone Progress Card (Phase 1 -> 2) */
 
   @keyframes pulse {
     0% { transform: scale(0.99); }
     100% { transform: scale(1.02); filter: brightness(1.1); }
   }
-
-  /* --- CHARACTER CUSTOMIZER MIRROR MODAL --- */
 
   /* --- THE MIRROR: make your lemonade hero --- */
   .kid-mirror {
@@ -2812,7 +2268,6 @@ body:not(.dad-mode):not(.low-cash) .prep-stand-card.has-truck .emergency-chore-p
     box-shadow: 0 4px 0 #4c1d95;
   }
   .kid-mirror-x { position: absolute; top: 10px; right: 12px; }
-  .kid-mirror-x[hidden] { display: none; }
   .kid-mirror-body { display: flex; gap: 16px; align-items: center; width: 100%; }
   .kid-mirror-left { flex: none; width: 290px; display: flex; flex-direction: column; align-items: center; }
   .kid-mirror-bubble {
@@ -3063,7 +2518,6 @@ body:not(.dad-mode):not(.low-cash) .prep-stand-card.has-truck .emergency-chore-p
     overflow: hidden; cursor: default;
     animation: money-bag-drop 0.18s ease-out;
   }
-  .money-bag[hidden] { display: none; }
   /* Phones: the pill is not centered, so pin the card to the screen edges instead. */
   @media (max-width: 600px) {
     .money-bag {
@@ -3235,97 +2689,41 @@ body:not(.dad-mode):not(.low-cash) .prep-stand-card.has-truck .emergency-chore-p
     flex-shrink: 0;
   }
 
-  /* Kid Mode chore banner: always shown, calm; yellow and pulsing when cash < $5. */
-  /* Looks like the supply tiles above it (supply-item-box); only the row layout differs. */
-  .emergency-chore-pill {
-    display: none;
+  /* The chore tile: always shown, calm; yellow and pulsing when cash < $5. It looks like the
+     supply tiles above it (supply-item-box); only the row layout differs. */
+  .chore-tile {
+    display: flex;
     flex-direction: row;
     align-items: center;
     gap: 6px;
     margin-top: 8px;
     transition: background-color 0.3s, border-color 0.3s;
   }
-  body:not(.dad-mode) .emergency-chore-pill {
-    display: flex !important;
-  }
   /* "Need cash?" may wrap onto two short lines, so a long chore name keeps one line
      and the tile does not grow taller. */
-  .emergency-chore-text {
+  .chore-tile-text {
     flex-shrink: 0;
     max-width: 4.6em;
     line-height: 1.1;
   }
-  #btn-chore-emergency {
+  #btn-chore {
     flex: 1;
     min-width: 0;
     min-height: 38px; /* same height as the buy buttons */
     padding: 4px 6px 4px 12px;
     font-size: 13px;
   }
-  #btn-chore-emergency .chore-reward { font-size: 13px; padding: 3px 8px; }
-  #btn-chore-emergency .chore-name { overflow-wrap: anywhere; }
+  #btn-chore .chore-reward { font-size: 13px; padding: 3px 8px; }
+  #btn-chore .chore-name { overflow-wrap: anywhere; }
   /* Phones: the coin jar says "need cash" by itself; give the chore name the room. */
   @media (max-width: 480px) {
-    .emergency-chore-text { display: none; }
+    .chore-tile-text { display: none; }
   }
-  body:not(.dad-mode).low-cash .emergency-chore-pill {
+  body.low-cash .chore-tile {
     background: #fef08a;
     border-color: #eab308;
     animation: pulse 1s infinite alternate;
   }
-  body:not(.dad-mode).low-cash .emergency-chore-text {
+  body.low-cash .chore-tile-text {
     color: #713f12;
-  }
-
-  /* Kid Mode Rules: Hide executive office titles and giant bank card */
-  body:not(.dad-mode) .panel-exec-heading,
-  body:not(.dad-mode) #bank-card {
-    display: none !important;
-  }
-
-  /* --- DAD MODE OFF: ULTRA-CLEAN SIMPLIFIED DAY 1 --- */
-  body:not(.dad-mode) .prep-mult-bar,
-  body:not(.dad-mode) #panel-column-3,
-  body:not(.dad-mode) #expansion-sections,
-  body:not(.dad-mode) #btn-toggle-bank-stats {
-    display: none !important;
-  }
-
-  body:not(.dad-mode) .grid {
-    grid-template-columns: repeat(2, minmax(320px, 460px)) !important;
-    justify-content: center;
-    max-width: 960px;
-    margin: 0 auto;
-  }
-  /* A little less padding in each column than Dad Mode's 12px: the first column stacks up
-     to four cards (Stage 5), or a recipe tip four lines long, and must still fit the kids'
-     1280x660 screen without scrolling. */
-  body:not(.dad-mode) .panel { padding-top: 9px; padding-bottom: 9px; }
-  /* Too narrow for two 320px columns (phones): one column. Without this the two-column
-     rules above made the page wider than the screen and it scrolled sideways. */
-  @media (max-width: 680px) {
-    body:not(.dad-mode) .grid { grid-template-columns: minmax(0, 1fr) !important; }
-  }
-  body:not(.dad-mode).has-house .grid {
-    grid-template-columns: repeat(2, minmax(320px, 460px)) minmax(240px, 290px) !important;
-    max-width: 1250px;
-  }
-  @media (max-width: 1100px) {
-    body:not(.dad-mode).has-house .grid {
-      grid-template-columns: repeat(2, minmax(320px, 460px)) !important;
-      max-width: 960px;
-    }
-    body:not(.dad-mode).has-house .house-col { grid-column: 1 / -1; }
-    .house-card { max-width: 420px; margin: 0 auto; }
-  }
-  @media (max-width: 680px) {
-    body:not(.dad-mode).has-house .grid { grid-template-columns: minmax(0, 1fr) !important; }
-  }
-
-  /* In Kid Mode, only show emergency chore button when cash is low (< $5.00) or bankrupt */
-  body:not(.dad-mode):not(.low-cash) #bank-chore-wrap {
-    display: none !important;
-  }
-  body.low-cash #bank-chore-wrap {
-    animation: pulse 1.2s infinite alternate;
   }

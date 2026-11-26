@@ -1,6 +1,6 @@
 // src/data/projects.ts -- everything the Stand Shop sells, Stages 1-5: the stand upgrades, the
 // steps that open each stage, the helpers, the factory steps and the big dreams. The shop's
-// order, pictures and pacing are in src/ui/kidShop.js; engine.buyProject buys one.
+// order, pictures and pacing are in src/shop.ts; engine.buyProject buys one.
 import type { ProjectDef, GameState } from '../types';
 import { BOTTLES_FOR_INVENTION, BOTTLES_FOR_LABELER } from './wholesale';
 
@@ -40,7 +40,7 @@ function squeezerStep(level: number): ProjectDef {
     costCash: step.cost,
     purchased: false,
     unlocked: (s: GameState) => s.phase >= 4 && s.totalSqueezersSold >= step.salesRequired,
-    effect: (e: any) => applySqueezerLevel(e.patent, step.level),
+    effect: (e) => applySqueezerLevel(e.patent, step.level),
   };
 }
 
@@ -79,9 +79,8 @@ export function createInitialProjects(): ProjectDef[] {
       costCash: FIRST_CHOICE_COST,
       purchased: false,
       unlocked: (s: GameState) => s.day >= 3,
-      effect: (e: any) => {
+      effect: (e) => {
         e.state.flags.hasAutoIce = true;
-        e.state.flags.autoIceEnabled = true;
         e.state.recipe.icePerCup = e.computeIdealIce(e.state.tempF);
       }
     },
@@ -93,7 +92,7 @@ export function createInitialProjects(): ProjectDef[] {
       costCash: FIRST_CHOICE_COST,
       purchased: false,
       unlocked: (s: GameState) => s.day >= 3,
-      effect: (e: any) => { e.state.flags.hasMiniFridge = true; }
+      effect: (e) => { e.state.flags.hasMiniFridge = true; }
     },
     {
       id: 'franchise_license',
@@ -103,8 +102,8 @@ export function createInitialProjects(): ProjectDef[] {
       costCash: 150,
       purchased: false,
       // A tasty recipe first: friends sell the kid's recipe.
-      unlocked: (s: GameState) => s.phase === 1 && (s.bestRecipeQuality >= 0.80 || (s.avgRecipeQuality || 0) >= 0.75),
-      effect: (e: any) => { e.state.phase = 2; }
+      unlocked: (s: GameState) => s.phase === 1 && (s.bestRecipeQuality >= 0.80 || s.avgRecipeQuality >= 0.75),
+      effect: (e) => { e.state.phase = 2; }
     },
     {
       id: 'club_card',
@@ -114,7 +113,7 @@ export function createInitialProjects(): ProjectDef[] {
       costCash: 60,
       purchased: false,
       unlocked: stage(2),
-      effect: (e: any) => { e.state.flags.hasClubCard = true; }
+      effect: (e) => { e.state.flags.hasClubCard = true; }
     },
     {
       id: 'cargo_wagon',
@@ -124,8 +123,8 @@ export function createInitialProjects(): ProjectDef[] {
       costCash: 75,
       purchased: false,
       unlocked: stage(2),
-      effect: (e: any) => {
-        Object.values(e.franchiseStands as Record<string, any>).forEach((st: any) => {
+      effect: (e) => {
+        Object.values(e.franchiseStands).forEach(st => {
           st.baseCapacity = Math.round(st.baseCapacity * 1.25);
         });
       }
@@ -138,7 +137,7 @@ export function createInitialProjects(): ProjectDef[] {
       costCash: 450,
       purchased: false,
       unlocked: (s: GameState) => s.phase === 2 && s.totalCupsSold.gte(250),
-      effect: (e: any) => { e.state.phase = 3; }
+      effect: (e) => { e.state.phase = 3; }
     },
     {
       id: 'commercial_labeler',
@@ -148,7 +147,7 @@ export function createInitialProjects(): ProjectDef[] {
       costCash: 250,
       purchased: false,
       unlocked: (s: GameState) => s.phase >= 3 && s.totalBottlesSold >= BOTTLES_FOR_LABELER,
-      effect: (e: any) => { e.state.flags.hasCommercialLabeler = true; }   // supplyPack('bottles') reads it
+      effect: (e) => { e.state.flags.hasCommercialLabeler = true; }   // supplyPack('bottles') reads it
     },
     {
       id: 'patent_filing',
@@ -158,7 +157,7 @@ export function createInitialProjects(): ProjectDef[] {
       costCash: 4000,
       purchased: false,
       unlocked: (s: GameState) => s.phase === 3 && s.totalBottlesSold >= BOTTLES_FOR_INVENTION,
-      effect: (e: any) => {
+      effect: (e) => {
         e.state.phase = 4;
         e.patent.licensed = true;
         applySqueezerLevel(e.patent, 1);
@@ -177,7 +176,7 @@ export function createInitialProjects(): ProjectDef[] {
       costCash: SUPPLY_TRUCK_COST,
       purchased: false,
       unlocked: stage(4),
-      effect: (e: any) => {
+      effect: (e) => {
         e.state.flags.hasSupplyTruck = true;
         e.runHelpers();
       }
@@ -190,7 +189,7 @@ export function createInitialProjects(): ProjectDef[] {
       costCash: STAND_CAPTAIN_COST,
       purchased: false,
       unlocked: stage(4),
-      effect: (e: any) => {
+      effect: (e) => {
         e.state.flags.hasStandCaptain = true;
         e.runHelpers();
       }
@@ -203,7 +202,7 @@ export function createInitialProjects(): ProjectDef[] {
       costCash: 6000,
       purchased: false,
       unlocked: stage(4),
-      effect: (e: any) => {
+      effect: (e) => {
         e.state.phase = 5;
         e.copacker.active = true;
       }
@@ -216,7 +215,7 @@ export function createInitialProjects(): ProjectDef[] {
       costCash: 18000,
       purchased: false,
       unlocked: stage(5),
-      effect: (e: any) => { e.copacker.casesPerDay = 300; }
+      effect: (e) => { e.copacker.casesPerDay = 300; }
     },
     {
       id: 'delivery_route',
@@ -226,7 +225,7 @@ export function createInitialProjects(): ProjectDef[] {
       costCash: DELIVERY_ROUTE_COST,
       purchased: false,
       unlocked: stage(5),
-      effect: (e: any) => {
+      effect: (e) => {
         e.state.flags.hasDeliveryRoute = true;
         e.runHelpers();
       }
@@ -239,7 +238,7 @@ export function createInitialProjects(): ProjectDef[] {
       costCash: 85000,
       purchased: false,
       unlocked: stage(5),
-      effect: (e: any) => {
+      effect: (e) => {
         e.copacker.casesPerDay = 1500;
         e.copacker.netPerCase = 22.00;
       }
@@ -253,7 +252,7 @@ export function createInitialProjects(): ProjectDef[] {
       costCash: 150000,
       purchased: false,
       unlocked: stage(5),
-      effect: (e: any) => { e.state.flags.hasFlavorLab = true; }
+      effect: (e) => { e.state.flags.hasFlavorLab = true; }
     },
     {
       id: 'national_bigbox',
@@ -263,7 +262,7 @@ export function createInitialProjects(): ProjectDef[] {
       costCash: 350000,
       purchased: false,
       unlocked: stage(5),
-      effect: (e: any) => { e.copacker.casesPerDay = 6000; }   // and the Brand tab opens (src/data/brand.ts)
+      effect: (e) => { e.copacker.casesPerDay = 6000; }   // and the Brand tab opens (src/data/brand.ts)
     },
     {
       id: 'club_store_pallets',
@@ -273,7 +272,7 @@ export function createInitialProjects(): ProjectDef[] {
       costCash: 1800000,
       purchased: false,
       unlocked: stage(5),
-      effect: (e: any) => { e.copacker.casesPerDay = 25000; }
+      effect: (e) => { e.copacker.casesPerDay = 25000; }
     },
     {
       id: 'qsr_fountain_licensing',
@@ -283,7 +282,7 @@ export function createInitialProjects(): ProjectDef[] {
       costCash: 8500000,
       purchased: false,
       unlocked: stage(5),
-      effect: (e: any) => { e.copacker.casesPerDay = 100000; }
+      effect: (e) => { e.copacker.casesPerDay = 100000; }
     },
     {
       id: 'global_beverage_jv',
@@ -293,7 +292,7 @@ export function createInitialProjects(): ProjectDef[] {
       costCash: 35000000,
       purchased: false,
       unlocked: stage(5),
-      effect: (e: any) => { e.copacker.casesPerDay = 350000; }
+      effect: (e) => { e.copacker.casesPerDay = 350000; }
     },
     // The big dreams, after the last factory step. The last one is the ending.
     {
@@ -304,7 +303,7 @@ export function createInitialProjects(): ProjectDef[] {
       costCash: 65000000,
       purchased: false,
       unlocked: stage(5),
-      effect: (e: any) => { e.state.flags.hasPrivateJet = true; }
+      effect: (e) => { e.state.flags.hasPrivateJet = true; }
     },
     {
       id: 'arena_naming',
@@ -314,7 +313,7 @@ export function createInitialProjects(): ProjectDef[] {
       costCash: 80000000,
       purchased: false,
       unlocked: stage(5),
-      effect: (e: any) => { e.state.flags.hasArenaNaming = true; }
+      effect: (e) => { e.state.flags.hasArenaNaming = true; }
     },
     {
       id: 'private_island',
@@ -324,7 +323,7 @@ export function createInitialProjects(): ProjectDef[] {
       costCash: ISLAND_COST,
       purchased: false,
       unlocked: stage(5),
-      effect: (e: any) => { e.state.gameWon = true; }   // main.js plays the ending once
+      effect: (e) => { e.state.gameWon = true; }   // the ending plays once (src/ui/ending.js)
     }
   ];
 }

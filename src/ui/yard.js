@@ -2,8 +2,10 @@
 // off, the things bought stand on a strip of grass under the house, and the next one (or the
 // puppy-or-kitten choice) takes the house step's place. Buying one plays a short scene.
 import { YARD_STEPS } from '../data/yard.ts';
-import { yardPic } from './shelf.js';
+import { yardPic } from '../pictures.ts';
 import { fmtWhole } from './format.js';
+import { savingsBarHTML } from './dom.js';
+import { confettiHTML } from './celebration.js';
 
 // The grass under the house, with everything bought so far (newest last; the scene shows a
 // new one arriving).
@@ -24,7 +26,7 @@ export function yardNextHTML(step, spare) {
   const price = `$${fmtWhole(step.cost)}`;
   const need = wait
     ? `<div class="house-later">${wait === 1 ? 'Ready tomorrow!' : `Ready in ${wait} days!`}</div>`
-    : short ? `<div class="house-save"><span class="stand-shop-bar"><span style="width:${Math.min(100, (spare / step.cost) * 100).toFixed(1)}%"></span></span>Save $${fmtWhole(Math.ceil(short))} more</div>` : '';
+    : short ? `<div class="house-save">${savingsBarHTML(spare, step.cost)}Save $${fmtWhole(Math.ceil(short))} more</div>` : '';
   if (step.things.length > 1) {
     const options = step.things.map(t => `<button type="button" class="yard-option" data-act="yard-buy" data-id="${t.id}"${off ? ' disabled' : ''}>
       <img src="${yardPic(t.id)}" alt="" /><span class="yard-option-name">${t.name}</span><span class="yard-option-price">${price}</span>
@@ -45,13 +47,10 @@ export function yardNextHTML(step, spare) {
 
 // The scene when a yard thing arrives: it pops onto the grass, with confetti.
 export function yardSceneHTML(thing) {
-  const colors = ['#facc15', '#f472b6', '#a78bfa', '#34d399', '#60a5fa'];
-  const confetti = Array.from({ length: 16 }, (_, i) =>
-    `<span class="house-confetti" style="left:${4 + i * 6}%;background:${colors[i % colors.length]};animation-delay:${(0.5 + ((i * 7) % 10) * 0.06).toFixed(2)}s"></span>`).join('');
   return `<div class="house-scene-card yard-scene">
     <div class="yard-scene-stage"><img src="${yardPic(thing.id)}" alt="" /></div>
-    ${confetti}
+    ${confettiHTML(16, 0.5)}
     <div class="house-scene-title" id="house-scene-title">${thing.name}!</div>
-    <button type="button" class="stand-shop-buy" data-act="house-scene-close">Yay!</button>
+    <button type="button" class="stand-shop-buy">Yay!</button>
   </div>`;
 }

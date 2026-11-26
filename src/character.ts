@@ -68,13 +68,10 @@ const DEFAULT_CHARACTER: CharacterProfile = {
   uniformColor: 0,  // Lemon Yellow
 };
 
-// Dad Mode keeps its own look: its mirror has every secret look open, and trying them on
-// there must not hand the kid a look they have not earned yet.
-
-/** The saved look; dad = Dad Mode's own look (a copy of the kid's until Dad changes it). */
-export function loadCharacterProfile(dad = false): CharacterProfile {
+/** The saved look (the default look until the player saves one). */
+export function loadCharacterProfile(): CharacterProfile {
   try {
-    const raw = (dad ? readStored(STORAGE_KEYS.dadLook) : null) ?? readStored(STORAGE_KEYS.kidLook);
+    const raw = readStored(STORAGE_KEYS.look);
     if (raw) {
       const parsed = JSON.parse(raw);
       return {
@@ -94,14 +91,14 @@ export function loadCharacterProfile(dad = false): CharacterProfile {
 
 /** True once the player has saved a look (a new player meets the mirror first). */
 export function hasSavedCharacterProfile(): boolean {
-  return readStored(STORAGE_KEYS.kidLook) !== null;
+  return readStored(STORAGE_KEYS.look) !== null;
 }
 
 /** Forget the saved look (Reset): the next mirror is a new player's mirror. */
 export function clearCharacterProfile(): void {
-  removeStored(STORAGE_KEYS.kidLook);
+  removeStored(STORAGE_KEYS.look);
 }
 
-export function saveCharacterProfile(profile: CharacterProfile, dad = false): void {
-  writeStored(dad ? STORAGE_KEYS.dadLook : STORAGE_KEYS.kidLook, JSON.stringify(profile));
+export function saveCharacterProfile(profile: CharacterProfile): void {
+  writeStored(STORAGE_KEYS.look, JSON.stringify(profile));
 }

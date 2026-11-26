@@ -1,9 +1,12 @@
-// src/ui/kidShop.js -- the Stand Shop card: one project at a time, in this order. The names,
+// src/shop.ts -- the Stand Shop's order: one project at a time, in this order. The names,
 // prices and what each one does are in src/data/projects.ts; this list adds the picture and
-// the pacing.
-import { FIRST_CHOICE } from '../data/projects.ts';
-import { BOTTLES_FOR_INVENTION } from '../data/wholesale.ts';
-import { shopReady } from '../unlocks.ts';
+// the pacing. The page's Stand Shop card (src/ui/standShop.js) and the simulator's bots
+// (sim/bots.ts) both shop from nextShopOffer.
+import type { LemonadeEngine } from './engine';
+import type { GameState, ProjectDef } from './types';
+import { FIRST_CHOICE } from './data/projects';
+import { BOTTLES_FOR_INVENTION } from './data/wholesale';
+import { shopReady } from './unlocks';
 
 // An item shows once the game unlocks it (from Day 3; the labeler once BOTTLES_FOR_LABELER
 // bottles have sold), so the card can be hidden for a while between buys; an "early" item
@@ -14,11 +17,18 @@ import { shopReady } from '../unlocks.ts';
 // page away. After the last factory step come the three big dreams; the last, Citrus Cay,
 // is the ending.
 // The first two are a choice (FIRST_CHOICE): both show side by side, the kid picks one, and
-// the other one comes next. pick: the short line under each in the choice.
-// pic: the picture. friends: N hides the item until N friends are hired. cheer: the kid
-// cheers when it is bought. notYet(s): what to do first, for an "early" item that has the
-// money but is not open.
-export const KID_SHOP = [
+// the other one comes next.
+export interface ShopItem {
+  id: string;
+  pic: string;
+  pick?: string;                           // the short line under it in the first choice
+  early?: boolean;
+  friends?: number;                        // hidden until this many friends are hired
+  cheer?: boolean;                         // the kid cheers when it is bought
+  notYet?: (s: GameState) => string;       // what to do first: an early item with the money but not open
+}
+
+export const SHOP_ITEMS: readonly ShopItem[] = [
   { id: 'auto_ice_dispenser', pick: 'Free ice, all day!', pic: './sprites/shop/ice_dispenser.png' },
   { id: 'fridge', pick: 'More customers!', pic: './sprites/shop/mini_fridge.png' },
   { id: 'franchise_license', pic: './sprites/shop/second_stand.png', early: true,
@@ -50,22 +60,26 @@ export const KID_SHOP = [
 // squeezers (also its picture on My Shelf).
 export const INVENTION = { name: 'Lemon Squeezer', pic: './sprites/shop/squeezer.png', worldPic: './sprites/shop/worldwide.png' };
 
-// Returns { item, p } for the next project (p from engine.projects), or, while neither of the
-// first choice is bought, { item, p, choices: [{ item, p }, { item, p }] } (item and p are then
-// the first of them).
-export function kidShopNext(engine, s) {
+export interface ShopChoice { item: ShopItem; p: ProjectDef }
+// The next project (p from engine.projects), or, while neither of the first choice is
+// bought, both of them in `choices` (item and p are then the first of them). null: nothing to
+// show today.
+export type ShopOffer = ShopChoice & { choices?: ShopChoice[] };
+
+export function nextShopOffer(engine: LemonadeEngine): ShopOffer | null {
+  const s = engine.state;
   // Leave a whole day between buying an upgrade and introducing the next one.
   if (!shopReady(s)) return null;
-  const project = id => engine.projects.find(x => x.id === id);
-  const choices = FIRST_CHOICE.map(id => ({ item: KID_SHOP.find(x => x.id === id), p: project(id) }));
-  if (choices.every(c => c.p && !c.p.purchased)) {
+  const project = (id: string) => engine.projects.find(x => x.id === id);
+  const choices = FIRST_CHOICE.map(id => ({ item: SHOP_ITEMS.find(x => x.id === id)!, p: project(id)! }));
+  if (choices.every(c => !c.p.purchased)) {
     return choices.every(c => c.p.unlocked(s)) ? { ...choices[0], choices } : null;
   }
-  for (const item of KID_SHOP) {
+  for (const item of SHOP_ITEMS) {
     const p = project(item.id);
     if (!p || p.purchased) continue;
     // The factory waits until the squeezer sells worldwide.
-    if (item.id === 'copacker_deal' && !project('global_licensing').purchased) return null;
+    if (item.id === 'copacker_deal' && !project('global_licensing')?.purchased) return null;
     if (item.early) return { item, p };
     // friends: N waits until that many friends are hired (the wagon only helps them).
     const hired = Object.values(engine.franchiseStands).filter(st => st.hired).length;

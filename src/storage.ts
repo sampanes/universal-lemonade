@@ -2,18 +2,15 @@
 //
 // Saves are not upgraded from older versions. When the stored data changes shape, bump
 // STORAGE_VERSION: the next page load clears every saved game, look and secret look, and the
-// game starts fresh. Only Dad Mode's on/off switch is kept.
+// game starts fresh.
 
 export const STORAGE_KEYS = {
-  kidGame: 'universal_lemonade_game',
-  dadGame: 'universal_lemonade_game_dad',
-  kidLook: 'universal_lemonade_character_profile',
-  dadLook: 'universal_lemonade_dad_look',       // Dad Mode's own look (its mirror opens every secret look)
+  game: 'universal_lemonade_game',
+  look: 'universal_lemonade_character_profile',
   unlocks: 'universal_lemonade_unlocks',        // the kid's earned secret looks
-  dadMode: 'universal_lemonade_dad_mode',       // 'true' / 'false'
 } as const;
 
-const STORAGE_VERSION = '4';
+const STORAGE_VERSION = '5';
 const VERSION_KEY = 'universal_lemonade_storage_version';
 const PREFIX = 'universal_lemonade_';
 
@@ -21,11 +18,10 @@ const PREFIX = 'universal_lemonade_';
 export function clearOutdatedStorage(): void {
   try {
     if (localStorage.getItem(VERSION_KEY) === STORAGE_VERSION) return;
-    const keep = new Set<string>([STORAGE_KEYS.dadMode]);
     const old: string[] = [];
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
-      if (key && key.startsWith(PREFIX) && !keep.has(key)) old.push(key);
+      if (key && key.startsWith(PREFIX)) old.push(key);
     }
     old.forEach(key => localStorage.removeItem(key));
     localStorage.setItem(VERSION_KEY, STORAGE_VERSION);

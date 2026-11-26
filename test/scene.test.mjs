@@ -1,12 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { LemonadeEngine, dayCrowds, crowdSize, shares } from '../.sim-build/index.js';
+import { LemonadeEngine, jumpToPhase, dayCrowds, crowdSize, shares } from '../.sim-build/index.js';
 
 const sum = list => list.reduce((n, x) => n + x, 0);
 
 test('each stand draws only people its real day had, and they add up to the real counts', () => {
   const e = new LemonadeEngine({seed: 41});
-  e.dadJumpToPhase(3);
+  jumpToPhase(e, 3);
   e.toggleFriendDayOff('leo');
   e.state.inv.cups = 2;
   const d = e.runDay();
@@ -25,7 +25,7 @@ test('each stand draws only people its real day had, and they add up to the real
 
 test('a day off gets one closed stop in route order', () => {
   const e = new LemonadeEngine({seed: 41});
-  e.dadJumpToPhase(3);
+  jumpToPhase(e, 3);
   e.toggleFriendDayOff('leo');
   const d = e.runDay();
   const crowds = dayCrowds(d.standVisits, d.friends);

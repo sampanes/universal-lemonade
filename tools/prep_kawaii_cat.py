@@ -127,10 +127,7 @@ def main(src_dir, dst_dir, names):
     total_in = total_out = 0
     for name in names:
         im = Image.open(os.path.join(src_dir, name)).convert('RGBA')
-        # n0..n9 and nc are flat ink that is itself close to the sheet color: keep as cut.
-        is_digit = name[0] == 'n' and len(name) <= 6
-        res = im if is_digit else defringe(im)
-        res = res.quantize(colors=256, method=Image.Quantize.FASTOCTREE, dither=Image.Dither.NONE)
+        res = defringe(im).quantize(colors=256, method=Image.Quantize.FASTOCTREE, dither=Image.Dither.NONE)
         dst = os.path.join(dst_dir, name)
         res.save(dst, optimize=True)
         total_in += os.path.getsize(os.path.join(src_dir, name))

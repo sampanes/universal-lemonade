@@ -6,8 +6,7 @@
 
 import type { LemonadeEngine } from '../src/engine';
 import { SQUEEZER_LEVELS } from '../src/data/projects';
-// @ts-expect-error The JavaScript UI has no TypeScript declarations.
-import { kidShopNext } from '../src/ui/kidShop.js';
+import { nextShopOffer } from '../src/shop';
 
 export interface BotContext {
   rand: () => number;          // the bot's own random numbers (separate from the game's)
@@ -63,7 +62,7 @@ function nudgeFromCustomers(e: LemonadeEngine): void {
 }
 
 // What the kid's page offers: the squeezer's next step on the Invention card, then the Stand
-// Shop in its own order (kidShopNext: one item at a time, a day between buys, all the way to
+// Shop in its own order (nextShopOffer: one item at a time, a day between buys, all the way to
 // Citrus Cay). The shop starts with a choice (FIRST_CHOICE); games with an odd seed pick the
 // second one first, so a run covers both. reserve: cash kept back besides today's supplies.
 function buyUpgrades(e: LemonadeEngine, reserve: number, chance: number, rand: () => number): void {
@@ -75,7 +74,7 @@ function buyUpgrades(e: LemonadeEngine, reserve: number, chance: number, rand: (
     e.buyProject(squeezer.id);
     return;
   }
-  const next = kidShopNext(e, s);
+  const next = nextShopOffer(e);
   if (!next) return;
   const p = next.choices ? next.choices[e.seed & 1].p : next.p;
   if (p.unlocked(s) && affordable(p.costCash) && rand() < chance) e.buyProject(p.id);
@@ -95,18 +94,17 @@ function lateGame(e: LemonadeEngine): void {
     }
   }
   const step = e.nextBrandStep();
-  if (step && e.brandOpen() && !e.brandWaitDays() && s.cash.toNumber() - e.restockCostForToday() >= step.cost) e.buyBrandStep();
+  if (step && e.brandOpen() && !e.brandWaitDays() && e.spareCash() >= step.cost) e.buyBrandStep();
 }
 
 // My House (src/data/house.ts) and then the yard (src/data/yard.ts): the next step as soon as
 // the money is spare after today's supplies. The yard's first step is the pet choice; games
 // with an odd seed pick the second pet first.
 function fixUpHome(e: LemonadeEngine): void {
-  const spare = () => e.state.cash.toNumber() - e.restockCostForToday();
   const step = e.nextHouseStep();
-  if (step && e.state.houseOpen && e.state.phase >= step.phase && spare() >= step.cost) e.buyHouseStep();
+  if (step && e.state.houseOpen && e.state.phase >= step.phase && e.spareCash() >= step.cost) e.buyHouseStep();
   const yard = e.nextYardStep();
-  if (yard && !yard.waitDays && spare() >= yard.cost) e.buyYardThing(yard.things[yard.things.length > 1 ? e.seed & 1 : 0].id);
+  if (yard && !yard.waitDays && e.spareCash() >= yard.cost) e.buyYardThing(yard.things[yard.things.length > 1 ? e.seed & 1 : 0].id);
 }
 
 function hireAndSign(e: LemonadeEngine, wageDaysReserve: number, chance: number, rand: () => number): void {

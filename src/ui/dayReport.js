@@ -1,12 +1,13 @@
-// src/ui/dayReport.js -- the Day Report: the docked ticket and the full report.
+// src/ui/dayReport.js -- the Day Report: what the day made, the stands and stores line by
+// line, what the neighbors and customers said, and the day's notes. It pops up when the day
+// scene ends (src/ui/reportModal.js), and the Money Bag opens it again.
 import { fmtDollars, fmtSigned } from './format.js';
 import { skyCondition } from '../scene/forecastArt.ts';
 import { FLAVORS, FLAVOR_BOOST } from '../data/flavors.ts';
+import { facePic } from '../pictures.ts';
 
-const SPRITE_DIR = './sprites/kawaii_cat/';
-
-// Five smiling stars with the first `frac` of the row lit (same markup as the reputation meter).
-const STAR5 = `<img src="${SPRITE_DIR}star_small.png" alt="" />`.repeat(5);
+// Five smiling stars with the first `frac` of the row lit.
+const STAR5 = '<img src="./sprites/kawaii_cat/star_small.png" alt="" />'.repeat(5);
 const starMeter = (frac, label) => `<span class="star-meter" role="img" aria-label="${label}">` +
   `<span class="star-meter-row dim">${STAR5}</span>` +
   `<span class="star-meter-row lit" style="width:${Math.round(frac * 100)}%">${STAR5}</span></span>`;
@@ -14,7 +15,7 @@ const isTeamNote = (r) => r.reviewer.includes('(');   // "Timmy (Elm Street)": a
 
 // Day Report cat: 1 star = calm (0) ... 5 stars = cheering (4); a losing day is always calm.
 export function reportCatMood(d) {
-  const cust = (d.reviews || []).filter(r => !isTeamNote(r));
+  const cust = d.reviews.filter(r => !isTeamNote(r));
   if (d.netProfit <= 0 || cust.length === 0) return 0;
   const avg = cust.reduce((sum, r) => sum + r.stars, 0) / cust.length;
   return Math.max(0, Math.min(4, Math.round(avg) - 1));
@@ -23,9 +24,22 @@ export function reportCatMood(d) {
 // Stars everywhere mean one thing: how much the neighborhood likes the stand (reputation).
 export const repStars = (d) => starMeter(d.reputationAfter, `Neighbors like the stand ${Math.round(d.reputationAfter * 100)} out of 100`);
 
-// hero(d): the picture at the top (the player's kid with a face for the day).
-export function renderFullDayReportHTML(d, s, isModal = false, hero = () => '') {
-  if (!d) return '';
+// A taste tester's or customer's comment (no stars on comments: stars only mean how much the
+// neighborhood likes the stand). mood: 'good', 'bad' or 'team'.
+function reviewHTML(r, mood) {
+  const face = r.face ? `<img class="report-review-face" src="${facePic(r.face)}" alt="" />` : '';
+  return `<div class="report-review ${mood}">
+      ${face}
+      <div class="report-review-text">
+        <div class="report-review-who">${r.reviewer}</div>
+        <div class="report-review-quote">&quot;${r.quote}&quot;</div>
+      </div>
+    </div>`;
+}
+
+// d: the day's summary; s: the game state; hero(d): the picture at the top (the player's kid
+// with a face for the day).
+export function dayReportHTML(d, s, hero) {
   const money = (n) => `$${fmtDollars(n, true)}`;
   const row = (label, amount, cls = '') =>
     `<div class="report-row ${cls}"><span>${label}</span><span class="amt">${amount}</span></div>`;
@@ -38,14 +52,14 @@ export function renderFullDayReportHTML(d, s, isModal = false, hero = () => '') 
   const showRows = s.phase >= 2 || brandBonus > 0.005;
   // Once a helper runs them (the Stand Captain, the Delivery Route), the stands are one line
   // and the stores are one line: next to the squeezer and the factory they are pocket change.
-  const helpers = s.flags || {};
+  const helpers = s.flags;
   let rows = '';
   if (helpers.hasStandCaptain) {
     const net = d.drivewayRevenue + d.franchiseGrossRevenue - d.franchiseWagesPaid;
     rows += row(`Lemonade stands (${count(d.drivewayCupsSold + d.franchiseCupsSold)} cups)`, fmtSigned(net, true), net < 0 ? 'cost' : '');
   } else {
     rows += row(`Driveway stand (${count(d.drivewayCupsSold)} cups)`, `+${money(d.drivewayRevenue)}`);
-    if (d.friends && d.friends.length) {
+    if (d.friends.length) {
       // One row per friend: what their stand took in minus their pay, so a slow rainy
       // day shows up as a friend who cost money.
       d.friends.forEach(f => {
@@ -60,7 +74,7 @@ export function renderFullDayReportHTML(d, s, isModal = false, hero = () => '') 
   }
   if (helpers.hasDeliveryRoute) {
     rows += row(`Stores (${count(d.bottlesSold)} bottles)`, `+${money(d.wholesaleRevenue)}`);
-  } else if (d.stores && d.stores.length) {
+  } else if (d.stores.length) {
     // One row per store; "12 of 25" when the bottles, lemons or sugar ran out first.
     d.stores.forEach(st => {
       const n = st.bottles < st.wanted ? `${count(st.bottles)} of ${count(st.wanted)}` : count(st.bottles);
@@ -85,27 +99,16 @@ export function renderFullDayReportHTML(d, s, isModal = false, hero = () => '') 
     if (r.topic === 'price') return 3;
     return 4;
   };
-  const shown = (d.reviews || [])
+  const shown = d.reviews
     .filter(r => !(d.recipeJustLocked && r.topic === 'taste'))
     .map((r, i) => ({ r, i }))
     .sort((a, b) => reviewRank(a.r) - reviewRank(b.r) || a.i - b.i)
     .slice(0, 2)
     .map(x => x.r);
-  const reviews = shown.map(r => {
-    const team = isTeamNote(r);
-    const mood = team ? 'team' : r.sentiment === 'positive' ? 'good' : 'bad';
-    const face = r.topic === 'taste' && r.face
-      ? `<img class="report-review-face" src="./sprites/faces/taste_${r.face}.png" alt="" />` : '';
-    return `<div class="report-review ${mood}">
-      ${face}
-      <div class="report-review-text">
-        <div class="report-review-who">${r.reviewer}</div>
-        <div class="report-review-quote">&quot;${r.quote}&quot;</div>
-      </div>
-    </div>`;
-  }).join('');
+  const reviews = shown.map(r =>
+    reviewHTML(r, isTeamNote(r) ? 'team' : r.sentiment === 'positive' ? 'good' : 'bad')).join('');
   // From Stage 4 the cents the ice machine and fridge save are not worth a line.
-  const notes = (d.notes || []).filter(n => n !== 'All operations ran smoothly!' && !(s.phase >= 4 && n.startsWith('Your upgrades saved')));
+  const notes = d.notes.filter(n => !(s.phase >= 4 && n.startsWith('Your upgrades saved')));
   // The Flavor Lab's tasting (Stage 5): the testers' comment, or the new flavor's big day.
   const ft = d.flavorTaste;
   const flavor = ft && FLAVORS.find(f => f.id === ft.id);
@@ -117,34 +120,21 @@ export function renderFullDayReportHTML(d, s, isModal = false, hero = () => '') 
     </div>`;
   } else if (ft && flavor) {
     flavorHTML = `<div class="report-section-title">Flavor Lab: ${flavor.name}</div>
-      <div class="report-review ${ft.review.sentiment === 'positive' ? 'good' : 'bad'}">
-        ${ft.review.face ? `<img class="report-review-face" src="./sprites/faces/taste_${ft.review.face}.png" alt="" />` : ''}
-        <div class="report-review-text"><div class="report-review-who">${ft.review.reviewer}</div>
-        <div class="report-review-quote">&quot;${ft.review.quote}&quot;</div></div>
-      </div>`;
+      ${reviewHTML(ft.review, ft.review.sentiment === 'positive' ? 'good' : 'bad')}`;
   }
-
-  const sInfo = d.seasonInfo;
 
   // Small changes are normal; warn only for a meaningful drop.
-  let rep = '';
-  {
-    const trend = d.reputationTrend;
-    const [cls, msg] = trend === 'up' ? ['up', 'Going up!']
-      : trend === 'down' ? ['down', 'Going down']
-      : ['same', d.reputationAfter >= 0.9 ? 'Looking good!' : 'Holding steady'];
-    rep = `<div class="report-rep"><span>What neighbors say</span>` +
-      starMeter(d.reputationAfter, `Reputation ${Math.round(d.reputationAfter * 100)} out of 100`) +
-      `<span class="report-rep-trend ${cls}">${msg}</span></div>`;
-  }
+  const [trendCls, trendMsg] = d.reputationTrend === 'up' ? ['up', 'Going up!']
+    : d.reputationTrend === 'down' ? ['down', 'Going down']
+    : ['same', d.reputationAfter >= 0.9 ? 'Looking good!' : 'Holding steady'];
+  const rep = `<div class="report-rep"><span>What neighbors say</span>` +
+    starMeter(d.reputationAfter, `Reputation ${Math.round(d.reputationAfter * 100)} out of 100`) +
+    `<span class="report-rep-trend ${trendCls}">${trendMsg}</span></div>`;
 
-  return `<div class="report-card ${isModal ? 'in-modal' : ''}">
+  return `<div class="report-card">
     <div class="ratio-banner report-banner">
       <span>DAY ${d.day} REPORT</span>
-      <div style="display:flex; align-items:center; gap:6px;">
-        <span class="report-weather">${sInfo.icon} ${d.tempF}&deg;F ${skyCondition(d.weather, d.tempF)}</span>
-        ${!isModal ? `<button type="button" class="fold-pill-btn" onclick="window._toggleReportInline(event)"><span>Close</span> <span class="fold-arrow" style="transform:rotate(180deg)">\u{25BE}</span></button>` : ''}
-      </div>
+      <span class="report-weather">${d.seasonInfo.icon} ${d.tempF}&deg;F ${skyCondition(d.weather, d.tempF)}</span>
     </div>
     <div class="report-body">
       ${d.recipeJustLocked ? `<div class="report-golden">
@@ -165,44 +155,5 @@ export function renderFullDayReportHTML(d, s, isModal = false, hero = () => '') 
       ${reviews ? `<div class="report-section-title">What people said</div>${reviews}` : ''}
       ${notes.length ? `<ul class="report-notes">${notes.map(n => `<li>${n}</li>`).join('')}</ul>` : ''}
     </div>
-  </div>`;
-}
-
-// The docked ticket, or the whole report when expanded.
-export function renderDayReport(s, expanded, hero) {
-  const d = s.lastDaySummary;
-  if (!d) {
-    return `<div class="report-dock-ticket placeholder">
-      <img class="report-dock-cat" src="${SPRITE_DIR}cat0.png" alt="" />
-      <div class="report-dock-info">
-        <div class="report-dock-top">
-          <span class="report-dock-title">DAY REPORT</span>
-        </div>
-        <div class="report-dock-sub">Open Day 1 to see how your stand performs!</div>
-      </div>
-    </div>`;
-  }
-
-  if (expanded) {
-    return renderFullDayReportHTML(d, s, false, hero);
-  }
-
-  const count = (n) => n.toLocaleString('en-US');
-  const units = d.drivewayCupsSold + d.franchiseCupsSold + d.bottlesSold;
-
-  return `<div class="report-dock-ticket" id="report-dock-ticket" onclick="window._toggleReportInline(event)" role="button" tabindex="0" title="Click to expand Day Report">
-    <img class="report-dock-cat" src="${SPRITE_DIR}cat${reportCatMood(d)}.png" alt="" />
-    <div class="report-dock-info">
-      <div class="report-dock-top">
-        <span class="report-dock-title">DAY ${d.day} REPORT</span>
-        <span class="report-dock-profit ${d.netProfit < 0 ? 'neg' : 'pos'}">${fmtSigned(d.netProfit)}</span>
-      </div>
-      <div class="report-dock-sub">
-        <span>${count(units)} drinks sold</span> &bull; ${repStars(d)}
-      </div>
-    </div>
-    <button type="button" class="fold-pill-btn report-dock-expand-btn" aria-expanded="false">
-      <span>Details</span> <span class="fold-arrow">\u{25BE}</span>
-    </button>
   </div>`;
 }
