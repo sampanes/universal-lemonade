@@ -19,6 +19,9 @@ Each sheet is one row of stickers on a transparent background.
   art_src/brand/sheets/ -> art_src/brand/ (the brand moves, src/data/brand.ts)
     brand_sheet_a.png   - billboard, radio jingle, TV commercial, ballpark team
     brand_sheet_b.png   - parade float, blimp, big game commercial
+  art_src/icons/sheets/ -> art_src/icons/ (small icons beside words, src/pictures.ts)
+    seasons_sheet.png   - spring, summer, fall, winter (the season badge)
+    alerts_sheet.png    - warning (a supply running low), lock (a button not open yet)
 Each sticker is found by its empty columns and cropped to itself, and its inside is made
 fully solid (the image tool leaves it at about 99%). Then run build_sticker_art.py to make
 the game-size files.
@@ -37,6 +40,7 @@ FLAVORS = os.path.join('art_src', 'flavors')
 TROPHIES = os.path.join('art_src', 'trophies')
 YARD = os.path.join('art_src', 'yard')
 BRAND = os.path.join('art_src', 'brand')
+ICONS = os.path.join('art_src', 'icons')
 # (folder, sheet file, sticker names from left to right). The sheet is in folder/sheets/.
 SHEETS = [
     (SHOP, 'supplies_sheet.png', ['big_wagon', 'club_card', 'bottles']),
@@ -52,6 +56,8 @@ SHEETS = [
     (YARD, 'yard_sheet_b.png', ['robot', 'balloon', 'puppy', 'kitten']),
     (BRAND, 'brand_sheet_a.png', ['billboard', 'jingle', 'tv', 'team']),
     (BRAND, 'brand_sheet_b.png', ['parade', 'blimp', 'big_game']),
+    (ICONS, 'seasons_sheet.png', ['spring', 'summer', 'fall', 'winter']),
+    (ICONS, 'alerts_sheet.png', ['warning', 'lock']),
 ]
 SOLID = 16      # alpha above this counts as part of a sticker
 OPAQUE = 240    # alpha at or above this is the sticker's inside: made 255

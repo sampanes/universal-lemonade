@@ -7,7 +7,7 @@ import { loadKidArt, kidImageURL } from './kid.ts';
 import { preloadInBackground, whenIdle } from './preload.ts';
 import { FLAVORS } from './data/flavors.ts';
 import { SHOP_ITEMS, INVENTION } from './shop.ts';
-import { fruitPic } from './pictures.ts';
+import { fruitPic, ALL_ICONS } from './pictures.ts';
 import { session, startSession, saveGame, newGame } from './ui/session.js';
 import { kid, initKidView, renderHeaderKid } from './ui/kidView.js';
 import { initMirror, renderMirror, checkMagicLooks, magicLookNews, resetLooks } from './ui/mirror.js';
@@ -113,12 +113,13 @@ initResetCard({ onOpen: () => setMoneyBag(false), onConfirm: startOver });
 document.getElementById('btn-run-day').onclick = openForBusiness;
 
 // Pictures that only show up later (the next shop item, stores, friends' stands, every house,
-// the Flavor Lab's fruits, the brand moves, the yard, the trophies and wallpapers, the day
-// scene's clouds and customers): loaded while the page is idle, so they never pop in.
+// the Flavor Lab's fruits, the brand moves, the yard, the trophies and wallpapers, the icons,
+// the day scene's clouds and customers): loaded while the page is idle, so they never pop in.
 whenIdle(() => {
   void preloadInBackground([
     ...ALL_HOUSE_IMAGES, ...ALL_PLACE_IMAGES, './sprites/morning_prep/cloud_puff.png',
     ...SHOP_ITEMS.map(item => item.pic), INVENTION.pic, INVENTION.worldPic, ...FLAVORS.map(f => fruitPic(f.id)), ...ALL_SHELF_IMAGES,
+    ...ALL_ICONS,
   ]).then(prepareCustomers);
 });
 

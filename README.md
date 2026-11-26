@@ -158,10 +158,11 @@ turn it into the small files in `public/sprites/`:
 
 - `art_src/build_kid_art.py` - the paper-doll kid (body, 21 hair styles, faces) and `kid.json`
 - `art_src/cut_sheets.py` - cuts the sticker sheets (Stand Shop pictures, Flavor Lab fruits,
-  trophies, yard things, brand moves) into full-size sources
+  trophies, yard things, brand moves, the season and alert icons) into full-size sources
 - `art_src/build_sticker_art.py` - the game-size Stand Shop pictures, Flavor Lab fruits,
-  trophies, yard things and brand moves
-- `art_src/build_wallpaper_art.py` - the page wallpapers, made from the game's own stickers
+  trophies, yard things, brand moves and icons
+- `art_src/build_wallpaper_art.py` - the page wallpapers, from the pattern tiles in
+  `art_src/wallpapers/` on each wallpaper's dark color
 - `art_src/build_frame_art.py` - the stand's ribbon, awning and tablecloth
 - `art_src/build_franchise_art.py` - the three friend stands (Elm Street, Ballpark, Pool)
 - `art_src/build_backdrop_art.py` - the neighborhoods behind the friends' stands, with the sky
@@ -169,7 +170,7 @@ turn it into the small files in `public/sprites/`:
 - `art_src/build_store_art.py` - the three bottle stores and the labeler
 - `art_src/build_house_art.py` - the family house pictures and their wall masks (for the paint color)
 - `art_src/clean_edges.py` - edge cleanup for small UI sprites
-- `tools/prep_kawaii_cat.py` - the cat, the stars and sparkles
+- `tools/prep_kawaii_cat.py` - the cat and the stars
 - `tools/make_pitcher_glass.py` - the see-through pitcher glass
 
 Recolorable layers (skin, hair, shirt) are drawn in gray, so the game can tint them.

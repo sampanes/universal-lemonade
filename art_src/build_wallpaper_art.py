@@ -1,73 +1,46 @@
-"""Make the page wallpapers (src/data/trophies.ts) from the game's own sticker pictures.
+"""Make the page wallpapers (src/data/trophies.ts) from the wallpaper tiles in art_src/wallpapers/.
 
-Each wallpaper is one seamless square tile: a dark color with a few stickers scattered over
-it, faded so the cards on top stay easy to read. The page repeats the tile at half its size
-(it is drawn at 2x for sharp screens). The stickers come from public/sprites/ (the lemon,
-the Flavor Lab's fruits, the stars and sparkles), so build_sticker_art.py runs first.
+Each tile is a 1024 x 1024 pattern on a transparent background with nothing touching its
+edges, so it repeats without a seam (its prompt: art_src/prompts/README.md). This puts the
+wallpaper's dark color behind it and fades the pattern, so the cards on top stay easy to
+read, then shrinks it to TILE px. The page repeats it at half that size (it is drawn at 2x
+for sharp screens).
 
 Run from the repo root:
     py -3.11 -I art_src/build_wallpaper_art.py
 """
 import os
 
+import numpy as np
 from PIL import Image
 
-SPRITES = os.path.join('public', 'sprites')
+SRC = os.path.join('art_src', 'wallpapers')
 DST = os.path.join('public', 'sprites', 'wallpapers')
-TILE = 320   # px; shown at 160 CSS px
+TILE = 640   # px; shown at 320 CSS px (game.css body[data-wallpaper])
+EDGE = 4     # px of the source that must be empty all around, or the repeat shows a seam
 
-# id -> (background color, how strongly the stickers show (0 to 1),
-#        [(sticker under public/sprites/, center x, center y, longer side, turn in degrees)])
+# id -> (background color, how strongly the pattern shows (0 to 1)). The colors match
+# body[data-wallpaper] in game.css.
 WALLPAPERS = {
-    'lemons': ('#2c1338', 0.42, [
-        ('lemon.png', 70, 62, 74, -18),
-        ('lemon_wheel.png', 228, 92, 58, 0),
-        ('lemon.png', 238, 238, 70, 24),
-        ('lemon_wheel.png', 78, 228, 52, 30),
-        ('lemon_wheel.png', 156, 160, 30, 12),
-    ]),
-    'fruit': ('#0f2f38', 0.45, [
-        ('flavors/strawberry.png', 66, 66, 64, -14),
-        ('flavors/peach.png', 226, 70, 62, 12),
-        ('flavors/blueberry.png', 150, 160, 54, 0),
-        ('flavors/watermelon.png', 72, 246, 64, 16),
-        ('flavors/mango.png', 244, 236, 62, -10),
-    ]),
-    'stars': ('#16123f', 0.55, [
-        ('kawaii_cat/star_small.png', 72, 70, 60, -12),
-        ('kawaii_cat/sparkle_big.png', 236, 108, 50, 0),
-        ('kawaii_cat/sparkle_small.png', 150, 176, 30, 0),
-        ('kawaii_cat/star_small.png', 238, 250, 46, 16),
-        ('kawaii_cat/sparkle_small.png', 62, 244, 36, 0),
-        ('kawaii_cat/sparkle_small.png', 300, 24, 22, 0),
-    ]),
+    'lemons': ('#2c1338', 0.28),
+    'fruit': ('#0f2f38', 0.28),
+    'stars': ('#16123f', 0.3),
 }
-
-
-def sticker(name, size, turn, strength):
-    im = Image.open(os.path.join(SPRITES, name)).convert('RGBA')
-    k = size / max(im.size)
-    im = im.convert('RGBa').resize((round(im.width * k), round(im.height * k)), Image.LANCZOS).convert('RGBA')
-    if turn:
-        im = im.rotate(turn, resample=Image.BICUBIC, expand=True)
-    a = im.getchannel('A').point(lambda v: round(v * strength))
-    im.putalpha(a)
-    return im
 
 
 def main():
     os.makedirs(DST, exist_ok=True)
-    for wid, (color, strength, stickers) in WALLPAPERS.items():
-        tile = Image.new('RGB', (TILE, TILE), color)
-        for name, cx, cy, size, turn in stickers:
-            im = sticker(name, size, turn, strength)
-            x, y = cx - im.width // 2, cy - im.height // 2
-            # Drawn again one tile over in each direction, so a sticker over an edge wraps.
-            for dx in (-TILE, 0, TILE):
-                for dy in (-TILE, 0, TILE):
-                    tile.paste(im, (x + dx, y + dy), im)
+    for wid, (color, strength) in WALLPAPERS.items():
+        art = Image.open(os.path.join(SRC, wid + '.png')).convert('RGBA')
+        alpha = np.asarray(art)[:, :, 3]
+        border = np.concatenate([alpha[:EDGE].ravel(), alpha[-EDGE:].ravel(), alpha[:, :EDGE].ravel(), alpha[:, -EDGE:].ravel()])
+        assert border.max() < 16, '%s: the pattern touches the edge, so the tiles would show a seam' % wid
+        art.putalpha(art.getchannel('A').point(lambda v: round(v * strength)))
+        tile = Image.new('RGBA', art.size, color)
+        tile.alpha_composite(art)
+        tile = tile.convert('RGB').resize((TILE, TILE), Image.LANCZOS)
         out = os.path.join(DST, wid + '.webp')
-        tile.save(out, quality=88, method=6)
+        tile.save(out, quality=86, method=6)
         print('[OK] %s %dx%d %d bytes' % (out, TILE, TILE, os.path.getsize(out)))
 
 

@@ -5,7 +5,7 @@ import { session } from './session.js';
 import { setText, setHTMLIfChanged, setClass, setHidden, setDisabled, setData, replayClass } from './dom.js';
 import { fmtWhole, fmtDollars, fmtRest } from './format.js';
 import { skyCondition, temperatureBand } from '../scene/forecastArt.ts';
-import { SUPPLY_PICS } from '../pictures.ts';
+import { SUPPLY_PICS, iconPic, seasonPic } from '../pictures.ts';
 import { ledgerSupplies } from '../engine.ts';
 
 // In grid order. Bottles (Stage 3 on) come right after the ice: once the ice machine makes the
@@ -17,7 +17,7 @@ const SUPPLIES = [
   { item: 'bottles', title: 'Bottles' },
   { item: 'cups', title: 'Cups' },
 ];
-const LOW_SIGN = '\u{26A0}\u{FE0F}';
+const LOW_SIGN = `<img src="${iconPic('warning')}" alt="" />`;
 const $ = (id) => document.getElementById(id);
 
 function supplyBoxHTML({ item, title }) {
@@ -37,7 +37,9 @@ function supplyBoxHTML({ item, title }) {
 }
 
 function renderWeather(s, engine, advice) {
-  setText($('weather-season-badge'), engine.getSeasonInfo(s.day).badge);
+  const season = engine.getSeasonInfo(s.day);
+  setHTMLIfChanged($('weather-season-badge'), `<img class="season-icon" src="${seasonPic(season.season)}" alt="" />` +
+    `${season.displayName} &middot; Day ${season.dayInSeason} of ${season.seasonLength}`);
   const sky = skyCondition(s.weather, s.tempF);
   setData($('weather-condition-label'), 'heat', temperatureBand(s.tempF));
   setText($('weather-temperature'), `${s.tempF}\u{B0}F`);

@@ -498,7 +498,7 @@ button:disabled {
   font: 700 13px/1.25 var(--font-ui);
   color: #51377a;
 }
-.store-lock { font-size: 0.85em; }
+.lock-icon { width: auto; height: 1.05em; vertical-align: -0.15em; }   /* the padlock: src/ui/dom.js LOCK */
 .friend-btn {
   margin: 4px 0 0;
   min-height: 30px;
@@ -587,7 +587,7 @@ div.friend-btn { display: flex; flex-direction: column; justify-content: center;
   white-space: nowrap;
   font-size: min(13px, calc(100cqw / (var(--chars, 10) * 0.52)));
   line-height: 14px;
-  height: 14px;   /* the lock emoji's font sits lower and would add a pixel */
+  height: 14px;   /* fixed: the padlock icon would add a pixel */
 }
 small.tile-line {
   font-size: min(10px, calc(100cqw / (var(--chars, 10) * 0.5)));
@@ -1093,7 +1093,7 @@ small.tile-line {
   border: 3px solid #ffffff;
   border-radius: 8px;
   box-shadow: 0 0 0 2px #c4b5fd;
-  background: #111 center / 48px;   /* the wallpaper's own tile: inline background-image */
+  background: #111 center / 96px;   /* a corner of the wallpaper's tile: inline background-image */
   cursor: pointer;
 }
 .shelf-wallpaper[aria-pressed="true"] { box-shadow: 0 0 0 3px #6d28d9; }
@@ -1103,9 +1103,9 @@ small.tile-line {
 }
 /* The page's wallpaper (body[data-wallpaper], set from state.wallpaper): the tile repeats
    at half its size, and the columns turn see-through so it shows behind the cards. */
-body[data-wallpaper="lemons"] { background: #2c1338 url('/sprites/wallpapers/lemons.webp') 0 0 / 160px 160px; }
-body[data-wallpaper="fruit"] { background: #0f2f38 url('/sprites/wallpapers/fruit.webp') 0 0 / 160px 160px; }
-body[data-wallpaper="stars"] { background: #16123f url('/sprites/wallpapers/stars.webp') 0 0 / 160px 160px; }
+body[data-wallpaper="lemons"] { background: #2c1338 url('/sprites/wallpapers/lemons.webp') 0 0 / 320px 320px; }
+body[data-wallpaper="fruit"] { background: #0f2f38 url('/sprites/wallpapers/fruit.webp') 0 0 / 320px 320px; }
+body[data-wallpaper="stars"] { background: #16123f url('/sprites/wallpapers/stars.webp') 0 0 / 320px 320px; }
 body:not([data-wallpaper="plain"]) .panel { background: rgba(14, 10, 22, 0.5); border-color: rgba(255, 255, 255, 0.16); }
 /* The yard scene (src/ui/yard.js): the new thing pops onto a round of grass. */
 .yard-scene-stage { position: relative; display: flex; justify-content: center; align-items: flex-end; height: 230px; padding-bottom: 18px; }
@@ -1531,6 +1531,15 @@ body:not([data-wallpaper="plain"]) .panel { background: rgba(14, 10, 22, 0.5); b
   letter-spacing: 0.3px;
   white-space: nowrap;
 }
+/* A season's icon before its name (the weather card's pill and the Day Report). The negative
+   margins keep it from making the line taller. */
+.season-icon {
+  width: 15px;
+  height: 15px;
+  margin: -3px 3px -3px 0;
+  vertical-align: middle;
+  object-fit: contain;
+}
 
 /* Stand frame: the border is drawn in CSS so it stays sharp at any size. Only the
    pictures are images (sprites/frame, made by art_src/build_frame_art.py): the ribbon
@@ -1719,9 +1728,10 @@ body:not(.low-cash) .prep-stand-card.has-truck .chore-tile { display: none; }
   100% { opacity: 0; transform: translateX(-50%) translateY(-6px); }
 }
 .supply-alert {
-  font-size: 13px;
+  display: inline-flex;
   animation: pulse-warn 1.5s ease-in-out infinite;
 }
+.supply-alert img { width: 17px; height: 17px; object-fit: contain; }
 @keyframes pulse-warn {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.3); }

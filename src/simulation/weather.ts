@@ -11,23 +11,16 @@ export function getSeasonInfo(day: number, b: Balance = BALANCE): SeasonInfo {
   const dayInSeason = (dayInYear % seasonLength) + 1; // 1..5
   const year = Math.floor((safeDay - 1) / daysInYear) + 1;
 
-  const seasons: { name: SeasonName; displayName: string; icon: string }[] = [
-    { name: 'SPRING', displayName: 'Spring', icon: '\u{1F338}' },
-    { name: 'SUMMER', displayName: 'Summer', icon: '\u{2600}\u{FE0F}' },
-    { name: 'FALL', displayName: 'Fall', icon: '\u{1F342}' },
-    { name: 'WINTER', displayName: 'Winter', icon: '\u{2744}\u{FE0F}' }
+  // The page shows each season's icon (src/pictures.ts seasonPic).
+  const seasons: { name: SeasonName; displayName: string }[] = [
+    { name: 'SPRING', displayName: 'Spring' },
+    { name: 'SUMMER', displayName: 'Summer' },
+    { name: 'FALL', displayName: 'Fall' },
+    { name: 'WINTER', displayName: 'Winter' }
   ];
 
   const current = seasons[seasonIdx];
-  return {
-    season: current.name,
-    displayName: current.displayName,
-    icon: current.icon,
-    dayInSeason,
-    seasonLength,
-    year,
-    badge: `${current.icon} ${current.displayName} \u{B7} Day ${dayInSeason} of ${seasonLength}`
-  };
+  return { season: current.name, displayName: current.displayName, dayInSeason, seasonLength, year };
 }
 
 export function rollWeatherForecast(

@@ -1,6 +1,7 @@
 // src/ui/dom.js -- small helpers that only touch the page when something changed. The page is
 // redrawn every frame (src/main.js), so each one compares first: an unchanged element is left
 // alone, which keeps a button under a finger from being replaced mid-tap.
+import { iconPic } from '../pictures.ts';
 
 export function setText(el, text) {
   if (el && el._lastText !== text) {
@@ -32,8 +33,8 @@ export function setData(el, key, value) {
   if (el && el.dataset[key] !== value) el.dataset[key] = value;
 }
 
-// A lock in front of a button that is not open yet.
-export const LOCK = '<span class="store-lock" aria-hidden="true">&#x1F512;</span> ';
+// A padlock in front of a button that is not open yet.
+export const LOCK = `<img class="lock-icon" src="${iconPic('lock')}" alt="" /> `;
 
 // Play an element's CSS animation again from the start (a pop-in on a card already showing).
 export function restartAnimation(el) {

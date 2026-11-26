@@ -8,11 +8,9 @@ export type SeasonName = 'SPRING' | 'SUMMER' | 'FALL' | 'WINTER';
 export interface SeasonInfo {
   season: SeasonName;
   displayName: string;
-  icon: string;
   dayInSeason: number;
   seasonLength: number;
   year: number;
-  badge: string;
 }
 
 export type GamePhase = 1 | 2 | 3 | 4 | 5;

@@ -4,7 +4,7 @@
 import { fmtDollars, fmtSigned } from './format.js';
 import { skyCondition } from '../scene/forecastArt.ts';
 import { FLAVORS, FLAVOR_BOOST } from '../data/flavors.ts';
-import { facePic } from '../pictures.ts';
+import { facePic, seasonPic } from '../pictures.ts';
 
 // Five smiling stars with the first `frac` of the row lit.
 const STAR5 = '<img src="./sprites/kawaii_cat/star_small.png" alt="" />'.repeat(5);
@@ -134,7 +134,7 @@ export function dayReportHTML(d, s, hero) {
   return `<div class="report-card">
     <div class="ratio-banner report-banner">
       <span>DAY ${d.day} REPORT</span>
-      <span class="report-weather">${d.seasonInfo.icon} ${d.tempF}&deg;F ${skyCondition(d.weather, d.tempF)}</span>
+      <span class="report-weather"><img class="season-icon" src="${seasonPic(d.seasonInfo.season)}" alt="${d.seasonInfo.displayName}" /> ${d.tempF}&deg;F ${skyCondition(d.weather, d.tempF)}</span>
     </div>
     <div class="report-body">
       ${d.recipeJustLocked ? `<div class="report-golden">
